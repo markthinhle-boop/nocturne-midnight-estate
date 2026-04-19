@@ -946,7 +946,6 @@ function handleMapRoomTap(roomId) {
 }
 
 function renderCurrentRoom() {
-  if (window._resetPanPosition) window._resetPanPosition();
   document.querySelectorAll('.room').forEach(r => r.classList.remove('active'));
   const cur = document.getElementById(`room-${gameState.currentRoom}`);
   if (cur) {
@@ -1047,7 +1046,6 @@ const ROOM_PARALLAX = {
 
   let _targetX = 0, _targetY = 0;
   let _curX = 0, _curY = 0;
-  let _panInit = false;
   let _scale = 1, _pinchStartDist = 0, _pinchStartScale = 1;
   let _pinchOriginX = 0, _pinchOriginY = 0;
   let _translateX = 0, _translateY = 0;
@@ -1069,7 +1067,7 @@ const ROOM_PARALLAX = {
     // div is 200% wide, left:0. Full pan = slide left by one appW.
     // Store half of that as cfg.x so ±cfg.x covers the full sweep.
     const appW = Math.min(window.innerWidth, 430);
-    cfg.x = Math.floor(appW * 0.75);
+    cfg.x = Math.floor(appW / 2);
     return cfg;
   }
 
@@ -1107,7 +1105,6 @@ const ROOM_PARALLAX = {
 
   function _tick() {
     const cfg = _getConfig();
-    if (!_panInit && cfg.x > 0) { _panInit=true; _curX=cfg.x; _targetX=cfg.x; _dragBaseX=cfg.x; }
     _curX = _lerp(_curX, _targetX, LERP);
     _curY = _lerp(_curY, _targetY, LERP);
     const cx = Math.max(-cfg.x * _scale, Math.min(cfg.x * _scale, _curX));
@@ -1122,7 +1119,7 @@ const ROOM_PARALLAX = {
     const cfg = _getConfig();
     const gamma = Math.max(-45, Math.min(45, e.gamma || 0));
     const beta  = Math.max(-45, Math.min(45, (e.beta || 0) - 45));
-    _gyroOffsetX = -(gamma / 90) * cfg.x;
+    _gyroOffsetX = -(gamma / 45) * cfg.x;
     // Gyro sets target relative to current drag-held position
     _targetX = Math.max(-cfg.x, Math.min(cfg.x, _dragBaseX + _gyroOffsetX));
     _targetY = -(beta / 45) * cfg.y;
@@ -1217,7 +1214,6 @@ const ROOM_PARALLAX = {
   }
 
   requestAnimationFrame(_tick);
-  window._resetPanPosition = function() { _panInit=false; _curX=0; _targetX=0; _dragBaseX=0; _gyroOffsetX=0; };
 })();
 window.ROOM_DESCRIPTIONS = ROOM_DESCRIPTIONS;
 window.CURATOR_INSULTS = CURATOR_INSULTS;

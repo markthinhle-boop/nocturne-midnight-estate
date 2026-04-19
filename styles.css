@@ -324,7 +324,7 @@ html, body {
   position: absolute;
   top: -10%; left: 0;
   width: 200%; height: 120%;
-  background-size: auto 100%; background-position: left center;
+  background-size: cover; background-position: left center;
   background-color: var(--bg-mid);
   transition: opacity 400ms;
   will-change: transform;
