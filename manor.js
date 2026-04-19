@@ -1082,11 +1082,12 @@ const ROOM_PARALLAX = {
     if (!bg) return;
     const cfg = _getConfig();
 
-    // div is 200% wide, left:0. Slide left to reveal panoramic right side.
-    // _curX = +cfg.x → tx = 0        (left edge of image visible)
-    // _curX = -cfg.x → tx = -appW    (right edge of image visible)
-    const appW = cfg.x * 2;
-    const tx = -(cfg.x - _curX) + _translateX;
+    // .room-bg is width:200% starting at left:0, so image = 2×appW wide.
+    // cfg.x = appW/2. tx = _curX - cfg.x keeps center of image visible at rest (_curX=0).
+    // _curX = +cfg.x → tx=0          → left edge (coat hooks)
+    // _curX =  0     → tx=-cfg.x     → center (foyer arch / stairs)
+    // _curX = -cfg.x → tx=-2*cfg.x   → right edge (mirror)
+    const tx = _curX - cfg.x + _translateX;
     const ty = _curY + _translateY;
 
     bg.style.transformOrigin = 'top left';
@@ -1119,7 +1120,7 @@ const ROOM_PARALLAX = {
     const cfg = _getConfig();
     const gamma = Math.max(-45, Math.min(45, e.gamma || 0));
     const beta  = Math.max(-45, Math.min(45, (e.beta || 0) - 45));
-    _gyroOffsetX = -(gamma / 45) * cfg.x * 0.25; // subtle ambient — drag is primary
+    _gyroOffsetX = (gamma / 45) * cfg.x * 0.25;
     // Gyro sets target relative to current drag-held position
     _targetX = Math.max(-cfg.x, Math.min(cfg.x, _dragBaseX + _gyroOffsetX));
     _targetY = -(beta / 45) * cfg.y;
@@ -1176,7 +1177,7 @@ const ROOM_PARALLAX = {
         const dx   = e.touches[0].clientX - _dragStartX;
         _velX      = e.touches[0].clientX - _lastDragX;
         _lastDragX = e.touches[0].clientX;
-        _targetX   = Math.max(-cfg.x, Math.min(cfg.x, _dragBaseX - dx * 2.2)); // negative: swipe right → pan right
+        _targetX   = Math.max(-cfg.x, Math.min(cfg.x, _dragBaseX - dx * 2.2));
       }
     }, { passive: false });
 
@@ -1189,7 +1190,7 @@ const ROOM_PARALLAX = {
         _isDragging = false;
         // Apply inertia then hold — gyro resumes from this position
         const cfg = _getConfig();
-        _dragBaseX = Math.max(-cfg.x, Math.min(cfg.x, _targetX - _velX * 3)); // match drag direction
+        _dragBaseX = Math.max(-cfg.x, Math.min(cfg.x, _targetX - _velX * 3));
         _targetX   = _dragBaseX;
         _velX      = 0;
       }
