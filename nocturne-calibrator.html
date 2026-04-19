@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nocturne — Hotspot Calibrator</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Courier New', monospace;
+    background: #080604;
+    color: #c9a84c;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #toolbar {
+    display: flex; align-items: center; gap: 10px; padding: 8px 12px;
+    background: #0d0a05; border-bottom: 1px solid #2a2010;
+    flex-shrink: 0; flex-wrap: wrap; z-index: 10;
+  }
+  #toolbar label { font-size: 10px; letter-spacing: 0.2em; color: #7a6030; text-transform: uppercase; }
+  #room-select {
+    background: #1a1208; border: 1px solid #3a2a10; color: #c9a84c;
+    font-family: inherit; font-size: 12px; padding: 4px 8px; border-radius: 3px;
+  }
+
+  /* Gyro simulator slider */
+  .gyro-control { display: flex; align-items: center; gap: 6px; }
+  .gyro-control label { font-size: 9px; color: #5a4020; letter-spacing: 0.15em; white-space: nowrap; }
+  input[type=range] {
+    -webkit-appearance: none; width: 90px; height: 3px;
+    background: #2a2010; border-radius: 2px; outline: none;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 12px; height: 12px;
+    background: #c9a84c; border-radius: 50%; cursor: pointer;
+  }
+  #gyro-x-val, #gyro-y-val {
+    font-size: 9px; color: #c9a84c; width: 32px; text-align: right;
+  }
+
+  .legend { display: flex; gap: 12px; align-items: center; font-size: 10px; color: #7a6030; }
+  .leg { display: flex; align-items: center; gap: 4px; }
+  .leg-box { width: 10px; height: 10px; border: 2px solid; border-radius: 2px; }
+  .leg-box.visible { border-color: #c9a84c; background: rgba(201,168,76,0.1); }
+  .leg-box.offscreen { border-color: #e05; background: rgba(220,0,80,0.1); }
+  .leg-box.new { border-color: #4caf50; background: rgba(76,175,80,0.15); }
+
+  #extract-btn {
+    margin-left: auto; padding: 5px 14px; background: #c9a84c; color: #000;
+    border: none; font-family: inherit; font-size: 11px; letter-spacing: 0.15em;
+    cursor: pointer; border-radius: 3px; text-transform: uppercase; font-weight: bold;
+  }
+  #extract-btn:hover { background: #e0c060; }
+
+  #main { flex: 1; display: flex; min-height: 0; overflow: hidden; }
+
+  /* Room outer — scrollable canvas area */
+  #room-outer {
+    flex: 1; display: flex; align-items: flex-start; justify-content: center;
+    background: #030201; overflow: auto; padding: 40px;
+    position: relative;
+  }
+
+  /* Phone frame */
+  #phone-frame {
+    position: relative; flex-shrink: 0;
+    width: 390px;
+    /* Phone extends taller to show off-screen area */
+  }
+
+  /* The viewport — what player sees */
+  #viewport-indicator {
+    position: absolute;
+    top: 0; left: 0;
+    width: 390px; height: 844px;
+    border: 2px solid rgba(201,168,76,0.5);
+    border-radius: 8px;
+    pointer-events: none;
+    z-index: 20;
+  }
+
+  /* Screen label */
+  #screen-label {
+    position: absolute;
+    top: -22px; left: 0; right: 0;
+    text-align: center;
+    font-size: 9px; letter-spacing: 0.25em;
+    color: rgba(201,168,76,0.4);
+    text-transform: uppercase;
+  }
+
+  /* The room container — wider + taller than viewport to allow off-screen placement */
+  #room-container {
+    position: relative;
+    /* Sized by JS after image loads to match natural image dimensions */
+    background: #000;
+    cursor: crosshair;
+    display: inline-block;
+  }
+
+  /* Room image fills the container */
+  #room-img {
+    position: absolute;
+    top: 0; left: 0;
+    width: auto; height: auto;
+    max-width: none; max-height: none;
+    opacity: 0.85;
+    display: block;
+  }
+
+  /* Gyro preview layer — moves with simulated tilt */
+  #gyro-layer {
+    position: absolute;
+    inset: 0;
+    transition: transform 100ms linear;
+    will-change: transform;
+  }
+
+  /* Dim overlay outside viewport bounds */
+  .dim-overlay {
+    position: absolute;
+    background: rgba(0,0,0,0.55);
+    pointer-events: none;
+    z-index: 5;
+  }
+  #dim-left  { top: 0; bottom: 0; left: 0; width: 195px; }
+  #dim-right { top: 0; bottom: 0; right: 0; width: 195px; }
+  #dim-top   { top: 0; left: 195px; right: 195px; height: 228px; }
+  #dim-bottom{ bottom: 0; left: 195px; right: 195px; height: 228px; }
+
+  /* Viewport border inside container */
+  #viewport-box {
+    position: absolute;
+    left: 195px; top: 228px;
+    width: 390px; height: 844px;
+    border: 1px dashed rgba(201,168,76,0.3);
+    pointer-events: none;
+    z-index: 6;
+  }
+
+  .hotspot {
+    position: absolute;
+    border: 2px solid #c9a84c;
+    background: rgba(201,168,76,0.12);
+    cursor: move; user-select: none; border-radius: 3px;
+    display: flex; align-items: flex-start; justify-content: flex-start; padding: 2px;
+    z-index: 10;
+  }
+  .hotspot.offscreen {
+    border-color: #e05;
+    background: rgba(220,0,80,0.12);
+  }
+  .hotspot.new-item { border-color: #4caf50; background: rgba(76,175,80,0.12); }
+  .hotspot.selected { box-shadow: 0 0 0 2px rgba(255,255,255,0.4); }
+
+  .hs-label {
+    font-size: 8px; color: #c9a84c; letter-spacing: 0.04em; line-height: 1.2;
+    pointer-events: none; max-width: 90px; overflow: hidden;
+    white-space: nowrap; text-overflow: ellipsis;
+  }
+  .hotspot.offscreen .hs-label { color: #ff4477; }
+  .hotspot.new-item .hs-label { color: #4caf50; }
+
+  .resize-handle {
+    position: absolute; bottom: 0; right: 0;
+    width: 8px; height: 8px;
+    background: #c9a84c; cursor: se-resize; border-radius: 1px;
+  }
+  .hotspot.offscreen .resize-handle { background: #e05; }
+
+  #crosshair-h { position: absolute; left: 0; right: 0; height: 1px; background: rgba(201,168,76,0.2); pointer-events: none; z-index: 15; }
+  #crosshair-v { position: absolute; top: 0; bottom: 0; width: 1px; background: rgba(201,168,76,0.2); pointer-events: none; z-index: 15; }
+
+  #coords-bar {
+    position: absolute;
+    bottom: 232px; left: 50%; transform: translateX(-50%);
+    background: rgba(0,0,0,0.9); border: 1px solid #2a2010;
+    color: #c9a84c; font-size: 11px; padding: 4px 12px; border-radius: 3px;
+    pointer-events: none; letter-spacing: 0.1em; z-index: 20; white-space: nowrap;
+  }
+
+  /* Sidebar */
+  #sidebar {
+    width: 230px; background: #0d0b06; border-left: 1px solid #2a2010;
+    display: flex; flex-direction: column; overflow: hidden; flex-shrink: 0;
+  }
+  #sidebar-title {
+    font-size: 9px; letter-spacing: 0.25em; color: #5a4020;
+    padding: 10px 12px 6px; text-transform: uppercase;
+    border-bottom: 1px solid #1a1208;
+  }
+  #obj-list { flex: 1; overflow-y: auto; }
+  .obj-row {
+    padding: 7px 12px; cursor: pointer; border-bottom: 1px solid #111008;
+    font-size: 10px; color: #8a6840; letter-spacing: 0.05em; line-height: 1.4;
+    display: flex; align-items: flex-start; gap: 6px;
+  }
+  .obj-row:hover { background: #1a1208; color: #c9a84c; }
+  .obj-row.active { background: #1f1505; color: #c9a84c; border-left: 2px solid #c9a84c; padding-left: 10px; }
+  .obj-row.offscreen-item { color: #ff4477; }
+  .obj-row.offscreen-item.active { border-left-color: #ff4477; }
+  .obj-row.new-item { color: #4caf50; }
+  .obj-dot { width: 6px; height: 6px; border-radius: 50%; background: #c9a84c; flex-shrink: 0; margin-top: 3px; }
+  .obj-dot.new { background: #4caf50; }
+  .obj-dot.offscreen { background: #e05; }
+  .obj-name { flex: 1; }
+  .obj-item { font-size: 9px; color: #5a4020; margin-top: 1px; }
+
+  /* Off-screen badge */
+  .offscreen-badge {
+    font-size: 8px; background: rgba(220,0,80,0.2); color: #ff4477;
+    padding: 1px 5px; border-radius: 2px; letter-spacing: 0.1em;
+    margin-top: 2px; display: inline-block;
+  }
+
+  #selected-panel {
+    border-top: 1px solid #1a1208; padding: 10px 12px; font-size: 10px; flex-shrink: 0;
+  }
+  #selected-panel .field { display: flex; justify-content: space-between; margin-bottom: 5px; }
+  #selected-panel .field label { color: #5a4020; letter-spacing: 0.1em; }
+  #selected-panel .field input {
+    width: 60px; background: #1a1208; border: 1px solid #2a2010; color: #c9a84c;
+    font-family: inherit; font-size: 10px; padding: 2px 4px; text-align: right; border-radius: 2px;
+  }
+  #selected-id { font-size: 9px; color: #7a6030; margin-bottom: 8px; letter-spacing: 0.08em; word-break: break-all; }
+
+  /* Off-screen info */
+  #offscreen-info {
+    font-size: 9px; color: #ff4477; margin-bottom: 8px;
+    letter-spacing: 0.08em; display: none;
+    background: rgba(220,0,80,0.08); padding: 4px 6px; border-radius: 3px;
+    border: 1px solid rgba(220,0,80,0.2);
+  }
+
+  #output-panel {
+    background: #050403; border-top: 1px solid #1a1208;
+    padding: 0; max-height: 140px; overflow-y: auto; flex-shrink: 0; display: none;
+  }
+  #output-panel pre {
+    font-size: 10px; color: #8a9; padding: 10px 12px;
+    white-space: pre-wrap; word-break: break-all; line-height: 1.5;
+  }
+
+  /* Add new hotspot btn */
+  #add-btn {
+    width: 100%; padding: 6px; background: transparent;
+    border: 1px dashed #2a2010; color: #5a4020;
+    font-family: inherit; font-size: 10px; letter-spacing: 0.15em;
+    cursor: pointer; text-transform: uppercase;
+  }
+  #add-btn:hover { border-color: #4caf50; color: #4caf50; }
+</style>
+</head>
+<body>
+
+<div id="toolbar">
+  <label>Room</label>
+  <select id="room-select"></select>
+
+  <div class="gyro-control">
+    <label>TILT X</label>
+    <input type="range" id="gyro-x" min="-160" max="160" value="0" step="1">
+    <span id="gyro-x-val">0px</span>
+  </div>
+  <div class="gyro-control">
+    <label>TILT Y</label>
+    <input type="range" id="gyro-y" min="-40" max="40" value="0" step="1">
+    <span id="gyro-y-val">0px</span>
+  </div>
+
+  <div class="legend">
+    <div class="leg"><div class="leg-box visible"></div><span>On screen</span></div>
+    <div class="leg"><div class="leg-box offscreen"></div><span>Off screen</span></div>
+    <div class="leg"><div class="leg-box new"></div><span>New</span></div>
+  </div>
+
+  <button id="extract-btn">⬇ Extract</button>
+</div>
+
+<div id="main">
+  <div id="room-outer">
+    <div id="phone-frame">
+      <div id="screen-label">← phone screen →</div>
+      <div id="viewport-indicator"></div>
+
+      <div id="room-container">
+        <img id="room-img" src="" alt="">
+
+        <!-- Dim overlays outside viewport -->
+        <div class="dim-overlay" id="dim-left"></div>
+        <div class="dim-overlay" id="dim-right"></div>
+        <div class="dim-overlay" id="dim-top"></div>
+        <div class="dim-overlay" id="dim-bottom"></div>
+        <div id="viewport-box"></div>
+
+        <div id="gyro-layer">
+          <!-- hotspots injected here -->
+        </div>
+
+        <div id="crosshair-h"></div>
+        <div id="crosshair-v"></div>
+        <div id="coords-bar">left: 0.0% &nbsp; top: 0.0%</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="sidebar">
+    <div id="sidebar-title">Objects — <span id="room-label">—</span></div>
+    <div id="obj-list"></div>
+    <button id="add-btn">+ Add New Hotspot</button>
+    <div id="selected-panel">
+      <div id="selected-id">— none selected —</div>
+      <div id="offscreen-info">⚠ OFF SCREEN — hidden until tilted</div>
+      <div class="field"><label>LEFT %</label><input id="f-left" type="number" step="0.1" min="-100" max="200"></div>
+      <div class="field"><label>TOP %</label><input id="f-top" type="number" step="0.1" min="-100" max="200"></div>
+      <div class="field"><label>WIDTH %</label><input id="f-width" type="number" step="0.1" min="1" max="100"></div>
+      <div class="field"><label>HEIGHT %</label><input id="f-height" type="number" step="0.1" min="1" max="100"></div>
+    </div>
+    <div id="output-panel">
+      <pre id="output-text"></pre>
+      <div style="display:flex;">
+        <button id="copy-btn" style="flex:1;background:#c9a84c;border:none;color:#000;font-family:inherit;font-size:10px;padding:7px;cursor:pointer;letter-spacing:0.15em;font-weight:bold;">COPY</button>
+        <button id="close-output" style="width:60px;background:#1a1208;border:none;border-left:1px solid #2a2010;color:#5a4020;font-family:inherit;font-size:10px;padding:7px;cursor:pointer;">CLOSE</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const ASSET_BASE = 'https://markthinhle-boop.github.io/nocturne-midnight-estate/assets/';
+
+const ROOM_BGS = {
+  'foyer':             'room/nocturne-room-foyer-bg.png',
+  'gallery':           'room/nocturne-room-gallery-bg.jpg',
+  'study':             'room/nocturne-room-study-bg.png',
+  'archive-path':      'room/nocturne-room-archive-path-bg.png',
+  'terrace':           'room/nocturne-room-terrace-bg.jpg',
+  'ballroom':          'room/nocturne-room-ballroom-bg.png',
+  'balcony':           'room/nocturne-room-balcony-bg.png',
+  'antechamber':       'room/nocturne-room-antechamber-bg.jpg',
+  'stage':             'room/nocturne-room-stage-bg.jpg',
+  'library':           'room/nocturne-room-library-bg.jpg',
+  'physicians':        'room/nocturne-room-physicians-bg.png',
+  'smoking':           'room/nocturne-room-smoking-bg.jpg',
+  'vault':             'room/nocturne-room-vault-bg.jpg',
+  'wine-cellar':       'room/nocturne-room-wine-cellar-bg.jpg',
+  'maids-quarters':    'room/nocturne-room-maids-quarters-bg.png',
+  'groundskeeper-cottage': 'room/nocturne-room-groundskeeper-cottage-bg.png',
+  'c1-arrival':        'room/nocturne-room-c1-antechamber.png',
+  'c3-original':       'room/nocturne-room-c3-original-bg.jpg',
+  'c5-correspondence': 'room/nocturne-room-c5-correspondence-bg.jpg',
+  'c6-tunnel':         'room/nocturne-room-c6-tunnel-bg.jpg',
+  'c7-study':          'room/nocturne-room-c7-study-bg.jpg',
+  'c8-gallery':        'room/nocturne-room-c8-gallery-bg.jpg',
+};
+
+const NEW_ITEMS = new Set([]);
+
+const HOTSPOTS = {
+  "balcony-mask-obj":    { room:"balcony",      item:"surgeons-mask",             left:22.0, top:76.0, width:8.7,  height:3.3, label:"Something on the balcony floor" },
+  "balcony-case-obj":    { room:"balcony",      item:"balcony-case",              left:62.1, top:75.5, width:6.1,  height:3.8, label:"A medical bag on the balcony floor" },
+  "vault-panel":         { room:"vault",        item:null,                        left:34.9, top:48.3, width:14.1, height:2.6, label:"A stone panel in the left wall" },
+  "vault-bookshelf-safe":{ room:"vault",        item:null,                        left:76.6, top:43.8, width:18.1, height:3.9, label:"Floor to ceiling. Bond records" },
+  "tunnel-door":         { room:"wine-cellar",  item:null,                        left:61.6, top:32.1, width:10.3, height:8.8, label:"A door in the stone wall" },
+  "estate-flower-obj":   { room:"foyer",        item:"estate-flower",             left:64.1, top:52.8, width:3.7,  height:3.1, label:"A white flower" },
+  "curators-note-obj":   { room:"foyer",        item:"curators-note",             left:77.8, top:52.8, width:4.8,  height:3.3, label:"A note on the invitation stand" },
+  "ashworth-seal-obj":   { room:"ballroom",     item:"ashworth-seal",             left:74.5, top:81.5, width:5.2,  height:4.5, label:"Something on the floor near the lectern" },
+  "northcott-log-obj":   { room:"foyer",        item:"northcott-notebook",        left:67.6, top:60.1, width:4.0,  height:4.0, label:"Northcott's notebook" },
+  "candle-request-obj":  { room:"foyer",        item:"candle-request-note",       left:72.0, top:52.8, width:3.5,  height:3.2, label:"A slip of paper" },
+  "northcott-arrival-obj":{ room:"foyer",       item:"northcott-arrival-record",  left:74.8, top:59.8, width:4.0,  height:4.0, label:"A leather-bound record" },
+  "unsigned-letter-obj": { room:"foyer",        item:"unsigned-letter",           left:78.5, top:48.0, width:4.5,  height:3.5, label:"An unsigned letter" },
+  "northcott-placement-obj":{ room:"antechamber", item:"northcott-placement-letter", left:13.7, top:65.5, width:4.0, height:4.0, label:"A sealed envelope" },
+  "guest-book-obj":      { room:"gallery",      item:"guest-book",                left:70.0, top:46.5, width:4.0,  height:4.0, label:"The guest book" },
+  "fireplace-obj":       { room:"study",        item:"burned-fragments",          left:54.0, top:52.6, width:9.6,  height:2.4, label:"The fireplace" },
+  "bookcase-obj":        { room:"study",        item:"estate-charter-vol3",       left:13.3, top:44.6, width:4.0,  height:4.0, label:"Bookcase" },
+  "decanter-obj":        { room:"study",        item:"study-decanter",            left:93.2, top:64.5, width:4.0,  height:4.0, label:"Decanter on desk" },
+  "ashworths-last-note-obj":{ room:"study",     item:"ashworths-last-note",       left:75.1, top:60.3, width:4.0,  height:4.0, label:"Note on mantelpiece" },
+  "rite-programme-obj":  { room:"study",        item:"rite-programme",            left:66.8, top:41.2, width:4.0,  height:4.0, label:"Rite programme" },
+  "compact-keepsake-obj":{ room:"study",        item:"compact-keepsake",          left:42.0, top:65.0, width:6.0,  height:4.0, label:"Correspondence drawer" },
+  "lady-key-obj":        { room:"study",        item:"lady-ashworths-key",        left:82.9, top:61.7, width:4.0,  height:4.0, label:"Key on mantelpiece" },
+  "lady-letter-obj":     { room:"library",      item:"lady-ashworth-letter",      left:3.6,  top:60.2, width:4.0,  height:4.0, label:"Letter on reading table" },
+  "archive-case-3":      { room:"archive-path", item:"unsigned-letter",           left:14.9, top:34.0, width:4.0,  height:4.0, label:"Archive Case 3" },
+  "case-3-wrapper-obj":  { room:"archive-path", item:"case-3-wrapper",            left:25.9, top:47.6, width:4.0,  height:4.0, label:"Case 3 wrapper" },
+  "voss-notes-obj":      { room:"archive-path", item:"voss-notes",                left:7.2,  top:66.5, width:4.0,  height:4.0, label:"Miss Voss's working notes" },
+  "archive-filing-notes-obj":{ room:"archive-path", item:"archive-filing-notes",  left:2.9,  top:31.1, width:4.0,  height:4.0, label:"Archive filing notes" },
+  "leather-document-roll-obj":{ room:"archive-path", item:"leather-document-roll", left:6.3, top:48.2, width:4.0,  height:4.0, label:"Leather document roll" },
+  "lectern-pen-obj":     { room:"ballroom",     item:"lectern-pen",               left:82.5, top:81.9, width:5.5,  height:3.6, label:"Fountain pen on lectern" },
+  "candle-iron-obj":     { room:"ballroom",     item:"candle-iron",               left:48.0, top:84.0, width:5.0,  height:3.0, label:"Candle iron near body" },
+  "terrace-map-obj":     { room:"terrace",      item:"terrace-garden-map",        left:1.9,  top:62.0, width:4.0,  height:4.0, label:"Garden map" },
+  "ballroom-programme-obj":{ room:"ballroom",   item:"ballroom-programme",        left:91.8, top:81.6, width:5.5,  height:4.0, label:"Rite programme dropped" },
+  "writing-case-obj":    { room:"antechamber",  item:"writing-case-evidence",     left:4.9,  top:66.0, width:4.0,  height:4.0, label:"Leather writing case" },
+  "gloves-obj":          { room:"antechamber",  item:"gloves-evidence",           left:86.0, top:65.6, width:4.0,  height:4.0, label:"Formal gloves" },
+  "bond-record-vol-obj": { room:"library",      item:"bond-record-volume",        left:13.7, top:59.2, width:4.0,  height:4.0, label:"Bond record volume" },
+  "warning-note-obj":    { room:"library",      item:"warning-note",              left:95.0, top:66.3, width:4.0,  height:4.0, label:"Sealed note" },
+  "debt-record-obj":     { room:"library",      item:"debt-record",               left:89.3, top:61.2, width:4.0,  height:4.0, label:"Debt record" },
+  "appointment-book-obj":{ room:"physicians",   item:"appointment-book",          left:33.3, top:59.8, width:4.0,  height:4.0, label:"Crane's appointment book" },
+  "curators-document-obj":{ room:"physicians",  item:"curators-document",         left:53.0, top:58.7, width:4.0,  height:4.0, label:"Curator's document" },
+  "vault-door-obj":      { room:"smoking",      item:null,                        left:82.2, top:26.1, width:6.8,  height:4.2, label:"Door at far end" },
+  "baron-papers-obj":    { room:"smoking",      item:"barons-real-origins",       left:36.4, top:43.1, width:4.0,  height:4.0, label:"Baron's papers" },
+  "ashtray-obj":         { room:"smoking",      item:"ashtray",                   left:73.3, top:68.0, width:4.0,  height:4.0, label:"Crystal ashtray" },
+  "correspondence-obj":  { room:"smoking",      item:"ashworths-sunday-letter",   left:19.6, top:42.7, width:4.0,  height:4.0, label:"Ashworth letter" },
+  "barons-file-obj":     { room:"smoking",      item:"barons-incomplete-file",    left:16.2, top:63.5, width:4.0,  height:4.0, label:"Baron's file" },
+  "smoking-letters-obj": { room:"smoking",      item:"smoking-letters",           left:6.7,  top:42.7, width:4.0,  height:4.0, label:"Correspondence bundle" },
+  "baron-channel-obj":   { room:"archive-path", item:"baron-compact-channel",     left:15.3, top:62.2, width:4.0,  height:4.0, label:"Channel notebook" },
+  "baron-window-obj":    { room:"library",      item:"baron-study-observation",   left:0.0,  top:34.6, width:4.0,  height:4.0, label:"Notepad on reading table" },
+  "arrangement-files-obj":{ room:"vault",       item:"arrangement-files",         left:5.5,  top:55.3, width:4.0,  height:4.0, label:"Arrangement files" },
+  "steward-bond-obj":    { room:"vault",        item:"steward-bond",              left:36.9, top:62.3, width:8.4,  height:4.1, label:"Bond document" },
+  "surgeons-licensing-record-obj":{ room:"vault", item:"surgeons-licensing-record", left:12.0, top:62.0, width:5.0, height:4.0, label:"Surgeon's licensing record" },
+  "original-agreement-obj":{ room:"c3-original", item:"original-agreement",       left:48.4, top:53.8, width:4.0,  height:4.0, label:"Founding agreement" },
+  "buried-bonds-obj":    { room:"vault",        item:"buried-bonds-comparison",   left:91.4, top:55.8, width:4.0,  height:4.0, label:"Document on lower shelf" },
+  "letter-shelves-obj":  { room:"c5-correspondence", item:"conspirator-letters",  left:9.7,  top:60.6, width:4.0,  height:4.0, label:"Forty years of letters" },
+  "unsealed-letter-obj": { room:"c5-correspondence", item:"unsealed-letter",      left:10.2, top:70.9, width:4.0,  height:4.0, label:"Unsealed letter" },
+  "stone-marker-obj":    { room:"c6-tunnel",    item:"keystone-rubbing",          left:77.6, top:50.8, width:4.0,  height:4.0, label:"Stone marker" },
+  "full-desk-c7-obj":    { room:"c7-study",     item:null,                        left:22.0, top:62.0, width:8.0,  height:6.0, label:"Two documents on desk" },
+  "testimonies-wall-obj":{ room:"library",      item:"witness-testimony",         left:7.1,  top:54.6, width:4.0,  height:4.0, label:"Bound collection" },
+  "planning-document-obj":{ room:"archive-path", item:"planning-document",        left:85.9, top:66.2, width:4.0,  height:4.0, label:"Planning document" },
+  "compact-verdict-obj": { room:"c8-gallery",   item:"compact-verdict",           left:50.0, top:62.0, width:4.0,  height:4.0, label:"Formal judgment document" },
+  "hatch-plain-mask-obj":{ room:"groundskeeper-cottage", item:"plain-mask",       left:75.0, top:30.0, width:5.0,  height:5.0, label:"Plain mask on wall hook" },
+  "garden-bench-obj":    { room:"terrace",      item:null,                        left:15.0, top:70.0, width:8.0,  height:6.0, label:"Garden bench below balcony" },
+  "northcott-candelabra-note-obj":{ room:"ballroom", item:null,                   left:55.0, top:65.0, width:7.0,  height:5.0, label:"Candelabra notation" },
+  "rite-programme-study-obj":{ room:"study",    item:"rite-programme",            left:66.8, top:41.2, width:4.0,  height:4.0, label:"Rite programme — study" },
+};
+
+// ── STATE ─────────────────────────────────────────────────────
+// Container dimensions
+const CONT_W = 780;
+const CONT_H = 1300;
+const VP_LEFT = 195;   // viewport left offset in container
+const VP_TOP  = 228;   // viewport top offset in container
+const VP_W    = 390;
+const VP_H    = 844;
+
+let currentRoom = 'study';
+let selectedId = null;
+let positions = {};
+let newItems = new Set(NEW_ITEMS);
+let gyroX = 0, gyroY = 0;
+
+Object.entries(HOTSPOTS).forEach(([id, h]) => {
+  positions[id] = { left: h.left, top: h.top, width: h.width, height: h.height };
+});
+
+// ── ELEMENTS ──────────────────────────────────────────────────
+const roomSelect  = document.getElementById('room-select');
+const roomImg     = document.getElementById('room-img');
+const roomContainer = document.getElementById('room-container');
+const gyroLayer   = document.getElementById('gyro-layer');
+const objList     = document.getElementById('obj-list');
+const coordsBar   = document.getElementById('coords-bar');
+const chH         = document.getElementById('crosshair-h');
+const chV         = document.getElementById('crosshair-v');
+const fLeft       = document.getElementById('f-left');
+const fTop        = document.getElementById('f-top');
+const fWidth      = document.getElementById('f-width');
+const fHeight     = document.getElementById('f-height');
+const selectedIdEl = document.getElementById('selected-id');
+const outputPanel = document.getElementById('output-panel');
+const outputText  = document.getElementById('output-text');
+const offscreenInfo = document.getElementById('offscreen-info');
+const gyroXSlider = document.getElementById('gyro-x');
+const gyroYSlider = document.getElementById('gyro-y');
+const gyroXVal    = document.getElementById('gyro-x-val');
+const gyroYVal    = document.getElementById('gyro-y-val');
+
+// ── ROOM SELECT ───────────────────────────────────────────────
+const rooms = [...new Set(Object.values(HOTSPOTS).map(h => h.room))].sort();
+rooms.forEach(r => {
+  const opt = document.createElement('option');
+  opt.value = r; opt.textContent = r;
+  roomSelect.appendChild(opt);
+});
+roomSelect.value = currentRoom;
+
+// ── GYRO PREVIEW ─────────────────────────────────────────────
+gyroXSlider.addEventListener('input', () => {
+  gyroX = parseInt(gyroXSlider.value);
+  gyroXVal.textContent = gyroX + 'px';
+  applyGyroPreview();
+  updateOffscreenStates();
+});
+gyroYSlider.addEventListener('input', () => {
+  gyroY = parseInt(gyroYSlider.value);
+  gyroYVal.textContent = gyroY + 'px';
+  applyGyroPreview();
+  updateOffscreenStates();
+});
+
+function applyGyroPreview() {
+  // Move the gyro-layer (hotspots) with tilt — same as game
+  gyroLayer.style.transform = `translate(${gyroX}px, ${gyroY}px)`;
+}
+
+// ── IS OFF SCREEN ─────────────────────────────────────────────
+// An object is "off screen" if its position in container coords
+// falls outside the viewport bounds (before gyro offset).
+// left/top are percentages of the CONTAINER (780x1300).
+function isOffScreen(id) {
+  const pos = positions[id];
+  return pos.left < 0 || pos.left > 100 || pos.top < 0 || pos.top > 100;
+}
+
+// ── HOTSPOT PIXEL POSITION ────────────────────────────────────
+// Hotspots are positioned as % of the viewport (390x844).
+// In the calibrator, the viewport starts at (VP_LEFT, VP_TOP) in the container.
+// So pixel position in container = VP_LEFT + (left/100)*VP_W
+function hsContainerPos(id) {
+  const pos = positions[id];
+  const vpL = window._vpLeft || VP_LEFT;
+  const vpT = window._vpTop  || VP_TOP;
+  const px = vpL + (pos.left / 100) * VP_W;
+  const py = vpT + (pos.top  / 100) * VP_H;
+  const pw = (pos.width  / 100) * VP_W;
+  const ph = (pos.height / 100) * VP_H;
+  return { px, py, pw, ph };
+}
+
+// ── LOAD ROOM ─────────────────────────────────────────────────
+function loadRoom(roomId) {
+  currentRoom = roomId;
+  selectedId = null;
+  gyroX = 0; gyroY = 0;
+  gyroXSlider.value = 0; gyroYSlider.value = 0;
+  gyroXVal.textContent = '0px'; gyroYVal.textContent = '0px';
+  applyGyroPreview();
+  updateSelectedPanel();
+  document.getElementById('room-label').textContent = roomId;
+
+  const bg = ROOM_BGS[roomId];
+  if (bg) {
+    roomImg.onload = () => {
+      const imgW = roomImg.naturalWidth;
+      const imgH = roomImg.naturalHeight;
+
+      // Size container to full image
+      roomContainer.style.width  = imgW + 'px';
+      roomContainer.style.height = imgH + 'px';
+
+      // Phone overlay centered on image
+      // VP_LEFT/VP_TOP = where viewport starts within the image
+      const vpL = Math.round((imgW - VP_W) / 2);
+      const vpT = Math.round((imgH - VP_H) / 2);
+      window._vpLeft = vpL;
+      window._vpTop  = vpT;
+
+      // Update dim overlays
+      document.getElementById('dim-left').style.cssText  = `top:0;bottom:0;left:0;width:${vpL}px;`;
+      document.getElementById('dim-right').style.cssText = `top:0;bottom:0;right:0;width:${imgW-vpL-VP_W}px;`;
+      document.getElementById('dim-top').style.cssText   = `top:0;left:${vpL}px;width:${VP_W}px;height:${vpT}px;`;
+      document.getElementById('dim-bottom').style.cssText= `bottom:0;left:${vpL}px;width:${VP_W}px;height:${imgH-vpT-VP_H}px;`;
+
+      // Viewport box
+      const vb = document.getElementById('viewport-box');
+      vb.style.left   = vpL + 'px';
+      vb.style.top    = vpT + 'px';
+      vb.style.width  = VP_W + 'px';
+      vb.style.height = VP_H + 'px';
+
+      // Coords bar
+      document.getElementById('coords-bar').style.cssText = `position:absolute;bottom:${imgH-vpT-VP_H+8}px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.9);border:1px solid #2a2010;color:#c9a84c;font-size:11px;padding:4px 12px;border-radius:3px;pointer-events:none;letter-spacing:0.1em;z-index:20;white-space:nowrap;`;
+
+      renderSidebar();
+      renderHotspots();
+    };
+    roomImg.onerror = () => { roomImg.style.display = 'none'; };
+    roomImg.src = ASSET_BASE + bg;
+    roomImg.style.display = 'block';
+  } else {
+    roomImg.style.display = 'none';
+    renderSidebar();
+    renderHotspots();
+  }
+}
+
+roomSelect.addEventListener('change', () => loadRoom(roomSelect.value));
+
+// ── SIDEBAR ───────────────────────────────────────────────────
+function renderSidebar() {
+  objList.innerHTML = '';
+  const roomObjs = Object.entries(HOTSPOTS).filter(([,h]) => h.room === currentRoom);
+  if (roomObjs.length === 0) {
+    objList.innerHTML = '<div style="padding:12px;font-size:10px;color:#3a2a10;">No objects in this room</div>';
+    return;
+  }
+  roomObjs.forEach(([id]) => {
+    const isNew = newItems.has(id);
+    const offscreen = isOffScreen(id);
+    const row = document.createElement('div');
+    row.id = 'row-' + id;
+    row.className = 'obj-row' + (isNew ? ' new-item' : '') + (offscreen ? ' offscreen-item' : '') + (id === selectedId ? ' active' : '');
+    row.innerHTML = `
+      <div class="obj-dot${isNew ? ' new' : ''}${offscreen ? ' offscreen' : ''}"></div>
+      <div class="obj-name">
+        ${id.replace('-obj','')}
+        <div class="obj-item">${HOTSPOTS[id].item || '(no item)'}</div>
+        ${offscreen ? '<span class="offscreen-badge">OFF SCREEN</span>' : ''}
+      </div>`;
+    row.addEventListener('click', () => selectObj(id));
+    objList.appendChild(row);
+  });
+}
+
+function updateOffscreenStates() {
+  const roomObjs = Object.entries(HOTSPOTS).filter(([,h]) => h.room === currentRoom);
+  roomObjs.forEach(([id]) => {
+    const el = document.getElementById('hs-' + id);
+    if (el) el.classList.toggle('offscreen', isOffScreen(id));
+    const row = document.getElementById('row-' + id);
+    if (row) row.classList.toggle('offscreen-item', isOffScreen(id));
+  });
+}
+
+// ── HOTSPOTS RENDER ───────────────────────────────────────────
+function renderHotspots() {
+  gyroLayer.querySelectorAll('.hotspot').forEach(el => el.remove());
+  const roomObjs = Object.entries(HOTSPOTS).filter(([,h]) => h.room === currentRoom);
+  roomObjs.forEach(([id]) => createHotspotEl(id));
+}
+
+function createHotspotEl(id) {
+  const isNew = newItems.has(id);
+  const offscreen = isOffScreen(id);
+
+  const el = document.createElement('div');
+  el.className = 'hotspot' + (isNew ? ' new-item' : '') + (offscreen ? ' offscreen' : '') + (id === selectedId ? ' selected' : '');
+  el.id = 'hs-' + id;
+
+  // Position in px relative to gyro-layer (which is positioned in container)
+  const { px, py, pw, ph } = hsContainerPos(id);
+  el.style.left   = px + 'px';
+  el.style.top    = py + 'px';
+  el.style.width  = pw + 'px';
+  el.style.height = ph + 'px';
+
+  const label = document.createElement('div');
+  label.className = 'hs-label';
+  label.textContent = id.replace('-obj','');
+  el.appendChild(label);
+
+  const resizeHandle = document.createElement('div');
+  resizeHandle.className = 'resize-handle';
+  el.appendChild(resizeHandle);
+
+  // ── DRAG MOVE ─────────────────────────────────────────────
+  el.addEventListener('mousedown', (e) => {
+    if (e.target === resizeHandle) return;
+    e.preventDefault();
+    selectObj(id);
+    const startX = e.clientX, startY = e.clientY;
+    const startLeft = positions[id].left, startTop = positions[id].top;
+
+    const onMove = (e) => {
+      const dx = (e.clientX - startX) / VP_W * 100;
+      const dy = (e.clientY - startY) / VP_H * 100;
+      positions[id].left = parseFloat((startLeft + dx).toFixed(1));
+      positions[id].top  = parseFloat((startTop  + dy).toFixed(1));
+      updateHotspotEl(id);
+      updateSelectedPanel();
+      updateOffscreenStates();
+    };
+    const onUp = () => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      renderSidebar();
+    };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  });
+
+  // ── RESIZE ────────────────────────────────────────────────
+  resizeHandle.addEventListener('mousedown', (e) => {
+    e.preventDefault(); e.stopPropagation();
+    selectObj(id);
+    const rStartX = e.clientX, rStartY = e.clientY;
+    const rStartW = positions[id].width, rStartH = positions[id].height;
+
+    const onMove = (e) => {
+      const dw = (e.clientX - rStartX) / VP_W * 100;
+      const dh = (e.clientY - rStartY) / VP_H * 100;
+      positions[id].width  = Math.max(1, parseFloat((rStartW + dw).toFixed(1)));
+      positions[id].height = Math.max(1, parseFloat((rStartH + dh).toFixed(1)));
+      updateHotspotEl(id);
+      updateSelectedPanel();
+    };
+    const onUp = () => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  });
+
+  gyroLayer.appendChild(el);
+}
+
+function updateHotspotEl(id) {
+  const el = document.getElementById('hs-' + id);
+  if (!el) return;
+  const { px, py, pw, ph } = hsContainerPos(id);
+  el.style.left   = px + 'px';
+  el.style.top    = py + 'px';
+  el.style.width  = pw + 'px';
+  el.style.height = ph + 'px';
+  el.classList.toggle('offscreen', isOffScreen(id));
+}
+
+// ── SELECT ────────────────────────────────────────────────────
+function selectObj(id) {
+  if (selectedId) {
+    const prev = document.getElementById('hs-' + selectedId);
+    if (prev) prev.classList.remove('selected');
+  }
+  selectedId = id;
+  const el = document.getElementById('hs-' + id);
+  if (el) el.classList.add('selected');
+  renderSidebar();
+  updateSelectedPanel();
+
+  // Scroll sidebar to active row
+  const row = document.getElementById('row-' + id);
+  if (row) row.scrollIntoView({ block: 'nearest' });
+}
+
+function updateSelectedPanel() {
+  if (!selectedId) {
+    selectedIdEl.textContent = '— none selected —';
+    offscreenInfo.style.display = 'none';
+    [fLeft,fTop,fWidth,fHeight].forEach(f => f.value = '');
+    return;
+  }
+  selectedIdEl.textContent = selectedId;
+  const pos = positions[selectedId];
+  fLeft.value   = pos.left;
+  fTop.value    = pos.top;
+  fWidth.value  = pos.width;
+  fHeight.value = pos.height;
+  offscreenInfo.style.display = isOffScreen(selectedId) ? 'block' : 'none';
+}
+
+[fLeft, fTop, fWidth, fHeight].forEach(f => {
+  f.addEventListener('input', () => {
+    if (!selectedId) return;
+    positions[selectedId].left   = parseFloat(fLeft.value)   || 0;
+    positions[selectedId].top    = parseFloat(fTop.value)    || 0;
+    positions[selectedId].width  = parseFloat(fWidth.value)  || 4;
+    positions[selectedId].height = parseFloat(fHeight.value) || 4;
+    updateHotspotEl(selectedId);
+    updateSelectedPanel();
+    updateOffscreenStates();
+  });
+});
+
+// ── CROSSHAIR + COORDS ────────────────────────────────────────
+roomContainer.addEventListener('mousemove', (e) => {
+  const rect = roomContainer.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  chH.style.top  = y + 'px';
+  chV.style.left = x + 'px';
+
+  // Convert container px to viewport % (what goes in engine.js)
+  const vpX = ((x - (window._vpLeft||VP_LEFT)) / VP_W * 100).toFixed(1);
+  const vpY = ((y - (window._vpTop||VP_TOP))  / VP_H * 100).toFixed(1);
+  const offX = vpX < 0 || vpX > 100 ? ' ⚠ OFF' : '';
+  const offY = vpY < 0 || vpY > 100 ? ' ⚠ OFF' : '';
+  coordsBar.textContent = `left: ${vpX}%${offX}   top: ${vpY}%${offY}`;
+});
+
+// ── ADD NEW HOTSPOT ───────────────────────────────────────────
+document.getElementById('add-btn').addEventListener('click', () => {
+  const id = 'new-obj-' + Date.now();
+  HOTSPOTS[id] = { room: currentRoom, item: null, left: 45, top: 45, width: 8, height: 6, label: 'New object' };
+  positions[id] = { left: 45, top: 45, width: 8, height: 6 };
+  newItems.add(id);
+  createHotspotEl(id);
+  renderSidebar();
+  selectObj(id);
+});
+
+// ── EXTRACT ───────────────────────────────────────────────────
+document.getElementById('extract-btn').addEventListener('click', () => {
+  const roomObjs = Object.entries(HOTSPOTS).filter(([,h]) => h.room === currentRoom);
+
+  let out = `// ── HOTSPOTS — ${currentRoom.toUpperCase()} ──\n\n`;
+  roomObjs.forEach(([id]) => {
+    const pos = positions[id];
+    const h = HOTSPOTS[id];
+    const offscreen = isOffScreen(id);
+    out += `  // ${id}${offscreen ? ' [OFF-SCREEN — hidden until tilted]' : ''}\n`;
+    out += `  hotspot: { left:${pos.left}, top:${pos.top}, width:${pos.width}, height:${pos.height} },\n\n`;
+  });
+
+  outputText.textContent = out;
+  outputPanel.style.display = 'block';
+});
+
+document.getElementById('copy-btn').addEventListener('click', () => {
+  navigator.clipboard.writeText(outputText.textContent).then(() => {
+    const btn = document.getElementById('copy-btn');
+    btn.textContent = '✓ COPIED';
+    setTimeout(() => { btn.textContent = 'COPY'; }, 2000);
+  });
+});
+
+document.getElementById('close-output').addEventListener('click', () => {
+  outputPanel.style.display = 'none';
+});
+
+// ── INIT ──────────────────────────────────────────────────────
+loadRoom(currentRoom);
+</script>
+</body>
+</html>
