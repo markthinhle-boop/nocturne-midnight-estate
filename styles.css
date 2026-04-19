@@ -250,6 +250,7 @@ html, body {
 #rooms-container {
   position: absolute;
   inset: 0;
+  touch-action: none;
 }
 
 /* Top bar */
