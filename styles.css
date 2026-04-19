@@ -322,9 +322,10 @@ html, body {
 
 .room-bg {
   position: absolute;
-  top: -10%; left: -50%;
-  width: 200%; height: 120%;
-  background-size: cover; background-position: left center;
+  top: 0; left: -50%;
+  width: 200%; height: 100%;
+  background-size: 100% auto;
+  background-position: left center;
   background-color: var(--bg-mid);
   transition: opacity 400ms;
   will-change: transform;
@@ -350,7 +351,7 @@ html, body {
 @keyframes dust-drift { 0% { background-position: 0 0; } 100% { background-position: 180px 60px; } }
 
 /* Ballroom — body visible at rest */
-#room-ballroom .room-bg { background-position: center bottom; }
+#room-ballroom .room-bg { background-position: left bottom; }
 
 /* Item thumbnail hotspots */
 .hotspot.no-star::before { display: none; }
