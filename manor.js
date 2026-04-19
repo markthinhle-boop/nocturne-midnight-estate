@@ -1067,7 +1067,7 @@ const ROOM_PARALLAX = {
     // div is 200% wide, left:0. Full pan = slide left by one appW.
     // Store half of that as cfg.x so ±cfg.x covers the full sweep.
     const appW = Math.min(window.innerWidth, 430);
-    cfg.x = Math.floor(appW); // full panoramic sweep
+    cfg.x = Math.floor(appW / 2);
     return cfg;
   }
 
