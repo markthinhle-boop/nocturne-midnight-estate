@@ -1069,7 +1069,7 @@ const ROOM_PARALLAX = {
     // div is 200% wide, left:0. Full pan = slide left by one appW.
     // Store half of that as cfg.x so ±cfg.x covers the full sweep.
     const appW = Math.min(window.innerWidth, 430);
-    cfg.x = appW; // image is 200% wide, hidden area = 1x appW, so full sweep = appW
+    cfg.x = Math.floor(appW * 0.75); // tuned: full image sweep without hitting black edge
     return cfg;
   }
 
