@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0A0A0A">
+  <title>Nocturne: Midnight Estate</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%230A0A0A' stroke='%23B8960C' stroke-width='3'/><text y='65' x='50' text-anchor='middle' font-size='50' fill='%23B8960C'>N</text></svg>">
+  <link rel="stylesheet" href="%PUBLIC_URL%/styles.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- ── SCREEN 1: STUDIOS ─────────────────────────────── -->
+  <div id="screen-studios" class="screen active">
+    <div class="studios-name">Nocturne Studios</div>
+    <div class="studios-name" style="font-size:10px;letter-spacing:0.2em;margin-top:4px;opacity:0.5;">LLC · Est. Houston · MMXXVI</div>
+  </div>
+
+  <!-- ── SCREEN 2: TITLE ───────────────────────────────── -->
+  <div id="screen-title" class="screen">
+    <div class="franchise-seal"><img src="%PUBLIC_URL%/assets/UI/nocturne-seal.png" style="width:60px;height:60px;object-fit:contain;" onerror="this.style.display='none'"></div>
+    <div class="title-rule"></div>
+    <div class="game-title">Nocturne</div>
+    <div class="game-subtitle">Midnight Estate</div>
+  </div>
+
+  <!-- ── SCREEN 3: ONBOARDING ──────────────────────────── -->
+  <div id="screen-onboarding" class="screen">
+
+    <!-- Step 1: Haptics -->
+    <div class="onboarding-step active" id="step-haptics">
+      <div class="onboarding-title">Before You Enter</div>
+      <div class="onboarding-body">The Estate communicates through touch as well as text. Would you like to enable this?</div>
+      <button class="btn-primary" id="btn-haptics-yes">Yes</button>
+      <button class="btn-secondary" id="btn-haptics-no">Not Now</button>
+    </div>
+
+    <!-- Step 2: Mask -->
+    <div class="onboarding-step" id="step-mask">
+      <div class="onboarding-title">Choose Your Standing</div>
+      <div class="mask-curator-framing">
+        The gate attendant presents three masks on a velvet board. He does not explain them. In this society, the mask you choose is the first thing anyone knows about you.
+      </div>
+      <div class="mask-cards">
+        <div class="mask-card" data-rank="aspirant">
+          <img src="%PUBLIC_URL%/assets/UI/nocturne-mask-aspirant.png" style="width:48px;height:48px;object-fit:contain;" onerror="this.style.display='none'">
+          <div class="mask-name">Aspirant</div>
+          <div class="mask-desc">The Estate has not yet decided what to make of you. It will find that useful.</div>
+          <div class="mask-pill">Lenient judgment · Characters warm</div>
+        </div>
+        <div class="mask-card selected" data-rank="envoy">
+          <img src="%PUBLIC_URL%/assets/UI/nocturne-mask-envoy.png" style="width:48px;height:48px;object-fit:contain;" onerror="this.style.display='none'">
+          <div class="mask-name">Envoy</div>
+          <div class="mask-desc">You were sent. The Estate will not ask by whom. It will watch what you do instead.</div>
+          <div class="mask-pill">Standard judgment · Characters cautious</div>
+        </div>
+        <div class="mask-card" data-rank="cavalier">
+          <img src="%PUBLIC_URL%/assets/UI/nocturne-mask-cavalier.png" style="width:48px;height:48px;object-fit:contain;" onerror="this.style.display='none'">
+          <div class="mask-name">Cavalier</div>
+          <div class="mask-desc">A formal rank within the Estate. The gold edge is recognised. Members will expect more from you — and give less away.</div>
+          <div class="mask-pill">Firm judgment · Characters demanding</div>
+        </div>
+      </div>
+      <div class="mask-footer">This is not a difficulty setting. The Estate judges how you investigate — not only what you find.</div>
+      <button class="btn-primary" id="btn-mask-continue">Continue</button>
+    </div>
+
+    <!-- Step 3: Difficulty -->
+    <div class="onboarding-step" id="step-difficulty">
+      <div class="onboarding-title">How You Investigate</div>
+      <div class="mask-curator-framing">
+        The same investigation. The same truth. Three different qualities of attention.
+      </div>
+      <div class="difficulty-cards">
+        <div class="difficulty-card" data-difficulty="observant">
+          <div>
+            <div class="diff-name">Observant</div>
+            <div class="diff-sub">The investigation surfaces what matters. Connections are visible. The Estate is generous with those who pay attention.</div>
+          </div>
+          <div class="diff-meta">12 items<br>No cooldown</div>
+        </div>
+        <div class="difficulty-card" data-difficulty="discerning">
+          <div>
+            <div class="diff-name">Discerning</div>
+            <div class="diff-sub">Evidence requires depth. The investigation does not explain itself. Most investigators work at this level.</div>
+          </div>
+          <div class="diff-meta">10 items<br>10s cooldown</div>
+        </div>
+        <div class="difficulty-card" data-difficulty="ruthless">
+          <div>
+            <div class="diff-name">Ruthless</div>
+            <div class="diff-sub">No annotations. No guidance. The truth is there. The investigation will not confirm you are finding it.</div>
+          </div>
+          <div class="diff-meta">8 items<br>30s cooldown</div>
+        </div>
+      </div>
+      <button class="btn-primary" id="btn-diff-continue" disabled>Continue</button>
+    </div>
+
+    <!-- Step 5: Gate -->
+    <div class="onboarding-step" id="step-gate">
+      <div class="gate-wrap">
+        <div class="gate-instruction">The gate requires the founding year.</div>
+        <div class="gate-dials">
+          <div class="gate-dial" id="dial-0">_</div>
+          <div class="gate-dial" id="dial-1">_</div>
+          <div class="gate-dial" id="dial-2">_</div>
+          <div class="gate-dial" id="dial-3">_</div>
+        </div>
+        <div class="gate-keypad" id="gate-keypad">
+          <div class="gate-key" data-key="1">1</div>
+          <div class="gate-key" data-key="2">2</div>
+          <div class="gate-key" data-key="3">3</div>
+          <div class="gate-key" data-key="4">4</div>
+          <div class="gate-key" data-key="5">5</div>
+          <div class="gate-key" data-key="6">6</div>
+          <div class="gate-key" data-key="7">7</div>
+          <div class="gate-key" data-key="8">8</div>
+          <div class="gate-key" data-key="9">9</div>
+          <div class="gate-key delete" data-key="delete">⌫</div>
+          <div class="gate-key" data-key="0">0</div>
+          <div class="gate-key" data-key="enter" style="color:var(--gold);">→</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /screen-onboarding -->
+
+  <!-- ── SCREEN 4: GAME ─────────────────────────────────── -->
+  <div id="screen-game" class="screen">
+
+    <!-- Train screens — inside game screen so z-indexes work against room layer -->
+    <div id="train-screen" style="display:none;">
+      <div id="train-bg"></div>
+      <!-- Atmospheric effects -->
+      <div id="train-window-flicker"></div>
+      <div id="train-sun-ray"></div>
+      <div id="train-dust"></div>
+      <div id="train-header">
+        <span id="train-car-label">The Compartment</span>
+      </div>
+      <div id="train-narrator"></div>
+      <div id="train-portrait-zone"></div>
+      <div id="train-dialogue-area"></div>
+      <div id="train-questions"></div>
+      <div id="train-nav"></div>
+    </div><!-- /train-screen -->
+
+    <div id="train-gate-screen" style="display:none;">
+      <div id="train-gate-bg"></div>
+      <div id="gate-moonbeam"></div>
+      <div id="gate-fog-near"></div>
+      <div id="gate-fog-far"></div>
+      <div id="gate-particles"></div>
+      <div id="train-gate-content">
+        <div id="train-gate-text"></div>
+        <div id="train-gate-btn-area"></div>
+      </div>
+    </div>
+
+    <div id="train-accusation-screen" style="display:none;">
+      <div id="train-accusation-prompt">Someone on this train took your wallet while you slept. One of these three people. You have no evidence. You have instinct. The train doesn't slow for indecision.</div>
+      <div id="train-accusation-portraits">
+        <!-- Three portrait cards injected by train.js -->
+      </div>
+    </div>
+
+    <div id="train-invitation-screen" style="display:none;">
+      <div id="invitation-card-visual">
+        <img src="%PUBLIC_URL%/assets/UI/nocturne-invitation-card.png"
+             style="width:180px;height:auto;object-fit:contain;"
+             onerror="this.style.opacity='0.4'">
+      </div>
+      <div id="invitation-ref-display">Reference: 1847</div>
+      <div id="invitation-password-field">
+        <input id="invitation-password-input"
+               type="password"
+               inputmode="numeric"
+               maxlength="4"
+               placeholder="_ _ _ _"
+               style="display:none;">
+        <div id="invitation-greyed-msg" style="display:none;">You were not expected.</div>
+      </div>
+      <div id="invitation-begin-again" style="display:none;">
+        <button onclick="trainBeginAgain()">Begin Again</button>
+      </div>
+    </div>
+
+    <!-- Top bar -->
+    <div id="top-bar">
+      <!-- Map -->
+      <div id="map-btn" onclick="openMap()">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+          <path d="M2 4 L6 2 L12 4 L16 2 V14 L12 16 L6 14 L2 16 V4Z" stroke="currentColor" stroke-width="1.2" fill="none"/>
+          <path d="M6 2 V14 M12 4 V16" stroke="currentColor" stroke-width="0.8"/>
+        </svg>
+      </div>
+
+      <!-- Centre — three slot systems -->
+      <div id="slot-systems">
+
+        <!-- Backpack + inventory count -->
+        <div id="inv-slot" onclick="openInventory()" title="Inventory">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M5 5 C5 3 11 3 11 5" stroke="currentColor" stroke-width="1.2" fill="none"/>
+            <rect x="2" y="5" width="12" height="9" rx="1.5" stroke="currentColor" stroke-width="1.2" fill="none"/>
+            <path d="M6 8 H10" stroke="currentColor" stroke-width="1"/>
+          </svg>
+          <span id="inventory-counter">0/10</span>
+        </div>
+
+        <!-- Mask + deception pips (3 slots) -->
+        <div id="deception-slot" title="Deception slots">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M2 5 C2 3 12 3 12 5 C12 9 10 11 7 11 C4 11 2 9 2 5Z" stroke="currentColor" stroke-width="1.2" fill="none"/>
+            <path d="M4 6 C4 5 5.5 4.5 7 5" stroke="currentColor" stroke-width="0.8" stroke-linecap="round"/>
+            <path d="M10 6 C10 5 8.5 4.5 7 5" stroke="currentColor" stroke-width="0.8" stroke-linecap="round"/>
+          </svg>
+          <div id="deception-pips">
+            <div class="slot-pip active" id="dec-pip-1"></div>
+            <div class="slot-pip active" id="dec-pip-2"></div>
+            <div class="slot-pip active" id="dec-pip-3"></div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Settings / menu -->
+      <div id="settings-btn" onclick="openSettings()">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+          <rect x="3" y="4"    width="12" height="1.5" fill="currentColor"/>
+          <rect x="3" y="8.25" width="12" height="1.5" fill="currentColor"/>
+          <rect x="3" y="12.5" width="12" height="1.5" fill="currentColor"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Rooms container -->
+    <div id="rooms-container">
+      <!-- Rooms injected by room JS files -->
+    </div>
+
+    <!-- Room nav buttons -->
+    <div id="room-nav">
+      <!-- Populated by renderRoomNav() -->
+    </div>
+
+    <!-- Room description overlay -->
+    <div id="room-description">
+      <p id="room-description-text"></p>
+    </div>
+
+    <!-- Dropped item tray -->
+    <div id="drop-tray">
+      <div id="drop-tray-label">Items you left here:</div>
+      <div id="drop-tray-items"></div>
+    </div>
+
+  </div><!-- /screen-game -->
+
+  <!-- ── TAP POPUP (global) ─────────────────────────────── -->
+  <div id="tap-popup">
+    <button class="popup-btn primary" id="popup-examine" onclick="handlePopupExamine()">Examine</button>
+    <button class="popup-btn" id="popup-pickup" onclick="handlePopupPickUp()">Pick Up</button>
+    <button class="popup-btn drop" id="popup-drop" onclick="handlePopupDrop()">Drop</button>
+  </div>
+
+  <!-- ── EXAMINE PANEL (global) ────────────────────────── -->
+  <div id="examine-panel">
+    <div id="examine-visual"></div>
+    <div id="examine-text"></div>
+    <div id="examine-more" onclick="handleExamineMore()">▼ Examine further</div>
+    <div id="examine-actions">
+      <button class="btn-keep" id="btn-examine-keep" onclick="handleExamineKeep()">Keep</button>
+      <button class="btn-drop" id="btn-examine-drop" onclick="handleExamineDrop()">Drop</button>
+      <button class="btn-close" id="btn-examine-close" onclick="closeExaminePanel(); if(gameState.currentRoom==='wine-cellar' && !gameState.tunnelFound){setTimeout(()=>{NocturneEngine.emit('tunnelDoorOpens',{});NocturneEngine.emit('tunnelEntered',{});},200);}else if(gameState.currentRoom==='wine-cellar' && gameState.tunnelFound){navigateTo('c6-tunnel');if(typeof renderCurrentRoom==='function')renderCurrentRoom();if(typeof renderRoomNav==='function')renderRoomNav();}">Close</button>
+    </div>
+  </div>
+
+  <!-- ── INLINE DROP SELECTOR ──────────────────────────── -->
+  <div id="drop-selector-panel">
+    <div id="drop-selector-instruction">Drop one item to make room.</div>
+    <div id="drop-selector-grid"></div>
+    <div id="drop-selector-incoming"></div>
+  </div>
+
+  <!-- ── INVENTORY PANEL ───────────────────────────────── -->
+  <div id="inventory-panel">
+    <div class="inventory-header">
+      <span>Inventory</span>
+      <div class="inventory-close" onclick="closeInventory()">×</div>
+    </div>
+    <div id="combine-hint" class="combine-hint" style="display:none;">Tap two items to combine.</div>
+    <div id="inventory-grid"></div>
+  </div>
+
+  <!-- ── CONVERSATION PANEL ────────────────────────────── -->
+  <div id="conversation-panel" class="composure-normal">
+    <!-- Portrait zone — floats on room background -->
+    <div id="conv-portrait-zone"></div>
+    <!-- Dialogue — below portrait -->
+    <div id="char-response"></div>
+    <!-- Questions -->
+    <div id="questions-list"></div>
+    <!-- Bottom bar: deception + dismiss -->
+    <div id="conv-bottom-bar">
+      <button id="btn-show-evidence" onclick="openDeceptionSelector()">Show Evidence</button>
+      <button id="btn-dismiss-conv" onclick="closeConversation()">—</button>
+    </div>
+  </div>
+
+  <!-- ── DECEPTION SELECTOR ────────────────────────────── -->
+  <div id="deception-panel">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:1px solid var(--border);">
+      <div style="font-size:9px;color:var(--gold);letter-spacing:0.2em;text-transform:uppercase;">Show Evidence</div>
+      <div id="deception-slot-counter" style="font-size:9px;color:var(--gold-dim);letter-spacing:0.1em;"></div>
+      <button onclick="closeDeceptionPanel()" style="background:transparent;border:none;color:var(--cream-dim);font-size:18px;cursor:pointer;padding:0 0 0 16px;line-height:1;">×</button>
+    </div>
+    <div id="deception-items-list"></div>
+    <button id="btn-present-it" onclick="presentDeception()">Present It — 3 slots remaining</button>
+    <button id="btn-put-back" onclick="putDeceptionBack()">Put It Back</button>
+  </div>
+
+  <!-- ── SLOW DRAG PANEL ───────────────────────────────── -->
+  <div id="slow-drag-panel">
+    <div id="slow-drag-instruction">Drag slowly.</div>
+    <div id="slow-drag-surface">
+      <div id="slow-drag-reveal"></div>
+      <div id="slow-drag-text" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:20px;font-size:13px;color:var(--cream);text-align:center;line-height:1.7;opacity:0;transition:opacity 400ms;"></div>
+    </div>
+    <div class="drag-complete-actions" id="drag-complete-actions" style="display:none;">
+      <button class="btn-keep" id="btn-drag-keep" onclick="handleDragKeep()">Keep</button>
+      <button class="btn-drop" id="btn-drag-drop" onclick="handleDragDrop()">Drop</button>
+    </div>
+    <button class="btn-secondary" onclick="closeSlowDragPanel()" style="margin-top:8px;">Close</button>
+  </div>
+
+  <!-- ── MAP PANEL ─────────────────────────────────────── -->
+  <div id="map-panel">
+    <div id="map-header">
+      <span id="map-title">Midnight Estate</span>
+      <div id="map-close" onclick="closeMap()">×</div>
+    </div>
+    <div id="map-tabs">
+      <div class="map-tab active" id="map-tab-estate" onclick="switchMapTab('estate')">The Estate</div>
+      <div class="map-tab" id="map-tab-compact" onclick="switchMapTab('compact')">The Compact</div>
+    </div>
+    <div id="map-svg-container">
+
+      <!-- ESTATE MAP -->
+      <svg id="map-svg-estate" viewBox="0 0 360 640" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <filter id="map-glow">
+            <feGaussianBlur stdDeviation="1.5" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+
+        <!-- Corridor connection lines — drawn beneath rooms -->
+        <g id="map-corridors" stroke="#1e1c18" stroke-width="8" stroke-linecap="round">
+          <!-- Foyer → Gallery -->
+          <line x1="172" y1="52" x2="140" y2="88"/>
+          <!-- Foyer → Study -->
+          <line x1="208" y1="52" x2="228" y2="88"/>
+          <!-- Gallery → Archive -->
+          <line x1="120" y1="128" x2="120" y2="148"/>
+          <!-- Archive → Lectern — removed -->
+          <!-- Archive → Terrace -->
+          <line x1="140" y1="188" x2="158" y2="208"/>
+          <!-- Terrace → Ballroom (paywall) -->
+          <line x1="176" y1="243" x2="176" y2="268" stroke-dasharray="4 3" stroke="#1a1814"/>
+          <!-- Ballroom → Antechamber -->
+          <line x1="148" y1="318" x2="100" y2="348"/>
+          <!-- Ballroom → Stage -->
+          <line x1="180" y1="318" x2="180" y2="348"/>
+          <!-- Ballroom → Library -->
+          <line x1="212" y1="318" x2="252" y2="348"/>
+          <!-- Smoking → Vault -->
+          <line x1="180" y1="456" x2="180" y2="478"/>
+          <!-- Ballroom → Physicians -->
+          <line x1="148" y1="318" x2="88"  y2="418"/>
+          <!-- Ballroom → Smoking -->
+          <line x1="180" y1="318" x2="180" y2="418"/>
+          <!-- Terrace → Maid's Quarters (right) -->
+          <line x1="214" y1="225" x2="230" y2="225"/>
+          <!-- Terrace → Groundskeeper Cottage (left) -->
+          <line x1="138" y1="225" x2="130" y2="225"/>
+          <!-- Vault → Wine Cellar (secret — hidden until cellarFound) -->
+          <!-- Not drawn — secret -->
+          <!-- Archive → Hedge Path (secret — hidden until hedgeGapFound) -->
+          <!-- Not drawn — secret -->
+        </g>
+
+        <!-- FREE TIER ROOMS -->
+        <g class="map-room undiscovered" id="mr-foyer" data-room="foyer">
+          <rect x="144" y="18" width="72" height="38" rx="3"/>
+          <text x="180" y="33" text-anchor="middle" class="map-room-label">FOYER</text>
+          <text x="180" y="47" text-anchor="middle" class="map-room-sub">entrance</text>
+          <circle class="map-current-dot" cx="180" cy="37" r="3"/>
+        </g>
+
+        <g class="map-room undiscovered" id="mr-gallery" data-room="gallery">
+          <rect x="80" y="88" width="80" height="38" rx="3"/>
+          <text x="120" y="103" text-anchor="middle" class="map-room-label">GALLERY</text>
+          <text x="120" y="117" text-anchor="middle" class="map-room-sub">portraits</text>
+          <circle class="map-current-dot" cx="120" cy="107" r="3"/>
+        </g>
+
+        <g class="map-room undiscovered" id="mr-study" data-room="study">
+          <rect x="200" y="88" width="80" height="38" rx="3"/>
+          <text x="240" y="103" text-anchor="middle" class="map-room-label">THE STUDY</text>
+          <text x="240" y="117" text-anchor="middle" class="map-room-sub">lady ashworth</text>
+          <circle class="map-current-dot" cx="240" cy="107" r="3"/>
+        </g>
+
+        <g class="map-room undiscovered" id="mr-archive-path" data-room="archive-path">
+          <rect x="80" y="148" width="80" height="38" rx="3"/>
+          <text x="120" y="163" text-anchor="middle" class="map-room-label">ARCHIVE</text>
+          <text x="120" y="177" text-anchor="middle" class="map-room-sub">garden path</text>
+          <circle class="map-current-dot" cx="120" cy="167" r="3"/>
+        </g>
+
+        <g class="map-room undiscovered" id="mr-lectern" data-room="lectern">
+          <rect x="36" y="208" width="68" height="34" rx="3"/>
+          <text x="70" y="222" text-anchor="middle" class="map-room-label">LECTERN</text>
+          <text x="70" y="234" text-anchor="middle" class="map-room-sub">the register</text>
+          <circle class="map-current-dot" cx="70" cy="225" r="3"/>
+        </g>
+
+        <g class="map-room undiscovered" id="mr-terrace" data-room="terrace">
+          <rect x="138" y="208" width="76" height="34" rx="3"/>
+          <text x="176" y="222" text-anchor="middle" class="map-room-label">TERRACE</text>
+          <text x="176" y="234" text-anchor="middle" class="map-room-sub">garden</text>
+          <circle class="map-current-dot" cx="176" cy="225" r="3"/>
+        </g>
+
+        <!-- GROUNDSKEEPER COTTAGE — left of terrace -->
+        <g class="map-room undiscovered" id="mr-groundskeeper-cottage" data-room="groundskeeper-cottage">
+          <rect x="54" y="208" width="76" height="34" rx="3"/>
+          <text x="92" y="220" text-anchor="middle" class="map-room-label">COTTAGE</text>
+          <circle class="map-current-dot" cx="92" cy="225" r="3"/>
+        </g>
+
+        <!-- MAID'S QUARTERS — right of terrace -->
+        <g class="map-room undiscovered" id="mr-maids-quarters" data-room="maids-quarters">
+          <rect x="230" y="208" width="76" height="34" rx="3"/>
+          <text x="268" y="222" text-anchor="middle" class="map-room-label">MAID'S QTR</text>
+          <circle class="map-current-dot" cx="268" cy="225" r="3"/>
+        </g>
+
+        <!-- SECRET — hedge path. display:none until hedgeGapFound -->
+        <g class="map-room undiscovered map-secret" id="mr-hedge-path" data-room="hedge-path" style="display:none;">
+          <rect x="36" y="160" width="40" height="26" rx="3"/>
+          <text x="56" y="172" text-anchor="middle" class="map-room-label" style="font-size:7px;">THE PATH</text>
+          <text x="56" y="181" text-anchor="middle" class="map-room-sub" style="font-size:6px;">secret</text>
+        </g>
+
+        <!-- PAID TIER ROOMS -->
+        <g class="map-room undiscovered" id="mr-ballroom" data-room="ballroom">
+          <rect x="112" y="268" width="136" height="48" rx="3"/>
+          <text x="180" y="286" text-anchor="middle" class="map-room-label">THE BALLROOM</text>
+          <text x="180" y="300" text-anchor="middle" class="map-room-sub">8:01 pm · the body</text>
+          <circle class="map-current-dot" cx="180" cy="290" r="3"/>
+        </g>
+
+        <g class="map-room undiscovered" id="mr-antechamber" data-room="antechamber">
+          <rect x="36" y="348" width="80" height="38" rx="3"/>
+          <text x="76" y="363" text-anchor="middle" class="map-room-label">ANTECHAMBER</text>
+          <text x="76" y="377" text-anchor="middle" class="map-room-sub">pemberton-hale</text>
+          <circle class="map-current-dot" cx="76" cy="367" r="3"/>
+        </g>
+
+        <g class="map-room undiscovered" id="mr-stage" data-room="stage">
+          <rect x="144" y="348" width="72" height="38" rx="3"/>
+          <text x="180" y="363" text-anchor="middle" class="map-room-label">THE STAGE</text>
+          <text x="180" y="377" text-anchor="middle" class="map-room-sub">accusation</text>
+          <circle class="map-current-dot" cx="180" cy="367" r="3"/>
+        </g>
+
+        <g class="map-room undiscovered" id="mr-library" data-room="library">
+          <rect x="244" y="348" width="80" height="38" rx="3"/>
+          <text x="284" y="363" text-anchor="middle" class="map-room-label">LIBRARY</text>
+          <text x="284" y="377" text-anchor="middle" class="map-room-sub">sir greaves</text>
+          <circle class="map-current-dot" cx="284" cy="367" r="3"/>
+        </g>
+
+        <g class="map-room undiscovered" id="mr-physicians" data-room="physicians">
+          <rect x="36" y="418" width="80" height="38" rx="3"/>
+          <text x="76" y="433" text-anchor="middle" class="map-room-label">PHYSICIANS</text>
+          <text x="76" y="447" text-anchor="middle" class="map-room-sub">dr. crane</text>
+          <circle class="map-current-dot" cx="76" cy="437" r="3"/>
+        </g>
+
+        <g class="map-room undiscovered" id="mr-smoking" data-room="smoking">
+          <rect x="144" y="418" width="72" height="38" rx="3"/>
+          <text x="180" y="433" text-anchor="middle" class="map-room-label">SMOKING</text>
+          <text x="180" y="447" text-anchor="middle" class="map-room-sub">the baron</text>
+          <circle class="map-current-dot" cx="180" cy="437" r="3"/>
+        </g>
+
+        <g class="map-room undiscovered" id="mr-vault" data-room="vault">
+          <rect x="144" y="478" width="72" height="38" rx="3"/>
+          <text x="180" y="493" text-anchor="middle" class="map-room-label">THE VAULT</text>
+          <text x="180" y="507" text-anchor="middle" class="map-room-sub">17 arrangements</text>
+          <circle class="map-current-dot" cx="180" cy="497" r="3"/>
+        </g>
+
+        <!-- SECRET — wine cellar. display:none until cellarFound -->
+        <g class="map-room undiscovered map-secret" id="mr-wine-cellar" data-room="wine-cellar" style="display:none;">
+          <rect x="144" y="558" width="72" height="38" rx="3"/>
+          <text x="180" y="573" text-anchor="middle" class="map-room-label">WINE CELLAR</text>
+          <text x="180" y="587" text-anchor="middle" class="map-room-sub">below the vault</text>
+          <circle class="map-current-dot" cx="180" cy="577" r="3"/>
+        </g>
+
+        <!-- TUNNEL — completely absent. Never shown. Not even faint. -->
+        <!-- mr-tunnel intentionally omitted from Estate map -->
+
+        <!-- Drop dots layer -->
+        <g id="map-drop-dots-estate"></g>
+
+        <!-- Map legend -->
+
+      </svg>
+
+      <!-- COMPACT MAP — hidden until tunnelFound -->
+                        <svg id="map-svg-compact" viewBox="-40 0 440 360" xmlns="http://www.w3.org/2000/svg" style="display:none;">
+        <defs>
+          <filter id="map-glow-c">
+            <feGaussianBlur stdDeviation="1.5" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+
+        <g id="map-corridors-compact" stroke="#1e1c14" stroke-width="8" stroke-linecap="round">
+          <line id="mcl-c6-c1"  x1="180" y1="48"  x2="180" y2="89"  style="display:none;"/>
+          <line id="mcl-c1-c3"  x1="180" y1="127" x2="80"  y2="169" style="display:none;"/>
+          <line id="mcl-c1-c7"  x1="180" y1="127" x2="280" y2="169" style="display:none;"/>
+          <line id="mcl-c1-c5"  x1="180" y1="127" x2="80"  y2="249" style="display:none;"/>
+          <line id="mcl-c1-c8"  x1="180" y1="127" x2="280" y2="249" style="display:none;"/>
+          <line id="mcl-c3-c5"  x1="80"  y1="207" x2="80"  y2="249" style="display:none;"/>
+          <line id="mcl-c7-c8"  x1="280" y1="207" x2="280" y2="249" style="display:none;"/>
+        </g>
+
+        <!-- Row 1: Tunnel -->
+        <g class="map-room undiscovered" id="mr-c6-tunnel" data-room="c6-tunnel">
+          <rect x="134" y="10" width="92" height="38" rx="3"/>
+          <text x="180" y="25" text-anchor="middle" class="map-room-label">TUNNEL MOUTH</text>
+          <text x="180" y="39" text-anchor="middle" class="map-room-sub">entry</text>
+          <circle class="map-current-dot" cx="180" cy="29" r="3"/>
+        </g>
+
+        <!-- Row 2: Arrival -->
+        <g class="map-room undiscovered" id="mr-c1-arrival" data-room="c1-arrival">
+          <rect x="134" y="89" width="92" height="38" rx="3"/>
+          <text x="180" y="104" text-anchor="middle" class="map-room-label">ARRIVAL</text>
+          <text x="180" y="118" text-anchor="middle" class="map-room-sub">the archivist</text>
+          <circle class="map-current-dot" cx="180" cy="108" r="3"/>
+        </g>
+
+        <!-- Row 3: Original | Study -->
+        <g class="map-room undiscovered" id="mr-c3-original" data-room="c3-original">
+          <rect x="34" y="169" width="92" height="38" rx="3"/>
+          <text x="80" y="184" text-anchor="middle" class="map-room-label">ORIGINAL</text>
+          <text x="80" y="198" text-anchor="middle" class="map-room-sub">the sovereign</text>
+          <circle class="map-current-dot" cx="80" cy="188" r="3"/>
+        </g>
+
+        <g class="map-room undiscovered" id="mr-c7-study" data-room="c7-study">
+          <rect x="234" y="169" width="92" height="38" rx="3"/>
+          <text x="280" y="184" text-anchor="middle" class="map-room-label">THE STUDY</text>
+          <text x="280" y="198" text-anchor="middle" class="map-room-sub">the envoy</text>
+          <circle class="map-current-dot" cx="280" cy="188" r="3"/>
+        </g>
+
+        <!-- Row 4: Letters | Gallery -->
+        <g class="map-room undiscovered" id="mr-c5-correspondence" data-room="c5-correspondence">
+          <rect x="34" y="249" width="92" height="38" rx="3"/>
+          <text x="80" y="264" text-anchor="middle" class="map-room-label">LETTERS</text>
+          <text x="80" y="278" text-anchor="middle" class="map-room-sub">correspondence</text>
+          <circle class="map-current-dot" cx="80" cy="268" r="3"/>
+        </g>
+
+        <g class="map-room undiscovered" id="mr-c8-gallery" data-room="c8-gallery">
+          <rect x="234" y="249" width="92" height="38" rx="3"/>
+          <text x="280" y="264" text-anchor="middle" class="map-room-label">GALLERY</text>
+          <text x="280" y="278" text-anchor="middle" class="map-room-sub">the heir</text>
+          <circle class="map-current-dot" cx="280" cy="268" r="3"/>
+        </g>
+
+        <g id="map-drop-dots-compact"></g>
+        <text x="18" y="352" font-size="7" fill="#3a3424" letter-spacing="0.1em">THE SOVEREIGN COMPACT · REFERENCE ONLY</text>
+      </svg>
+
+    </div>
+  </div>
+
+  <!-- ── STAGE SCREEN ───────────────────────────────────── -->
+  <div id="stage-screen">
+    <div class="stage-curator-line" id="stage-curator-line">
+      "Three things. A reason. A method. A moment. Evidence is not the same as understanding. The Estate judges both."
+    </div>
+    <div id="stage-pedestals">
+      <div class="pedestal" id="pedestal-motive" onclick="tapPedestal('motive')">
+        <div class="pedestal-label">Motive</div>
+        <div class="pedestal-item" id="pedestal-motive-item"><span class="pedestal-empty">A reason someone wanted this.</span></div>
+      </div>
+      <div class="pedestal" id="pedestal-means" onclick="tapPedestal('means')">
+        <div class="pedestal-label">Means</div>
+        <div class="pedestal-item" id="pedestal-means-item"><span class="pedestal-empty">How it was done.</span></div>
+      </div>
+      <div class="pedestal" id="pedestal-moment" onclick="tapPedestal('moment')">
+        <div class="pedestal-label">Moment</div>
+        <div class="pedestal-item" id="pedestal-moment-item"><span class="pedestal-empty">When and where.</span></div>
+      </div>
+      <div class="pedestal hidden" id="pedestal-accomplice" onclick="tapPedestal('accomplice')" style="border-color:var(--silver);">
+        <div class="pedestal-label" style="color:var(--silver);">The Accomplice</div>
+        <div class="pedestal-item" id="pedestal-accomplice-item"><span class="pedestal-empty">Who knew.</span></div>
+      </div>
+      <div class="pedestal hidden" id="pedestal-record" onclick="tapPedestal('record')" style="border-color:var(--gold-dim);">
+        <div class="pedestal-label" style="color:var(--gold-dim);">The Record</div>
+        <div class="pedestal-item" id="pedestal-record-item"><span class="pedestal-empty">What the Estate does not know.</span></div>
+      </div>
+    </div>
+    <button id="btn-confirm-accusation" onclick="confirmAccusation()" disabled>The Estate has heard your case.</button>
+    <button class="btn-secondary" onclick="closeStage()">— Leave the Stage —</button>
+  </div>
+
+  <!-- ── PUZZLE PANEL ───────────────────────────────────── -->
+  <div id="puzzle-panel">
+    <div class="puzzle-header">
+      <span class="puzzle-title" id="puzzle-title">Puzzle</span>
+      <span class="puzzle-close" id="puzzle-close-btn" onclick="closePuzzle()">×</span>
+    </div>
+    <div class="puzzle-body" id="puzzle-body">
+      <!-- Puzzle content injected by puzzles.js -->
+    </div>
+  </div>
+
+  <!-- ── TUNNEL SCREEN ──────────────────────────────────── -->
+  <div id="tunnel-screen">
+    <div class="tunnel-description" id="tunnel-description">
+      Old stone. A single lantern on a hook, warm and recently used.
+      The passage connects two houses built around something older than either.
+      Sixty seconds. There is no way to hurry it.
+    </div>
+  </div>
+
+  <!-- ── PAYWALL SCREEN ─────────────────────────────────── -->
+  <div id="paywall-screen">
+    <div class="paywall-curator-reflection" id="paywall-curator-text">
+      You have seen the body. You have seen the room. You have seen the hand pointing at something no one else has noticed. The investigation does not end here. It begins here. The Estate has set a price for the truth.
+    </div>
+    <div class="paywall-price" id="paywall-price">£3.99</div>
+    <div class="paywall-action">
+      <button class="btn-primary" id="btn-paywall-purchase" onclick="handlePurchase()">Complete the Investigation</button>
+    </div>
+    <div class="paywall-not-now" onclick="closePaywall()">Not yet. The body will keep.</div>
+  </div>
+
+  <!-- ── VERDICT SCREEN ─────────────────────────────────── -->
+  <div id="verdict-screen">
+    <div id="verdict-cast"></div>
+    <div id="verdict-curator-line"></div>
+    <div id="verdict-name"></div>
+    <div id="verdict-second-name"></div>
+    <div id="verdict-evidence"></div>
+    <div id="verdict-tone-text"></div>
+    <div id="verdict-final-line"></div>
+  </div>
+
+  <!-- ── ITEM EMERGE (animation element) ───────────────── -->
+  <div id="item-emerge"></div>
+
+</div><!-- /app -->
+
+<!-- ── SCRIPTS ────────────────────────────────────────────── -->
+<script src="%PUBLIC_URL%/engine.js"></script>
+<script src="%PUBLIC_URL%/onboarding.js"></script>
+<script src="%PUBLIC_URL%/sounds.js"></script>
+<script src="%PUBLIC_URL%/manor.js"></script>
+<script src="%PUBLIC_URL%/characters.js"></script>
+<script src="%PUBLIC_URL%/paid-tier.js"></script>
+<script src="%PUBLIC_URL%/puzzles.js"></script>
+<script src="%PUBLIC_URL%/inventory.js"></script>
+<script src="%PUBLIC_URL%/map.js"></script>
+<script src="%PUBLIC_URL%/verdict.js"></script>
+<script src="%PUBLIC_URL%/tunnel.js"></script>
+<script src="%PUBLIC_URL%/train.js"></script>
+<script src="%PUBLIC_URL%/train-voice.js"></script>
+<script src="%PUBLIC_URL%/compact.js"></script>
+<script src="%PUBLIC_URL%/compact-characters.js"></script>
+<script src="%PUBLIC_URL%/notepad.js"></script>
+<script src="%PUBLIC_URL%/board.js"></script>
+<script src="%PUBLIC_URL%/ambient.js"></script>
+
+<script src="%PUBLIC_URL%/ui.js"></script>
+<script src="%PUBLIC_URL%/rowe.js"></script>
+<script src="%PUBLIC_URL%/interrogation.js"></script>
+<script src="%PUBLIC_URL%/behavioral_logger.js"></script>
+<script src="%PUBLIC_URL%/nis.js"></script>
+<script src="%PUBLIC_URL%/career.js"></script>
+
+<!-- Stubs for incomplete modules -->
+<script>
+  window.tunnel = window.tunnel || null;
+  window.compactCharacters = window.compactCharacters || null;
+  // No generate.js. No PRICE_SCENARIO. Fixed truth only.
+</script>
+
+<script>
+  // ── VIEWPORT HEIGHT FIX ───────────────────────────────────
+  // Fixes browser chrome eating layout on mobile.
+  // Sets --app-height to actual visible height, not CSS vh.
+  // Runs immediately, then updates on resize/orientation change.
+  function setAppHeight() {
+    document.documentElement.style.setProperty('--app-height', window.innerHeight + 'px');
+  }
+  setAppHeight();
+  window.addEventListener('resize', setAppHeight);
+  window.addEventListener('orientationchange', () => setTimeout(setAppHeight, 100));
+</script>
+
+<script>
+  // ── BOOTSTRAP ────────────────────────────────────────────
+  document.addEventListener('DOMContentLoaded', () => {
+    initOnboarding();
+    initUI();
+
+    const _devRoomTarget = localStorage.getItem('devRoom');
+
+    NocturneEngine.on('engineReady', ({ loaded }) => {
+      const hasValidSave = loaded && gameState.rooms && gameState.rooms.foyer &&
+        gameState.currentRoom && gameState.currentRoom !== '';
+
+      if (hasValidSave || _devRoomTarget) {
+        showScreen('screen-game');
+        if (typeof initRooms === 'function') initRooms();
+        if (typeof initMapUI === 'function') initMapUI();
+        if (typeof initTunnel === 'function') initTunnel();
+        if (typeof initPaidTier === 'function' && gameState.paidTierUnlocked) initPaidTier();
+        if (typeof initCompact === 'function') initCompact();
+        if (typeof initMap === 'function') initMap();
+        if (typeof initNotepad === 'function') initNotepad();
+        updateInventoryCounter();
+        if (_devRoomTarget) {
+          setTimeout(() => {
+            if (_devRoomTarget.startsWith('c') && typeof arriveAtCompact === 'function') {
+              arriveAtCompact('cellar');
+            }
+            if (typeof navigateTo === 'function') navigateTo(_devRoomTarget);
+            if (typeof renderCurrentRoom === 'function') renderCurrentRoom();
+            if (typeof renderRoomNav === 'function') renderRoomNav();
+          }, 800);
+        }
+      } else {
+        // Clear any stale/partial save and start fresh
+        try { localStorage.removeItem('nocturne_save'); } catch(e) {}
+        newGame();
+        startOpeningSequence();
+      }
+    });
+
+    initEngine();
+    if (typeof initTunnel === "function") initTunnel();
+  });
+</script>
+
+</body>
+</html>
