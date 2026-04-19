@@ -379,10 +379,12 @@ html, body {
 .hotspot-layer {
   position: absolute; inset: 0;
   z-index: 10;
+  pointer-events: none;
 }
 .hotspot {
   position: absolute;
   cursor: pointer;
+  pointer-events: auto;
 }
 .hotspot:active { opacity: 0.8; }
 
