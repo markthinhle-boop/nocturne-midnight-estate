@@ -1064,10 +1064,15 @@ const ROOM_PARALLAX = {
   function _getConfig() {
     const room = (window.gameState && window.gameState.currentRoom) || '';
     const cfg  = Object.assign({}, ROOM_PARALLAX[room] || ROOM_PARALLAX['_default']);
-    // div is 200% wide, left:0. Full pan = slide left by one appW.
-    // Store half of that as cfg.x so ±cfg.x covers the full sweep.
     const appW = Math.min(window.innerWidth, 430);
-    cfg.x = Math.floor(appW / 2);
+    const appH = window.innerHeight;
+    // .room-bg is 200% wide, left:-50%, background-size:cover.
+    // Image is 2:1. Cover scales to fill div height (appH*1.2).
+    // Rendered image width = (appH * 1.2) * 2 (since image is 2:1).
+    // Pan range = half of (rendered width - appW).
+    const divH = appH * 1.2;
+    const renderedW = divH * 2; // 2:1 image scaled to fill height
+    cfg.x = Math.max(Math.floor(appW / 2), Math.floor((renderedW - appW) / 2));
     return cfg;
   }
 
