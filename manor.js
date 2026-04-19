@@ -946,6 +946,7 @@ function handleMapRoomTap(roomId) {
 }
 
 function renderCurrentRoom() {
+  if (window._resetPanPosition) window._resetPanPosition();
   document.querySelectorAll('.room').forEach(r => r.classList.remove('active'));
   const cur = document.getElementById(`room-${gameState.currentRoom}`);
   if (cur) {
@@ -1046,6 +1047,7 @@ const ROOM_PARALLAX = {
 
   let _targetX = 0, _targetY = 0;
   let _curX = 0, _curY = 0;
+  let _initDone = false;
   let _scale = 1, _pinchStartDist = 0, _pinchStartScale = 1;
   let _pinchOriginX = 0, _pinchOriginY = 0;
   let _translateX = 0, _translateY = 0;
@@ -1105,6 +1107,12 @@ const ROOM_PARALLAX = {
 
   function _tick() {
     const cfg = _getConfig();
+    if (!_initDone && cfg.x > 0) {
+      _initDone = true;
+      _curX = cfg.x;
+      _targetX = cfg.x;
+      _dragBaseX = cfg.x;
+    }
     _curX = _lerp(_curX, _targetX, LERP);
     _curY = _lerp(_curY, _targetY, LERP);
     const cx = Math.max(-cfg.x * _scale, Math.min(cfg.x * _scale, _curX));
@@ -1214,6 +1222,12 @@ const ROOM_PARALLAX = {
   }
 
   requestAnimationFrame(_tick);
+
+  window._resetPanPosition = function() {
+    _initDone = false;
+    _curX = 0; _targetX = 0; _dragBaseX = 0;
+    _gyroOffsetX = 0;
+  };
 })();
 window.ROOM_DESCRIPTIONS = ROOM_DESCRIPTIONS;
 window.CURATOR_INSULTS = CURATOR_INSULTS;
