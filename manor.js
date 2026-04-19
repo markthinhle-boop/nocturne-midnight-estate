@@ -1082,11 +1082,10 @@ const ROOM_PARALLAX = {
     if (!bg) return;
     const cfg = _getConfig();
 
-    // .room-bg is width:200% starting at left:0, so image = 2×appW wide.
-    // cfg.x = appW/2. tx = _curX - cfg.x keeps center of image visible at rest (_curX=0).
-    // _curX = +cfg.x → tx=0          → left edge (coat hooks)
-    // _curX =  0     → tx=-cfg.x     → center (foyer arch / stairs)
-    // _curX = -cfg.x → tx=-2*cfg.x   → right edge (mirror)
+    // CSS: left:-50% centers the 200%-wide div. tx=_curX offsets from center.
+    // _curX = 0       → center of foyer (arch, stairs)
+    // _curX = +cfg.x  → left edge (coat hooks)
+    // _curX = -cfg.x  → right edge (mirror)
     const tx = _curX + _translateX;
     const ty = _curY + _translateY;
 
