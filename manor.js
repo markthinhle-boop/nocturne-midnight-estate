@@ -1119,7 +1119,7 @@ const ROOM_PARALLAX = {
     const cfg = _getConfig();
     const gamma = Math.max(-45, Math.min(45, e.gamma || 0));
     const beta  = Math.max(-45, Math.min(45, (e.beta || 0) - 45));
-    _gyroOffsetX = -(gamma / 45) * cfg.x;
+    _gyroOffsetX = -(gamma / 45) * cfg.x * 0.25; // subtle ambient — drag is primary
     // Gyro sets target relative to current drag-held position
     _targetX = Math.max(-cfg.x, Math.min(cfg.x, _dragBaseX + _gyroOffsetX));
     _targetY = -(beta / 45) * cfg.y;
@@ -1176,7 +1176,7 @@ const ROOM_PARALLAX = {
         const dx   = e.touches[0].clientX - _dragStartX;
         _velX      = e.touches[0].clientX - _lastDragX;
         _lastDragX = e.touches[0].clientX;
-        _targetX   = Math.max(-cfg.x, Math.min(cfg.x, _dragBaseX + dx * 1.5));
+        _targetX   = Math.max(-cfg.x, Math.min(cfg.x, _dragBaseX + dx * 2.2));
       }
     }, { passive: false });
 
