@@ -322,7 +322,7 @@ html, body {
 
 .room-bg {
   position: absolute;
-  top: -10%; left: 0;
+  top: -10%; left: -50%;
   width: 200%; height: 120%;
   background-size: cover; background-position: left center;
   background-color: var(--bg-mid);

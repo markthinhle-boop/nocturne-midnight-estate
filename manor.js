@@ -1087,7 +1087,7 @@ const ROOM_PARALLAX = {
     // _curX = +cfg.x → tx=0          → left edge (coat hooks)
     // _curX =  0     → tx=-cfg.x     → center (foyer arch / stairs)
     // _curX = -cfg.x → tx=-2*cfg.x   → right edge (mirror)
-    const tx = _curX - cfg.x + _translateX;
+    const tx = _curX + _translateX;
     const ty = _curY + _translateY;
 
     bg.style.transformOrigin = 'top left';
