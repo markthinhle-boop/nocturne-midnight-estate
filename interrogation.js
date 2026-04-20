@@ -25,7 +25,7 @@ const TECHNIQUES = {
   wait: {
     id:          'wait',
     label:       'The Wait',
-    callum_line: 'Silence forces choice. Fragmenters use it to recompose. Performers fill it with rehearsed material. Watch which one I get.',
+    callum_line: 'Say nothing. See what he fills it with.',
     real_world:  'Scharff + Cognitive combined', // INTERNAL ONLY — not rendered
     composure_multiplier: 0.0,
     snap_bonus:           2,
@@ -36,7 +36,7 @@ const TECHNIQUES = {
   approach: {
     id:          'approach',
     label:       'The Approach',
-    callum_line: 'Present an almost-complete picture. An honest person corrects the small error. A deceiver corrects the one detail that implicates them.',
+    callum_line: 'Tell him almost everything. See what he corrects.',
     real_world:  'Scharff Technique',           // INTERNAL ONLY — not rendered
     composure_multiplier: 0.4,
     snap_bonus:           0,
@@ -46,7 +46,7 @@ const TECHNIQUES = {
   account: {
     id:          'account',
     label:       'The Account',
-    callum_line: 'Free narrative first. No interruption. The order they choose tells me more than the facts they select.',
+    callum_line: 'Let them talk. See what they choose to include.',
     real_world:  'PEACE / Cognitive Interview',  // INTERNAL ONLY — not rendered
     composure_multiplier: 0.6,
     snap_bonus:           1,
@@ -56,7 +56,7 @@ const TECHNIQUES = {
   record: {
     id:          'record',
     label:       'The Record',
-    callum_line: 'Ask the question before I show what I have. A rehearsed answer on the first ask and a different answer on the second ask is the evidence.',
+    callum_line: 'Ask first. Show after.',
     real_world:  'Strategic Use of Evidence',   // INTERNAL ONLY — not rendered
     composure_multiplier: 1.0,
     snap_bonus:           0,
@@ -66,7 +66,7 @@ const TECHNIQUES = {
   pressure: {
     id:          'pressure',
     label:       'The Pressure',
-    callum_line: 'Confrontation only works when the target has already committed to a story that cannot hold. The innocent man gets angry. The guilty one recalculates.',
+    callum_line: 'He knows I know. Make sure he feels that.',
     real_world:  'Reid (inverted)',              // INTERNAL ONLY — not rendered
     composure_multiplier: 1.8,
     snap_bonus:          -1,
@@ -530,16 +530,139 @@ function getSuspectDebrief(charId) {
   return SUSPECT_DEBRIEF[charId] || null;
 }
 
+// ── ESCALATED FAILURE STATE (#F) ──────────────────────────────
+// Wrong-technique escalation for high-stakes suspects. Teaches
+// technique-matters through visible, recoverable consequences.
+//
+// Escalation levels:
+//   Level 0: normal (no penalty)
+//   Level 1: after 1 consecutive 'poor' technique — warning echo (already exists)
+//   Level 2: after 2 consecutive 'poor' — BRANCH LOCK
+//            Branch questions won't unlock until composure recovers 15 points
+//   Level 3: after 3 consecutive 'poor' — FRACTURE FLOOR RISE
+//            Character becomes harder to break (threshold +10) for the rest
+//            of the conversation. Persists even after recovery.
+//
+// ONE optimal technique clears the consecutive-poor counter back to 0.
+// Neutral techniques neither increment nor reset — they're holding pattern.
+//
+// Applied only to HIGH_STAKES_CHARS. Minor characters stay responsive —
+// this layer exists specifically to add weight to the core investigations.
+const HIGH_STAKES_CHARS = ['surgeon', 'crane', 'steward', 'pemberton-hale', 'lady-ashworth'];
+
+// Per-character escalation state:
+//   { consecutive_poor, branch_locked_until, fracture_floor_bonus, last_classification }
+const _escalationState = Object.create(null);
+
+// Per-character escalation lines — named for the specific suspect's
+// psychology. Reused across the three levels.
+const ESCALATION_LOCK_LINES = {
+  'surgeon':        "He has registered the sequence of your choices. The warmth is still there. It is not for you anymore — it is for the memory of when you were closer to the truth than you are now. He will answer narrative questions. Nothing else, until you have re-earned what you just spent.",
+  'crane':          "She is now being precise in a way that protects her specifically. The technique you chose told her what kind of investigator you are. She has adjusted. Narrative questions will still land. Pressure questions will find nothing to push against.",
+  'steward':        "Sir. He says it once, then does not say it again. Fourteen years of formality has closed around whatever he might have said. Narrative questions remain available. The deeper questions have gone back into the wall they came from.",
+  'pemberton-hale': "The performance has absorbed your technique as data. He is now performing a version of himself that is calibrated specifically to your approach. The rehearsed sentences are the only ones you will get until you stop giving him material to rehearse against.",
+  'lady-ashworth':  "She is looking at the garden again. You have told her something about how you work. She will return to narrative register — the safest ground for both of you. The other ground is closed until you find a different way of standing on it.",
+};
+
+const ESCALATION_FLOOR_LINES = {
+  'surgeon':        "The warmth has hardened. He is now performing composure rather than maintaining it — which is a thing he has also done many times. You will not break him tonight. You can still reach him, but the cost of reaching him just went up.",
+  'crane':          "Her precision has crystallised. She will not fragment again in this conversation. What you learn from her from here forward you will learn by listening, not by pressing.",
+  'steward':        "His posture has not changed. That is the change. He has decided that you are not the person the Bond prepared him for. He will remain. He will not open.",
+  'pemberton-hale': "The performance has achieved the state it has been rehearsing toward. He is composed in a way that cannot be broken by a third error. What you will get from here is what he has already prepared for you to get.",
+  'lady-ashworth':  "The grief has become composed. She has decided she does not trust you enough to be disorganised in front of you. You have the careful Lady Ashworth now. You will not get the other one back this evening.",
+};
+
+function _getEscalation(charId) {
+  if (!_escalationState[charId]) {
+    _escalationState[charId] = {
+      consecutive_poor: 0,
+      branch_locked_until_composure: null,
+      fracture_floor_bonus: 0,
+      last_classification: null,
+    };
+  }
+  return _escalationState[charId];
+}
+
+function _applyEscalation(charId, classification) {
+  if (!HIGH_STAKES_CHARS.includes(charId)) return null;
+  const esc = _getEscalation(charId);
+  esc.last_classification = classification;
+
+  if (classification === 'optimal') {
+    esc.consecutive_poor = 0;
+    return null;
+  }
+  if (classification !== 'poor') {
+    // Neutral — hold pattern, don't increment
+    return null;
+  }
+
+  // poor
+  esc.consecutive_poor++;
+
+  if (esc.consecutive_poor === 2) {
+    // BRANCH LOCK: lock branches until composure recovers 15 points
+    const current = (gameState.characters[charId] || {}).composure || 100;
+    esc.branch_locked_until_composure = Math.min(100, current + 15);
+    return {
+      level: 2,
+      line: ESCALATION_LOCK_LINES[charId] || "The conversation has narrowed. Only basic questions remain available.",
+    };
+  }
+  if (esc.consecutive_poor >= 3) {
+    // FRACTURE FLOOR RISE: permanently raise threshold for this conversation
+    if (esc.fracture_floor_bonus < 10) {
+      esc.fracture_floor_bonus = 10;
+      return {
+        level: 3,
+        line: ESCALATION_FLOOR_LINES[charId] || "The character has hardened. Further pressure will produce diminishing returns.",
+      };
+    }
+  }
+  return null;
+}
+
+function isBranchLocked(charId) {
+  if (!HIGH_STAKES_CHARS.includes(charId)) return false;
+  const esc = _escalationState[charId];
+  if (!esc || !esc.branch_locked_until_composure) return false;
+  const current = (gameState.characters[charId] || {}).composure || 100;
+  if (current >= esc.branch_locked_until_composure) {
+    // Recovered — clear the lock
+    esc.branch_locked_until_composure = null;
+    return false;
+  }
+  return true;
+}
+
+function getFractureFloorBonus(charId) {
+  const esc = _escalationState[charId];
+  return esc ? (esc.fracture_floor_bonus || 0) : 0;
+}
+
+function resetEscalation(charId) {
+  delete _escalationState[charId];
+}
+
 // Expose for UI
 window.CHARACTER_TELLS          = CHARACTER_TELLS;
 window.COMPOSURE_TRANSITIONS    = COMPOSURE_TRANSITIONS;
 window.CONSEQUENCE_ECHOES       = CONSEQUENCE_ECHOES;
 window.SUSPECT_DEBRIEF          = SUSPECT_DEBRIEF;
 window.TECHNIQUE_REGISTER       = TECHNIQUE_REGISTER;
+window.HIGH_STAKES_CHARS        = HIGH_STAKES_CHARS;
+window.ESCALATION_LOCK_LINES    = ESCALATION_LOCK_LINES;
+window.ESCALATION_FLOOR_LINES   = ESCALATION_FLOOR_LINES;
 window.getCharacterTell         = getCharacterTell;
 window.getComposureTransitionLine = getComposureTransitionLine;
 window.getConsequenceEcho       = getConsequenceEcho;
 window.getSuspectDebrief        = getSuspectDebrief;
+window.isBranchLocked           = isBranchLocked;
+window.getFractureFloorBonus    = getFractureFloorBonus;
+window.resetEscalation          = resetEscalation;
+window._applyEscalation         = _applyEscalation;
+window._getEscalation           = _getEscalation;
 
 // ── CHARACTER INTERROGATION DATA ──────────────────────────────
 // Full simulator data per character.
@@ -3850,10 +3973,14 @@ function openTechniqueSelector(charId) {
     ].join(';');
 
     const callumLine = document.createElement('div');
-    callumLine.style.cssText = 'font-size:12px;color:var(--cream);letter-spacing:0.015em;line-height:1.55;';
-    // The new callum_lines are gender-neutral (they describe behavioural
-    // categories, not specific persons), so no pronoun swap is needed.
-    callumLine.textContent = `"${tech.callum_line}"`;
+    callumLine.style.cssText = 'font-size:12px;color:var(--cream);letter-spacing:0.02em;line-height:1.4;';
+    const lineText = isFemale
+      ? tech.callum_line
+          .replace('He knows I know', 'She knows I know')
+          .replace('Tell him almost everything', 'Tell her almost everything')
+          .replace('he fills it with', 'she fills it with')
+      : tech.callum_line;
+    callumLine.textContent = `"${lineText}"`;
     btn.appendChild(callumLine);
 
     const hintLine = document.createElement('div');
@@ -3894,6 +4021,13 @@ function _confirmTechniqueSelected(charId, techniqueId) {
     Object.keys(window._pivotAnnounced).forEach(k => {
       if (k.startsWith(charId + ':')) delete window._pivotAnnounced[k];
     });
+  }
+
+  // Reset escalation state on new conversation — each interrogation
+  // session starts with a clean slate. Penalties do not carry across
+  // reopens; the player gets a fair fresh start on revisit.
+  if (typeof resetEscalation === 'function') {
+    resetEscalation(charId);
   }
 
   // Handle technique-aware characters
@@ -4094,8 +4228,13 @@ function _applyComposureCost(charId, baseCost) {
     updateComposureState(charId);
   }
 
-  // Check fracture
-  const threshold = data ? data.fracture_threshold : 40;
+  // Check fracture — threshold lowered by escalation bonus if set.
+  // (#F level 3: fracture floor "rise" means harder-to-break —
+  // the break point drops so composure must fall further.)
+  const baseThreshold = data ? data.fracture_threshold : 40;
+  const bonus = (typeof getFractureFloorBonus === 'function')
+    ? getFractureFloorBonus(charId) : 0;
+  const threshold = Math.max(0, baseThreshold - bonus);
   if (newComposure <= threshold && current > threshold) {
     _fireFracture(charId);
   }
@@ -4400,6 +4539,19 @@ function renderBranchQuestions(charId) {
   const branches   = getAvailableBranches(charId);
   const list       = document.getElementById('questions-list');
   if (!list || branches.length === 0) return;
+
+  // ── BRANCH LOCK (#F level 2) ──────────────────────────────
+  // High-stakes suspects with 2+ consecutive poor techniques lock
+  // their branches until composure recovers 15 points from lock point.
+  if (typeof isBranchLocked === 'function' && isBranchLocked(charId)) {
+    // Render a visible locked placeholder instead of branch rows
+    const lockRow = document.createElement('div');
+    lockRow.className = 'question-item question-branch-locked';
+    lockRow.textContent = 'Deeper ground is closed. Work back to composure.';
+    lockRow.style.cssText = ';border-left:2px solid rgba(210,140,110,0.4);padding-left:16px;color:rgba(190,150,120,0.55);font-style:italic;cursor:not-allowed;pointer-events:none;';
+    list.appendChild(lockRow);
+    return;
+  }
 
   branches.forEach(({ branchId, branch }) => {
     Object.entries(branch.questions).forEach(([qId, q]) => {
@@ -4707,6 +4859,29 @@ window.askQuestion = function(charId, qId) {
           requestAnimationFrame(() => { echoEl.style.opacity = '1'; });
         }, 400);
       }
+
+      // ── ESCALATION (#F) ──────────────────────────────────
+      // High-stakes characters escalate on consecutive poor choices.
+      // Level 2: branch lock. Level 3: fracture floor rise.
+      const classification = _classifyEffectiveness(charId, technique);
+      const escalation = _applyEscalation(charId, classification);
+      if (escalation) {
+        setTimeout(() => {
+          const resp = document.getElementById('char-response');
+          if (!resp) return;
+          if (resp.querySelector('.escalation-beat')) return;
+          const escEl = document.createElement('div');
+          escEl.className = 'escalation-beat';
+          escEl.textContent = escalation.line;
+          // Level 2 = amber warning. Level 3 = red, thicker.
+          const palette = escalation.level === 3
+            ? { color:'rgba(210,140,110,0.92)', border:'rgba(210,140,110,0.65)', bg:'rgba(40,20,14,0.55)' }
+            : { color:'rgba(220,180,120,0.92)', border:'rgba(220,180,120,0.65)', bg:'rgba(35,24,12,0.5)' };
+          escEl.style.cssText = `margin-top:14px;padding:12px 14px;font-size:11.5px;color:${palette.color};font-style:italic;letter-spacing:0.03em;line-height:1.65;border-left:3px solid ${palette.border};background:${palette.bg};opacity:0;transition:opacity 900ms ease;`;
+          resp.appendChild(escEl);
+          requestAnimationFrame(() => { escEl.style.opacity = '1'; });
+        }, 900); // lands after the echo (400ms) + a beat
+      }
     }
   } catch(e) { /* non-fatal */ }
 
@@ -4743,55 +4918,7 @@ const PIVOT_BEATS = [
 ];
 const _PIVOT_FEMALE = ['ashworth','voss','crane','heir','archivist','lady-ashworth'];
 
-// ── SCRIPTED PIVOT MOMENTS ────────────────────────────────────
-// One scripted beat per suspect — overrides the generic PIVOT_BEATS
-// when the character reaches their SINGULAR high-stakes branch unlock.
-// These are the moments a real investigator would recognise: the turn
-// where the interview either breaks open or closes forever. Prose is
-// written in Callum's perspective — observation, not narration.
-// Keyed by {charId}:{qId}. If a character has a scripted beat matching
-// the currently-available pivot, it fires instead of the generic.
-const PIVOT_MOMENTS = {
-  'northcott:BA3': "He has stopped looking at the notebook. That is significant. For twenty minutes the notebook has been his anchor. If he answers the next question without looking at it, he is telling you something the notebook cannot.",
-
-  'steward:BC2': "Fourteen years of formality has been the wall. A man does not hold that wall unless he is holding something behind it. The next question is the hinge. If he answers it, the wall is no longer the point. What is behind the wall is.",
-
-  'lady-ashworth:BC3': "She has been looking at the garden. For forty minutes she has not looked at you. If she looks at you now — directly, at your face — she has decided you are not what she thought you were. Or exactly what she thought you were. The two are indistinguishable until she speaks.",
-
-  'voss:SB3': "She selects her sentences the way her brother selected patients. If the next sentence is not selected — if it arrives without the usual interval — she is telling you something she did not intend to. She is letting you see the selection mechanism itself.",
-
-  'pemberton-hale:PA3': "The performance has been eight years long. A man does not maintain a performance that long without occasionally rehearsing the moment it ends. He has rehearsed this. If his next answer is clean — too clean — he has chosen to deliver the rehearsed ending. If it is messy, he has chosen not to.",
-
-  'greaves:GB3': "Greaves does not guess. He has not guessed once in this conversation. If he is about to describe something with fewer qualifications than he has used for every other observation, the observation is complete. He is not guessing. He saw it. Exactly.",
-
-  'baron:BD2': "He has been producing volume to cover a silence. The next question asks about the silence directly. If the volume stops, he is choosing to let you hear what it has been covering. If the volume increases, he has decided he cannot.",
-
-  'crane:CB3': "Precision is composure for a physician. She has not varied the length of a single sentence by one word. If the next answer is a fragment — if it arrives in pieces rather than in a clause — the precision has failed. That failure will tell you what the precision was for.",
-
-  'uninvited:HA2': "He has been answering with perfect plausibility. Plausibility is a choice. The next question does not admit plausibility — only truth or refusal. He will choose one. The choice itself is the evidence.",
-
-  'sovereign:SB1': "He has waited forty-three years to name this name. He has composed the sentence many times. If the sentence arrives shorter than he composed it, he is trusting you to carry the rest. If it arrives at full length, he has decided you cannot.",
-
-  'heir:HA3': "She has been testing the questions. Now she is testing the questioner. The next answer is not about what happened — it is about what she has decided you are prepared to do with what happened.",
-
-  'envoy:EA3': "Charm is a working language. It has stopped working here. The next question requires an answer in a different language — the one underneath the charm. If he switches, you have the interview. If he retreats into charm, you have lost it.",
-
-  'archivist:AA3': "Music is how she locates herself. If the music stops for the next answer, she is locating herself somewhere else — in the history she has been archiving. If the music continues, the answer is in the register she has rehearsed.",
-
-  'surgeon:SC1': "The warmth has been calibrated for forty-three minutes. Calibration is expensive. A man this composed is running a constant calculation. The next question forces a new calculation. Watch the moment between the question and the answer. That is the calculation becoming visible.",
-
-  'hatch:HB2': "Thirty years of service is also thirty years of not saying things. Speech is not his register. If he names the name, he has decided the thirty years were enough. If he does not name it, he has decided they were not.",
-
-  // Vivienne's VC2 is the payoff itself (the push witnessed). Beat before it
-  // acknowledges this is the moment the evening finally gets spoken aloud.
-  'vivienne:VC2': "She has been holding one sentence for four hours. The evening has been waiting for someone to ask for it in an order she could answer. You have asked in that order. What she says next she has not said aloud tonight. She may not say it aloud twice.",
-};
-
-function _pivotBeatFor(charId, pivotQ) {
-  // Scripted pivot takes priority over generic rotation.
-  const scripted = PIVOT_MOMENTS[charId + ':' + pivotQ];
-  if (scripted) return scripted;
-  // Fall back to generic rotation.
+function _pivotBeatFor(charId) {
   const idx = (window._pivotBeatCursor = ((window._pivotBeatCursor || 0) + 1) % PIVOT_BEATS.length);
   let line = PIVOT_BEATS[idx];
   if (_PIVOT_FEMALE.includes(charId)) {
@@ -4853,16 +4980,10 @@ function _renderPivotBeat(charId) {
     const existing = document.getElementById('pivot-beat-line');
     if (existing) existing.remove();
 
-    // Scripted moments get heavier styling — player should feel the
-    // weight shift. Generic fallback keeps the lighter treatment.
-    const isScripted = !!PIVOT_MOMENTS[charId + ':' + pivotQ];
-
     const beat = document.createElement('div');
     beat.id = 'pivot-beat-line';
-    beat.textContent = _pivotBeatFor(charId, pivotQ);
-    beat.style.cssText = isScripted
-      ? 'padding:12px 16px;margin:8px 14px 12px;font-size:11.5px;font-style:italic;color:rgba(215,185,125,0.92);letter-spacing:0.04em;line-height:1.65;border-left:2px solid rgba(215,185,125,0.7);background:rgba(30,22,12,0.55);opacity:0;transition:opacity 900ms ease;'
-      : 'padding:8px 14px;margin:6px 14px 10px;font-size:11px;font-style:italic;color:rgba(200,170,110,0.82);letter-spacing:0.04em;line-height:1.55;border-left:2px solid rgba(200,170,110,0.55);background:rgba(25,18,10,0.4);opacity:0;transition:opacity 700ms ease;';
+    beat.textContent = _pivotBeatFor(charId);
+    beat.style.cssText = 'padding:8px 14px;margin:6px 14px 10px;font-size:11px;font-style:italic;color:rgba(200,170,110,0.82);letter-spacing:0.04em;line-height:1.55;border-left:2px solid rgba(200,170,110,0.55);background:rgba(25,18,10,0.4);opacity:0;transition:opacity 700ms ease;';
     // Insert at TOP of questions list so it sits above the options
     listEl.insertBefore(beat, listEl.firstChild);
     requestAnimationFrame(() => { beat.style.opacity = '1'; });
@@ -4962,10 +5083,6 @@ window.askBranchQuestion       = askBranchQuestion;
 window.getComposureVariantResponse = getComposureVariantResponse;
 window._stopSilenceSystem = _stopSilenceSystem;
 window._interrogationState = _interrogationState;
-window.PIVOT_MOMENTS = PIVOT_MOMENTS;
-window.PIVOT_BEATS = PIVOT_BEATS;
-window._pivotBeatFor = _pivotBeatFor;
-window._findPivotInAvailable = _findPivotInAvailable;
 
 
 // ── ROWE FUNNEL + DUEL WIRING ──────────────────────────────────
