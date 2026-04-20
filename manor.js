@@ -1186,7 +1186,7 @@ const ROOM_PARALLAX = {
         const dx   = e.touches[0].clientX - _dragStartX;
         _velX      = e.touches[0].clientX - _lastDragX;
         _lastDragX = e.touches[0].clientX;
-        _targetX   = Math.max(-cfg.x, Math.min(cfg.x, _dragBaseX - dx * 2.2));
+        _targetX   = Math.max(-cfg.x, Math.min(cfg.x, _dragBaseX + dx * 2.2));
       }
     }, { passive: false });
 
@@ -1199,7 +1199,7 @@ const ROOM_PARALLAX = {
         _isDragging = false;
         // Apply inertia then hold — gyro resumes from this position
         const cfg = _getConfig();
-        _dragBaseX = Math.max(-cfg.x, Math.min(cfg.x, _targetX - _velX * 3));
+        _dragBaseX = Math.max(-cfg.x, Math.min(cfg.x, _targetX + _velX * 3));
         _targetX   = _dragBaseX;
         _velX      = 0;
       }
