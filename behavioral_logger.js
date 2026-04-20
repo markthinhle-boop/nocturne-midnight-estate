@@ -1054,4 +1054,5 @@ window.logQuestionAnswered  = logQuestionAnswered;
 window.logTechniqueSelected = logTechniqueSelected;
 window.INFORMATION_NODES    = INFORMATION_NODES;
 window.CHAR_META            = CHAR_META;
+window.TECHNIQUE_COMPATIBILITY = TECHNIQUE_COMPATIBILITY;
 window.NIR_KEY              = NIR_KEY;

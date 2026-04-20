@@ -103,6 +103,444 @@ const COMPOSURE_COSTS = {
   wait_silence:          0,   // Costs nothing — timer-based
 };
 
+// ── TECHNIQUE REGISTER (#3) ───────────────────────────────────
+// One-word tonal preview shown under the callum_line on the
+// technique selector. Not per-character — technique-wide.
+// Replaces old verbose TECHNIQUE_HINTS ("composure drops fast" etc).
+const TECHNIQUE_REGISTER = {
+  wait:     'patience',
+  approach: 'conversation',
+  account:  'narrative',
+  record:   'precision',
+  pressure: 'confrontation',
+};
+
+// ── CHARACTER TELLS (#1) ──────────────────────────────────────
+// Observational lines surfaced before the player picks the next
+// technique. Each tell is unique to the character and written to
+// point a perceptive player toward the optimal technique without
+// naming the system. Surfaced once per turn, cycles, never repeats
+// until the character's full tell pool is exhausted.
+//
+// optimal_technique mapping (from CHAR_META):
+//   northcott/greaves/sovereign/archivist/crane → account
+//   steward/ph/surgeon → record
+//   ashworth/voss/heir → wait
+//   curator/envoy/uninvited → approach
+//   baron → wait
+//
+const CHARACTER_TELLS = {
+  "northcott": [
+    "Northcott has not stopped looking at the notebook on the desk between you. He wants you to ask about it.",
+    "He shifts his weight onto the other foot. The first voluntary movement he has made since you sat down.",
+    "His pencil is out of his pocket but he is not writing. He is waiting to be told what matters.",
+    "The notebook is open to a specific page. He turned to it before you arrived.",
+  ],
+  "steward": [
+    "The Steward's hands are folded in front of him. The position has not varied in three minutes.",
+    "He addresses you as 'sir' even in pauses. The formality is not hospitality — it is distance.",
+    "He has not looked at the door once. A man with nowhere else to be, or a man who has decided not to look.",
+    "His collar is straight. His cuffs are straight. Something in him is not.",
+  ],
+  "lady-ashworth": [
+    "Lady Ashworth has been looking at the garden since you entered. She has not looked at you.",
+    "She is holding a letter. She does not appear to be reading it. She does not put it down.",
+    "The pause before she answers is the same length every time. She has practised this conversation.",
+    "She finishes each sentence cleanly. No question yet has made her begin one she could not complete.",
+  ],
+  "curator": [
+    "The Curator is arranging objects on his desk by some order you cannot read. He began before you arrived.",
+    "He has offered you tea twice. The second time was after you declined the first.",
+    "He speaks with the warmth of a man who has already decided what he will and will not say.",
+    "His eyes move to the door when you ask anything specific. Not alarm — rehearsal.",
+  ],
+  "voss": [
+    "Miss Voss has not filled a single silence yet. She is letting them sit.",
+    "She answers questions you have not asked. Not evasion — priority.",
+    "Her hands are in her lap and they have not moved. You would not know she was speaking from her hands.",
+    "She stops mid-sentence sometimes. Not searching — selecting.",
+  ],
+  "pemberton-hale": [
+    "Pemberton-Hale has taken his gloves off and put them on twice since you sat down.",
+    "His writing case is on the table. He has not opened it. He has not put it away.",
+    "He is performing composure. The performance is good enough that you can see it.",
+    "Every sentence he finishes lands exactly where he wanted it to. No drift. No spillage.",
+  ],
+  "greaves": [
+    "Greaves is tracking everything. You can see him cataloguing the conversation as it happens.",
+    "He waits a beat after you finish speaking. Not to think — to confirm you are done.",
+    "He keeps a small notebook. He has not written in it tonight. The notebook is usually full.",
+    "His answers are precise. When he does not know, he says so. When he knows, he knows exactly.",
+  ],
+  "baron": [
+    "The Baron has not stopped moving. His hand. His shoulder. The direction of his gaze.",
+    "He answers before you finish the question. Then corrects himself. Then re-answers.",
+    "He laughs at things that are not funny. The laugh is a punctuation mark he is using to end topics.",
+    "His glass is empty. He has not noticed. He has been raising it to drink for the last minute.",
+  ],
+  "crane": [
+    "Dr. Crane is precise. Every answer so far has been exactly the length it needed to be.",
+    "She sets her bag on the floor in the same position each time she enters. That is a habit of a careful person.",
+    "Her hands are clean. Of course they are clean. The care of the cleaning is what you noticed.",
+    "She has not said a word that could be transcribed incorrectly.",
+  ],
+  "uninvited": [
+    "He is watching you decide whether you believe him. He seems comfortable with whatever you decide.",
+    "The room is warmer than it was. He has not moved.",
+    "He is not a member of this Society. Everyone knows this. Nobody has said it.",
+    "He offers explanations before you request them. The explanations are good. Too good.",
+  ],
+  "sovereign": [
+    "The Sovereign is still. The kind of stillness that comes from forty-three years of waiting.",
+    "He has already decided what he will tell you. The order is what remains.",
+    "His voice is quiet. You lean in without meaning to. He has not raised it once.",
+    "He watches your face the way a man reads a document he wrote himself.",
+  ],
+  "heir": [
+    "The Heir has been reading a testimony on the wall since you entered. She has not turned.",
+    "She answers without inflection. The content is varied. The tone is one tone.",
+    "She will wait longer than you will. She has demonstrated this twice.",
+    "Her attention is complete. Nothing you have said has been missed. Nothing has been acknowledged either.",
+  ],
+  "envoy": [
+    "The Envoy is disarmingly forthcoming. He has volunteered three details you did not ask for.",
+    "He speaks as if you are already on his side. You have not agreed to be.",
+    "He laughs easily. The laughs are timed. The timing is excellent.",
+    "He asks you more questions than you are asking him. He is doing it gently.",
+  ],
+  "archivist": [
+    "The Archivist is at the piano. She is playing when she is nervous. She is playing now.",
+    "She does not look up when you speak. She does when you stop.",
+    "The music is Chopin. She picked it. She is not performing — she is self-soothing.",
+    "She will answer anything you ask. The answers will be true. They will also be exactly what you asked for.",
+  ],
+  "surgeon": [
+    "The Surgeon's composure is a surface. You cannot tell what is underneath it.",
+    "He has not asked you a single question. A man being investigated usually has one.",
+    "His hands are steady. Not held still — steady. There is a difference and he is demonstrating it.",
+    "The warmth in his voice is perfectly calibrated. That is what concerns you.",
+  ],
+};
+
+// ── COMPOSURE TRANSITION BEATS (#2) ───────────────────────────
+// Single-line physical beat surfaced when a character crosses a
+// composure threshold during interrogation. Not a UI meter — a
+// prose observation the player sees. Each line unique per character
+// per transition.
+//
+// Transitions: composed→controlled, controlled→strained,
+//              strained→fractured, fractured→collapsed.
+//
+const COMPOSURE_TRANSITIONS = {
+  "northcott": {
+    "composed_to_controlled":   "He straightens his notebook. An unnecessary correction.",
+    "controlled_to_strained":   "His pencil is in his hand. He did not take it out consciously.",
+    "strained_to_fractured":    "He looks at the door for the first time since you began.",
+    "fractured_to_collapsed":   "The notebook closes in his hands. He didn't mean to close it.",
+  },
+  "steward": {
+    "composed_to_controlled":   "A small correction in his posture. Infinitesimal. You saw it.",
+    "controlled_to_strained":   "He says 'sir' at the beginning of a sentence now, not only the end.",
+    "strained_to_fractured":    "His hands unfold. He does not seem to know where to put them.",
+    "fractured_to_collapsed":   "He stops addressing you as 'sir' mid-sentence. The word was there and then it was not.",
+  },
+  "lady-ashworth": {
+    "composed_to_controlled":   "Her fingers adjust the letter in her lap. The angle changes by a degree.",
+    "controlled_to_strained":   "She looks at you for the first time since you sat down. Then back to the garden.",
+    "strained_to_fractured":    "The letter is no longer in her hand. You did not see her set it down.",
+    "fractured_to_collapsed":   "She is not looking at the garden anymore. She is looking at nothing.",
+  },
+  "curator": {
+    "composed_to_controlled":   "The tea he offered is still on the desk between you. He has not offered it again.",
+    "controlled_to_strained":   "He rearranges the objects on the desk. The order is no longer clear.",
+    "strained_to_fractured":    "He pauses in the middle of a sentence and does not resume.",
+    "fractured_to_collapsed":   "He looks at you directly. The warmth is gone. What is underneath is very tired.",
+  },
+  "voss": {
+    "composed_to_controlled":   "She stops answering questions you have not asked. She is waiting for yours.",
+    "controlled_to_strained":   "A pause appears where there was none before. Long enough that you notice.",
+    "strained_to_fractured":    "Her hands move. It is the first time they have moved tonight.",
+    "fractured_to_collapsed":   "She looks at the desk. She is not selecting anymore. She is looking.",
+  },
+  "pemberton-hale": {
+    "composed_to_controlled":   "His gloves are off. He is not reaching for them.",
+    "controlled_to_strained":   "The writing case is open. He did not open it in front of you before.",
+    "strained_to_fractured":    "The performance cracks once. You see him underneath it. Then the performance returns.",
+    "fractured_to_collapsed":   "He stops performing. The man underneath is not composed. He is exhausted.",
+  },
+  "greaves": {
+    "composed_to_controlled":   "He does not wait the beat anymore. He is answering faster than he did.",
+    "controlled_to_strained":   "His notebook is in his hand. He has not opened it.",
+    "strained_to_fractured":    "He writes something. A single word. He does not show you.",
+    "fractured_to_collapsed":   "The notebook closes. He looks at it as if he is not sure what he wrote.",
+  },
+  "baron": {
+    "composed_to_controlled":   "The laugh has stopped. He did not notice he was using it.",
+    "controlled_to_strained":   "He stops moving. The stillness is louder than the motion was.",
+    "strained_to_fractured":    "He puts the glass down. He looks at his own hand as if it surprised him.",
+    "fractured_to_collapsed":   "He says nothing for a full beat. The Baron saying nothing is a kind of noise.",
+  },
+  "crane": {
+    "composed_to_controlled":   "Her answer is shorter than the previous one. A single word shorter.",
+    "controlled_to_strained":   "She adjusts the bag on the floor. The position changes. The habit is disrupted.",
+    "strained_to_fractured":    "Her hands are no longer clean in the way they were. She has touched something.",
+    "fractured_to_collapsed":   "She stops being precise. For one sentence. Then the precision returns, and you understand what it was for.",
+  },
+  "uninvited": {
+    "composed_to_controlled":   "He acknowledges the question more directly than he did the last one. An adjustment.",
+    "controlled_to_strained":   "The warmth in the room has not changed. The warmth from him has.",
+    "strained_to_fractured":    "He offers an explanation you did not ask for. The first ungraceful thing he has done.",
+    "fractured_to_collapsed":   "He is not watching you anymore. He is watching something you cannot see.",
+  },
+  "sovereign": {
+    "composed_to_controlled":   "The stillness changes quality. It is not the stillness of waiting anymore.",
+    "controlled_to_strained":   "He lifts his eyes from the document he was not reading.",
+    "strained_to_fractured":    "His voice stays quiet. The quietness is no longer restraint. It is something else.",
+    "fractured_to_collapsed":   "He closes the document. He has been holding it for forty-three years.",
+  },
+  "heir": {
+    "composed_to_controlled":   "She turns from the testimony on the wall. She has not done that yet.",
+    "controlled_to_strained":   "The inflection returns to her voice. It sounds strange after the absence of it.",
+    "strained_to_fractured":    "She acknowledges something you said twenty minutes ago. She has been carrying it.",
+    "fractured_to_collapsed":   "She looks at the testimony she was reading. She was reading the fourth one. You understand now.",
+  },
+  "envoy": {
+    "composed_to_controlled":   "The timing on the laugh is off by a half-beat. He corrects it. Too late.",
+    "controlled_to_strained":   "He stops asking you questions. The conversation is yours now.",
+    "strained_to_fractured":    "He volunteers a detail and then stops halfway through. He will not finish it.",
+    "fractured_to_collapsed":   "The charm is gone. The man underneath it has been doing this for a very long time.",
+  },
+  "archivist": {
+    "composed_to_controlled":   "The music stops. She keeps her hands on the keys.",
+    "controlled_to_strained":   "She plays one note. Then another. Not a piece. A pause.",
+    "strained_to_fractured":    "She turns from the piano. Her hands are still on it.",
+    "fractured_to_collapsed":   "She stands. The piano is behind her for the first time since you entered.",
+  },
+  "surgeon": {
+    "composed_to_controlled":   "The surface adjusts. Something behind it moved, and the surface followed.",
+    "controlled_to_strained":   "The warmth in his voice is still calibrated. The calibration is visible now.",
+    "strained_to_fractured":    "His hands are no longer steady. They are held still. You see the holding.",
+    "fractured_to_collapsed":   "He asks you a question. It is the first one he has asked all evening.",
+  },
+};
+
+// ── CONSEQUENCE ECHOES (#4) ───────────────────────────────────
+// Post-response beat that tells the player what their technique
+// just did — in prose, not mechanics. Fires once per question.
+// Keyed by (character × technique × effectiveness).
+//
+// effectiveness derives from TECHNIQUE_COMPATIBILITY:
+//   optimal   — technique matched counter_strategy well (>15)
+//   neutral   — mild positive/negative (-10 to +15)
+//   poor      — strong mismatch (<-15)
+//
+// One echo per combination. Unique per character. No repeats.
+//
+const CONSEQUENCE_ECHOES = {
+  "northcott": {
+    account:   { optimal: "He gave you more than you asked for. That is his instinct. You chose the technique that honoured it." },
+    record:    { neutral: "He showed you the entry before you asked. The item was not necessary. The technique was not wrong." },
+    approach:  { neutral: "He corrected your assumption. You learned something. He did not lose anything by telling you." },
+    wait:      { poor:    "He filled the silence with what he had already decided to say. You could have asked for it directly." },
+    pressure:  { poor:    "He will now require you to earn the next answer. A cooperative witness does not need pressure." },
+  },
+  "steward": {
+    account:   { poor:    "He gave you the formal answer. The complete answer is underneath the formal one. The technique did not reach it." },
+    record:    { optimal: "The evidence did what speech could not. He cannot refuse what you placed on the table." },
+    approach:  { neutral: "He registered that you already know. That is useful. The formality has shifted." },
+    wait:      { neutral: "The silence did not move him. Fourteen years of silence taught him how to outlast yours." },
+    pressure:  { poor:    "He became more formal, not less. You have pushed him further from the answer." },
+  },
+  "lady-ashworth": {
+    account:   { neutral: "She told you what she has already decided to tell. The narrative was hers." },
+    record:    { neutral: "She acknowledged the evidence without responding to it. The item did less than the question will." },
+    approach:  { neutral: "She corrected you. Minimally. You learned the shape of what she is not saying." },
+    wait:      { optimal: "She filled the silence with what she has been carrying. You waited longer than her composure." },
+    pressure:  { poor:    "She redirected. Pressure does not work on someone who has already decided what to lose." },
+  },
+  "curator": {
+    account:   { neutral: "He offered you tea again. Warmth is his deflection. The narrative went where he directed it." },
+    record:    { neutral: "He identified the document before you named it. He has seen many documents." },
+    approach:  { optimal: "He corrected one detail and left the rest. You now know exactly what he is protecting." },
+    wait:      { neutral: "He continued arranging objects. The silence was a tool he also owns." },
+    pressure:  { poor:    "The warmth vanished. You will not get it back. He is not warm to people who pressure him." },
+  },
+  "voss": {
+    account:   { poor:    "She let you talk. You filled your own silence. She has not conceded anything." },
+    record:    { poor:    "She has been handling documents for thirty-one years. Yours did not land." },
+    approach:  { poor:    "She corrected a detail you did not claim. She is ahead of this technique." },
+    wait:      { optimal: "She selected what to say next. Your patience let her choose. What she chose is what she meant." },
+    pressure:  { poor:    "She did not answer. She waited until the pressure passed, the way one waits out weather." },
+  },
+  "pemberton-hale": {
+    account:   { poor:    "He performed the narrative. You have a story now. It is his story." },
+    record:    { optimal: "The evidence broke the performance. He cannot perform an object he has already touched." },
+    approach:  { neutral: "He accepted your version. The acceptance was itself a performance. You saw the seam." },
+    wait:      { neutral: "He did not fill the silence. He has rehearsed silence as carefully as speech." },
+    pressure:  { neutral: "He escalated the performance. The composure is excellent. The excellence is now the tell." },
+  },
+  "greaves": {
+    account:   { optimal: "He gave you the complete sequence. In order. He has been waiting to give it to someone." },
+    record:    { neutral: "He identified the item and its context. He will now tell you what he knows about it." },
+    approach:  { neutral: "He confirmed what you already believed. The confirmation was the point. Useful." },
+    wait:      { poor:    "He waited as long as you did. Silence from a careful observer yields only silence." },
+    pressure:  { poor:    "He noted the technique and registered it as unnecessary. You have lost his good opinion briefly." },
+  },
+  "baron": {
+    account:   { poor:    "He produced the story he wanted you to have. Cheerful. Complete. Useless." },
+    record:    { neutral: "He looked at the item and laughed. Then answered around it." },
+    approach:  { neutral: "He corrected you into the version he prefers. You got a correction. Not a fact." },
+    wait:      { optimal: "He filled the silence with something he did not intend to say. Then he laughed at having said it." },
+    pressure:  { poor:    "He went louder. He has a louder to go to. Pressure is the one technique he has rehearsed." },
+  },
+  "crane": {
+    account:   { optimal: "She gave you the sequence in precise order. She has been organising it since eight-oh-one." },
+    record:    { neutral: "She identified the item accurately and accepted its implication. She is not denying the facts." },
+    approach:  { neutral: "She corrected one element. The correction is itself information. She has told you something." },
+    wait:      { poor:    "She waited with you. She is not uncomfortable with silence. Silence does not cost her anything." },
+    pressure:  { poor:    "She became more precise, not less. Pressure sharpens her. That is not what you wanted." },
+  },
+  "uninvited": {
+    account:   { neutral: "He narrated the room. Not the question. You have a beautiful sentence and no new information." },
+    record:    { neutral: "He considered the item with interest. He did not touch it. He told you what he thought of it." },
+    approach:  { optimal: "He corrected you. Minimally. The correction was the first concrete thing he has said." },
+    wait:      { poor:    "He is comfortable in silences. He has been in this building longer than the silence has." },
+    pressure:  { poor:    "Pressure is a language he does not speak. The room cooled. You will not recover the warmth." },
+  },
+  "sovereign": {
+    account:   { optimal: "He gave you the sequence of forty-three years. He has been composing this answer the whole time." },
+    record:    { neutral: "He recognised the item. He had prepared for it to arrive. You are late, but he is grateful." },
+    approach:  { neutral: "He corrected the detail gently. You were close. He did not correct what was important." },
+    wait:      { neutral: "He has waited forty-three years. Your silence did not disturb him. You learned nothing new." },
+    pressure:  { poor:    "He did not respond to the technique. He responded to the fact that you chose it." },
+  },
+  "heir": {
+    account:   { optimal: "She gave you the plan. Eight months. Seventeen variables. She will not repeat it." },
+    record:    { neutral: "She knew the document before you produced it. Of course she did. She wrote it." },
+    approach:  { neutral: "She corrected you cleanly. The correction contained more than the question asked for." },
+    wait:      { optimal: "She waited until you were done waiting, then answered. Patience was the cost. She accepted payment." },
+    pressure:  { poor:    "She did not react. She has been ready for pressure longer than you have known her name." },
+  },
+  "envoy": {
+    account:   { poor:    "He gave you the narrative he prefers. It is very good. None of it is wrong. None of it is complete." },
+    record:    { neutral: "He identified the document and praised your discovery. The praise was a redirection." },
+    approach:  { optimal: "He corrected you — which means he conceded the frame. You now have a foothold." },
+    wait:      { neutral: "He asked you a question in return. He has been running this conversation since it started." },
+    pressure:  { poor:    "He became more charming. That is his pressure response. You will get less, not more." },
+  },
+  "archivist": {
+    account:   { optimal: "She gave you the full account while her hands stayed on the keys. The music was composure. The words were not." },
+    record:    { neutral: "She identified the document and told you where she filed it. She files everything." },
+    approach:  { neutral: "She corrected one entry and left the rest. You now know which archive matters." },
+    wait:      { neutral: "She filled the silence with a piece of music. The piece was an answer. You did not speak the language." },
+    pressure:  { poor:    "The music stopped. That is her response to pressure. Starting it again will not be easy." },
+  },
+  "surgeon": {
+    account:   { poor:    "He gave you a clinical narrative. Every word was true. None of it was the truth." },
+    record:    { optimal: "The item produced a response he had not rehearsed. The first one tonight." },
+    approach:  { poor:    "He corrected you. The correction was exactly what he wanted you to take away. You took it." },
+    wait:      { neutral: "He let the silence stand. He did not need to fill it. Neither, it turns out, did you." },
+    pressure:  { neutral: "He noted the escalation with professional interest. The composure adjusted. Nothing underneath it moved." },
+  },
+};
+
+// ── PER-CHARACTER DEBRIEF (#6) ────────────────────────────────
+// One-shot scorecard fired when a character's conversation closes
+// (fracture, collapse, or manual exit after at least one question).
+// Teaches the player the character archetype mid-run so they can
+// adjust for the next suspect.
+//
+// Unique phrasing per character. Counter-strategy and optimal
+// technique named in-world, not in system labels.
+//
+const SUSPECT_DEBRIEF = {
+  "northcott":      { strategy_label: "Cooperative",                     strategy_line: "He wanted to help. The record was ready before you arrived.",                optimal_label: "The Account",     coaching_line: "Let him narrate. He has been holding the sequence for you." },
+  "steward":        { strategy_label: "Formal withholding",              strategy_line: "He will not volunteer. The formality is a wall.",                           optimal_label: "The Record",      coaching_line: "Place the item first. Speech cannot reach him. Paper can." },
+  "lady-ashworth":  { strategy_label: "Grief-redirection",               strategy_line: "She is grieving. She will redirect the conversation toward what she has already accepted.", optimal_label: "The Wait",        coaching_line: "She will fill the silence with what she has been carrying. Do not interrupt the waiting." },
+  "curator":        { strategy_label: "Warm withholding",                strategy_line: "He controls the warmth. The warmth is how he controls the room.",           optimal_label: "The Approach",    coaching_line: "Feed him almost everything. Let him correct the one thing that matters." },
+  "voss":           { strategy_label: "Strategic fragmentation",         strategy_line: "She chooses what to say next. Her silences are selections.",                optimal_label: "The Wait",        coaching_line: "Outlast her selection. What she eventually chooses is what she means." },
+  "pemberton-hale": { strategy_label: "Performed composure",             strategy_line: "The composure is the performance. He has rehearsed it for eight years.",   optimal_label: "The Record",      coaching_line: "An object in his hand breaks the performance. Speech alone will not." },
+  "greaves":        { strategy_label: "Cooperative precision",           strategy_line: "He will tell you exactly what he knows. He will not guess.",                 optimal_label: "The Account",     coaching_line: "Open the narrative. His observation is complete. Your questions do not need to be." },
+  "baron":          { strategy_label: "Fragmentation under noise",       strategy_line: "He produces motion and laughter in place of answers.",                      optimal_label: "The Wait",        coaching_line: "Stop talking. He cannot sustain his own noise. The silence is where the fact appears." },
+  "crane":          { strategy_label: "Clinical fragmentation",          strategy_line: "She is precise in pieces. Each piece is true. The pieces do not assemble.", optimal_label: "The Account",     coaching_line: "Let her sequence the pieces. She has already arranged them in order for you." },
+  "uninvited":      { strategy_label: "Redirective performance",         strategy_line: "He redirects every question into atmosphere and implication.",              optimal_label: "The Approach",    coaching_line: "Feed him your version. His correction will be the only concrete thing he says." },
+  "sovereign":      { strategy_label: "Forty-year cooperation",          strategy_line: "He has been waiting for you. He will give the full sequence. Once.",        optimal_label: "The Account",     coaching_line: "Let him deliver what he has composed. Do not interrupt the structure." },
+  "heir":           { strategy_label: "Fragmented authority",            strategy_line: "She carries the plan in pieces. Each piece is weaponised.",                 optimal_label: "The Wait",        coaching_line: "She will outlast your waiting — but after she does, she will answer completely." },
+  "envoy":          { strategy_label: "Redirective charm",               strategy_line: "He asks you more questions than you ask him. Gently.",                      optimal_label: "The Approach",    coaching_line: "Tell him what you think happened. The correction is the only real move he has." },
+  "archivist":      { strategy_label: "Cooperative through music",       strategy_line: "The piano is her composure. The words are offered freely.",                  optimal_label: "The Account",     coaching_line: "Do not stop the music. Let her narrate while her hands are occupied." },
+  "surgeon":        { strategy_label: "Performed warmth",                strategy_line: "The warmth is calibrated. Every technique adjusts around it. The thing underneath does not move.", optimal_label: "The Record",      coaching_line: "He cannot perform an object he has already touched. The mask is the break." },
+};
+
+// ── RUNTIME HELPERS (Tells, Transitions, Echoes, Debrief) ─────
+// Small API surface used by UI. Kept here so all character-facing
+// prose lives in one file.
+
+const _tellRotation = Object.create(null);       // charId → [shuffled tell indexes]
+const _echoFiredThisTurn = Object.create(null);  // charId → true once per turn
+const _debriefFiredFor = Object.create(null);    // charId → true (once per case)
+
+function getCharacterTell(charId) {
+  const pool = CHARACTER_TELLS[charId];
+  if (!pool || !pool.length) return null;
+  let rot = _tellRotation[charId];
+  if (!rot || !rot.length) {
+    rot = pool.map((_, i) => i);
+    // Fisher-Yates
+    for (let i = rot.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [rot[i], rot[j]] = [rot[j], rot[i]];
+    }
+    _tellRotation[charId] = rot;
+  }
+  const idx = rot.shift();
+  return pool[idx];
+}
+
+function getComposureTransitionLine(charId, prevState, nextState) {
+  const t = COMPOSURE_TRANSITIONS[charId];
+  if (!t) return null;
+  const key = prevState + '_to_' + nextState;
+  return t[key] || null;
+}
+
+function _classifyEffectiveness(charId, techniqueId) {
+  try {
+    const meta = (window.CHAR_META || {})[charId];
+    if (!meta || !meta.counter_strategy) return 'neutral';
+    const compat = (window.TECHNIQUE_COMPATIBILITY || {})[techniqueId];
+    if (!compat) return 'neutral';
+    const score = compat[meta.counter_strategy];
+    if (score === undefined) return 'neutral';
+    if (score > 15)  return 'optimal';
+    if (score < -15) return 'poor';
+    return 'neutral';
+  } catch (e) { return 'neutral'; }
+}
+
+function getConsequenceEcho(charId, techniqueId) {
+  const charEchoes = CONSEQUENCE_ECHOES[charId];
+  if (!charEchoes) return null;
+  const techEchoes = charEchoes[techniqueId];
+  if (!techEchoes) return null;
+  const eff = _classifyEffectiveness(charId, techniqueId);
+  return techEchoes[eff] || techEchoes.neutral || techEchoes.optimal || techEchoes.poor || null;
+}
+
+function getSuspectDebrief(charId) {
+  return SUSPECT_DEBRIEF[charId] || null;
+}
+
+// Expose for UI
+window.CHARACTER_TELLS          = CHARACTER_TELLS;
+window.COMPOSURE_TRANSITIONS    = COMPOSURE_TRANSITIONS;
+window.CONSEQUENCE_ECHOES       = CONSEQUENCE_ECHOES;
+window.SUSPECT_DEBRIEF          = SUSPECT_DEBRIEF;
+window.TECHNIQUE_REGISTER       = TECHNIQUE_REGISTER;
+window.getCharacterTell         = getCharacterTell;
+window.getComposureTransitionLine = getComposureTransitionLine;
+window.getConsequenceEcho       = getConsequenceEcho;
+window.getSuspectDebrief        = getSuspectDebrief;
+
 // ── CHARACTER INTERROGATION DATA ──────────────────────────────
 // Full simulator data per character.
 // counter_strategy, optimal_technique, composure variants,
@@ -3386,11 +3824,11 @@ function openTechniqueSelector(charId) {
   ].join(';');
 
   const TECHNIQUE_HINTS = {
-    account:  'Gentle approach. Slowest composure drain.',
-    pressure: 'Aggressive. Composure drops fast. Risk of early fracture.',
-    approach: 'Disarming. Minimal composure cost. Character may lower guard.',
-    record:   'Controlled. Standard composure cost. Best with items in hand.',
-    wait:     'No composure cost. Character fills the silence. Unpredictable.',
+    account:  (window.TECHNIQUE_REGISTER && window.TECHNIQUE_REGISTER.account)  || 'narrative',
+    pressure: (window.TECHNIQUE_REGISTER && window.TECHNIQUE_REGISTER.pressure) || 'confrontation',
+    approach: (window.TECHNIQUE_REGISTER && window.TECHNIQUE_REGISTER.approach) || 'conversation',
+    record:   (window.TECHNIQUE_REGISTER && window.TECHNIQUE_REGISTER.record)   || 'precision',
+    wait:     (window.TECHNIQUE_REGISTER && window.TECHNIQUE_REGISTER.wait)     || 'patience',
   };
 
   const femaleChars = ['ashworth', 'voss', 'crane'];
@@ -3617,6 +4055,36 @@ function _applyComposureCost(charId, baseCost) {
   const newComposure = Math.max(floor, current - actualCost);
   charState.composure = newComposure;
   gameState.characters[charId] = charState;
+
+  // ── TRANSITION BEAT (#2) ────────────────────────────────
+  // Detect composure state crossing and surface the per-character
+  // physical beat. Uses the ui.js threshold scheme (70/55/40)
+  // with an explicit collapsed band at <=20 for fracture→collapse.
+  try {
+    const _stateFor = (c) => {
+      if (c > 70) return 'composed';
+      if (c > 55) return 'controlled';
+      if (c > 40) return 'strained';
+      if (c > 20) return 'fractured';
+      return 'collapsed';
+    };
+    const prevState = _stateFor(current);
+    const nextState = _stateFor(newComposure);
+    if (prevState !== nextState) {
+      const line = getComposureTransitionLine(charId, prevState, nextState);
+      if (line) {
+        const resp = document.getElementById('char-response');
+        if (resp) {
+          const beat = document.createElement('div');
+          beat.className = 'composure-transition-beat';
+          beat.textContent = line;
+          beat.style.cssText = 'margin-top:14px;padding-top:10px;border-top:1px dashed rgba(170,140,90,0.18);font-size:12px;color:rgba(190,170,130,0.78);font-style:italic;letter-spacing:0.02em;line-height:1.6;opacity:0;transition:opacity 600ms ease;';
+          resp.appendChild(beat);
+          requestAnimationFrame(() => { beat.style.opacity = '1'; });
+        }
+      }
+    }
+  } catch(e) { /* non-fatal */ }
 
   if (typeof updateComposureState === 'function') {
     updateComposureState(charId);
@@ -4213,6 +4681,31 @@ window.askQuestion = function(charId, qId) {
   const qType = _inferQType(qId, q);
   NocturneEngine.emit('questionAnswered', { charId, qId, qType });
 
+  // ── CONSEQUENCE ECHO (#4) ──────────────────────────────
+  // Surface one echo per question, styled as a field note
+  // beneath the response. Reports what the technique just did
+  // in character-specific terms — without naming the system.
+  try {
+    const technique = _interrogationState.selectedTechnique;
+    if (technique && !q?.snap && !q?.final && !q?.correction) {
+      const echoText = getConsequenceEcho(charId, technique);
+      if (echoText) {
+        setTimeout(() => {
+          const resp = document.getElementById('char-response');
+          if (!resp) return;
+          // Only one echo per turn — prevents stacking on branch follow-ups
+          if (resp.querySelector('.consequence-echo')) return;
+          const echoEl = document.createElement('div');
+          echoEl.className = 'consequence-echo';
+          echoEl.textContent = echoText;
+          echoEl.style.cssText = 'margin-top:16px;padding:10px 14px;font-size:11px;color:rgba(190,170,130,0.62);font-style:italic;letter-spacing:0.04em;line-height:1.6;border-left:2px solid rgba(170,140,90,0.3);background:rgba(20,14,8,0.35);opacity:0;transition:opacity 800ms ease;';
+          resp.appendChild(echoEl);
+          requestAnimationFrame(() => { echoEl.style.opacity = '1'; });
+        }, 400);
+      }
+    }
+  } catch(e) { /* non-fatal */ }
+
   // Check word tell
   if (q) {
     // intentionally blank — annotations removed
@@ -4322,6 +4815,7 @@ window.renderBranchQuestions   = renderBranchQuestions;
 window.askBranchQuestion       = askBranchQuestion;
 window.getComposureVariantResponse = getComposureVariantResponse;
 window._stopSilenceSystem = _stopSilenceSystem;
+window._interrogationState = _interrogationState;
 
 
 // ── ROWE FUNNEL + DUEL WIRING ──────────────────────────────────

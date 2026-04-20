@@ -1719,6 +1719,28 @@ function _openConversationDirect(charId) {
     }
   }
   updateComposureLabel(charId);
+
+  // ── TELL (#1) ────────────────────────────────────────────
+  // Show one observational tell above the intro, once per open.
+  // Rotates across plays. Skips characters without a tell pool
+  // (rowe/uninvited treated per pool presence).
+  try {
+    if (typeof window.getCharacterTell === 'function') {
+      const tellText = window.getCharacterTell(charId);
+      if (tellText) {
+        const existingTell = document.getElementById('char-tell-line');
+        if (existingTell) existingTell.remove();
+        const tellEl = document.createElement('div');
+        tellEl.id = 'char-tell-line';
+        tellEl.textContent = tellText;
+        tellEl.style.cssText = 'padding:10px 20px 6px;font-size:11px;font-style:italic;color:rgba(170,140,90,0.72);letter-spacing:0.02em;line-height:1.55;border-left:1px solid rgba(170,140,90,0.25);margin:8px 14px 10px;';
+        const charResponse = document.getElementById('char-response');
+        if (charResponse && charResponse.parentNode) {
+          charResponse.parentNode.insertBefore(tellEl, charResponse);
+        }
+      }
+    }
+  } catch(e) { /* non-fatal */ }
 }
 
 // openConversation: public entry point.
@@ -1820,6 +1842,37 @@ function updateComposureLabel(charId) {
 }
 
 function closeConversation() {
+  // ── DEBRIEF (#6) ──────────────────────────────────────────
+  // Fire once per character per case when a real interrogation
+  // has taken place (at least one question answered AND technique
+  // was selected). Teaches the player the archetype mid-run.
+  try {
+    const charId = _activeCharId;
+    if (charId
+        && typeof window.getSuspectDebrief === 'function'
+        && !window._debriefShown?.[charId]) {
+      const techUsed = (window._interrogationState?.techniqueHistory || {})[charId]
+                       || gameState.character_technique_history?.[charId];
+      const answered = Object.keys(gameState.char_dialogue_complete?.[charId] || {})
+                       .filter(k => !k.startsWith('_')).length;
+      if (techUsed && answered >= 1) {
+        const debrief = window.getSuspectDebrief(charId);
+        const meta    = (window.CHAR_META || {})[charId] || {};
+        if (debrief) {
+          window._debriefShown = window._debriefShown || {};
+          window._debriefShown[charId] = true;
+          _showSuspectDebriefOverlay(charId, debrief, meta, techUsed);
+          // Defer actual panel close until overlay dismissed
+          return;
+        }
+      }
+    }
+  } catch(e) { /* non-fatal, fall through to normal close */ }
+
+  _closeConversationPanel();
+}
+
+function _closeConversationPanel() {
   document.getElementById('conversation-panel').classList.remove('open');
 
   const UNINVITED_ROOMS = ['ballroom', 'library', 'vault', 'wine-cellar'];
@@ -1859,6 +1912,86 @@ function closeConversation() {
     z.style.visibility = '';
     z.style.pointerEvents = '';
   });
+}
+
+function _showSuspectDebriefOverlay(charId, debrief, meta, techUsed) {
+  const existing = document.getElementById('suspect-debrief-overlay');
+  if (existing) existing.remove();
+
+  const charData = (window.CHARACTERS || {})[charId] || {};
+  const displayName = charData.display_name || charId;
+
+  const TECH_LABELS = {
+    account:  'The Account',
+    record:   'The Record',
+    approach: 'The Approach',
+    wait:     'The Wait',
+    pressure: 'The Pressure',
+  };
+  const techLabel    = TECH_LABELS[techUsed] || techUsed;
+  const optimalLabel = debrief.optimal_label || TECH_LABELS[meta.optimal_technique] || '—';
+  const matchedOptimal = meta.optimal_technique === techUsed;
+
+  const overlay = document.createElement('div');
+  overlay.id = 'suspect-debrief-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:9500;background:rgba(4,3,2,0.88);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 400ms ease;padding:24px;box-sizing:border-box;';
+
+  const card = document.createElement('div');
+  card.style.cssText = 'width:min(460px,96vw);max-height:90vh;overflow-y:auto;background:#0f0d09;border:1px solid rgba(180,155,90,0.28);padding:28px 28px 22px;box-shadow:0 8px 40px rgba(0,0,0,0.7);';
+
+  const header = document.createElement('div');
+  header.style.cssText = 'font-size:9px;letter-spacing:0.32em;color:var(--gold,#c9a84c);text-transform:uppercase;opacity:0.85;margin-bottom:14px;';
+  header.textContent = 'Interrogation Notes';
+  card.appendChild(header);
+
+  const name = document.createElement('div');
+  name.style.cssText = 'font-size:18px;letter-spacing:0.15em;color:var(--cream,#e8dcc8);text-transform:uppercase;margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid rgba(180,155,90,0.18);';
+  name.textContent = displayName;
+  card.appendChild(name);
+
+  const mkRow = (label, value) => {
+    const row = document.createElement('div');
+    row.style.cssText = 'margin-bottom:14px;';
+    const l = document.createElement('div');
+    l.style.cssText = 'font-size:9px;letter-spacing:0.22em;color:var(--gold-dim,#9a7c3a);text-transform:uppercase;margin-bottom:4px;opacity:0.8;';
+    l.textContent = label;
+    const v = document.createElement('div');
+    v.style.cssText = 'font-size:13px;color:var(--cream-dim,#b8a98a);line-height:1.55;letter-spacing:0.02em;';
+    v.textContent = value;
+    row.appendChild(l);
+    row.appendChild(v);
+    return row;
+  };
+
+  card.appendChild(mkRow('Counter-strategy', debrief.strategy_label));
+  const stratBeat = document.createElement('div');
+  stratBeat.style.cssText = 'font-size:12px;color:rgba(190,170,130,0.72);font-style:italic;margin:-8px 0 16px;line-height:1.6;';
+  stratBeat.textContent = debrief.strategy_line;
+  card.appendChild(stratBeat);
+
+  card.appendChild(mkRow('Technique used', techLabel));
+  card.appendChild(mkRow('Optimal technique', optimalLabel));
+
+  const matchRow = document.createElement('div');
+  matchRow.style.cssText = 'margin:10px 0 18px;padding:10px 12px;border-left:2px solid ' + (matchedOptimal ? 'rgba(180,155,90,0.7)' : 'rgba(170,90,80,0.6)') + ';background:rgba(20,14,8,0.45);font-size:12px;color:var(--cream-dim,#b8a98a);line-height:1.6;font-style:italic;letter-spacing:0.02em;';
+  matchRow.textContent = debrief.coaching_line;
+  card.appendChild(matchRow);
+
+  const closeBtn = document.createElement('button');
+  closeBtn.style.cssText = 'display:block;margin:14px auto 0;background:transparent;border:1px solid rgba(180,155,90,0.35);color:var(--gold,#c9a84c);padding:8px 28px;font-size:10px;letter-spacing:0.24em;cursor:pointer;text-transform:uppercase;font-family:inherit;';
+  closeBtn.textContent = 'Continue';
+  closeBtn.onclick = () => {
+    overlay.style.opacity = '0';
+    setTimeout(() => {
+      overlay.remove();
+      _closeConversationPanel();
+    }, 400);
+  };
+  card.appendChild(closeBtn);
+
+  overlay.appendChild(card);
+  document.body.appendChild(overlay);
+  requestAnimationFrame(() => { overlay.style.opacity = '1'; });
 }
 
 function renderQuestions(charId) {
