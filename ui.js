@@ -1725,11 +1725,15 @@ function _openConversationDirect(charId) {
   // Rotates across plays. Skips characters without a tell pool
   // (rowe/uninvited treated per pool presence).
   try {
+    // Always clear any prior Tell element first — prevents the prior
+    // character's Tell from persisting when a character without a Tell
+    // (or a character whose getCharacterTell returns null) is opened.
+    const existingTell = document.getElementById('char-tell-line');
+    if (existingTell) existingTell.remove();
+
     if (typeof window.getCharacterTell === 'function') {
       const tellText = window.getCharacterTell(charId);
       if (tellText) {
-        const existingTell = document.getElementById('char-tell-line');
-        if (existingTell) existingTell.remove();
         const tellEl = document.createElement('div');
         tellEl.id = 'char-tell-line';
         tellEl.textContent = tellText;

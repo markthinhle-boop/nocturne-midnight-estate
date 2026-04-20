@@ -142,7 +142,7 @@ const CHARACTER_TELLS = {
     "He has not looked at the door once. A man with nowhere else to be, or a man who has decided not to look.",
     "His collar is straight. His cuffs are straight. Something in him is not.",
   ],
-  "lady-ashworth": [
+  "ashworth": [
     "Lady Ashworth has been looking at the garden since you entered. She has not looked at you.",
     "She is holding a letter. She does not appear to be reading it. She does not put it down.",
     "The pause before she answers is the same length every time. She has practised this conversation.",
@@ -244,7 +244,7 @@ const COMPOSURE_TRANSITIONS = {
     "strained_to_fractured":    "His hands unfold. He does not seem to know where to put them.",
     "fractured_to_collapsed":   "He stops addressing you as 'sir' mid-sentence. The word was there and then it was not.",
   },
-  "lady-ashworth": {
+  "ashworth": {
     "composed_to_controlled":   "Her fingers adjust the letter in her lap. The angle changes by a degree.",
     "controlled_to_strained":   "She looks at you for the first time since you sat down. Then back to the garden.",
     "strained_to_fractured":    "The letter is no longer in her hand. You did not see her set it down.",
@@ -351,7 +351,7 @@ const CONSEQUENCE_ECHOES = {
     wait:      { neutral: "The silence did not move him. Fourteen years of silence taught him how to outlast yours." },
     pressure:  { poor:    "He became more formal, not less. You have pushed him further from the answer." },
   },
-  "lady-ashworth": {
+  "ashworth": {
     account:   { neutral: "She told you what she has already decided to tell. The narrative was hers." },
     record:    { neutral: "She acknowledged the evidence without responding to it. The item did less than the question will." },
     approach:  { neutral: "She corrected you. Minimally. You learned the shape of what she is not saying." },
@@ -456,7 +456,7 @@ const CONSEQUENCE_ECHOES = {
 const SUSPECT_DEBRIEF = {
   "northcott":      { strategy_label: "Cooperative",                     strategy_line: "He wanted to help. The record was ready before you arrived.",                optimal_label: "The Account",     coaching_line: "Let him narrate. He has been holding the sequence for you." },
   "steward":        { strategy_label: "Formal withholding",              strategy_line: "He will not volunteer. The formality is a wall.",                           optimal_label: "The Record",      coaching_line: "Place the item first. Speech cannot reach him. Paper can." },
-  "lady-ashworth":  { strategy_label: "Grief-redirection",               strategy_line: "She is grieving. She will redirect the conversation toward what she has already accepted.", optimal_label: "The Wait",        coaching_line: "She will fill the silence with what she has been carrying. Do not interrupt the waiting." },
+  "ashworth":  { strategy_label: "Grief-redirection",               strategy_line: "She is grieving. She will redirect the conversation toward what she has already accepted.", optimal_label: "The Wait",        coaching_line: "She will fill the silence with what she has been carrying. Do not interrupt the waiting." },
   "curator":        { strategy_label: "Warm withholding",                strategy_line: "He controls the warmth. The warmth is how he controls the room.",           optimal_label: "The Approach",    coaching_line: "Feed him almost everything. Let him correct the one thing that matters." },
   "voss":           { strategy_label: "Strategic fragmentation",         strategy_line: "She chooses what to say next. Her silences are selections.",                optimal_label: "The Wait",        coaching_line: "Outlast her selection. What she eventually chooses is what she means." },
   "pemberton-hale": { strategy_label: "Performed composure",             strategy_line: "The composure is the performance. He has rehearsed it for eight years.",   optimal_label: "The Record",      coaching_line: "An object in his hand breaks the performance. Speech alone will not." },
@@ -548,7 +548,7 @@ function getSuspectDebrief(charId) {
 //
 // Applied only to HIGH_STAKES_CHARS. Minor characters stay responsive —
 // this layer exists specifically to add weight to the core investigations.
-const HIGH_STAKES_CHARS = ['surgeon', 'crane', 'steward', 'pemberton-hale', 'lady-ashworth'];
+const HIGH_STAKES_CHARS = ['surgeon', 'crane', 'steward', 'pemberton-hale', 'ashworth'];
 
 // Per-character escalation state:
 //   { consecutive_poor, branch_locked_until, fracture_floor_bonus, last_classification }
@@ -561,7 +561,7 @@ const ESCALATION_LOCK_LINES = {
   'crane':          "She is now being precise in a way that protects her specifically. The technique you chose told her what kind of investigator you are. She has adjusted. Narrative questions will still land. Pressure questions will find nothing to push against.",
   'steward':        "Sir. He says it once, then does not say it again. Fourteen years of formality has closed around whatever he might have said. Narrative questions remain available. The deeper questions have gone back into the wall they came from.",
   'pemberton-hale': "The performance has absorbed your technique as data. He is now performing a version of himself that is calibrated specifically to your approach. The rehearsed sentences are the only ones you will get until you stop giving him material to rehearse against.",
-  'lady-ashworth':  "She is looking at the garden again. You have told her something about how you work. She will return to narrative register — the safest ground for both of you. The other ground is closed until you find a different way of standing on it.",
+  'ashworth':  "She is looking at the garden again. You have told her something about how you work. She will return to narrative register — the safest ground for both of you. The other ground is closed until you find a different way of standing on it.",
 };
 
 const ESCALATION_FLOOR_LINES = {
@@ -569,7 +569,7 @@ const ESCALATION_FLOOR_LINES = {
   'crane':          "Her precision has crystallised. She will not fragment again in this conversation. What you learn from her from here forward you will learn by listening, not by pressing.",
   'steward':        "His posture has not changed. That is the change. He has decided that you are not the person the Bond prepared him for. He will remain. He will not open.",
   'pemberton-hale': "The performance has achieved the state it has been rehearsing toward. He is composed in a way that cannot be broken by a third error. What you will get from here is what he has already prepared for you to get.",
-  'lady-ashworth':  "The grief has become composed. She has decided she does not trust you enough to be disorganised in front of you. You have the careful Lady Ashworth now. You will not get the other one back this evening.",
+  'ashworth':  "The grief has become composed. She has decided she does not trust you enough to be disorganised in front of you. You have the careful Lady Ashworth now. You will not get the other one back this evening.",
 };
 
 function _getEscalation(charId) {
@@ -4916,7 +4916,7 @@ const PIVOT_BEATS = [
   "Something has opened that was not open before. You can feel it. He can too.",
   "You are closer now than you were two questions ago. He is deciding whether to let you arrive.",
 ];
-const _PIVOT_FEMALE = ['ashworth','voss','crane','heir','archivist','lady-ashworth'];
+const _PIVOT_FEMALE = ['ashworth','voss','crane','heir','archivist'];
 
 function _pivotBeatFor(charId) {
   const idx = (window._pivotBeatCursor = ((window._pivotBeatCursor || 0) + 1) % PIVOT_BEATS.length);
