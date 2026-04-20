@@ -664,184 +664,6 @@ window.resetEscalation          = resetEscalation;
 window._applyEscalation         = _applyEscalation;
 window._getEscalation           = _getEscalation;
 
-// ═══════════════════════════════════════════════════════════
-// PORTRAIT REACTION ENGINE — world-class 3-layer system
-// ═══════════════════════════════════════════════════════════
-// Layer 1: ambient breathing keyed to composure state
-// Layer 2: per-question beats (optimal/poor/neutral/lockin/break)
-// Layer 3: per-character scripted signatures on pivot moments
-//
-// Targets both legacy #char-portrait and per-character
-// .conv-npc-portrait inside #conv-card-${charId}.
-// All animation classes are additive and one-shot except breath-*
-// (persistent) and state-broken (persistent).
-// ═══════════════════════════════════════════════════════════
-
-// All portrait reaction class names — used for cleanup sweeps
-const PORTRAIT_REACTION_CLASSES = [
-  'breath-composed','breath-controlled','breath-strained','breath-fractured','breath-collapsed',
-  'react-recognition','react-closing','react-lockin','react-break',
-  'state-broken',
-  'sig-surgeon-sc1','sig-crane-cb3','sig-steward-bc2','sig-vivienne-vc2','sig-ashworth-bc3','sig-hatch-hb2',
-];
-
-// All breath class names (subset — used for swap-only, preserves reactions)
-const PORTRAIT_BREATH_CLASSES = [
-  'breath-composed','breath-controlled','breath-strained','breath-fractured','breath-collapsed',
-];
-
-// Scripted pivot signatures — key is `${charId}:${qId}`
-const PORTRAIT_SIGNATURES = {
-  'surgeon:SC1':       'sig-surgeon-sc1',
-  'crane:CB3':         'sig-crane-cb3',
-  'steward:BC2':       'sig-steward-bc2',
-  'vivienne:VC2':      'sig-vivienne-vc2',
-  'lady-ashworth:BC3': 'sig-ashworth-bc3',
-  'hatch:HB2':         'sig-hatch-hb2',
-};
-
-/**
- * Return all portrait DOM elements for a given charId.
- * Covers: #char-portrait (legacy single), #conv-portrait-${charId} (multi).
- */
-function _portraitsFor(charId) {
-  const out = [];
-  const legacy = document.getElementById('char-portrait');
-  if (legacy) out.push(legacy);
-  if (charId) {
-    const multi = document.getElementById(`conv-portrait-${charId}`);
-    if (multi) out.push(multi);
-  }
-  return out;
-}
-
-/**
- * Map composure number to breath class.
- * Mirrors the composure_state thresholds used elsewhere (70/55/40/20).
- */
-function _breathClassForComposure(composure) {
-  if (composure == null) composure = 100;
-  if (composure > 70) return 'breath-composed';
-  if (composure > 55) return 'breath-controlled';
-  if (composure > 40) return 'breath-strained';
-  if (composure > 20) return 'breath-fractured';
-  return 'breath-collapsed';
-}
-
-/**
- * LAYER 1 — apply ambient breath based on current composure.
- * Called on conversation open and after each composure change.
- * Persistent class — swap only, don't nuke reaction classes.
- */
-function applyPortraitBreath(charId) {
-  const charState = (gameState.characters && gameState.characters[charId]) || {};
-  const composure = charState.composure !== undefined ? charState.composure : 100;
-  const targetClass = _breathClassForComposure(composure);
-  _portraitsFor(charId).forEach(el => {
-    PORTRAIT_BREATH_CLASSES.forEach(c => { if (c !== targetClass) el.classList.remove(c); });
-    el.classList.add(targetClass);
-  });
-}
-
-/**
- * LAYER 2 — fire a per-question reaction.
- * Classifications: 'optimal' -> recognition, 'poor' -> closing,
- * 'neutral' -> nothing, 'lockin' (node granted) -> lockin,
- * 'break' (fracture crossed) -> break (persists via state-broken).
- * One-shot: class is added, animationend clears it.
- */
-function firePortraitReaction(charId, reactionType) {
-  if (!reactionType || reactionType === 'neutral') return;
-  const classMap = {
-    'optimal':     'react-recognition',
-    'poor':        'react-closing',
-    'lockin':      'react-lockin',
-    'break':       'react-break',
-  };
-  const cls = classMap[reactionType];
-  if (!cls) return;
-  _portraitsFor(charId).forEach(el => {
-    // Clear any other reaction classes first to avoid conflicts
-    ['react-recognition','react-closing','react-lockin','react-break'].forEach(c => el.classList.remove(c));
-    // Force reflow so animation restarts if same class re-added
-    // eslint-disable-next-line no-unused-expressions
-    el.offsetWidth;
-    el.classList.add(cls);
-    // For the break reaction: after animation completes, persist state-broken
-    if (cls === 'react-break') {
-      const onEnd = (ev) => {
-        if (ev.animationName && ev.animationName.startsWith('reactBreak')) {
-          el.classList.remove('react-break');
-          el.classList.add('state-broken');
-          el.removeEventListener('animationend', onEnd);
-        }
-      };
-      el.addEventListener('animationend', onEnd);
-    } else {
-      // Self-clear other one-shot reactions when their animation ends
-      const onEnd = (ev) => {
-        if (ev.animationName && (
-          ev.animationName.startsWith('reactRecognition') ||
-          ev.animationName.startsWith('reactClosing') ||
-          ev.animationName.startsWith('reactLockin'))) {
-          el.classList.remove(cls);
-          el.removeEventListener('animationend', onEnd);
-        }
-      };
-      el.addEventListener('animationend', onEnd);
-    }
-  });
-}
-
-/**
- * LAYER 3 — fire a per-character scripted portrait signature.
- * Called from askQuestion / askBranchQuestion when qId matches
- * a known pivot key. One-shot (signature classes clear themselves).
- */
-function firePortraitSignature(charId, qId) {
-  const key = `${charId}:${qId}`;
-  const sigClass = PORTRAIT_SIGNATURES[key];
-  if (!sigClass) return;
-  _portraitsFor(charId).forEach(el => {
-    // Clear any prior signature
-    Object.values(PORTRAIT_SIGNATURES).forEach(c => el.classList.remove(c));
-    // eslint-disable-next-line no-unused-expressions
-    el.offsetWidth;
-    el.classList.add(sigClass);
-    // Steward's sig-steward-bc2 is a !important filter+none animation,
-    // doesn't emit animationend. Clear it on a timer.
-    if (sigClass === 'sig-steward-bc2') {
-      setTimeout(() => el.classList.remove(sigClass), 2000);
-    } else {
-      const onEnd = (ev) => {
-        // Clear when the character's specific keyframe ends
-        el.classList.remove(sigClass);
-        el.removeEventListener('animationend', onEnd);
-      };
-      el.addEventListener('animationend', onEnd);
-    }
-  });
-}
-
-/**
- * Clear all portrait reaction/breath/signature classes.
- * Called on conversation close.
- */
-function clearPortraitReactions(charId) {
-  _portraitsFor(charId).forEach(el => {
-    PORTRAIT_REACTION_CLASSES.forEach(c => el.classList.remove(c));
-  });
-}
-
-// Expose for UI
-window.applyPortraitBreath    = applyPortraitBreath;
-window.firePortraitReaction   = firePortraitReaction;
-window.firePortraitSignature  = firePortraitSignature;
-window.clearPortraitReactions = clearPortraitReactions;
-window.PORTRAIT_SIGNATURES    = PORTRAIT_SIGNATURES;
-
-// ═══════════════════════════════════════════════════════════
-
 // ── CHARACTER INTERROGATION DATA ──────────────────────────────
 // Full simulator data per character.
 // counter_strategy, optimal_technique, composure variants,
@@ -994,7 +816,7 @@ const INTERROGATION_DATA = {
         // "The candelabra — you knew its exact position."
         composed:   '"The south candelabra is positioned six feet from the lectern during normal Rite assembly." He says it precisely. "That evening it had been moved to four feet. Vivienne noticed at six-thirty when she was cleaning the south section. She came through the foyer and told me because she knew I was logging the room state." A pause. "I went to confirm it at seven-fifteen because the candelabra position affects the sightline from the south entrance to the lectern. A member entering from the south at the wrong moment would be partially occluded." He holds the notebook. "That is specific knowledge. I know it because I keep the record. I know the position of every fixed object in the Ballroom." He looks at you. "I am aware of what it looks like that I knew exactly where that candelabra was positioned at seven-fifteen."',
         controlled: '"Vivienne told me at six-thirty." A pause. "I went to confirm at seven-fifteen. The south candelabra had been moved from six feet to four feet from the lectern." He holds the notebook. "I know the position because I keep the record." Another pause. "I know what that sounds like now."',
-        strained:   '"Vivienne told me." A pause. "I went to check. Seven-fifteen." He looks at the notebook. "Four feet from the lectern. Not six." Another pause. "I know the positions of all the fixed objects. I keep the record." || He does not say what the record means now.',
+        strained:   '"Vivienne told me." A pause. "I went to check. Seven-fifteen." He looks at the notebook. "Four feet from the lectern. Not six." Another pause. "I know the positions of all the fixed objects. I keep the record." He does not say what the record means now.',
         fractured:  '"Vivienne." A beat. "She told me at six-thirty." Another beat. "I went to check." He holds the notebook. "Four feet from the lectern." A pause. "I know what that means now."',
         grants_node: 'northcott_candelabra_knowledge',
       },
@@ -1256,7 +1078,7 @@ const INTERROGATION_DATA = {
     },
 
     silence_fill: 'He adjusts something that doesn\'t need adjusting. "The candles were changed at six-fifteen. Both sets. Lady Ashworth asked for both." A pause. "That is not something I would usually note."',
-    silence_tell: 'A very long silence. Then: "I have been in this house for fourteen years." He looks at the portrait. "I know which decisions I made tonight." A pause. "I know which of them I cannot undo." || He does not say what the decisions were. He does not look away from the portrait.',
+    silence_tell: 'A very long silence. Then: "I have been in this house for fourteen years." He looks at the portrait. "I know which decisions I made tonight." A pause. "I know which of them I cannot undo." He does not say what the decisions were. He does not look away from the portrait.',
 
     scharff_corrections: {
       'steward_arrived_seven':  '"I arrived at five-thirty, sir. As I do every evening the Estate convenes. I have not arrived at seven in fourteen years."',
@@ -1421,7 +1243,7 @@ const INTERROGATION_DATA = {
         // "How are you holding up?"
         grants_node: 'ashworth_false_timeline_arrived_seven',
         timeline_critical: true,
-        approach_response: '"The question implies this evening was unexpected. It wasn\'t." She looks at him steadily. "Edmund told me something was going to happen tonight. I came because he asked me to."',
+        approach_response: '"The question implies this evening was unexpected. It wasn\'t." She looks at you steadily. "Edmund told me something was going to happen tonight. I came because he asked me to."',
         composed:   '"Edmund was particular about his work and particular about his risks." A pause. "He made arrangements before tonight. He made them carefully." She looks at Callum. "He said if something went wrong, find someone from outside. I am deciding whether you are who he meant."',
         controlled: '"He told me something was going to happen. He didn\'t tell me what. He asked me to come." A pause. "I came. I\'ve been here since seven."',
         strained:   '"He said trust no one inside the building." A pause. "He said that six weeks ago. I told him to cancel. He said he couldn\'t." Another pause. "It had gone too far for that."',
@@ -1464,7 +1286,7 @@ const INTERROGATION_DATA = {
         return_echo: 'She has not moved from the window. "Seven forty." She says it as you enter. A pause. "Two minutes." She does not say what she was doing for two minutes.',
         composed:   '"I go to that part of the garden when I need to think." She says it without looking at you. "I have gone there for twenty-two years. It is the part of the garden that faces away from the house." A pause. "I did not know I was beneath the balcony at seven forty. I know that now." She looks at the garden. "I was there because I had been in the building since seven and I needed to be outside for a moment. The announcement was fifteen minutes away." Another pause. "I walked to the garden because that is what I do when Edmund is about to do something I cannot stop." She is very still. "I did not stop him. I was in the garden."',
         controlled: '"Seven forty. The garden." A pause. "I walk there when I need to think." She looks at the garden. "I did not know it was beneath the balcony. I know now." Another pause. "I was there for approximately two minutes. I came back inside. The Rite began at eight."',
-        strained:   '"I was in the garden." A pause. She looks at the window. "I go there when I cannot change something that is about to happen." Another pause. "Two minutes. I came back inside." || She does not say what she was thinking during the two minutes.',
+        strained:   '"I was in the garden." A pause. She looks at the window. "I go there when I cannot change something that is about to happen." Another pause. "Two minutes. I came back inside." She does not say what she was thinking during the two minutes.',
         fractured:  '"The garden." A beat. "Seven forty." Another beat. "I go there when I cannot stop something." She looks at the window. "I came back inside."',
         snapback:   '"I was in the garden at seven forty. That is accurate."',
         grants_node: 'ashworth_garden_740',
@@ -1476,7 +1298,7 @@ const INTERROGATION_DATA = {
         return_echo: 'She has not moved from the window. "Seven forty." She says it as you enter. A pause. "Two minutes." She does not say what she was doing for two minutes.',
         composed:   '"I go to that part of the garden when I need to think." She says it without looking at you. "I have gone there for twenty-two years. It is the part of the garden that faces away from the house." A pause. "I did not know I was beneath the balcony at seven forty. I know that now." She looks at the garden. "I was there because I had been in the building since seven and I needed to be outside for a moment. The announcement was fifteen minutes away." Another pause. "I walked to the garden because that is what I do when Edmund is about to do something I cannot stop." She is very still. "I did not stop him. I was in the garden."',
         controlled: '"Seven forty. The garden." A pause. "I walk there when I need to think." She looks at the garden. "I did not know it was beneath the balcony. I know now." Another pause. "I was there for approximately two minutes. I came back inside. The Rite began at eight."',
-        strained:   '"I was in the garden." A pause. She looks at the window. "I go there when I cannot change something that is about to happen." Another pause. "Two minutes. I came back inside." || She does not say what she was thinking during the two minutes.',
+        strained:   '"I was in the garden." A pause. She looks at the window. "I go there when I cannot change something that is about to happen." Another pause. "Two minutes. I came back inside." She does not say what she was thinking during the two minutes.',
         fractured:  '"The garden." A beat. "Seven forty." Another beat. "I go there when I cannot stop something." She looks at the window. "I came back inside."',
         snapback:   '"I was in the garden at seven forty. That is accurate."',
         grants_node: 'ashworth_garden_740',
@@ -2474,7 +2296,7 @@ const INTERROGATION_DATA = {
         grants_node: 'crane_first_visit_ashworth_alive',
       },
       'Q4': {
-        composed:   '"I left my medical case on the balcony during the earlier visit." She says it steadily. "After the examination I went back to retrieve it." A pause. "That is the reason for the second trip upstairs." || She does not say what else she found.',
+        composed:   '"I left my medical case on the balcony during the earlier visit." She says it steadily. "After the examination I went back to retrieve it." A pause. "That is the reason for the second trip upstairs." She does not say what else she found.',
         controlled: '"I went back for my case." A pause. "I had left it upstairs during the earlier visit." She touches the bag. "I retrieved it." Another pause. "That is the reason for the second trip."',
         strained:   '"I went back for my case." A pause. "The earlier visit. I left it there." She touches the bag. "I went back." Another pause. "I came back downstairs."',
         snapback:   '"I retrieved my medical case from the balcony. That is the documented reason for the second visit."',
@@ -2741,7 +2563,7 @@ const INTERROGATION_DATA = {
     },  // end composure_variants
 
     silence_fill: 'He picks up the drink. Puts it down. "I\'ve been in the Compact\'s arrangements for three years. I stopped three months ago." A pause. "Something changed in the questions they were asking. The precision of them." He doesn\'t explain further.',
-    silence_tell: 'The longest pause of the evening. He picks up the drink. Actually takes it. Sets it down empty. "Someone was here before the Rite." He says it to the ashtray. "I noted the time. I noted what he was carrying." Another pause. "I have been trying to decide since eight-oh-one whether what I noted was enough to change what happened. It wasn\'t. But I noted it." || He does not say who. He does not say what he was carrying. He picks up the cigarette and does not light it.',
+    silence_tell: 'The longest pause of the evening. He picks up the drink. Actually takes it. Sets it down empty. "Someone was here before the Rite." He says it to the ashtray. "I noted the time. I noted what he was carrying." Another pause. "I have been trying to decide since eight-oh-one whether what I noted was enough to change what happened. It wasn\'t. But I noted it." He does not say who. He does not say what he was carrying. He picks up the cigarette and does not light it.',
 
     word_tell: null,
 
@@ -3284,7 +3106,7 @@ const INTERROGATION_DATA = {
             text:     '"Why didn\'t you say anything."',
             type:     'focused_follow_up',
             cost:     10,
-            response_composed:   'The note said not to involve himself in anything that happened outside. He had read it three times. He is a barrister. "I know what withholding observation evidence means." A pause. "I have been in this room since seven making that accounting." || He does not say what the accounting produced. The accounting is still running.',
+            response_composed:   'The note said not to involve himself in anything that happened outside. He had read it three times. He is a barrister. "I know what withholding observation evidence means." A pause. "I have been in this room since seven making that accounting." He does not say what the accounting produced. The accounting is still running.',
             unlocks: 'GA3',
             grants_node: 'greaves_chose_note_over_testimony',
           },
@@ -4406,11 +4228,6 @@ function _applyComposureCost(charId, baseCost) {
     updateComposureState(charId);
   }
 
-  // PORTRAIT LAYER 1 — update ambient breath to match new composure state
-  try {
-    if (typeof applyPortraitBreath === 'function') applyPortraitBreath(charId);
-  } catch(e) { /* non-fatal */ }
-
   // Check fracture — threshold lowered by escalation bonus if set.
   // (#F level 3: fracture floor "rise" means harder-to-break —
   // the break point drops so composure must fall further.)
@@ -4419,10 +4236,6 @@ function _applyComposureCost(charId, baseCost) {
     ? getFractureFloorBonus(charId) : 0;
   const threshold = Math.max(0, baseThreshold - bonus);
   if (newComposure <= threshold && current > threshold) {
-    // PORTRAIT LAYER 2 — fracture crossed: fire break reaction
-    try {
-      if (typeof firePortraitReaction === 'function') firePortraitReaction(charId, 'break');
-    } catch(e) { /* non-fatal */ }
     _fireFracture(charId);
   }
 
@@ -4774,34 +4587,6 @@ function askBranchQuestion(charId, branchId, qId, q) {
   const cost = COMPOSURE_COSTS[q.type] || COMPOSURE_COSTS.focused_follow_up;
   _applyComposureCost(charId, cost);
 
-  // ── PORTRAIT LAYER 3 — scripted signature on pivot branch qIds ──
-  // Six pivot moments fire here: surgeon:SC1, crane:CB3, steward:BC2,
-  // vivienne:VC2, lady-ashworth:BC3, hatch:HB2. Non-pivot branches
-  // fall through silently (function is a no-op for unknown keys).
-  try {
-    if (typeof firePortraitSignature === 'function') firePortraitSignature(charId, qId);
-  } catch(e) { /* non-fatal */ }
-
-  // ── PORTRAIT LAYER 2 — lockin on grants_node ──────────────
-  try {
-    if (q.grants_node && typeof firePortraitReaction === 'function') {
-      setTimeout(() => firePortraitReaction(charId, 'lockin'), 200);
-    }
-  } catch(e) { /* non-fatal */ }
-
-  // ── PORTRAIT LAYER 2 — classification reaction (if no node granted) ──
-  try {
-    const technique = _interrogationState.selectedTechnique;
-    if (technique && !q.grants_node) {
-      const classification = _classifyEffectiveness(charId, technique);
-      if (classification === 'optimal' || classification === 'poor') {
-        if (typeof firePortraitReaction === 'function') {
-          setTimeout(() => firePortraitReaction(charId, classification), 300);
-        }
-      }
-    }
-  } catch(e) { /* non-fatal */ }
-
   // Get composure-appropriate response
   const charState  = (gameState.characters && gameState.characters[charId]) || {};
   const composure  = charState.composure !== undefined ? charState.composure : 100;
@@ -5052,20 +4837,6 @@ window.askQuestion = function(charId, qId) {
   const qType = _inferQType(qId, q);
   NocturneEngine.emit('questionAnswered', { charId, qId, qType });
 
-  // ── PORTRAIT LAYER 3 — scripted signature on pivot moments ──
-  // Fires BEFORE the response-complete reactions so the signature
-  // leads the visual beat (matches cinematic beat order).
-  try {
-    if (typeof firePortraitSignature === 'function') firePortraitSignature(charId, qId);
-  } catch(e) { /* non-fatal */ }
-
-  // ── PORTRAIT LAYER 2 — lockin reaction on timeline node grant ──
-  try {
-    if (q && q.grants_node && typeof firePortraitReaction === 'function') {
-      setTimeout(() => firePortraitReaction(charId, 'lockin'), 200);
-    }
-  } catch(e) { /* non-fatal */ }
-
   // ── CONSEQUENCE ECHO (#4) ──────────────────────────────
   // Surface one echo per question, styled as a field note
   // beneath the response. Reports what the technique just did
@@ -5089,24 +4860,10 @@ window.askQuestion = function(charId, qId) {
         }, 400);
       }
 
-      // ── PORTRAIT LAYER 2 — per-question classification reaction ──
-      // Fires AFTER grants_node lockin (if both apply) so lockin wins
-      // visually. Classification maps optimal→recognition, poor→closing.
-      const classification = _classifyEffectiveness(charId, technique);
-      try {
-        if (classification === 'optimal' || classification === 'poor') {
-          // Only fire if no grants_node (lockin already covered the beat)
-          if (!q || !q.grants_node) {
-            if (typeof firePortraitReaction === 'function') {
-              setTimeout(() => firePortraitReaction(charId, classification), 300);
-            }
-          }
-        }
-      } catch(e) { /* non-fatal */ }
-
       // ── ESCALATION (#F) ──────────────────────────────────
       // High-stakes characters escalate on consecutive poor choices.
       // Level 2: branch lock. Level 3: fracture floor rise.
+      const classification = _classifyEffectiveness(charId, technique);
       const escalation = _applyEscalation(charId, classification);
       if (escalation) {
         setTimeout(() => {
