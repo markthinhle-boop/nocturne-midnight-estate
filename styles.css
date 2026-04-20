@@ -1558,89 +1558,263 @@ html, body {
   50%     { opacity: 0.4; }
 }
 
-/* ── CHARACTER PORTRAIT ANIMATIONS ─────────────────────── */
-#char-portrait {
-  transition: transform 300ms ease-out, filter 400ms ease;
-  transform-origin: center bottom;
-}
-/* Speaking bob — fires while response text appears */
-#char-portrait.speaking {
-  animation: portraitBob 600ms ease-in-out infinite;
-}
-@keyframes portraitBob {
-  0%,100% { transform: translateY(0px); }
-  50%     { transform: translateY(-3px); }
-}
-/* Composure cracking — shake */
-#char-portrait.composure-cracking {
-  animation: portraitShake 300ms ease-in-out;
-}
-@keyframes portraitShake {
-  0%,100% { transform: translateX(0px); }
-  25%     { transform: translateX(-2px); }
-  75%     { transform: translateX(2px); }
-}
-/* Composure broken — tilt and hold */
-#char-portrait.composure-broken {
-  transform: rotate(2deg) !important;
-  transition: transform 400ms ease-out;
-}
-/* Snap-back lurch */
-#char-portrait.snap-lurch {
-  animation: portraitLurch 300ms ease-out;
-}
-@keyframes portraitLurch {
-  0%   { transform: scale(1.0); }
-  40%  { transform: scale(1.05); }
-  100% { transform: scale(1.0); }
-}
-/* Deception hit recoil */
-#char-portrait.deception-recoil {
-  animation: portraitRecoil 230ms ease-out;
-}
-@keyframes portraitRecoil {
-  0%   { transform: scale(1.0); }
-  40%  { transform: scale(0.97); }
-  100% { transform: scale(1.0); }
-}
-/* Final line — pull back and hold */
-#char-portrait.final-pullback {
-  transform: scale(0.97) !important;
-  transition: transform 200ms ease-out;
-}
-/* Surgeon — turns away 3deg on Q3 */
-#char-portrait.turn-away {
-  transform: rotate(3deg) !important;
-  transition: transform 400ms ease-out;
-}
-/* Uninvited — imperceptible creep */
-#char-portrait.uninvited-creep {
-  transform: scale(1.03) !important;
-  transition: transform 1000ms ease-in-out;
-}
-/* Sovereign desaturate over Elara story */
-#char-portrait.elara-desaturate {
-  filter: saturate(0.3);
-  transition: filter 8000ms linear;
-}
-/* Lady Ashworth turns away on final line */
-#char-portrait.turned-away {
-  transform: rotate(-180deg) !important;
-  transition: transform 600ms ease-in-out;
+/* ═══════════════════════════════════════════════════════════════
+   CHARACTER PORTRAIT — WORLD-CLASS REACTION SYSTEM
+   Three layers: ambient breathing (Layer 1), per-question beats
+   (Layer 2), per-character signatures (Layer 3). Replaces the
+   previous shake/tilt/red-tint system entirely.
+   
+   Design principle: stillness, gaze, and lighting shift.
+   Color-tint and shake are lazy — real interrogation reads in
+   micro-timing. A face that holds too long is more disturbing
+   than a face that shakes.
+═══════════════════════════════════════════════════════════════ */
+
+/* Base portrait — both per-character and legacy single portrait */
+#char-portrait,
+.conv-npc-portrait {
+  transition:
+    transform      600ms cubic-bezier(0.4, 0, 0.2, 1),
+    filter         800ms cubic-bezier(0.4, 0, 0.2, 1),
+    opacity        400ms ease;
+  transform-origin: center center;
+  will-change: transform, filter;
 }
 
-/* ── COMPOSURE BORDER ANIMATIONS ─────────────────────────── */
-#conversation-panel.composure-normal   { border-top: 2px solid var(--border); }
-#conversation-panel.composure-cracking { border-top: 2px solid var(--gold); animation: composureTremble 4s ease-in-out infinite; }
-#conversation-panel.composure-broken   { border-top: 2px solid #8B0000; animation: composureBreak 6s ease-in-out infinite; }
-#conversation-panel.composure-shattered{ border-top: 2px solid #C84040; }
-@keyframes composureTremble {
-  0%,100% { border-top-color: var(--gold); }
-  50%     { border-top-color: rgba(184,150,12,0.4); }
+/* ─────────────────────────────────────────────────────────────
+   LAYER 1 — AMBIENT BREATHING
+   Always running on the active portrait. Mirrors composure state.
+   Composed = slow, regular. Strained = faster, irregular.
+   Fractured = stillness. The stillness is the point.
+───────────────────────────────────────────────────────────── */
+
+/* Composed: slow 4s cycle, 1px rise. Calm respiration. */
+.conv-npc-portrait.breath-composed,
+#char-portrait.breath-composed {
+  animation: breathComposed 4s ease-in-out infinite;
 }
-@keyframes composureBreak {
-  0%,100% { border-top-color: #8B0000; }
-  50%     { border-top-color: rgba(139,0,0,0.3); }
+@keyframes breathComposed {
+  0%,100% { transform: translateY(0px); }
+  50%     { transform: translateY(-1px); }
+}
+
+/* Controlled: 3s cycle, 1.5px. Attention maintained. */
+.conv-npc-portrait.breath-controlled,
+#char-portrait.breath-controlled {
+  animation: breathControlled 3s ease-in-out infinite;
+}
+@keyframes breathControlled {
+  0%,100% { transform: translateY(0px); }
+  50%     { transform: translateY(-1.5px); }
+}
+
+/* Strained: 2s cycle, 2px, uneven timing. Shallow breath. */
+.conv-npc-portrait.breath-strained,
+#char-portrait.breath-strained {
+  animation: breathStrained 2s ease-in-out infinite;
+}
+@keyframes breathStrained {
+  0%   { transform: translateY(0px); }
+  35%  { transform: translateY(-2px); }
+  55%  { transform: translateY(-1.5px); }
+  100% { transform: translateY(0px); }
+}
+
+/* Fractured: breath HOLDS. Stillness. */
+.conv-npc-portrait.breath-fractured,
+#char-portrait.breath-fractured {
+  animation: none;
+  transform: translateY(0px);
+  filter: saturate(0.88) brightness(0.96);
+}
+
+/* Collapsed: stone. No movement, desaturated further. */
+.conv-npc-portrait.breath-collapsed,
+#char-portrait.breath-collapsed {
+  animation: none;
+  transform: translateY(0px) scale(0.995);
+  filter: saturate(0.75) brightness(0.92) contrast(1.05);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   LAYER 2 — PER-QUESTION REACTIONS
+   Fires once when a response completes. Classification-based.
+   One-shot animations. Never persist. Do not overlap with breath.
+───────────────────────────────────────────────────────────── */
+
+/* (a) RECOGNITION — optimal technique hit.
+   Portrait registers that you did the right thing.
+   Micro-tilt toward camera, 800ms hold, slow return. */
+.conv-npc-portrait.react-recognition,
+#char-portrait.react-recognition {
+  animation: reactRecognition 2000ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+@keyframes reactRecognition {
+  0%   { transform: rotate(0deg) scale(1) translateZ(0); filter: none; }
+  20%  { transform: rotate(-0.5deg) scale(1.008); filter: brightness(1.04) saturate(1.03); }
+  60%  { transform: rotate(-0.5deg) scale(1.008); filter: brightness(1.04) saturate(1.03); }
+  100% { transform: rotate(0deg) scale(1); filter: none; }
+}
+
+/* (b) CLOSING — poor technique.
+   Saturation drops, lighting cools, slow restore.
+   The suspect just decided you are not capable. */
+.conv-npc-portrait.react-closing,
+#char-portrait.react-closing {
+  animation: reactClosing 2400ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+@keyframes reactClosing {
+  0%   { filter: none; }
+  15%  { filter: saturate(0.78) brightness(0.94) hue-rotate(-4deg); }
+  65%  { filter: saturate(0.78) brightness(0.94) hue-rotate(-4deg); }
+  100% { filter: none; }
+}
+
+/* (c) NEUTRAL — nothing. No class applied. */
+
+/* (d) LOCK-IN — timeline node granted.
+   Micro-sharpening. Saturation + contrast briefly up.
+   "That just went on the record." */
+.conv-npc-portrait.react-lockin,
+#char-portrait.react-lockin {
+  animation: reactLockin 1800ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+@keyframes reactLockin {
+  0%   { filter: none; transform: scale(1); }
+  25%  { filter: saturate(1.1) contrast(1.05) brightness(1.02); transform: scale(1.005); }
+  70%  { filter: saturate(1.1) contrast(1.05) brightness(1.02); transform: scale(1.005); }
+  100% { filter: none; transform: scale(1); }
+}
+
+/* (e) BREAK — fracture threshold crossed.
+   Micro-shake THEN desaturate THEN tilt hold.
+   The mask finally slips. Persists until conversation ends. */
+.conv-npc-portrait.react-break,
+#char-portrait.react-break {
+  animation: reactBreak 1000ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+@keyframes reactBreak {
+  0%   { transform: translateX(0) rotate(0deg); filter: none; }
+  8%   { transform: translateX(-1px) rotate(0deg); }
+  16%  { transform: translateX(1px) rotate(0deg); }
+  24%  { transform: translateX(-0.5px) rotate(0deg); }
+  32%  { transform: translateX(0) rotate(0deg); filter: saturate(0.85); }
+  60%  { transform: translateX(0) rotate(1.2deg); filter: saturate(0.78) brightness(0.95); }
+  100% { transform: translateX(0) rotate(1.2deg); filter: saturate(0.78) brightness(0.95); }
+}
+
+/* Persistent broken state — applied after react-break finishes */
+.conv-npc-portrait.state-broken,
+#char-portrait.state-broken {
+  transform: rotate(1.2deg);
+  filter: saturate(0.78) brightness(0.95);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   LAYER 3 — PER-CHARACTER SIGNATURES
+   Unique portrait reactions on scripted pivot moments.
+   These are the moments real directors plan shot-by-shot.
+───────────────────────────────────────────────────────────── */
+
+/* SURGEON — SC1 "You were at the railing."
+   Portrait holds gaze 1500ms longer than usual.
+   Lighting cools over the hold. The warmth goes out. */
+.conv-npc-portrait.sig-surgeon-sc1,
+#char-portrait.sig-surgeon-sc1 {
+  animation: sigSurgeonSC1 2400ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+@keyframes sigSurgeonSC1 {
+  0%   { filter: none; transform: scale(1); }
+  15%  { filter: hue-rotate(-2deg) brightness(0.99); transform: scale(1.002); }
+  65%  { filter: hue-rotate(-6deg) brightness(0.96) saturate(0.92); transform: scale(1.002); }
+  100% { filter: hue-rotate(-6deg) brightness(0.96) saturate(0.92); transform: scale(1); }
+}
+
+/* CRANE — CB3 "Two reasons."
+   Gaze drops down-left. Committed-truth retrieval tell.
+   Imperceptible rotation + very slight Y shift. */
+.conv-npc-portrait.sig-crane-cb3,
+#char-portrait.sig-crane-cb3 {
+  animation: sigCraneCB3 1800ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+@keyframes sigCraneCB3 {
+  0%   { transform: rotate(0deg) translateY(0); }
+  25%  { transform: rotate(-0.3deg) translateY(1px); }
+  75%  { transform: rotate(-0.3deg) translateY(1px); }
+  100% { transform: rotate(0deg) translateY(0); }
+}
+
+/* STEWARD — BC2 Clara reveal.
+   ABSOLUTE stillness for 2000ms. No breath. The fourteen-year wall. */
+.conv-npc-portrait.sig-steward-bc2,
+#char-portrait.sig-steward-bc2 {
+  animation: none !important;
+  transform: translateY(0) !important;
+  filter: saturate(0.92) !important;
+  transition: filter 1200ms ease-in-out;
+}
+
+/* VIVIENNE — VC2 the push witnessed.
+   Camera pulls IN. The room closes. */
+.conv-npc-portrait.sig-vivienne-vc2,
+#char-portrait.sig-vivienne-vc2 {
+  animation: sigVivienneVC2 1800ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+@keyframes sigVivienneVC2 {
+  0%   { transform: scale(1); filter: none; }
+  40%  { transform: scale(1.03); filter: brightness(1.03) contrast(1.04); }
+  100% { transform: scale(1.03); filter: brightness(1.03) contrast(1.04); }
+}
+
+/* LADY ASHWORTH — BC3 "Edmund chose you."
+   Eyes go to the garden. Portrait shifts down 2px for 1800ms,
+   slowly returns. Looking past camera. */
+.conv-npc-portrait.sig-ashworth-bc3,
+#char-portrait.sig-ashworth-bc3 {
+  animation: sigAshworthBC3 2400ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+@keyframes sigAshworthBC3 {
+  0%   { transform: translateY(0); }
+  30%  { transform: translateY(2px); }
+  75%  { transform: translateY(2px); }
+  100% { transform: translateY(0); }
+}
+
+/* HATCH — HB2 the record question.
+   A single nod. The only character who gets one.
+   His acknowledgement that the record is what matters. */
+.conv-npc-portrait.sig-hatch-hb2,
+#char-portrait.sig-hatch-hb2 {
+  animation: sigHatchHB2 900ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+@keyframes sigHatchHB2 {
+  0%   { transform: translateY(0); }
+  35%  { transform: translateY(3px); }
+  65%  { transform: translateY(0px); }
+  100% { transform: translateY(0); }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   COMPOSURE PANEL BORDER — subtle, not emergency-red
+   Replaces the old bright-red shattered border with something
+   that reads as "the conversation has changed" not "FAILURE"
+───────────────────────────────────────────────────────────── */
+#conversation-panel.composure-normal    { border-top: 2px solid var(--border); }
+#conversation-panel.composure-cracking  {
+  border-top: 2px solid var(--gold);
+  animation: borderTremble 4s ease-in-out infinite;
+}
+#conversation-panel.composure-broken    {
+  border-top: 2px solid rgba(120, 60, 50, 0.5);
+  transition: border-color 1200ms ease;
+}
+#conversation-panel.composure-shattered {
+  border-top: 2px solid rgba(150, 70, 60, 0.65);
+  transition: border-color 1200ms ease;
+}
+@keyframes borderTremble {
+  0%,100% { border-top-color: var(--gold); }
+  50%     { border-top-color: rgba(184,150,12,0.35); }
 }
 
 /* ── QUESTION GOLD FLASH ─────────────────────────────────── */

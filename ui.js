@@ -1741,6 +1741,17 @@ function _openConversationDirect(charId) {
       }
     }
   } catch(e) { /* non-fatal */ }
+
+  // ── PORTRAIT LAYER 1 — start ambient breathing ─────────────────
+  // Initialize breath class based on current composure. Runs for the
+  // life of the conversation; subsequent composure changes swap class
+  // via applyPortraitBreath() called from _applyComposureCost.
+  try {
+    if (typeof applyPortraitBreath === 'function') {
+      // Use rAF so the portrait element is definitely in the DOM
+      requestAnimationFrame(() => applyPortraitBreath(charId));
+    }
+  } catch(e) { /* non-fatal */ }
 }
 
 // openConversation: public entry point.
@@ -1874,6 +1885,16 @@ function closeConversation() {
 
 function _closeConversationPanel() {
   document.getElementById('conversation-panel').classList.remove('open');
+
+  // ── PORTRAIT — clear all reaction classes ────────────────────
+  // Breath + reactions + signatures all cleared on close so next
+  // conversation opens clean. state-broken does NOT persist across
+  // conversations — each session is a fresh read of the suspect.
+  try {
+    if (_activeCharId && typeof clearPortraitReactions === 'function') {
+      clearPortraitReactions(_activeCharId);
+    }
+  } catch(e) { /* non-fatal */ }
 
   const UNINVITED_ROOMS = ['ballroom', 'library', 'vault', 'wine-cellar'];
   const curRoom = gameState && gameState.currentRoom;

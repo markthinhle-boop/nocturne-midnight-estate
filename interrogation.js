@@ -664,6 +664,184 @@ window.resetEscalation          = resetEscalation;
 window._applyEscalation         = _applyEscalation;
 window._getEscalation           = _getEscalation;
 
+// ═══════════════════════════════════════════════════════════
+// PORTRAIT REACTION ENGINE — world-class 3-layer system
+// ═══════════════════════════════════════════════════════════
+// Layer 1: ambient breathing keyed to composure state
+// Layer 2: per-question beats (optimal/poor/neutral/lockin/break)
+// Layer 3: per-character scripted signatures on pivot moments
+//
+// Targets both legacy #char-portrait and per-character
+// .conv-npc-portrait inside #conv-card-${charId}.
+// All animation classes are additive and one-shot except breath-*
+// (persistent) and state-broken (persistent).
+// ═══════════════════════════════════════════════════════════
+
+// All portrait reaction class names — used for cleanup sweeps
+const PORTRAIT_REACTION_CLASSES = [
+  'breath-composed','breath-controlled','breath-strained','breath-fractured','breath-collapsed',
+  'react-recognition','react-closing','react-lockin','react-break',
+  'state-broken',
+  'sig-surgeon-sc1','sig-crane-cb3','sig-steward-bc2','sig-vivienne-vc2','sig-ashworth-bc3','sig-hatch-hb2',
+];
+
+// All breath class names (subset — used for swap-only, preserves reactions)
+const PORTRAIT_BREATH_CLASSES = [
+  'breath-composed','breath-controlled','breath-strained','breath-fractured','breath-collapsed',
+];
+
+// Scripted pivot signatures — key is `${charId}:${qId}`
+const PORTRAIT_SIGNATURES = {
+  'surgeon:SC1':       'sig-surgeon-sc1',
+  'crane:CB3':         'sig-crane-cb3',
+  'steward:BC2':       'sig-steward-bc2',
+  'vivienne:VC2':      'sig-vivienne-vc2',
+  'lady-ashworth:BC3': 'sig-ashworth-bc3',
+  'hatch:HB2':         'sig-hatch-hb2',
+};
+
+/**
+ * Return all portrait DOM elements for a given charId.
+ * Covers: #char-portrait (legacy single), #conv-portrait-${charId} (multi).
+ */
+function _portraitsFor(charId) {
+  const out = [];
+  const legacy = document.getElementById('char-portrait');
+  if (legacy) out.push(legacy);
+  if (charId) {
+    const multi = document.getElementById(`conv-portrait-${charId}`);
+    if (multi) out.push(multi);
+  }
+  return out;
+}
+
+/**
+ * Map composure number to breath class.
+ * Mirrors the composure_state thresholds used elsewhere (70/55/40/20).
+ */
+function _breathClassForComposure(composure) {
+  if (composure == null) composure = 100;
+  if (composure > 70) return 'breath-composed';
+  if (composure > 55) return 'breath-controlled';
+  if (composure > 40) return 'breath-strained';
+  if (composure > 20) return 'breath-fractured';
+  return 'breath-collapsed';
+}
+
+/**
+ * LAYER 1 — apply ambient breath based on current composure.
+ * Called on conversation open and after each composure change.
+ * Persistent class — swap only, don't nuke reaction classes.
+ */
+function applyPortraitBreath(charId) {
+  const charState = (gameState.characters && gameState.characters[charId]) || {};
+  const composure = charState.composure !== undefined ? charState.composure : 100;
+  const targetClass = _breathClassForComposure(composure);
+  _portraitsFor(charId).forEach(el => {
+    PORTRAIT_BREATH_CLASSES.forEach(c => { if (c !== targetClass) el.classList.remove(c); });
+    el.classList.add(targetClass);
+  });
+}
+
+/**
+ * LAYER 2 — fire a per-question reaction.
+ * Classifications: 'optimal' -> recognition, 'poor' -> closing,
+ * 'neutral' -> nothing, 'lockin' (node granted) -> lockin,
+ * 'break' (fracture crossed) -> break (persists via state-broken).
+ * One-shot: class is added, animationend clears it.
+ */
+function firePortraitReaction(charId, reactionType) {
+  if (!reactionType || reactionType === 'neutral') return;
+  const classMap = {
+    'optimal':     'react-recognition',
+    'poor':        'react-closing',
+    'lockin':      'react-lockin',
+    'break':       'react-break',
+  };
+  const cls = classMap[reactionType];
+  if (!cls) return;
+  _portraitsFor(charId).forEach(el => {
+    // Clear any other reaction classes first to avoid conflicts
+    ['react-recognition','react-closing','react-lockin','react-break'].forEach(c => el.classList.remove(c));
+    // Force reflow so animation restarts if same class re-added
+    // eslint-disable-next-line no-unused-expressions
+    el.offsetWidth;
+    el.classList.add(cls);
+    // For the break reaction: after animation completes, persist state-broken
+    if (cls === 'react-break') {
+      const onEnd = (ev) => {
+        if (ev.animationName && ev.animationName.startsWith('reactBreak')) {
+          el.classList.remove('react-break');
+          el.classList.add('state-broken');
+          el.removeEventListener('animationend', onEnd);
+        }
+      };
+      el.addEventListener('animationend', onEnd);
+    } else {
+      // Self-clear other one-shot reactions when their animation ends
+      const onEnd = (ev) => {
+        if (ev.animationName && (
+          ev.animationName.startsWith('reactRecognition') ||
+          ev.animationName.startsWith('reactClosing') ||
+          ev.animationName.startsWith('reactLockin'))) {
+          el.classList.remove(cls);
+          el.removeEventListener('animationend', onEnd);
+        }
+      };
+      el.addEventListener('animationend', onEnd);
+    }
+  });
+}
+
+/**
+ * LAYER 3 — fire a per-character scripted portrait signature.
+ * Called from askQuestion / askBranchQuestion when qId matches
+ * a known pivot key. One-shot (signature classes clear themselves).
+ */
+function firePortraitSignature(charId, qId) {
+  const key = `${charId}:${qId}`;
+  const sigClass = PORTRAIT_SIGNATURES[key];
+  if (!sigClass) return;
+  _portraitsFor(charId).forEach(el => {
+    // Clear any prior signature
+    Object.values(PORTRAIT_SIGNATURES).forEach(c => el.classList.remove(c));
+    // eslint-disable-next-line no-unused-expressions
+    el.offsetWidth;
+    el.classList.add(sigClass);
+    // Steward's sig-steward-bc2 is a !important filter+none animation,
+    // doesn't emit animationend. Clear it on a timer.
+    if (sigClass === 'sig-steward-bc2') {
+      setTimeout(() => el.classList.remove(sigClass), 2000);
+    } else {
+      const onEnd = (ev) => {
+        // Clear when the character's specific keyframe ends
+        el.classList.remove(sigClass);
+        el.removeEventListener('animationend', onEnd);
+      };
+      el.addEventListener('animationend', onEnd);
+    }
+  });
+}
+
+/**
+ * Clear all portrait reaction/breath/signature classes.
+ * Called on conversation close.
+ */
+function clearPortraitReactions(charId) {
+  _portraitsFor(charId).forEach(el => {
+    PORTRAIT_REACTION_CLASSES.forEach(c => el.classList.remove(c));
+  });
+}
+
+// Expose for UI
+window.applyPortraitBreath    = applyPortraitBreath;
+window.firePortraitReaction   = firePortraitReaction;
+window.firePortraitSignature  = firePortraitSignature;
+window.clearPortraitReactions = clearPortraitReactions;
+window.PORTRAIT_SIGNATURES    = PORTRAIT_SIGNATURES;
+
+// ═══════════════════════════════════════════════════════════
+
 // ── CHARACTER INTERROGATION DATA ──────────────────────────────
 // Full simulator data per character.
 // counter_strategy, optimal_technique, composure variants,
@@ -4228,6 +4406,11 @@ function _applyComposureCost(charId, baseCost) {
     updateComposureState(charId);
   }
 
+  // PORTRAIT LAYER 1 — update ambient breath to match new composure state
+  try {
+    if (typeof applyPortraitBreath === 'function') applyPortraitBreath(charId);
+  } catch(e) { /* non-fatal */ }
+
   // Check fracture — threshold lowered by escalation bonus if set.
   // (#F level 3: fracture floor "rise" means harder-to-break —
   // the break point drops so composure must fall further.)
@@ -4236,6 +4419,10 @@ function _applyComposureCost(charId, baseCost) {
     ? getFractureFloorBonus(charId) : 0;
   const threshold = Math.max(0, baseThreshold - bonus);
   if (newComposure <= threshold && current > threshold) {
+    // PORTRAIT LAYER 2 — fracture crossed: fire break reaction
+    try {
+      if (typeof firePortraitReaction === 'function') firePortraitReaction(charId, 'break');
+    } catch(e) { /* non-fatal */ }
     _fireFracture(charId);
   }
 
@@ -4587,6 +4774,34 @@ function askBranchQuestion(charId, branchId, qId, q) {
   const cost = COMPOSURE_COSTS[q.type] || COMPOSURE_COSTS.focused_follow_up;
   _applyComposureCost(charId, cost);
 
+  // ── PORTRAIT LAYER 3 — scripted signature on pivot branch qIds ──
+  // Six pivot moments fire here: surgeon:SC1, crane:CB3, steward:BC2,
+  // vivienne:VC2, lady-ashworth:BC3, hatch:HB2. Non-pivot branches
+  // fall through silently (function is a no-op for unknown keys).
+  try {
+    if (typeof firePortraitSignature === 'function') firePortraitSignature(charId, qId);
+  } catch(e) { /* non-fatal */ }
+
+  // ── PORTRAIT LAYER 2 — lockin on grants_node ──────────────
+  try {
+    if (q.grants_node && typeof firePortraitReaction === 'function') {
+      setTimeout(() => firePortraitReaction(charId, 'lockin'), 200);
+    }
+  } catch(e) { /* non-fatal */ }
+
+  // ── PORTRAIT LAYER 2 — classification reaction (if no node granted) ──
+  try {
+    const technique = _interrogationState.selectedTechnique;
+    if (technique && !q.grants_node) {
+      const classification = _classifyEffectiveness(charId, technique);
+      if (classification === 'optimal' || classification === 'poor') {
+        if (typeof firePortraitReaction === 'function') {
+          setTimeout(() => firePortraitReaction(charId, classification), 300);
+        }
+      }
+    }
+  } catch(e) { /* non-fatal */ }
+
   // Get composure-appropriate response
   const charState  = (gameState.characters && gameState.characters[charId]) || {};
   const composure  = charState.composure !== undefined ? charState.composure : 100;
@@ -4837,6 +5052,20 @@ window.askQuestion = function(charId, qId) {
   const qType = _inferQType(qId, q);
   NocturneEngine.emit('questionAnswered', { charId, qId, qType });
 
+  // ── PORTRAIT LAYER 3 — scripted signature on pivot moments ──
+  // Fires BEFORE the response-complete reactions so the signature
+  // leads the visual beat (matches cinematic beat order).
+  try {
+    if (typeof firePortraitSignature === 'function') firePortraitSignature(charId, qId);
+  } catch(e) { /* non-fatal */ }
+
+  // ── PORTRAIT LAYER 2 — lockin reaction on timeline node grant ──
+  try {
+    if (q && q.grants_node && typeof firePortraitReaction === 'function') {
+      setTimeout(() => firePortraitReaction(charId, 'lockin'), 200);
+    }
+  } catch(e) { /* non-fatal */ }
+
   // ── CONSEQUENCE ECHO (#4) ──────────────────────────────
   // Surface one echo per question, styled as a field note
   // beneath the response. Reports what the technique just did
@@ -4860,10 +5089,24 @@ window.askQuestion = function(charId, qId) {
         }, 400);
       }
 
+      // ── PORTRAIT LAYER 2 — per-question classification reaction ──
+      // Fires AFTER grants_node lockin (if both apply) so lockin wins
+      // visually. Classification maps optimal→recognition, poor→closing.
+      const classification = _classifyEffectiveness(charId, technique);
+      try {
+        if (classification === 'optimal' || classification === 'poor') {
+          // Only fire if no grants_node (lockin already covered the beat)
+          if (!q || !q.grants_node) {
+            if (typeof firePortraitReaction === 'function') {
+              setTimeout(() => firePortraitReaction(charId, classification), 300);
+            }
+          }
+        }
+      } catch(e) { /* non-fatal */ }
+
       // ── ESCALATION (#F) ──────────────────────────────────
       // High-stakes characters escalate on consecutive poor choices.
       // Level 2: branch lock. Level 3: fracture floor rise.
-      const classification = _classifyEffectiveness(charId, technique);
       const escalation = _applyEscalation(charId, classification);
       if (escalation) {
         setTimeout(() => {
