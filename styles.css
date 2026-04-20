@@ -1588,35 +1588,35 @@ html, body {
    Fractured = stillness. The stillness is the point.
 ───────────────────────────────────────────────────────────── */
 
-/* Composed: slow 4s cycle, 1px rise. Calm respiration. */
+/* Composed: slow 4s cycle, deep 2.5px rise. Calm full respiration. */
 .conv-npc-portrait.breath-composed,
 #char-portrait.breath-composed {
   animation: breathComposed 4s ease-in-out infinite;
 }
 @keyframes breathComposed {
   0%,100% { transform: translateY(0px); }
-  50%     { transform: translateY(-1px); }
+  50%     { transform: translateY(-2.5px); }
 }
 
-/* Controlled: 3s cycle, 1.5px. Attention maintained. */
+/* Controlled: 3s cycle, 1.8px. Contained breath. */
 .conv-npc-portrait.breath-controlled,
 #char-portrait.breath-controlled {
   animation: breathControlled 3s ease-in-out infinite;
 }
 @keyframes breathControlled {
   0%,100% { transform: translateY(0px); }
-  50%     { transform: translateY(-1.5px); }
+  50%     { transform: translateY(-1.8px); }
 }
 
-/* Strained: 2s cycle, 2px, uneven timing. Shallow breath. */
+/* Strained: 2s cycle, 1.2px, uneven timing. Shallow quick intakes. */
 .conv-npc-portrait.breath-strained,
 #char-portrait.breath-strained {
   animation: breathStrained 2s ease-in-out infinite;
 }
 @keyframes breathStrained {
   0%   { transform: translateY(0px); }
-  35%  { transform: translateY(-2px); }
-  55%  { transform: translateY(-1.5px); }
+  30%  { transform: translateY(-1.2px); }
+  50%  { transform: translateY(-0.8px); }
   100% { transform: translateY(0px); }
 }
 
