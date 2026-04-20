@@ -816,7 +816,7 @@ const INTERROGATION_DATA = {
         // "The candelabra — you knew its exact position."
         composed:   '"The south candelabra is positioned six feet from the lectern during normal Rite assembly." He says it precisely. "That evening it had been moved to four feet. Vivienne noticed at six-thirty when she was cleaning the south section. She came through the foyer and told me because she knew I was logging the room state." A pause. "I went to confirm it at seven-fifteen because the candelabra position affects the sightline from the south entrance to the lectern. A member entering from the south at the wrong moment would be partially occluded." He holds the notebook. "That is specific knowledge. I know it because I keep the record. I know the position of every fixed object in the Ballroom." He looks at you. "I am aware of what it looks like that I knew exactly where that candelabra was positioned at seven-fifteen."',
         controlled: '"Vivienne told me at six-thirty." A pause. "I went to confirm at seven-fifteen. The south candelabra had been moved from six feet to four feet from the lectern." He holds the notebook. "I know the position because I keep the record." Another pause. "I know what that sounds like now."',
-        strained:   '"Vivienne told me." A pause. "I went to check. Seven-fifteen." He looks at the notebook. "Four feet from the lectern. Not six." Another pause. "I know the positions of all the fixed objects. I keep the record." He does not say what the record means now.',
+        strained:   '"Vivienne told me." A pause. "I went to check. Seven-fifteen." He looks at the notebook. "Four feet from the lectern. Not six." Another pause. "I know the positions of all the fixed objects. I keep the record." || He does not say what the record means now.',
         fractured:  '"Vivienne." A beat. "She told me at six-thirty." Another beat. "I went to check." He holds the notebook. "Four feet from the lectern." A pause. "I know what that means now."',
         grants_node: 'northcott_candelabra_knowledge',
       },
@@ -1078,7 +1078,7 @@ const INTERROGATION_DATA = {
     },
 
     silence_fill: 'He adjusts something that doesn\'t need adjusting. "The candles were changed at six-fifteen. Both sets. Lady Ashworth asked for both." A pause. "That is not something I would usually note."',
-    silence_tell: 'A very long silence. Then: "I have been in this house for fourteen years." He looks at the portrait. "I know which decisions I made tonight." A pause. "I know which of them I cannot undo." He does not say what the decisions were. He does not look away from the portrait.',
+    silence_tell: 'A very long silence. Then: "I have been in this house for fourteen years." He looks at the portrait. "I know which decisions I made tonight." A pause. "I know which of them I cannot undo." || He does not say what the decisions were. He does not look away from the portrait.',
 
     scharff_corrections: {
       'steward_arrived_seven':  '"I arrived at five-thirty, sir. As I do every evening the Estate convenes. I have not arrived at seven in fourteen years."',
@@ -1286,7 +1286,7 @@ const INTERROGATION_DATA = {
         return_echo: 'She has not moved from the window. "Seven forty." She says it as you enter. A pause. "Two minutes." She does not say what she was doing for two minutes.',
         composed:   '"I go to that part of the garden when I need to think." She says it without looking at you. "I have gone there for twenty-two years. It is the part of the garden that faces away from the house." A pause. "I did not know I was beneath the balcony at seven forty. I know that now." She looks at the garden. "I was there because I had been in the building since seven and I needed to be outside for a moment. The announcement was fifteen minutes away." Another pause. "I walked to the garden because that is what I do when Edmund is about to do something I cannot stop." She is very still. "I did not stop him. I was in the garden."',
         controlled: '"Seven forty. The garden." A pause. "I walk there when I need to think." She looks at the garden. "I did not know it was beneath the balcony. I know now." Another pause. "I was there for approximately two minutes. I came back inside. The Rite began at eight."',
-        strained:   '"I was in the garden." A pause. She looks at the window. "I go there when I cannot change something that is about to happen." Another pause. "Two minutes. I came back inside." She does not say what she was thinking during the two minutes.',
+        strained:   '"I was in the garden." A pause. She looks at the window. "I go there when I cannot change something that is about to happen." Another pause. "Two minutes. I came back inside." || She does not say what she was thinking during the two minutes.',
         fractured:  '"The garden." A beat. "Seven forty." Another beat. "I go there when I cannot stop something." She looks at the window. "I came back inside."',
         snapback:   '"I was in the garden at seven forty. That is accurate."',
         grants_node: 'ashworth_garden_740',
@@ -1298,7 +1298,7 @@ const INTERROGATION_DATA = {
         return_echo: 'She has not moved from the window. "Seven forty." She says it as you enter. A pause. "Two minutes." She does not say what she was doing for two minutes.',
         composed:   '"I go to that part of the garden when I need to think." She says it without looking at you. "I have gone there for twenty-two years. It is the part of the garden that faces away from the house." A pause. "I did not know I was beneath the balcony at seven forty. I know that now." She looks at the garden. "I was there because I had been in the building since seven and I needed to be outside for a moment. The announcement was fifteen minutes away." Another pause. "I walked to the garden because that is what I do when Edmund is about to do something I cannot stop." She is very still. "I did not stop him. I was in the garden."',
         controlled: '"Seven forty. The garden." A pause. "I walk there when I need to think." She looks at the garden. "I did not know it was beneath the balcony. I know now." Another pause. "I was there for approximately two minutes. I came back inside. The Rite began at eight."',
-        strained:   '"I was in the garden." A pause. She looks at the window. "I go there when I cannot change something that is about to happen." Another pause. "Two minutes. I came back inside." She does not say what she was thinking during the two minutes.',
+        strained:   '"I was in the garden." A pause. She looks at the window. "I go there when I cannot change something that is about to happen." Another pause. "Two minutes. I came back inside." || She does not say what she was thinking during the two minutes.',
         fractured:  '"The garden." A beat. "Seven forty." Another beat. "I go there when I cannot stop something." She looks at the window. "I came back inside."',
         snapback:   '"I was in the garden at seven forty. That is accurate."',
         grants_node: 'ashworth_garden_740',
@@ -2296,7 +2296,7 @@ const INTERROGATION_DATA = {
         grants_node: 'crane_first_visit_ashworth_alive',
       },
       'Q4': {
-        composed:   '"I left my medical case on the balcony during the earlier visit." She says it steadily. "After the examination I went back to retrieve it." A pause. "That is the reason for the second trip upstairs." She does not say what else she found.',
+        composed:   '"I left my medical case on the balcony during the earlier visit." She says it steadily. "After the examination I went back to retrieve it." A pause. "That is the reason for the second trip upstairs." || She does not say what else she found.',
         controlled: '"I went back for my case." A pause. "I had left it upstairs during the earlier visit." She touches the bag. "I retrieved it." Another pause. "That is the reason for the second trip."',
         strained:   '"I went back for my case." A pause. "The earlier visit. I left it there." She touches the bag. "I went back." Another pause. "I came back downstairs."',
         snapback:   '"I retrieved my medical case from the balcony. That is the documented reason for the second visit."',
@@ -2563,7 +2563,7 @@ const INTERROGATION_DATA = {
     },  // end composure_variants
 
     silence_fill: 'He picks up the drink. Puts it down. "I\'ve been in the Compact\'s arrangements for three years. I stopped three months ago." A pause. "Something changed in the questions they were asking. The precision of them." He doesn\'t explain further.',
-    silence_tell: 'The longest pause of the evening. He picks up the drink. Actually takes it. Sets it down empty. "Someone was here before the Rite." He says it to the ashtray. "I noted the time. I noted what he was carrying." Another pause. "I have been trying to decide since eight-oh-one whether what I noted was enough to change what happened. It wasn\'t. But I noted it." He does not say who. He does not say what he was carrying. He picks up the cigarette and does not light it.',
+    silence_tell: 'The longest pause of the evening. He picks up the drink. Actually takes it. Sets it down empty. "Someone was here before the Rite." He says it to the ashtray. "I noted the time. I noted what he was carrying." Another pause. "I have been trying to decide since eight-oh-one whether what I noted was enough to change what happened. It wasn\'t. But I noted it." || He does not say who. He does not say what he was carrying. He picks up the cigarette and does not light it.',
 
     word_tell: null,
 
@@ -3106,7 +3106,7 @@ const INTERROGATION_DATA = {
             text:     '"Why didn\'t you say anything."',
             type:     'focused_follow_up',
             cost:     10,
-            response_composed:   'The note said not to involve himself in anything that happened outside. He had read it three times. He is a barrister. "I know what withholding observation evidence means." A pause. "I have been in this room since seven making that accounting." He does not say what the accounting produced. The accounting is still running.',
+            response_composed:   'The note said not to involve himself in anything that happened outside. He had read it three times. He is a barrister. "I know what withholding observation evidence means." A pause. "I have been in this room since seven making that accounting." || He does not say what the accounting produced. The accounting is still running.',
             unlocks: 'GA3',
             grants_node: 'greaves_chose_note_over_testimony',
           },
