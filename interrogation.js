@@ -2226,19 +2226,19 @@ const INTERROGATION_DATA = {
         unlock_condition: { requires_node: 'vivienne_plain_mask_described', after: 'Q9' },
         questions: {
           'HB1': {
-            text:     '"Vivienne told you it was the Compact\'s physician. That\'s who came to this door."',
+            text:     '"Vivienne described the face she saw. Does it match the person who came to this door?"',
             type:     'partial_claim',
             cost:     5,
-            response_composed:   'A pause of a different quality. "Vivienne told me what she saw on the terrace. She told me the face of the person who came around the balcony stairs." He looks at the cottage door. "I know that face." A pause. "I have known since eight-fifteen." Another pause. "I did not need Vivienne to tell me. I knew when I gave the mask." He looks at you. "I knew the face. I gave the mask anyway. That is the thing I have been sitting with."',
+            response_composed:   'A pause of a different quality. "Vivienne told me what she saw on the terrace. She described the person who came around the balcony stairs." He looks at the cottage door. "The description matches the person I gave the mask to." A pause. "I have been sitting with that match since eight-fifteen." Another pause. "It is not for me to name the match. I do not know the man. I know the sequence — he came to my door at seven forty-eight, he asked for a spare mask, I gave it." He looks at you. "The person who can name him is Vivienne. She saw the face at a moment that matters. I saw it at a moment after."',
             unlocks: 'HB2',
-            grants_node: 'hatch_knew_the_face',
+            grants_node: 'hatch_confirms_mask_handoff',
           },
           'HB2': {
-            text:     '"Say the name."',
+            text:     '"What belongs in the record?"',
             type:     'direct_confrontation',
             cost:     15,
-            response_composed:   'The longest pause in the cottage. Longer than any pause he has produced. He looks at the garden. Then at the cottage door. Then at you. "The Compact\'s physician." He says it. Not the name — the role. "That is the accurate description for the record." A pause. "Thomas Hatch gave a mask to the Compact\'s physician at seven forty-eight. The physician returned to the assembly. At eight-oh-one Lord Ashworth was found dead." He looks at you. "That is what belongs in the record." Another pause. "The name belongs in the record too." He says it. Precisely. Completely. One time.',
-            grants_node: 'hatch_named_surgeon',
+            response_composed:   'The longest pause in the cottage. Longer than any pause he has produced. He looks at the garden. Then at the cottage door. Then at you. "Thomas Hatch gave a spare mask to a person at seven forty-eight on the night Lord Ashworth died." A pause. "The person wore the plain mask back to the assembly. The plain mask had no signature mark. That is why it was the spare." Another pause. "That is the complete account of what I gave and when and to what kind of mask." He looks at you. "The identity of the person belongs on a different line of the record. Not mine." A pause. "I am not refusing. I am being exact. I do not sign a name to something I cannot swear to under oath, and what I can swear to is the mask and the time. That is my part."',
+            grants_node: 'hatch_gave_spare_mask_748',
           },
         },
       },
@@ -2246,7 +2246,7 @@ const INTERROGATION_DATA = {
 
     contamination: {
       'vivienne': '"She told me at eight-fifteen." He says it before you mention her. A pause. "She told me plainly." He looks at the garden. "Vivienne tells things plainly when they cost her something to tell." Another pause. "This cost her something."',
-      'surgeon':  'He is still for a moment. "The Compact physician." He says the role. A pause. "He came to this door at seven forty-eight." He looks at the cottage door. "He was polite. He said good evening and he needed a spare mask and he thanked me when I gave it." Another pause. "He was very warm." He says it exactly. "That is the detail I keep returning to. He was very warm."',
+      'surgeon':  'He is still for a moment. "A person came to this door at seven forty-eight." He says it exactly that way. "Asked for a spare mask. I gave it." A pause. "Whether that person is the one you are asking about is a question Vivienne answers more cleanly than I do. I did not see the balcony. I saw the door." He looks at the cottage door. "The handoff is what I can swear to. The identity is for the witness who saw the act."',
       'pemberton-hale': '"The Viscount was at the lectern at seven forty." He says it. A plain fact. "I saw him from the garden door. He was handling something on the lectern surface." A pause. "At seven forty-four the east service gate opened. The corridor connects the lectern side of the ballroom to the terrace route." He looks at the garden. "I note times. I note positions. I do not draw conclusions. That is your function."',
       'baron': '"The Baron was at the smoking room window at seven forty-four." He says it exactly. "I saw him as I passed. He was watching the terrace." A pause. "He was still watching when I came back at seven forty-nine." He looks at the garden. "A man who watches a terrace for five minutes without moving is watching for something specific." Another pause. "I know what was happening on the terrace during those five minutes."',
       'steward': '"The Steward opened the east service gate at seven forty-four." He says it. "He stood in the opening for thirty seconds. The gate faces the terrace approach directly." A pause. "A person standing in that gate at seven forty-four would have a clear view of the balcony stairs." He looks at the garden. "The Steward then walked toward the south corridor. Seven fifty-eight he was in the south corridor. I saw him on my lamp schedule." Another pause. "That is the sequence I noted."',
