@@ -1021,7 +1021,7 @@ window._preloadAssets = _preloadAssets;
 // All room backgrounds are 2:1 panoramic.
 // x = computed at runtime (appW/2). y = max vertical travel px.
 const ROOM_PARALLAX = {
-  'foyer':                 { y: 10 },
+  'foyer':                 { y: 0 },
   'study':                 { y: 20 },
   'ballroom':              { y: 10 },
   'library':               { y: 20 },
@@ -1037,7 +1037,7 @@ const ROOM_PARALLAX = {
   'tunnel-passage':        { y: 20 },
   'maids-quarters':        { y: 15 },
   'groundskeeper-cottage': { y: 15 },
-  '_default':              { y: 15 },
+  '_default':              { y: 0 },
 };
 
 // ── GYROSCOPE + PINCH ZOOM ────────────────────────────────
@@ -1064,15 +1064,18 @@ const ROOM_PARALLAX = {
   function _getConfig() {
     const room = (window.gameState && window.gameState.currentRoom) || '';
     const cfg  = Object.assign({}, ROOM_PARALLAX[room] || ROOM_PARALLAX['_default']);
-    const appW = Math.min(window.innerWidth, 430);
-    const appH = window.innerHeight;
-    // .room-bg is 200% wide, left:-50%, background-size:cover.
-    // Image is 2:1. Cover scales to fill div height (appH*1.2).
-    // Rendered image width = (appH * 1.2) * 2 (since image is 2:1).
-    // Pan range = half of (rendered width - appW).
-    const divH = appH * 1.2;
-    const renderedW = divH * 2; // 2:1 image scaled to fill height
-    cfg.x = Math.max(Math.floor(appW / 2), Math.floor((renderedW - appW) / 2));
+    // bg is now 2:1 aspect-ratio sized to container height, centered via translate(-50%,-50%).
+    // Pannable range is (bgWidth - containerWidth) / 2 in each direction.
+    const bg = _getBg();
+    if (bg) {
+      const bgRect = bg.getBoundingClientRect();
+      const parent = bg.parentElement;
+      const parentW = parent ? parent.getBoundingClientRect().width : window.innerWidth;
+      cfg.x = Math.max(0, Math.floor((bgRect.width - parentW) / 2));
+    } else {
+      const appW = Math.min(window.innerWidth, 430);
+      cfg.x = Math.floor(appW / 2);
+    }
     return cfg;
   }
 
@@ -1087,23 +1090,25 @@ const ROOM_PARALLAX = {
     if (!bg) return;
     const cfg = _getConfig();
 
-    // CSS: left:-50% centers the 200%-wide div. tx=_curX offsets from center.
-    // _curX = 0       → center of foyer (arch, stairs)
-    // _curX = +cfg.x  → left edge (coat hooks)
-    // _curX = -cfg.x  → right edge (mirror)
+    // bg is top:50% left:50% with translate(-50%,-50%) centering in CSS.
+    // Our JS transform overrides CSS, so we re-apply the -50%,-50% as the base,
+    // then add pan offsets (_curX, _curY) and scale on top.
+    // _curX = 0       → center of room (foyer: arch, stairs)
+    // _curX = +cfg.x  → left edge (foyer: coat hooks)
+    // _curX = -cfg.x  → right edge (foyer: mirror)
     const tx = _curX + _translateX;
     const ty = _curY + _translateY;
 
-    bg.style.transformOrigin = 'top left';
-    bg.style.transform = `translate(${tx}px, ${ty}px) scale(${_scale})`;
+    bg.style.transformOrigin = 'center center';
+    bg.style.transform = `translate(-50%, -50%) translate(${tx}px, ${ty}px) scale(${_scale})`;
 
     const roomId = (window.gameState && window.gameState.currentRoom) || '';
     const cur = document.getElementById(`room-${roomId}`);
     if (cur) {
       const hl = cur.querySelector('.hotspot-layer');
       if (hl) {
-        hl.style.transformOrigin = 'top left';
-        hl.style.transform = `translate(${tx}px, ${ty}px) scale(${_scale})`;
+        hl.style.transformOrigin = 'center center';
+        hl.style.transform = `translate(-50%, -50%) translate(${tx}px, ${ty}px) scale(${_scale})`;
       }
     }
   }

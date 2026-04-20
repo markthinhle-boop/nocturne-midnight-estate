@@ -322,9 +322,12 @@ html, body {
 
 .room-bg {
   position: absolute;
-  top: -10%; left: -50%;
-  width: 200%; height: 120%;
-  background-size: cover; background-position: center center;
+  top: 50%; left: 50%;
+  height: 100%;
+  aspect-ratio: 2 / 1;              /* 2:1 panoramic backgrounds */
+  transform: translate(-50%, -50%); /* starts centered */
+  background-size: 100% 100%;
+  background-position: center center;
   background-color: var(--bg-mid);
   transition: opacity 400ms;
   will-change: transform;
@@ -375,16 +378,18 @@ html, body {
 .hour-late .room-bg            { filter: brightness(0.7) sepia(0.1); }
 .hour-deep_night .room-bg      { filter: brightness(0.5) sepia(0.15); }
 
-/* Hotspot layer */
+/* Hotspot layer — matches .room-bg dimensions so hotspot % coords map to image */
 .hotspot-layer {
-  position: absolute; inset: 0;
+  position: absolute;
+  top: 50%; left: 50%;
+  height: 100%;
+  aspect-ratio: 2 / 1;
+  transform: translate(-50%, -50%);
   z-index: 10;
-  pointer-events: none;
 }
 .hotspot {
   position: absolute;
   cursor: pointer;
-  pointer-events: auto;
 }
 .hotspot:active { opacity: 0.8; }
 
