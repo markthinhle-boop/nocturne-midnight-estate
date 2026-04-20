@@ -1058,6 +1058,7 @@ const ROOM_PARALLAX = {
   let _velX        = 0;
   let _lastDragX   = 0;
   let _gyroOffsetX = 0; // gyro contribution, updated when not dragging
+  let _edgeHit     = 0; // -1 = at left edge fired, +1 = right edge fired, 0 = clear
 
   function _lerp(a, b, t) { return a + (b - a) * t; }
 
@@ -1102,10 +1103,31 @@ const ROOM_PARALLAX = {
     bg.style.transformOrigin = 'center center';
     bg.style.transform = `translate(-50%, -50%) translate(${tx}px, ${ty}px) scale(${_scale})`;
 
+    // Dynamic vignette — shift center opposite to pan direction for peripheral fade.
+    // tx positive = looking left (image slid right) → darken right side → vignette center shifts left.
+    // Range: 35%–65% (subtle).
     const roomId = (window.gameState && window.gameState.currentRoom) || '';
-    const cur = document.getElementById(`room-${roomId}`);
-    if (cur) {
-      const hl = cur.querySelector('.hotspot-layer');
+    const roomEl = document.getElementById(`room-${roomId}`);
+    if (roomEl) {
+      const v = roomEl.querySelector('.room-vignette');
+      if (v && cfg.x > 0) {
+        const panRatio = Math.max(-1, Math.min(1, tx / cfg.x));
+        const vignPct  = 50 - panRatio * 15; // 35%..65%
+        v.style.setProperty('--vign-x', vignPct.toFixed(1) + '%');
+      }
+    }
+
+    // Haptic pulse at edges — fires once per edge-hit, clears when pulled away.
+    if (cfg.x > 0 && _isDragging && typeof navigator !== 'undefined' && navigator.vibrate) {
+      const atRight = _curX >= cfg.x - 0.5;
+      const atLeft  = _curX <= -cfg.x + 0.5;
+      if (atLeft && _edgeHit !== -1)      { navigator.vibrate(10); _edgeHit = -1; }
+      else if (atRight && _edgeHit !== 1) { navigator.vibrate(10); _edgeHit = 1; }
+      else if (!atLeft && !atRight)       { _edgeHit = 0; }
+    }
+
+    if (roomEl) {
+      const hl = roomEl.querySelector('.hotspot-layer');
       if (hl) {
         hl.style.transformOrigin = 'center center';
         hl.style.transform = `translate(-50%, -50%) translate(${tx}px, ${ty}px) scale(${_scale})`;

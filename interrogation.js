@@ -3892,6 +3892,14 @@ function _confirmTechniqueSelected(charId, techniqueId) {
   // Log to behavioral system
   NocturneEngine.emit('techniqueSelected', { charId, technique: techniqueId });
 
+  // Reset pivot announcements for this character — fresh interrogation
+  // gets fresh beats if branches reopen in subsequent questions.
+  if (window._pivotAnnounced) {
+    Object.keys(window._pivotAnnounced).forEach(k => {
+      if (k.startsWith(charId + ':')) delete window._pivotAnnounced[k];
+    });
+  }
+
   // Handle technique-aware characters
   const data = INTERROGATION_DATA[charId];
   if (data && data.technique_awareness && data.technique_awareness[techniqueId]) {
@@ -4726,6 +4734,91 @@ function _inferQType(qId, q) {
 
 // ── PATCH renderQuestions TO INCLUDE BRANCHES ─────────────────
 
+// ── PIVOT BEATS (#5) ──────────────────────────────────────────
+// Fired when a branch question becomes newly available — signals
+// "this turn matters" without naming the system. Generic prose
+// (character voice is supplied by the Tell + Echo). Rotates across
+// 4 variants. Announced once per (charId × pivotQ) per conversation.
+const PIVOT_BEATS = [
+  "A long pause. Whatever you ask next, he will be preparing for.",
+  "The room has shifted. The next question lands differently than the last one did.",
+  "Something has opened that was not open before. You can feel it. He can too.",
+  "You are closer now than you were two questions ago. He is deciding whether to let you arrive.",
+];
+const _PIVOT_FEMALE = ['ashworth','voss','crane','heir','archivist','lady-ashworth'];
+
+function _pivotBeatFor(charId) {
+  const idx = (window._pivotBeatCursor = ((window._pivotBeatCursor || 0) + 1) % PIVOT_BEATS.length);
+  let line = PIVOT_BEATS[idx];
+  if (_PIVOT_FEMALE.includes(charId)) {
+    line = line.replace(/\bhe will\b/g, 'she will')
+               .replace(/\bHe can\b/g, 'She can')
+               .replace(/\bhe can\b/g, 'she can')
+               .replace(/\bHe is\b/g, 'She is')
+               .replace(/\bhe is\b/g, 'she is');
+  }
+  return line;
+}
+
+function _findPivotInAvailable(charId, availableQIds) {
+  if (!Array.isArray(availableQIds)) return null;
+  const answered = gameState.char_dialogue_complete[charId] || {};
+  window._pivotAnnounced = window._pivotAnnounced || {};
+  for (const qId of availableQIds) {
+    // Branch questions: 2-letter-prefixed IDs like NA1/BA2/BC3/NB1. Excludes Q1/Q2.
+    if (!/^[A-Z]{2}\d+$/.test(qId)) continue;
+    if (answered[qId]) continue;
+    const key = charId + ':' + qId;
+    if (window._pivotAnnounced[key]) continue;
+    return qId;
+  }
+  return null;
+}
+
+function _renderPivotBeat(charId) {
+  try {
+    const listEl = document.getElementById('questions-list');
+    if (!listEl) return;
+    // Get available qIds from rendered question rows + branch rows
+    const available = [];
+    listEl.querySelectorAll('.question-item').forEach(el => {
+      const qId = el.dataset && el.dataset.qid;
+      if (qId) available.push(qId);
+    });
+    // Also check branch rows which may not carry data-qid — scan via CHARACTERS
+    const charData = window.CHARACTERS && window.CHARACTERS[charId];
+    if (charData && typeof computeAvailableQuestions === 'function') {
+      const computed = computeAvailableQuestions(charId) || [];
+      computed.forEach(q => { if (!available.includes(q)) available.push(q); });
+    }
+    // Pull branch question IDs via getAvailableBranches if present
+    if (typeof getAvailableBranches === 'function') {
+      try {
+        const branches = getAvailableBranches(charId) || [];
+        branches.forEach(b => {
+          if (b && b.qId && !available.includes(b.qId)) available.push(b.qId);
+        });
+      } catch(e) { /* non-fatal */ }
+    }
+
+    const pivotQ = _findPivotInAvailable(charId, available);
+    if (!pivotQ) return;
+    window._pivotAnnounced[charId + ':' + pivotQ] = true;
+
+    // Remove any existing pivot beat before adding
+    const existing = document.getElementById('pivot-beat-line');
+    if (existing) existing.remove();
+
+    const beat = document.createElement('div');
+    beat.id = 'pivot-beat-line';
+    beat.textContent = _pivotBeatFor(charId);
+    beat.style.cssText = 'padding:8px 14px;margin:6px 14px 10px;font-size:11px;font-style:italic;color:rgba(200,170,110,0.82);letter-spacing:0.04em;line-height:1.55;border-left:2px solid rgba(200,170,110,0.55);background:rgba(25,18,10,0.4);opacity:0;transition:opacity 700ms ease;';
+    // Insert at TOP of questions list so it sits above the options
+    listEl.insertBefore(beat, listEl.firstChild);
+    requestAnimationFrame(() => { beat.style.opacity = '1'; });
+  } catch(e) { /* non-fatal */ }
+}
+
 const _originalRenderQuestions = window.renderQuestions;
 window.renderQuestions = function(charId) {
   // Block during Alistair Rowe choice flow
@@ -4738,6 +4831,9 @@ window.renderQuestions = function(charId) {
 
   // Add technique switch button if conversation in progress
   _addTechniqueSwitchButton(charId);
+
+  // Pivot beat — fires when a branch entry becomes newly available
+  _renderPivotBeat(charId);
 };
 
 function _addCognitiveLoadOption(charId) {

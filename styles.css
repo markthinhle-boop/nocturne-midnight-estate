@@ -334,11 +334,13 @@ html, body {
 }
 .room-bg.fading { opacity: 0; }
 
-/* Vignette overlay */
+/* Vignette overlay — --vign-x shifts center opposite to pan for peripheral fade */
 .room-vignette {
   position: absolute; inset: 0;
   pointer-events: none; z-index: 2;
-  background: radial-gradient(ellipse at center, transparent 40%, rgba(4,3,2,0.45) 80%, rgba(4,3,2,0.72) 100%);
+  --vign-x: 50%;
+  background: radial-gradient(ellipse at var(--vign-x) center, transparent 40%, rgba(4,3,2,0.45) 80%, rgba(4,3,2,0.72) 100%);
+  transition: background 120ms linear;
 }
 
 /* Dust grain */
@@ -770,13 +772,13 @@ html, body {
 #char-response {
   width: 100%;
   box-sizing: border-box;
-  padding: 10px 20px 6px;
-  font-size: 12.5px;
-  line-height: 1.6;
+  padding: 12px 20px 8px;
+  font-size: 13px;
+  line-height: 1.7;
   color: var(--cream);
   font-style: italic;
-  min-height: 44px;
-  max-height: 20vh;
+  min-height: 52px;
+  max-height: 28vh;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   flex-shrink: 1;
