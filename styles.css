@@ -788,17 +788,49 @@ html, body {
   z-index: 1;
 }
 
-/* Narrator observation — appears after character dialogue, dimmer + slightly smaller */
+/* Narrator observation — Callum's investigator voice, distinct from character speech.
+   Five visual differentiators from dialogue:
+   (1) different font family — sans-serif vs body serif
+   (2) left padding + margin — physically set apart
+   (3) glyph prefix — field-note marker in the margin
+   (4) cooler color shift — observation reads cool, speech reads warm
+   (5) paragraph break support — each italic observation gets room to land */
 #char-response .narrator {
   display: block;
-  margin-top: 10px;
-  padding-top: 8px;
-  border-top: 1px solid rgba(42,37,28,0.4);
-  color: var(--cream-dim);
-  font-size: 11px;
+  position: relative;
+  margin-top: 14px;
+  margin-left: 6px;
+  padding: 10px 12px 4px 22px;       /* left: 22px = space for the glyph */
+  border-top: 1px dashed rgba(120,140,160,0.35);
+  color: rgba(180,190,205,0.82);      /* cool pale blue-gray, not cream-dim */
+  font-family: 'Inter', 'Helvetica Neue', 'Arial', sans-serif;
+  font-size: 11.5px;
   font-style: italic;
-  letter-spacing: 0.01em;
-  line-height: 1.65;
+  font-weight: 300;
+  letter-spacing: 0.025em;
+  line-height: 1.7;
+}
+
+/* Field-note glyph — small mark in the left margin, signals "annotation, not speech" */
+#char-response .narrator::before {
+  content: '·';
+  position: absolute;
+  left: 6px;
+  top: 10px;
+  font-size: 18px;
+  color: rgba(180,190,205,0.55);
+  font-style: normal;
+  line-height: 1;
+}
+
+/* Paragraph break support inside narrator — each sentence block gets spacing */
+#char-response .narrator p,
+#char-response .narrator br + span {
+  display: block;
+  margin-top: 8px;
+}
+#char-response .narrator p:first-child {
+  margin-top: 0;
 }
 
 /* Scroll fade — signals more content below */
