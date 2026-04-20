@@ -25,7 +25,7 @@ const TECHNIQUES = {
   wait: {
     id:          'wait',
     label:       'The Wait',
-    callum_line: 'Say nothing. See what he fills it with.',
+    callum_line: 'Silence forces choice. Fragmenters use it to recompose. Performers fill it with rehearsed material. Watch which one I get.',
     real_world:  'Scharff + Cognitive combined', // INTERNAL ONLY — not rendered
     composure_multiplier: 0.0,
     snap_bonus:           2,
@@ -36,7 +36,7 @@ const TECHNIQUES = {
   approach: {
     id:          'approach',
     label:       'The Approach',
-    callum_line: 'Tell him almost everything. See what he corrects.',
+    callum_line: 'Present an almost-complete picture. An honest person corrects the small error. A deceiver corrects the one detail that implicates them.',
     real_world:  'Scharff Technique',           // INTERNAL ONLY — not rendered
     composure_multiplier: 0.4,
     snap_bonus:           0,
@@ -46,7 +46,7 @@ const TECHNIQUES = {
   account: {
     id:          'account',
     label:       'The Account',
-    callum_line: 'Let them talk. See what they choose to include.',
+    callum_line: 'Free narrative first. No interruption. The order they choose tells me more than the facts they select.',
     real_world:  'PEACE / Cognitive Interview',  // INTERNAL ONLY — not rendered
     composure_multiplier: 0.6,
     snap_bonus:           1,
@@ -56,7 +56,7 @@ const TECHNIQUES = {
   record: {
     id:          'record',
     label:       'The Record',
-    callum_line: 'Ask first. Show after.',
+    callum_line: 'Ask the question before I show what I have. A rehearsed answer on the first ask and a different answer on the second ask is the evidence.',
     real_world:  'Strategic Use of Evidence',   // INTERNAL ONLY — not rendered
     composure_multiplier: 1.0,
     snap_bonus:           0,
@@ -66,7 +66,7 @@ const TECHNIQUES = {
   pressure: {
     id:          'pressure',
     label:       'The Pressure',
-    callum_line: 'He knows I know. Make sure he feels that.',
+    callum_line: 'Confrontation only works when the target has already committed to a story that cannot hold. The innocent man gets angry. The guilty one recalculates.',
     real_world:  'Reid (inverted)',              // INTERNAL ONLY — not rendered
     composure_multiplier: 1.8,
     snap_bonus:          -1,
@@ -3850,14 +3850,10 @@ function openTechniqueSelector(charId) {
     ].join(';');
 
     const callumLine = document.createElement('div');
-    callumLine.style.cssText = 'font-size:12px;color:var(--cream);letter-spacing:0.02em;line-height:1.4;';
-    const lineText = isFemale
-      ? tech.callum_line
-          .replace('He knows I know', 'She knows I know')
-          .replace('Tell him almost everything', 'Tell her almost everything')
-          .replace('he fills it with', 'she fills it with')
-      : tech.callum_line;
-    callumLine.textContent = `"${lineText}"`;
+    callumLine.style.cssText = 'font-size:12px;color:var(--cream);letter-spacing:0.015em;line-height:1.55;';
+    // The new callum_lines are gender-neutral (they describe behavioural
+    // categories, not specific persons), so no pronoun swap is needed.
+    callumLine.textContent = `"${tech.callum_line}"`;
     btn.appendChild(callumLine);
 
     const hintLine = document.createElement('div');
@@ -4747,7 +4743,55 @@ const PIVOT_BEATS = [
 ];
 const _PIVOT_FEMALE = ['ashworth','voss','crane','heir','archivist','lady-ashworth'];
 
-function _pivotBeatFor(charId) {
+// ── SCRIPTED PIVOT MOMENTS ────────────────────────────────────
+// One scripted beat per suspect — overrides the generic PIVOT_BEATS
+// when the character reaches their SINGULAR high-stakes branch unlock.
+// These are the moments a real investigator would recognise: the turn
+// where the interview either breaks open or closes forever. Prose is
+// written in Callum's perspective — observation, not narration.
+// Keyed by {charId}:{qId}. If a character has a scripted beat matching
+// the currently-available pivot, it fires instead of the generic.
+const PIVOT_MOMENTS = {
+  'northcott:BA3': "He has stopped looking at the notebook. That is significant. For twenty minutes the notebook has been his anchor. If he answers the next question without looking at it, he is telling you something the notebook cannot.",
+
+  'steward:BC2': "Fourteen years of formality has been the wall. A man does not hold that wall unless he is holding something behind it. The next question is the hinge. If he answers it, the wall is no longer the point. What is behind the wall is.",
+
+  'lady-ashworth:BC3': "She has been looking at the garden. For forty minutes she has not looked at you. If she looks at you now — directly, at your face — she has decided you are not what she thought you were. Or exactly what she thought you were. The two are indistinguishable until she speaks.",
+
+  'voss:SB3': "She selects her sentences the way her brother selected patients. If the next sentence is not selected — if it arrives without the usual interval — she is telling you something she did not intend to. She is letting you see the selection mechanism itself.",
+
+  'pemberton-hale:PA3': "The performance has been eight years long. A man does not maintain a performance that long without occasionally rehearsing the moment it ends. He has rehearsed this. If his next answer is clean — too clean — he has chosen to deliver the rehearsed ending. If it is messy, he has chosen not to.",
+
+  'greaves:GB3': "Greaves does not guess. He has not guessed once in this conversation. If he is about to describe something with fewer qualifications than he has used for every other observation, the observation is complete. He is not guessing. He saw it. Exactly.",
+
+  'baron:BD2': "He has been producing volume to cover a silence. The next question asks about the silence directly. If the volume stops, he is choosing to let you hear what it has been covering. If the volume increases, he has decided he cannot.",
+
+  'crane:CB3': "Precision is composure for a physician. She has not varied the length of a single sentence by one word. If the next answer is a fragment — if it arrives in pieces rather than in a clause — the precision has failed. That failure will tell you what the precision was for.",
+
+  'uninvited:HA2': "He has been answering with perfect plausibility. Plausibility is a choice. The next question does not admit plausibility — only truth or refusal. He will choose one. The choice itself is the evidence.",
+
+  'sovereign:SB1': "He has waited forty-three years to name this name. He has composed the sentence many times. If the sentence arrives shorter than he composed it, he is trusting you to carry the rest. If it arrives at full length, he has decided you cannot.",
+
+  'heir:HA3': "She has been testing the questions. Now she is testing the questioner. The next answer is not about what happened — it is about what she has decided you are prepared to do with what happened.",
+
+  'envoy:EA3': "Charm is a working language. It has stopped working here. The next question requires an answer in a different language — the one underneath the charm. If he switches, you have the interview. If he retreats into charm, you have lost it.",
+
+  'archivist:AA3': "Music is how she locates herself. If the music stops for the next answer, she is locating herself somewhere else — in the history she has been archiving. If the music continues, the answer is in the register she has rehearsed.",
+
+  'surgeon:SC1': "The warmth has been calibrated for forty-three minutes. Calibration is expensive. A man this composed is running a constant calculation. The next question forces a new calculation. Watch the moment between the question and the answer. That is the calculation becoming visible.",
+
+  'hatch:HB2': "Thirty years of service is also thirty years of not saying things. Speech is not his register. If he names the name, he has decided the thirty years were enough. If he does not name it, he has decided they were not.",
+
+  // Vivienne's VC2 is the payoff itself (the push witnessed). Beat before it
+  // acknowledges this is the moment the evening finally gets spoken aloud.
+  'vivienne:VC2': "She has been holding one sentence for four hours. The evening has been waiting for someone to ask for it in an order she could answer. You have asked in that order. What she says next she has not said aloud tonight. She may not say it aloud twice.",
+};
+
+function _pivotBeatFor(charId, pivotQ) {
+  // Scripted pivot takes priority over generic rotation.
+  const scripted = PIVOT_MOMENTS[charId + ':' + pivotQ];
+  if (scripted) return scripted;
+  // Fall back to generic rotation.
   const idx = (window._pivotBeatCursor = ((window._pivotBeatCursor || 0) + 1) % PIVOT_BEATS.length);
   let line = PIVOT_BEATS[idx];
   if (_PIVOT_FEMALE.includes(charId)) {
@@ -4809,10 +4853,16 @@ function _renderPivotBeat(charId) {
     const existing = document.getElementById('pivot-beat-line');
     if (existing) existing.remove();
 
+    // Scripted moments get heavier styling — player should feel the
+    // weight shift. Generic fallback keeps the lighter treatment.
+    const isScripted = !!PIVOT_MOMENTS[charId + ':' + pivotQ];
+
     const beat = document.createElement('div');
     beat.id = 'pivot-beat-line';
-    beat.textContent = _pivotBeatFor(charId);
-    beat.style.cssText = 'padding:8px 14px;margin:6px 14px 10px;font-size:11px;font-style:italic;color:rgba(200,170,110,0.82);letter-spacing:0.04em;line-height:1.55;border-left:2px solid rgba(200,170,110,0.55);background:rgba(25,18,10,0.4);opacity:0;transition:opacity 700ms ease;';
+    beat.textContent = _pivotBeatFor(charId, pivotQ);
+    beat.style.cssText = isScripted
+      ? 'padding:12px 16px;margin:8px 14px 12px;font-size:11.5px;font-style:italic;color:rgba(215,185,125,0.92);letter-spacing:0.04em;line-height:1.65;border-left:2px solid rgba(215,185,125,0.7);background:rgba(30,22,12,0.55);opacity:0;transition:opacity 900ms ease;'
+      : 'padding:8px 14px;margin:6px 14px 10px;font-size:11px;font-style:italic;color:rgba(200,170,110,0.82);letter-spacing:0.04em;line-height:1.55;border-left:2px solid rgba(200,170,110,0.55);background:rgba(25,18,10,0.4);opacity:0;transition:opacity 700ms ease;';
     // Insert at TOP of questions list so it sits above the options
     listEl.insertBefore(beat, listEl.firstChild);
     requestAnimationFrame(() => { beat.style.opacity = '1'; });
@@ -4912,6 +4962,10 @@ window.askBranchQuestion       = askBranchQuestion;
 window.getComposureVariantResponse = getComposureVariantResponse;
 window._stopSilenceSystem = _stopSilenceSystem;
 window._interrogationState = _interrogationState;
+window.PIVOT_MOMENTS = PIVOT_MOMENTS;
+window.PIVOT_BEATS = PIVOT_BEATS;
+window._pivotBeatFor = _pivotBeatFor;
+window._findPivotInAvailable = _findPivotInAvailable;
 
 
 // ── ROWE FUNNEL + DUEL WIRING ──────────────────────────────────
