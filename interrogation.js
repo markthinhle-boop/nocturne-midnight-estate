@@ -3861,7 +3861,7 @@ function openTechniqueSelector(charId) {
     btn.appendChild(callumLine);
 
     const hintLine = document.createElement('div');
-    hintLine.style.cssText = 'font-size:10px;color:rgba(140,120,80,0.55);font-style:italic;margin-top:3px;line-height:1.4;letter-spacing:0.02em;';
+    hintLine.style.cssText = 'font-size:13px;color:rgba(200,170,110,0.9);font-style:italic;margin-top:5px;line-height:1.4;letter-spacing:0.08em;text-transform:lowercase;';
     hintLine.textContent = TECHNIQUE_HINTS[tech.id] || '';
     btn.appendChild(hintLine);
 

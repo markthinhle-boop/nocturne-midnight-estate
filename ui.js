@@ -1733,7 +1733,7 @@ function _openConversationDirect(charId) {
         const tellEl = document.createElement('div');
         tellEl.id = 'char-tell-line';
         tellEl.textContent = tellText;
-        tellEl.style.cssText = 'padding:10px 20px 6px;font-size:11px;font-style:italic;color:rgba(170,140,90,0.72);letter-spacing:0.02em;line-height:1.55;border-left:1px solid rgba(170,140,90,0.25);margin:8px 14px 10px;';
+        tellEl.style.cssText = 'padding:6px 14px 6px 12px;font-size:10.5px;font-style:italic;color:rgba(170,140,90,0.72);letter-spacing:0.02em;line-height:1.5;border-left:1px solid rgba(170,140,90,0.25);margin:4px 14px 4px;';
         const charResponse = document.getElementById('char-response');
         if (charResponse && charResponse.parentNode) {
           charResponse.parentNode.insertBefore(tellEl, charResponse);
