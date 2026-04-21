@@ -1376,7 +1376,7 @@ const INTERROGATION_DATA = {
   'ashworth': {
     counter_strategy:  'redirect',
     optimal_technique: 'wait',
-    composure_floor:   60,
+    composure_floor:   40,
     fracture_threshold: 65,
 
     baseline: {
