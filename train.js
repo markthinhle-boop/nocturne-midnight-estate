@@ -510,6 +510,8 @@ function _showInvitationCard() {
         input.removeEventListener('input', _handler);
         haptic([200]);
         gameState.verdictTracker.session_start = Date.now();
+        // Cut gate ambient audio before entering foyer
+        NocturneEngine.emit('gateSceneEnded', {});
         // Hide everything immediately — no cutscene
         document.getElementById('train-screen').style.display = 'none';
         screen.style.opacity = '0';
@@ -542,6 +544,8 @@ function _showBeginAgain() {
 function _gateCorrect() {
   haptic([200]);
   gameState.verdictTracker.session_start = Date.now();
+  // Cut gate ambient audio before entering foyer
+  NocturneEngine.emit('gateSceneEnded', {});
   const screen = document.getElementById('train-invitation-screen');
   if (screen) { screen.style.opacity = '0'; screen.style.transition = 'opacity 1200ms ease'; }
   setTimeout(() => _endTrainSequence(), 1200);
