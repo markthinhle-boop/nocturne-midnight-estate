@@ -664,6 +664,138 @@ window.resetEscalation          = resetEscalation;
 window._applyEscalation         = _applyEscalation;
 window._getEscalation           = _getEscalation;
 
+// ═══════════════════════════════════════════════════════════
+// PORTRAIT REACTION ENGINE — 3-layer system
+// ═══════════════════════════════════════════════════════════
+// Layer 1: ambient breathing keyed to composure
+// Layer 2: per-question beats (optimal/poor/neutral/lockin/break)
+// Layer 3: per-character scripted signatures on pivot moments
+// ═══════════════════════════════════════════════════════════
+
+const PORTRAIT_REACTION_CLASSES = [
+  'breath-composed','breath-controlled','breath-strained','breath-fractured','breath-collapsed',
+  'react-recognition','react-closing','react-lockin','react-break',
+  'state-broken',
+  'sig-surgeon-sc1','sig-crane-cb3','sig-steward-bc2','sig-vivienne-vc2','sig-ashworth-bc3','sig-hatch-hb2',
+];
+
+const PORTRAIT_BREATH_CLASSES = [
+  'breath-composed','breath-controlled','breath-strained','breath-fractured','breath-collapsed',
+];
+
+const PORTRAIT_SIGNATURES = {
+  'surgeon:SC1':    'sig-surgeon-sc1',
+  'crane:CB3':      'sig-crane-cb3',
+  'steward:BC2':    'sig-steward-bc2',
+  'vivienne:VC2':   'sig-vivienne-vc2',
+  'ashworth:BC3':   'sig-ashworth-bc3',
+  'hatch:HB2':      'sig-hatch-hb2',
+};
+
+function _portraitsFor(charId) {
+  const out = [];
+  const legacy = document.getElementById('char-portrait');
+  if (legacy) out.push(legacy);
+  if (charId) {
+    const multi = document.getElementById(`conv-portrait-${charId}`);
+    if (multi) out.push(multi);
+  }
+  return out;
+}
+
+function _breathClassForComposure(composure) {
+  if (composure == null) composure = 100;
+  if (composure > 70) return 'breath-composed';
+  if (composure > 55) return 'breath-controlled';
+  if (composure > 40) return 'breath-strained';
+  if (composure > 20) return 'breath-fractured';
+  return 'breath-collapsed';
+}
+
+function applyPortraitBreath(charId) {
+  const charState = (gameState.characters && gameState.characters[charId]) || {};
+  const composure = charState.composure !== undefined ? charState.composure : 100;
+  const targetClass = _breathClassForComposure(composure);
+  _portraitsFor(charId).forEach(el => {
+    PORTRAIT_BREATH_CLASSES.forEach(c => { if (c !== targetClass) el.classList.remove(c); });
+    el.classList.add(targetClass);
+  });
+}
+
+function firePortraitReaction(charId, reactionType) {
+  if (!reactionType || reactionType === 'neutral') return;
+  const classMap = {
+    'optimal':  'react-recognition',
+    'poor':     'react-closing',
+    'lockin':   'react-lockin',
+    'break':    'react-break',
+  };
+  const cls = classMap[reactionType];
+  if (!cls) return;
+  _portraitsFor(charId).forEach(el => {
+    ['react-recognition','react-closing','react-lockin','react-break'].forEach(c => el.classList.remove(c));
+    // eslint-disable-next-line no-unused-expressions
+    el.offsetWidth;
+    el.classList.add(cls);
+    if (cls === 'react-break') {
+      const onEnd = (ev) => {
+        if (ev.animationName && ev.animationName.startsWith('reactBreak')) {
+          el.classList.remove('react-break');
+          el.classList.add('state-broken');
+          el.removeEventListener('animationend', onEnd);
+        }
+      };
+      el.addEventListener('animationend', onEnd);
+    } else {
+      const onEnd = (ev) => {
+        if (ev.animationName && (
+          ev.animationName.startsWith('reactRecognition') ||
+          ev.animationName.startsWith('reactClosing') ||
+          ev.animationName.startsWith('reactLockin'))) {
+          el.classList.remove(cls);
+          el.removeEventListener('animationend', onEnd);
+        }
+      };
+      el.addEventListener('animationend', onEnd);
+    }
+  });
+}
+
+function firePortraitSignature(charId, qId) {
+  const key = `${charId}:${qId}`;
+  const sigClass = PORTRAIT_SIGNATURES[key];
+  if (!sigClass) return;
+  _portraitsFor(charId).forEach(el => {
+    Object.values(PORTRAIT_SIGNATURES).forEach(c => el.classList.remove(c));
+    // eslint-disable-next-line no-unused-expressions
+    el.offsetWidth;
+    el.classList.add(sigClass);
+    if (sigClass === 'sig-steward-bc2') {
+      setTimeout(() => el.classList.remove(sigClass), 2000);
+    } else {
+      const onEnd = () => {
+        el.classList.remove(sigClass);
+        el.removeEventListener('animationend', onEnd);
+      };
+      el.addEventListener('animationend', onEnd);
+    }
+  });
+}
+
+function clearPortraitReactions(charId) {
+  _portraitsFor(charId).forEach(el => {
+    PORTRAIT_REACTION_CLASSES.forEach(c => el.classList.remove(c));
+  });
+}
+
+window.applyPortraitBreath    = applyPortraitBreath;
+window.firePortraitReaction   = firePortraitReaction;
+window.firePortraitSignature  = firePortraitSignature;
+window.clearPortraitReactions = clearPortraitReactions;
+window.PORTRAIT_SIGNATURES    = PORTRAIT_SIGNATURES;
+
+// ═══════════════════════════════════════════════════════════
+
 // ── CHARACTER INTERROGATION DATA ──────────────────────────────
 // Full simulator data per character.
 // counter_strategy, optimal_technique, composure variants,
@@ -4228,6 +4360,11 @@ function _applyComposureCost(charId, baseCost) {
     updateComposureState(charId);
   }
 
+  // PORTRAIT LAYER 1 — update ambient breath to match new composure state
+  try {
+    if (typeof applyPortraitBreath === 'function') applyPortraitBreath(charId);
+  } catch(e) { /* non-fatal */ }
+
   // Check fracture — threshold lowered by escalation bonus if set.
   // (#F level 3: fracture floor "rise" means harder-to-break —
   // the break point drops so composure must fall further.)
@@ -4236,6 +4373,10 @@ function _applyComposureCost(charId, baseCost) {
     ? getFractureFloorBonus(charId) : 0;
   const threshold = Math.max(0, baseThreshold - bonus);
   if (newComposure <= threshold && current > threshold) {
+    // PORTRAIT LAYER 2 — fracture crossed: fire break reaction
+    try {
+      if (typeof firePortraitReaction === 'function') firePortraitReaction(charId, 'break');
+    } catch(e) { /* non-fatal */ }
     _fireFracture(charId);
   }
 

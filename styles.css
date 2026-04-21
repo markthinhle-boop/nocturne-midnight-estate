@@ -1595,7 +1595,7 @@ html, body {
 }
 @keyframes breathComposed {
   0%,100% { transform: translateY(0px); }
-  50%     { transform: translateY(-2.5px); }
+  50%     { transform: translateY(-5px); }
 }
 
 /* Controlled: 3s cycle, 1.8px. Contained breath. */
@@ -1605,7 +1605,7 @@ html, body {
 }
 @keyframes breathControlled {
   0%,100% { transform: translateY(0px); }
-  50%     { transform: translateY(-1.8px); }
+  50%     { transform: translateY(-3.5px); }
 }
 
 /* Strained: 2s cycle, 1.2px, uneven timing. Shallow quick intakes. */
@@ -1615,8 +1615,8 @@ html, body {
 }
 @keyframes breathStrained {
   0%   { transform: translateY(0px); }
-  30%  { transform: translateY(-1.2px); }
-  50%  { transform: translateY(-0.8px); }
+  30%  { transform: translateY(-2.5px); }
+  50%  { transform: translateY(-1.8px); }
   100% { transform: translateY(0px); }
 }
 
