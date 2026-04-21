@@ -1588,76 +1588,78 @@ html, body {
    Fractured = stillness. The stillness is the point.
 ───────────────────────────────────────────────────────────── */
 
-/* Composed: slow 4s cycle, 5px rise. Neutral tint. Calm full respiration. */
+/* Composed: slow 4s cycle, 5px rise. Head upright. Calm full respiration. */
 .conv-npc-portrait.breath-composed,
 #char-portrait.breath-composed {
   animation: breathComposed 4s ease-in-out infinite;
   filter: saturate(1) brightness(1);
-  transition: filter 1200ms cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: center 70%;
+  transition: filter 300ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 @keyframes breathComposed {
   0%,100% { transform: translateY(0px); }
   50%     { transform: translateY(-5px); }
 }
 
-/* Controlled: 3s cycle, 3.5px. Slight desaturation. Contained breath. */
+/* Controlled: 3s cycle, 3.5px. Head 1px lower at rest. Slight desaturation. */
 .conv-npc-portrait.breath-controlled,
 #char-portrait.breath-controlled {
   animation: breathControlled 3s ease-in-out infinite;
   filter: saturate(0.95) brightness(0.99);
-  transition: filter 1200ms cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: center 70%;
+  transition: filter 300ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 @keyframes breathControlled {
-  0%,100% { transform: translateY(0px); }
-  50%     { transform: translateY(-3.5px); }
+  0%,100% { transform: translateY(1px); }
+  50%     { transform: translateY(-2.5px); }
 }
 
-/* Strained: 2s cycle, uneven timing. Cool shift. Micro-tilt beginning.
-   The body is starting to collapse — 0.5deg tilt inside the breath loop. */
+/* Strained: 2s cycle, uneven. Head 2px lower + 0.5deg tilt. Cool shift. */
 .conv-npc-portrait.breath-strained,
 #char-portrait.breath-strained {
   animation: breathStrained 2s ease-in-out infinite;
   filter: saturate(0.9) brightness(0.97) hue-rotate(-2deg);
   transform-origin: center 70%;
-  transition: filter 1200ms cubic-bezier(0.4, 0, 0.2, 1);
+  transition: filter 300ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 @keyframes breathStrained {
-  0%   { transform: translateY(0px) rotate(-0.5deg); }
-  30%  { transform: translateY(-2.5px) rotate(-0.5deg); }
-  50%  { transform: translateY(-1.8px) rotate(-0.5deg); }
-  100% { transform: translateY(0px) rotate(-0.5deg); }
+  0%   { transform: translateY(2px) rotate(-0.5deg); }
+  30%  { transform: translateY(-0.5px) rotate(-0.5deg); }
+  50%  { transform: translateY(0.2px) rotate(-0.5deg); }
+  100% { transform: translateY(2px) rotate(-0.5deg); }
 }
 
-/* Fractured: breath HOLDS. Tilt + slump. Warm amber cast — composure collapsing inward. */
+/* Fractured: breath HOLDS. Head 4px down + 1.5deg tilt. Warm amber cast. */
 .conv-npc-portrait.breath-fractured,
 #char-portrait.breath-fractured {
   animation: none;
-  transform: translateY(1px) rotate(-1.5deg);
+  transform: translateY(4px) rotate(-1.5deg);
   transform-origin: center 70%;
   filter: saturate(0.85) brightness(0.94) hue-rotate(2deg);
-  transition: transform 1200ms cubic-bezier(0.4, 0, 0.2, 1), filter 1200ms cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 1200ms cubic-bezier(0.4, 0, 0.2, 1), filter 300ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Collapsed: stone. Deeper tilt, cold flat tone. */
+/* Collapsed: stone. Head 6px down + 2.5deg tilt + inward scale. Cold flat tone. */
 .conv-npc-portrait.breath-collapsed,
 #char-portrait.breath-collapsed {
   animation: none;
-  transform: translateY(2px) rotate(-2.5deg) scale(0.992);
+  transform: translateY(6px) rotate(-2.5deg) scale(0.992);
   transform-origin: center 70%;
   filter: saturate(0.72) brightness(0.9) contrast(1.05);
-  transition: transform 1400ms cubic-bezier(0.4, 0, 0.2, 1), filter 1400ms cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 1400ms cubic-bezier(0.4, 0, 0.2, 1), filter 300ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* ─── STATE TRANSITION FLASH ────────────────────────────────
-   One-shot brightness dip fired on every threshold crossing.
-   Player feels the state change land. 400ms total. */
+   One-shot brightness dip + saturation drain on every threshold crossing.
+   The player feels the moment. 700ms with 15% dwell on the dip. */
 .conv-npc-portrait.state-transition,
 #char-portrait.state-transition {
-  animation: stateTransitionFlash 400ms ease-out;
+  animation: stateTransitionFlash 700ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 @keyframes stateTransitionFlash {
   0%   { filter: brightness(1) saturate(1); }
-  35%  { filter: brightness(0.88) saturate(0.9); }
+  15%  { filter: brightness(0.72) saturate(0.65); }
+  30%  { filter: brightness(0.72) saturate(0.65); }
   100% { filter: brightness(1) saturate(1); }
 }
 
