@@ -2856,7 +2856,7 @@ const INTERROGATION_DATA = {
   'curator': {
     counter_strategy:  'withhold',
     optimal_technique: 'approach',
-    composure_floor:   55,
+    composure_floor:   40,
     fracture_threshold: 60,
 
     baseline: {
@@ -3171,7 +3171,7 @@ const INTERROGATION_DATA = {
   'greaves': {
     counter_strategy:  'cooperate',
     optimal_technique: 'account',
-    composure_floor:   60,
+    composure_floor:   40,
     fracture_threshold: 65,
 
     baseline: {
@@ -3483,7 +3483,7 @@ const INTERROGATION_DATA = {
   'pemberton-hale': {
     counter_strategy:  'perform',
     optimal_technique: 'record',
-    composure_floor:   45,
+    composure_floor:   40,
     fracture_threshold: 55,
 
     baseline: {
