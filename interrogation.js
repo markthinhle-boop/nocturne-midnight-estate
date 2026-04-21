@@ -675,7 +675,7 @@ window._getEscalation           = _getEscalation;
 const PORTRAIT_REACTION_CLASSES = [
   'breath-composed','breath-controlled','breath-strained','breath-fractured','breath-collapsed',
   'react-recognition','react-closing','react-lockin','react-break',
-  'state-broken',
+  'state-broken','state-transition',
   'sig-surgeon-sc1','sig-crane-cb3','sig-steward-bc2','sig-vivienne-vc2','sig-ashworth-bc3','sig-hatch-hb2',
 ];
 
@@ -717,8 +717,24 @@ function applyPortraitBreath(charId) {
   const composure = charState.composure !== undefined ? charState.composure : 100;
   const targetClass = _breathClassForComposure(composure);
   _portraitsFor(charId).forEach(el => {
+    // Detect real state change — is the target breath class different from what's applied?
+    const hadDifferent = PORTRAIT_BREATH_CLASSES.some(c => c !== targetClass && el.classList.contains(c));
     PORTRAIT_BREATH_CLASSES.forEach(c => { if (c !== targetClass) el.classList.remove(c); });
     el.classList.add(targetClass);
+    // Fire one-shot transition flash on real crossings (not on initial open)
+    if (hadDifferent) {
+      el.classList.remove('state-transition');
+      // eslint-disable-next-line no-unused-expressions
+      el.offsetWidth; // force reflow so animation restarts
+      el.classList.add('state-transition');
+      const onEnd = (ev) => {
+        if (ev.animationName && ev.animationName.startsWith('stateTransitionFlash')) {
+          el.classList.remove('state-transition');
+          el.removeEventListener('animationend', onEnd);
+        }
+      };
+      el.addEventListener('animationend', onEnd);
+    }
   });
 }
 
