@@ -1365,6 +1365,15 @@ const ROOM_OBJECTS = {
     max_depth: 1, hotspot: { left: 61.6, top: 32.1, width: 10.3, height: 8.8 },
   },
 
+  // ── BILLIARD ROOM ──────────────────────────────────────────
+  "billiard-table-obj": {
+    room: "billiard-room",
+    tap_1: "The table is set mid-game.",
+    item_id: null, item_at_depth: null, is_essential: false, is_deception_item: false,
+    slow_drag: false, max_depth: 1,
+    hotspot: { left: 18, top: 33, width: 42, height: 32 },
+  },
+
   // ── FOYER ──────────────────────────────────────────────────
   "estate-flower-obj": {
     room: "foyer",
@@ -1965,6 +1974,14 @@ function tapObject(objectId, tapX, tapY) {
 
   if (!gameState.examined_objects.includes(objectId)) {
     gameState.examined_objects.push(objectId);
+  }
+
+  // billiard-table-obj — launches standalone billiards mini-game
+  if (objectId === 'billiard-table-obj') {
+    if (typeof window.openBilliards === 'function') {
+      window.openBilliards();
+    }
+    return;
   }
 
   // vault-door-obj — seal required, fires tapVaultDoor directly
