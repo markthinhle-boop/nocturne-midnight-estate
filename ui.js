@@ -2554,8 +2554,8 @@ const NAV_LAYOUT = {
   // split = insert current room label after row index N (0 = before all rows, 1 = after first row, etc.)
   // ── ESTATE ─────────────────────────────────────────────────
   'foyer':        { rows: [['gallery', 'study']],                                                    split: 0 },
-  'gallery':      { rows: [['foyer'], ['archive-path']],                                             split: 1 },
-  'study':        { rows: [['foyer'], ['map-room']],                                                split: 1 },
+  'gallery':      { rows: [['foyer'], ['terrace']],                                                   split: 1 },
+  'study':        { rows: [['foyer'], ['archive-path', 'map-room']],                                  split: 1 },
   // ── EAST WING — symmetric chain matches the map layout ──
   // Row 1: map-room → dining-room (study is entry; trophy below map)
   // Row 2: trophy-room → billiard-room (cross-linked)
@@ -2566,9 +2566,9 @@ const NAV_LAYOUT = {
   'billiard-room':{ rows: [['dining-room'], ['conservatory']],                                       split: 1 },
   'weapons-room': { rows: [['trophy-room'], ['conservatory']],                                       split: 1 },
   'conservatory': { rows: [['billiard-room'], ['weapons-room']],                                     split: 1 },
-  'archive-path': { rows: [['gallery'], ['lectern', 'terrace']],                                     split: 1 },
+  'archive-path': { rows: [['study']],                                                               split: 1 },
   'lectern':      { rows: [['archive-path']],                                                        split: 1 },
-  'terrace':      { rows: [['archive-path'], ['ballroom'], ['maids-quarters', 'groundskeeper-cottage']], split: 1 },
+  'terrace':      { rows: [['gallery'], ['ballroom'], ['maids-quarters', 'groundskeeper-cottage']], split: 1 },
   'maids-quarters': { rows: [['terrace'], ['groundskeeper-cottage']], split: 1 },
   'groundskeeper-cottage': { rows: [['terrace'], ['maids-quarters']], split: 1 },
   'ballroom':     { rows: [['terrace'], ['antechamber', 'stage', 'library'], ['physicians', 'smoking']], split: 1 },
