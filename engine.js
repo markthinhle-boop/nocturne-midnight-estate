@@ -1374,6 +1374,15 @@ const ROOM_OBJECTS = {
     hotspot: { left: 18, top: 33, width: 42, height: 32 },
   },
 
+  // ── SMOKING ROOM ───────────────────────────────────────────
+  "chess-board-obj": {
+    room: "smoking",
+    tap_1: "A chess board mid-game. The Baron is waiting.",
+    item_id: null, item_at_depth: null, is_essential: false, is_deception_item: false,
+    slow_drag: false, max_depth: 1,
+    hotspot: { left: 32, top: 55, width: 32, height: 30 },
+  },
+
   // ── FOYER ──────────────────────────────────────────────────
   "estate-flower-obj": {
     room: "foyer",
@@ -1983,6 +1992,17 @@ function tapObject(objectId, tapX, tapY) {
     } else {
       showToast('Billiards script not loaded. Add <script src="%PUBLIC_URL%/billiards.js"></script> to index.html.');
       console.error('[billiards] window.openBilliards is undefined — billiards.js is not loaded');
+    }
+    return;
+  }
+
+  // chess-board-obj — launches standalone chess game vs Baron
+  if (objectId === 'chess-board-obj') {
+    if (typeof window.openChess === 'function') {
+      window.openChess();
+    } else {
+      showToast('Chess script not loaded. Add <script src="chess.js"></script> to index.html.');
+      console.error('[chess] window.openChess is undefined — chess.js is not loaded');
     }
     return;
   }
