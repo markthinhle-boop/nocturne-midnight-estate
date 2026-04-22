@@ -2565,7 +2565,6 @@ const NAV_LAYOUT = {
   'weapons-room': { rows: [['trophy-room'], ['conservatory']],                                       split: 1 },
   'conservatory': { rows: [['billiard-room'], ['weapons-room']],                                     split: 1 },
   'archive-path': { rows: [['physicians', 'smoking']],                                                split: 0 },
-  'lectern':      { rows: [['archive-path']],                                                        split: 1 },
   'terrace':      { rows: [['gallery'], ['ballroom'], ['maids-quarters', 'groundskeeper-cottage']], split: 1 },
   'maids-quarters': { rows: [['terrace'], ['groundskeeper-cottage']], split: 1 },
   'groundskeeper-cottage': { rows: [['terrace'], ['maids-quarters']], split: 1 },
