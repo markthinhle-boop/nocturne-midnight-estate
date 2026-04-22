@@ -2,15 +2,16 @@
  * NOCTURNE: MIDNIGHT ESTATE — BILLIARDS
  * Standard 8-ball solids/stripes. Solo practice OR vs Alistair.
  * Canvas 2D, mobile-safe, realistic-ish physics.
+ * Portrait phones: table rotates 90° so it fills width.
  * Mount: tap billiard-table object in Billiard Room → openBilliards()
  * ========================================================================= */
 (function () {
   'use strict';
 
   // ---------- Table geometry (internal units, scaled at render) -----------
-  const TABLE_W = 800;            // internal width (playfield + rails)
+  const TABLE_W = 800;
   const TABLE_H = 400;
-  const RAIL = 22;                // rail thickness
+  const RAIL = 32;
   const PLAY_X0 = RAIL;
   const PLAY_Y0 = RAIL;
   const PLAY_X1 = TABLE_W - RAIL;
@@ -20,43 +21,29 @@
 
   const BALL_R = 10;
   const POCKET_R = 18;
-  const POCKET_CAPTURE_R = 16;    // how close a ball center must be to drop
+  const POCKET_CAPTURE_R = 16;
 
   const POCKETS = [
-    { x: PLAY_X0 + 6,         y: PLAY_Y0 + 6 },         // TL
-    { x: TABLE_W / 2,         y: PLAY_Y0 - 2 },         // TM
-    { x: PLAY_X1 - 6,         y: PLAY_Y0 + 6 },         // TR
-    { x: PLAY_X0 + 6,         y: PLAY_Y1 - 6 },         // BL
-    { x: TABLE_W / 2,         y: PLAY_Y1 + 2 },         // BM
-    { x: PLAY_X1 - 6,         y: PLAY_Y1 - 6 }          // BR
+    { x: PLAY_X0 + 6,   y: PLAY_Y0 + 6 },
+    { x: TABLE_W / 2,   y: PLAY_Y0 - 2 },
+    { x: PLAY_X1 - 6,   y: PLAY_Y0 + 6 },
+    { x: PLAY_X0 + 6,   y: PLAY_Y1 - 6 },
+    { x: TABLE_W / 2,   y: PLAY_Y1 + 2 },
+    { x: PLAY_X1 - 6,   y: PLAY_Y1 - 6 }
   ];
 
-  const FRICTION = 0.988;         // per-frame velocity decay
-  const MIN_SPEED = 0.06;         // below this, ball stops
-  const CUSHION_DAMP = 0.78;      // velocity retained after cushion bounce
-  const BALL_RESTITUTION = 0.96;  // ball-ball collision elasticity
-  const SPIN_FRICTION = 0.94;     // spin decay per frame
-  const SPIN_TO_VEL = 0.12;       // how strongly spin curves a rolling ball
+  const FRICTION = 0.988;
+  const MIN_SPEED = 0.06;
+  const CUSHION_DAMP = 0.78;
+  const BALL_RESTITUTION = 0.96;
+  const SPIN_FRICTION = 0.94;
+  const SPIN_TO_VEL = 0.12;
 
-  // ---------- Ball data ----------------------------------------------------
-  // 0 = cue. 1-7 solids, 8 = eight ball, 9-15 stripes.
   const BALL_COLORS = {
-    0: '#f5ecd7',   // cue
-    1: '#f7c948',   // yellow
-    2: '#2e5cb8',   // blue
-    3: '#c0392b',   // red
-    4: '#6c3483',   // purple
-    5: '#d35400',   // orange
-    6: '#196f3d',   // green
-    7: '#7b241c',   // maroon
-    8: '#111111',   // eight
-    9: '#f7c948',
-    10: '#2e5cb8',
-    11: '#c0392b',
-    12: '#6c3483',
-    13: '#d35400',
-    14: '#196f3d',
-    15: '#7b241c'
+    0: '#f5ecd7', 1: '#f7c948', 2: '#2e5cb8', 3: '#c0392b', 4: '#6c3483',
+    5: '#d35400', 6: '#196f3d', 7: '#7b241c', 8: '#111111',
+    9: '#f7c948', 10: '#2e5cb8', 11: '#c0392b', 12: '#6c3483',
+    13: '#d35400', 14: '#196f3d', 15: '#7b241c'
   };
 
   function ballType(n) {
@@ -67,7 +54,6 @@
   }
 
   // ---------- Dialogue: Alistair, 100+ unique lines -----------------------
-  // Categories trigger based on game state. Each category has many lines.
   const DIALOGUE = {
     preMatch: [
       "Grey. You play? Or are we about to discover something charming about you?",
@@ -80,19 +66,6 @@
       "Rules: eight-ball, call your pocket, scratches cost you. You know the rest.",
       "Shall we keep score, or shall we pretend we aren't?",
       "Pick a cue. The lighter one sits better for beginners."
-    ],
-    playerBreak: [
-      "Break it. Let's see what you do with chaos.",
-      "Hit it like you mean it, Grey.",
-      "The break tells you everything. Go on.",
-      "Don't think. Not yet.",
-      "Firm strike. Centre ball. Unless you'd prefer theatrics."
-    ],
-    alistairBreak: [
-      "Watch the shoulder. That's where power actually comes from.",
-      "This one's for the room, not for you.",
-      "I've broken this rack a thousand times. It never gets old.",
-      "Pay attention. You might learn something."
     ],
     goodShotPlayer: [
       "Hm. Tidy.",
@@ -224,12 +197,6 @@
       "Well. You won by attrition. Still counts.",
       "A defeat. Rare. I'll take the lesson."
     ],
-    safety: [
-      "A safety. Interesting choice.",
-      "You're playing defence. I respect it. Briefly.",
-      "Hiding behind my ball. Bold.",
-      "Safeties are confessions. What are you afraid of?"
-    ],
     contemplative: [
       "This table's seen things.",
       "I learned pool from a man who lost at it. He was better at that than winning.",
@@ -237,20 +204,6 @@
       "Ashworth never played. Said it was undignified. He was wrong about a lot of things.",
       "The trick is to see the next shot before you take this one.",
       "Patience, Grey. The table rewards it. So does this house."
-    ],
-    trashTalk: [
-      "Are you going to shoot, or are you courting it?",
-      "The ball won't move if you think at it.",
-      "Take the shot. Or concede. Either would speed things along.",
-      "If you stand there any longer I'll pour another drink.",
-      "The cloth is bleeding from boredom."
-    ],
-    turnPromptPlayer: [
-      "Your shot.",
-      "Go on, then.",
-      "The table is yours.",
-      "Take it.",
-      "Whenever you're ready."
     ]
   };
 
@@ -260,117 +213,100 @@
     return arr[Math.floor(Math.random() * arr.length)];
   }
 
-  // ---------- Game state ---------------------------------------------------
+  // ---------- Module state -------------------------------------------------
   let state = null;
   let canvas = null;
   let ctx = null;
   let modal = null;
-  let scaleFactor = 1;
   let rafId = null;
   let shotStartTime = 0;
 
+  // Layout
+  let viewMode = 'landscape';  // 'landscape' | 'portrait'
+  let tableScale = 1;
+  let tableOffsetX = 0;
+  let tableOffsetY = 0;
+
+  // HUD regions in SCREEN space
+  let hud = {
+    shootBtn: null,
+    powerBar: null,
+    spinBall: null,
+    dialogueBox: null
+  };
+
+  let modeSelectRegions = null;
+  let modeSelectActive = false;
+
+  let powerDragging = false;
+  let spinDragging = false;
+
   function newGame(mode) {
     state = {
-      mode: mode,                 // 'solo' | 'vs'
+      mode: mode,
       balls: makeRack(),
-      // Shot input
       aimX: PLAY_X1 - 100,
       aimY: TABLE_H / 2,
-      power: 0.5,                 // 0..1
-      spinX: 0,                   // -1..1  (side english)
-      spinY: 0,                   // -1..1  (top/back)
-      // Turn / rules
-      turn: 'player',             // 'player' | 'alistair'
-      playerGroup: null,          // 'solid' | 'stripe' | null (open table)
-      alistairGroup: null,
+      power: 0.5,
+      spinX: 0, spinY: 0,
+      turn: 'player',
+      playerGroup: null, alistairGroup: null,
       openTable: true,
       ballInHand: false,
-      gamePhase: 'aiming',        // 'aiming' | 'simulating' | 'gameover'
-      firstContact: null,         // first ball cue hit this shot
+      gamePhase: 'aiming',
+      firstContact: null,
       pocketedThisShot: [],
-      winner: null,
-      loseReason: null,
-      // AI adaptation
-      playerStats: {
-        shotsTaken: 0,
-        shotsMissed: 0,
-        ballsSunk: 0,
-        scratches: 0,
-        skill: 0.5                // 0..1, drives Alistair's aim noise
-      },
-      // Called pocket (8-ball only)
+      winner: null, loseReason: null,
+      playerStats: { shotsTaken: 0, shotsMissed: 0, ballsSunk: 0, scratches: 0, skill: 0.5 },
       calledPocket: null,
       showCallPocket: false,
-      // Dialogue
-      dialogue: pickLine('preMatch'),
-      dialogueTimer: 0,
-      // UI
-      showHelp: false
+      dialogue: '', dialogueTimer: 0
     };
-
-    // Place cue ball at "head spot"
     state.balls[0].x = PLAY_X0 + PLAY_W * 0.25;
     state.balls[0].y = TABLE_H / 2;
-
-    setTimeout(() => say(mode === 'vs' ? 'preMatch' : null), 100);
+    if (mode === 'vs') setTimeout(() => say('preMatch'), 150);
   }
 
   function makeRack() {
     const balls = [];
-    // Cue
     balls.push({ id: 0, n: 0, x: 0, y: 0, vx: 0, vy: 0, spinX: 0, spinY: 0, inPlay: true, pocketed: false });
-    // Rack triangle at foot spot
     const foot = { x: PLAY_X0 + PLAY_W * 0.72, y: TABLE_H / 2 };
-    // Standard 8-ball rack: apex, mixed rows, 8 in middle of 3rd row.
-    const order = [
-      [1],
-      [9, 2],
-      [3, 8, 10],
-      [11, 4, 5, 12],
-      [6, 13, 7, 14, 15]
-    ];
-    const dx = BALL_R * 2 * 0.866 + 0.4;  // horizontal spacing (cos 30)
-    const dy = BALL_R * 2 + 0.4;          // vertical spacing
+    const order = [[1], [9, 2], [3, 8, 10], [11, 4, 5, 12], [6, 13, 7, 14, 15]];
+    const dx = BALL_R * 2 * 0.866 + 0.4;
+    const dy = BALL_R * 2 + 0.4;
     for (let row = 0; row < order.length; row++) {
       const rowBalls = order[row];
       const rowX = foot.x + row * dx;
       const rowY0 = foot.y - ((rowBalls.length - 1) * dy) / 2;
       for (let i = 0; i < rowBalls.length; i++) {
         balls.push({
-          id: balls.length,
-          n: rowBalls[i],
-          x: rowX,
-          y: rowY0 + i * dy,
+          id: balls.length, n: rowBalls[i],
+          x: rowX, y: rowY0 + i * dy,
           vx: 0, vy: 0, spinX: 0, spinY: 0,
-          inPlay: true,
-          pocketed: false
+          inPlay: true, pocketed: false
         });
       }
     }
     return balls;
   }
 
-  // ---------- Shot / physics ----------------------------------------------
+  // ---------- Physics ------------------------------------------------------
   function takeShot() {
-    if (state.gamePhase !== 'aiming') return;
+    if (!state || state.gamePhase !== 'aiming') return;
     const cue = state.balls[0];
     if (!cue.inPlay) return;
 
-    // 8-ball: if player is on eight, require called pocket
-    if (state.turn === 'player' && isOnEight('player') && !state.calledPocket) {
+    if (state.turn === 'player' && isOnEight('player') && !state.calledPocket && state.calledPocket !== 0) {
       state.showCallPocket = true;
-      render();
       return;
     }
 
     const dx = state.aimX - cue.x;
     const dy = state.aimY - cue.y;
     const d = Math.hypot(dx, dy) || 1;
-    const power = state.power;
-    const speed = 4 + power * 22;      // base speed
+    const speed = 4 + state.power * 22;
     cue.vx = (dx / d) * speed;
     cue.vy = (dy / d) * speed;
-    // spin becomes lateral/longitudinal after collision
     cue.spinX = state.spinX * 6;
     cue.spinY = state.spinY * 6;
 
@@ -378,30 +314,25 @@
     state.pocketedThisShot = [];
     state.gamePhase = 'simulating';
     shotStartTime = performance.now();
-    state.playerStats.shotsTaken += state.turn === 'player' ? 1 : 0;
+    if (state.turn === 'player') state.playerStats.shotsTaken++;
   }
 
   function step() {
     const balls = state.balls;
 
-    // Integrate
     for (const b of balls) {
       if (!b.inPlay) continue;
       b.x += b.vx;
       b.y += b.vy;
-      // Spin influence on direction (slight curve while rolling)
       b.vx += b.spinX * SPIN_TO_VEL * 0.05;
       b.vy += b.spinY * SPIN_TO_VEL * 0.05;
-      // Friction
       b.vx *= FRICTION;
       b.vy *= FRICTION;
       b.spinX *= SPIN_FRICTION;
       b.spinY *= SPIN_FRICTION;
-      const sp = Math.hypot(b.vx, b.vy);
-      if (sp < MIN_SPEED) { b.vx = 0; b.vy = 0; }
+      if (Math.hypot(b.vx, b.vy) < MIN_SPEED) { b.vx = 0; b.vy = 0; }
     }
 
-    // Cushions
     for (const b of balls) {
       if (!b.inPlay) continue;
       if (b.x < PLAY_X0 + BALL_R) { b.x = PLAY_X0 + BALL_R; b.vx = -b.vx * CUSHION_DAMP; b.spinX *= 0.5; }
@@ -410,7 +341,6 @@
       if (b.y > PLAY_Y1 - BALL_R) { b.y = PLAY_Y1 - BALL_R; b.vy = -b.vy * CUSHION_DAMP; b.spinY *= 0.5; }
     }
 
-    // Ball-ball collisions
     for (let i = 0; i < balls.length; i++) {
       const a = balls[i];
       if (!a.inPlay) continue;
@@ -422,49 +352,28 @@
         const dist = Math.hypot(dx, dy);
         const minD = BALL_R * 2;
         if (dist > 0 && dist < minD) {
-          // record first contact for foul checking
           if (a.n === 0 && state.firstContact === null) state.firstContact = b.n;
           if (b.n === 0 && state.firstContact === null) state.firstContact = a.n;
-          // positional correction
           const overlap = (minD - dist) / 2;
           const nx = dx / dist;
           const ny = dy / dist;
-          a.x -= nx * overlap;
-          a.y -= ny * overlap;
-          b.x += nx * overlap;
-          b.y += ny * overlap;
-          // velocity along normal
+          a.x -= nx * overlap; a.y -= ny * overlap;
+          b.x += nx * overlap; b.y += ny * overlap;
           const avn = a.vx * nx + a.vy * ny;
           const bvn = b.vx * nx + b.vy * ny;
           const p = (avn - bvn) * BALL_RESTITUTION;
-          a.vx -= p * nx;
-          a.vy -= p * ny;
-          b.vx += p * nx;
-          b.vy += p * ny;
-          // spin transfer on cue ball (English)
-          if (a.n === 0) {
-            b.vx += a.spinX * 0.4;
-            b.vy += a.spinY * 0.4;
-            a.spinX *= 0.3;
-            a.spinY *= 0.3;
-          }
-          if (b.n === 0) {
-            a.vx += b.spinX * 0.4;
-            a.vy += b.spinY * 0.4;
-            b.spinX *= 0.3;
-            b.spinY *= 0.3;
-          }
+          a.vx -= p * nx; a.vy -= p * ny;
+          b.vx += p * nx; b.vy += p * ny;
+          if (a.n === 0) { b.vx += a.spinX * 0.4; b.vy += a.spinY * 0.4; a.spinX *= 0.3; a.spinY *= 0.3; }
+          if (b.n === 0) { a.vx += b.spinX * 0.4; a.vy += b.spinY * 0.4; b.spinX *= 0.3; b.spinY *= 0.3; }
         }
       }
     }
 
-    // Pocket capture
     for (const b of balls) {
       if (!b.inPlay) continue;
       for (const p of POCKETS) {
-        const dx = b.x - p.x;
-        const dy = b.y - p.y;
-        if (Math.hypot(dx, dy) < POCKET_CAPTURE_R) {
+        if (Math.hypot(b.x - p.x, b.y - p.y) < POCKET_CAPTURE_R) {
           b.inPlay = false;
           b.pocketed = true;
           b.vx = 0; b.vy = 0;
@@ -475,17 +384,13 @@
       }
     }
 
-    // Stop condition: all balls at rest
     let allStopped = true;
     for (const b of balls) {
       if (!b.inPlay) continue;
       if (Math.abs(b.vx) > MIN_SPEED || Math.abs(b.vy) > MIN_SPEED) { allStopped = false; break; }
     }
 
-    // Safety timeout
-    const elapsed = performance.now() - shotStartTime;
-    if (elapsed > 12000) allStopped = true;
-
+    if (performance.now() - shotStartTime > 12000) allStopped = true;
     if (allStopped) resolveShot();
   }
 
@@ -496,7 +401,6 @@
     const cueScratched = pocketed.some(b => b.n === 0);
     const eightSunk = pocketed.some(b => b.n === 8);
 
-    // Assign groups on first legal pot (not cue, not 8)
     if (state.openTable) {
       const legalPot = pocketed.find(b => b.n !== 0 && b.n !== 8);
       if (legalPot && !cueScratched) {
@@ -514,23 +418,14 @@
       }
     }
 
-    // 8-ball rules
     if (eightSunk) {
       const shooterOnEight = isOnEight(shooter);
-      if (!shooterOnEight) {
-        // Pocketed 8 early → shooter loses
-        endGame(other(shooter), 'Early eight ball');
-        return;
-      }
-      if (cueScratched) {
-        endGame(other(shooter), 'Cue scratch on eight');
-        return;
-      }
-      // On eight, called pocket only matters for player (AI always auto-calls its pocket correctly when legal)
-      if (shooter === 'player') {
+      if (!shooterOnEight) { endGame(other(shooter), 'Early eight ball'); return; }
+      if (cueScratched) { endGame(other(shooter), 'Cue scratch on eight'); return; }
+      if (shooter === 'player' && state.calledPocket !== null) {
         const eight = pocketed.find(b => b.n === 8);
-        if (state.calledPocket && eight.pocketedAt) {
-          const called = POCKETS[state.calledPocket];
+        const called = POCKETS[state.calledPocket];
+        if (eight && eight.pocketedAt) {
           if (Math.hypot(eight.pocketedAt.x - called.x, eight.pocketedAt.y - called.y) > 5) {
             endGame('alistair', 'Wrong pocket on eight');
             return;
@@ -541,10 +436,8 @@
       return;
     }
 
-    // Determine if shooter pocketed their own color
     const shooterGroup = shooter === 'player' ? state.playerGroup : state.alistairGroup;
-    let sankOwn = false;
-    let sankOpp = false;
+    let sankOwn = false, sankOpp = false;
     for (const b of pocketed) {
       if (b.n === 0 || b.n === 8) continue;
       const t = ballType(b.n);
@@ -553,20 +446,15 @@
       else sankOpp = true;
     }
 
-    // Handle scratches and fouls
     let foul = false;
     if (cueScratched) foul = true;
-    if (state.firstContact == null) foul = true;        // no contact
-    if (!state.openTable && shooterGroup) {
-      // First contact must be own group (unless on 8)
-      if (state.firstContact != null) {
-        const onEight = isOnEight(shooter);
-        if (onEight && state.firstContact !== 8) foul = true;
-        if (!onEight && state.firstContact === 8) foul = true;
-        if (!onEight && state.firstContact !== 8) {
-          const t = ballType(state.firstContact);
-          if (t !== shooterGroup) foul = true;
-        }
+    if (state.firstContact == null) foul = true;
+    if (!state.openTable && shooterGroup && state.firstContact != null) {
+      const onEight = isOnEight(shooter);
+      if (onEight && state.firstContact !== 8) foul = true;
+      if (!onEight && state.firstContact === 8) foul = true;
+      if (!onEight && state.firstContact !== 8) {
+        if (ballType(state.firstContact) !== shooterGroup) foul = true;
       }
     }
 
@@ -576,22 +464,21 @@
       if (cueScratched) state.playerStats.scratches++;
     }
 
-    // Reset cue ball if scratched
     if (cueScratched) {
       cueBall.inPlay = true;
       cueBall.pocketed = false;
       cueBall.x = PLAY_X0 + PLAY_W * 0.25;
       cueBall.y = TABLE_H / 2;
+      cueBall.vx = 0; cueBall.vy = 0;
+      cueBall.spinX = 0; cueBall.spinY = 0;
     }
 
-    // Dialogue & turn transition
     if (state.mode === 'vs') {
       if (shooter === 'player') {
         if (cueScratched) say('scratchPlayer');
         else if (sankOpp) say('sunkOpponentBall');
         else if (sankOwn) say('sunkPlayerBall');
-        else if (pocketed.length === 0) say(foul ? 'missedPlayer' : 'missedPlayer');
-        else say('goodShotPlayer');
+        else say('missedPlayer');
       } else {
         if (cueScratched) say('scratchAlistair');
         else if (sankOwn) say('goodShotAlistair');
@@ -602,7 +489,6 @@
     state.calledPocket = null;
     state.showCallPocket = false;
 
-    // Continue turn if sank own and no foul
     const continueTurn = sankOwn && !foul;
     if (!continueTurn) {
       state.turn = other(shooter);
@@ -611,14 +497,11 @@
       state.ballInHand = false;
     }
 
-    // Update AI skill estimate based on player stats
     updateAISkill();
-
     state.gamePhase = 'aiming';
 
-    // If AI turn, schedule move
-    if (state.mode === 'vs' && state.turn === 'alistair' && state.gamePhase === 'aiming') {
-      setTimeout(alistairMove, 900 + Math.random() * 800);
+    if (state.mode === 'vs' && state.turn === 'alistair') {
+      setTimeout(alistairMove, 900 + Math.random() * 700);
     }
   }
 
@@ -627,7 +510,6 @@
   function isOnEight(who) {
     const group = who === 'player' ? state.playerGroup : state.alistairGroup;
     if (!group) return false;
-    // All of shooter's group must be off the table
     for (const b of state.balls) {
       if (b.n === 0 || b.n === 8) continue;
       if (ballType(b.n) === group && b.inPlay) return false;
@@ -640,28 +522,36 @@
     state.winner = winner;
     state.loseReason = reason;
     if (state.mode === 'vs') {
-      if (winner === 'player') say(reason.includes('Early') || reason.includes('Wrong') || reason.includes('scratch') ? 'alistairLostEight' : 'playerWonEight');
-      else say(reason.includes('Eight ball sunk') ? 'alistairWonEight' : 'playerLostEight');
+      if (winner === 'player') {
+        if (reason.indexOf('Early') >= 0 || reason.indexOf('Wrong') >= 0 || reason.indexOf('scratch') >= 0) say('alistairLostEight');
+        else say('playerWonEight');
+      } else {
+        if (reason.indexOf('Eight ball sunk') >= 0) say('alistairWonEight');
+        else say('playerLostEight');
+      }
     }
   }
 
-  // ---------- Adaptive AI --------------------------------------------------
   function updateAISkill() {
     const p = state.playerStats;
     if (p.shotsTaken < 2) return;
     const missRate = p.shotsMissed / p.shotsTaken;
     const scratchRate = p.scratches / p.shotsTaken;
-    // skill 0 = terrible, 1 = great. Roughly inverse of miss rate, penalised by scratches.
     const s = Math.max(0, Math.min(1, 1 - missRate - scratchRate * 0.3));
     p.skill = p.skill * 0.6 + s * 0.4;
   }
 
   function alistairMove() {
-    if (state.gamePhase !== 'aiming') return;
+    if (!state || state.gamePhase !== 'aiming') return;
     if (state.turn !== 'alistair') return;
 
-    // Pick target ball — prefer own group, or any if open table, or 8 if on eight
     const cue = state.balls[0];
+    if (state.ballInHand) {
+      cue.x = PLAY_X0 + PLAY_W * 0.25;
+      cue.y = TABLE_H / 2;
+      state.ballInHand = false;
+    }
+
     const onEight = isOnEight('alistair');
     let candidates = [];
     for (const b of state.balls) {
@@ -672,13 +562,10 @@
       if (state.openTable && b.n === 8) continue;
       candidates.push(b);
     }
-
     if (candidates.length === 0) {
-      // Fallback — just hit any ball
       for (const b of state.balls) if (b.inPlay && b.n !== 0) candidates.push(b);
     }
 
-    // For each candidate, find best pocket
     let best = null;
     for (const ball of candidates) {
       for (let pi = 0; pi < POCKETS.length; pi++) {
@@ -688,13 +575,10 @@
       }
     }
 
-    // Skill-based noise: worse player → more noise (Alistair adapts to NOT steamroll weak players)
     const playerSkill = state.playerStats.skill;
-    // Alistair targets ~player skill + 0.2, clamped. So a weak player gets a slightly-better Alistair, not a lethal one.
     const aiSkill = Math.max(0.3, Math.min(0.95, playerSkill + 0.2));
-    const noise = (1 - aiSkill) * 60;  // pixel offset on aim
+    const noise = (1 - aiSkill) * 60;
 
-    // Aim at computed ghost-ball position
     let targetX, targetY;
     if (best && best.score > -1000) {
       const ghost = ghostBall(best.ball, best.pocket);
@@ -702,7 +586,6 @@
       targetY = ghost.y + (Math.random() - 0.5) * noise;
       if (onEight) state.calledPocket = best.pi;
     } else {
-      // Defensive random
       targetX = cue.x + (Math.random() - 0.5) * 400;
       targetY = cue.y + (Math.random() - 0.5) * 200;
     }
@@ -710,10 +593,8 @@
     state.aimX = targetX;
     state.aimY = targetY;
     state.power = 0.55 + Math.random() * 0.25 + aiSkill * 0.1;
-    state.spinX = 0;
-    state.spinY = 0;
+    state.spinX = 0; state.spinY = 0;
 
-    // Dialogue — sharpness based on state
     const myBalls = countGroup('alistair');
     const yourBalls = countGroup('player');
     if (onEight) say('alistairEightApproach');
@@ -733,40 +614,26 @@
   }
 
   function ghostBall(target, pocket) {
-    // Position cue ball should contact ball at, to drive target toward pocket.
-    const tx = target.x;
-    const ty = target.y;
-    const px = pocket.x;
-    const py = pocket.y;
-    const dx = tx - px;
-    const dy = ty - py;
+    const dx = target.x - pocket.x;
+    const dy = target.y - pocket.y;
     const d = Math.hypot(dx, dy) || 1;
-    return {
-      x: tx + (dx / d) * BALL_R * 2,
-      y: ty + (dy / d) * BALL_R * 2
-    };
+    return { x: target.x + (dx / d) * BALL_R * 2, y: target.y + (dy / d) * BALL_R * 2 };
   }
 
   function scoreShot(cue, ball, pocket) {
-    // Higher is better. Penalise blocked paths and bad angles.
     const ghost = ghostBall(ball, pocket);
-    // Angle between cue→ghost and ball→pocket
-    const v1x = ghost.x - cue.x;
-    const v1y = ghost.y - cue.y;
-    const v2x = pocket.x - ball.x;
-    const v2y = pocket.y - ball.y;
+    const v1x = ghost.x - cue.x, v1y = ghost.y - cue.y;
+    const v2x = pocket.x - ball.x, v2y = pocket.y - ball.y;
     const d1 = Math.hypot(v1x, v1y) || 1;
     const d2 = Math.hypot(v2x, v2y) || 1;
     const cos = (v1x * v2x + v1y * v2y) / (d1 * d2);
-    if (cos < 0.2) return -1000;       // impossible cut
-    // Check blockers between cue and ghost
+    if (cos < 0.2) return -1000;
     for (const b of state.balls) {
       if (!b.inPlay) continue;
       if (b.id === ball.id || b.n === 0) continue;
       const dist = pointToSegment(b.x, b.y, cue.x, cue.y, ghost.x, ghost.y);
       if (dist < BALL_R * 1.8) return -500;
     }
-    // Prefer closer balls and cleaner angles
     return cos * 10 - d1 * 0.01 - d2 * 0.01;
   }
 
@@ -779,57 +646,245 @@
     return Math.hypot(px - xx, py - yy);
   }
 
-  // ---------- Dialogue display --------------------------------------------
   function say(cat) {
-    if (!cat) return;
+    if (!cat || !state) return;
     const line = pickLine(cat);
     if (!line) return;
     state.dialogue = line;
-    state.dialogueTimer = 260;
-    render();
+    state.dialogueTimer = 320;
   }
 
-  // ---------- Rendering ----------------------------------------------------
-  function render() {
-    if (!ctx) return;
+  // ---------- Coordinate mapping ------------------------------------------
+  // Portrait mode: table rotated 90° CCW.
+  //   Table-space (tx, ty) → screen (sx, sy):
+  //     sx = offsetX + ty * scale
+  //     sy = offsetY + (TABLE_W - tx) * scale    (table x-axis runs upward on screen)
+  //   Screen (sx, sy) → table (tx, ty):
+  //     ty = (sx - offsetX) / scale
+  //     tx = TABLE_W - (sy - offsetY) / scale
+  function computeLayout() {
     const W = canvas.width;
     const H = canvas.height;
-    ctx.clearRect(0, 0, W, H);
+    const topPad = 8;
+    const bottomPad = 180;  // dialogue (70) + controls (48) + turn bar (24) + gaps
+    const sidePad = 8;
 
-    // Compute scale to fit TABLE_W x TABLE_H in canvas
-    const sx = W / TABLE_W;
-    const sy = H / TABLE_H;
-    scaleFactor = Math.min(sx, sy);
-    const ox = (W - TABLE_W * scaleFactor) / 2;
-    const oy = (H - TABLE_H * scaleFactor) / 2;
+    if (W >= H) {
+      viewMode = 'landscape';
+      const availW = W - sidePad * 2;
+      const availH = H - topPad - bottomPad;
+      const sx = availW / TABLE_W;
+      const sy = availH / TABLE_H;
+      tableScale = Math.min(sx, sy);
+      const drawW = TABLE_W * tableScale;
+      const drawH = TABLE_H * tableScale;
+      tableOffsetX = sidePad + (availW - drawW) / 2;
+      tableOffsetY = topPad + (availH - drawH) / 2;
+    } else {
+      viewMode = 'portrait';
+      const availW = W - sidePad * 2;
+      const availH = H - topPad - bottomPad;
+      // Rotated: table's long axis becomes vertical on screen
+      const sx = availW / TABLE_H;       // horizontal fits TABLE_H
+      const sy = availH / TABLE_W;       // vertical fits TABLE_W
+      tableScale = Math.min(sx, sy);
+      const drawW = TABLE_H * tableScale;
+      const drawH = TABLE_W * tableScale;
+      tableOffsetX = sidePad + (availW - drawW) / 2;
+      tableOffsetY = topPad + (availH - drawH) / 2;
+    }
+  }
+
+  function screenToTable(sx, sy) {
+    if (viewMode === 'landscape') {
+      return {
+        x: (sx - tableOffsetX) / tableScale,
+        y: (sy - tableOffsetY) / tableScale
+      };
+    }
+    return {
+      x: TABLE_W - (sy - tableOffsetY) / tableScale,
+      y: (sx - tableOffsetX) / tableScale
+    };
+  }
+
+  function tableToScreen(tx, ty) {
+    if (viewMode === 'landscape') {
+      return { x: tableOffsetX + tx * tableScale, y: tableOffsetY + ty * tableScale };
+    }
+    return { x: tableOffsetX + ty * tableScale, y: tableOffsetY + (TABLE_W - tx) * tableScale };
+  }
+
+  // ---------- Render -------------------------------------------------------
+  function render() {
+    if (!ctx || !state) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    computeLayout();
 
     ctx.save();
-    ctx.translate(ox, oy);
-    ctx.scale(scaleFactor, scaleFactor);
-
-    // Felt
-    const grad = ctx.createRadialGradient(TABLE_W/2, TABLE_H/2, 40, TABLE_W/2, TABLE_H/2, TABLE_W/1.2);
-    grad.addColorStop(0, '#7c2a1a');
-    grad.addColorStop(1, '#4a1808');
-    ctx.fillStyle = grad;
-    ctx.fillRect(PLAY_X0, PLAY_Y0, PLAY_W, PLAY_H);
-
-    // Rails
-    ctx.fillStyle = '#2a1206';
-    ctx.fillRect(0, 0, TABLE_W, RAIL);
-    ctx.fillRect(0, TABLE_H - RAIL, TABLE_W, RAIL);
-    ctx.fillRect(0, 0, RAIL, TABLE_H);
-    ctx.fillRect(TABLE_W - RAIL, 0, RAIL, TABLE_H);
-
-    // Pockets
-    for (const p of POCKETS) {
-      ctx.fillStyle = '#000';
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, POCKET_R, 0, Math.PI * 2);
-      ctx.fill();
+    if (viewMode === 'landscape') {
+      ctx.translate(tableOffsetX, tableOffsetY);
+      ctx.scale(tableScale, tableScale);
+    } else {
+      // Rotate so table-space (0,0) ends up at screen (offsetX + 0*scale, offsetY + TABLE_W*scale)
+      // and table-space (TABLE_W, 0) ends up at screen (offsetX, offsetY)
+      ctx.translate(tableOffsetX, tableOffsetY + TABLE_W * tableScale);
+      ctx.rotate(-Math.PI / 2);
+      ctx.scale(tableScale, tableScale);
     }
 
-    // Balls (shadows first)
+    drawTable();
+    drawBalls();
+    drawAim();
+    drawCalledPocket();
+
+    ctx.restore();
+
+    drawOverlay();
+    drawHUD();
+  }
+
+  function drawTable() {
+    // ---- Outer table body shadow (falls onto the floor) ----
+    ctx.save();
+    ctx.fillStyle = 'rgba(0,0,0,0.55)';
+    ctx.fillRect(-16, TABLE_H - 6, TABLE_W + 32, 28);
+    ctx.restore();
+
+    // ---- Rail / cushion base (deep mahogany) ----
+    // Draw full table block first, then carve out playfield
+    const railGrad = ctx.createLinearGradient(0, 0, 0, TABLE_H);
+    railGrad.addColorStop(0,   '#1a0a03');
+    railGrad.addColorStop(0.3, '#3a1a08');
+    railGrad.addColorStop(0.5, '#4a220c');
+    railGrad.addColorStop(0.7, '#3a1a08');
+    railGrad.addColorStop(1,   '#140703');
+    ctx.fillStyle = railGrad;
+    ctx.fillRect(0, 0, TABLE_W, TABLE_H);
+
+    // Subtle wood grain on rails (horizontal streaks)
+    ctx.save();
+    ctx.globalAlpha = 0.12;
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 0.5;
+    for (let i = 0; i < 6; i++) {
+      const yTop = 4 + i * 4;
+      ctx.beginPath();
+      ctx.moveTo(0, yTop);
+      ctx.bezierCurveTo(TABLE_W * 0.3, yTop + (Math.sin(i) * 1.5), TABLE_W * 0.7, yTop - (Math.cos(i) * 1.5), TABLE_W, yTop);
+      ctx.stroke();
+      const yBot = TABLE_H - 4 - i * 4;
+      ctx.beginPath();
+      ctx.moveTo(0, yBot);
+      ctx.bezierCurveTo(TABLE_W * 0.4, yBot + (Math.cos(i) * 1.5), TABLE_W * 0.6, yBot - (Math.sin(i) * 1.5), TABLE_W, yBot);
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    // Rail highlight edges (thin brass/gold trim along inner cushion line)
+    ctx.save();
+    ctx.strokeStyle = 'rgba(180,140,80,0.35)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(PLAY_X0 - 1, PLAY_Y0 - 1, PLAY_W + 2, PLAY_H + 2);
+    ctx.restore();
+
+    // ---- Playfield: crimson felt with lamp glow ----
+    // Base felt
+    ctx.fillStyle = '#6b1a0c';
+    ctx.fillRect(PLAY_X0, PLAY_Y0, PLAY_W, PLAY_H);
+
+    // Lamp light falloff — centered warm ellipse (the hanging lamp above)
+    const lampGrad = ctx.createRadialGradient(
+      TABLE_W / 2, TABLE_H / 2, 30,
+      TABLE_W / 2, TABLE_H / 2, TABLE_W * 0.55
+    );
+    lampGrad.addColorStop(0,   'rgba(255, 200, 130, 0.32)');
+    lampGrad.addColorStop(0.3, 'rgba(200, 120,  60, 0.15)');
+    lampGrad.addColorStop(0.7, 'rgba(40,  10,   5, 0.25)');
+    lampGrad.addColorStop(1,   'rgba(10,   4,   2, 0.55)');
+    ctx.fillStyle = lampGrad;
+    ctx.fillRect(PLAY_X0, PLAY_Y0, PLAY_W, PLAY_H);
+
+    // Subtle felt grain (two-direction noise via sparse lines)
+    ctx.save();
+    ctx.globalAlpha = 0.05;
+    ctx.strokeStyle = '#2a0a03';
+    ctx.lineWidth = 0.4;
+    for (let y = PLAY_Y0 + 4; y < PLAY_Y1; y += 6) {
+      ctx.beginPath();
+      ctx.moveTo(PLAY_X0, y + Math.sin(y * 0.1) * 0.5);
+      ctx.lineTo(PLAY_X1, y + Math.cos(y * 0.1) * 0.5);
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    // Inner cushion bevel shadow (felt edge drops into cushion)
+    ctx.save();
+    ctx.strokeStyle = 'rgba(0,0,0,0.55)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(PLAY_X0, PLAY_Y0);
+    ctx.lineTo(PLAY_X1, PLAY_Y0);
+    ctx.moveTo(PLAY_X0, PLAY_Y1);
+    ctx.lineTo(PLAY_X1, PLAY_Y1);
+    ctx.moveTo(PLAY_X0, PLAY_Y0);
+    ctx.lineTo(PLAY_X0, PLAY_Y1);
+    ctx.moveTo(PLAY_X1, PLAY_Y0);
+    ctx.lineTo(PLAY_X1, PLAY_Y1);
+    ctx.stroke();
+    ctx.restore();
+
+    // ---- Pockets with brass rings and dark wells ----
+    for (const p of POCKETS) {
+      // Outer brass ring (carved into rail)
+      const ringGrad = ctx.createRadialGradient(p.x, p.y - 2, POCKET_R * 0.4, p.x, p.y, POCKET_R + 4);
+      ringGrad.addColorStop(0,   '#5a3a10');
+      ringGrad.addColorStop(0.6, '#3a2208');
+      ringGrad.addColorStop(1,   '#1a0a02');
+      ctx.fillStyle = ringGrad;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, POCKET_R + 2, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Pocket well (black)
+      const wellGrad = ctx.createRadialGradient(p.x, p.y - 3, 1, p.x, p.y, POCKET_R);
+      wellGrad.addColorStop(0,   '#1a0a04');
+      wellGrad.addColorStop(1,   '#000');
+      ctx.fillStyle = wellGrad;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, POCKET_R - 2, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Subtle brass rim highlight (top edge catches light)
+      ctx.save();
+      ctx.strokeStyle = 'rgba(210,170,90,0.35)';
+      ctx.lineWidth = 0.8;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, POCKET_R, Math.PI * 1.1, Math.PI * 1.9);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // ---- Corner diamond inlays on rails (period detail) ----
+    ctx.save();
+    ctx.fillStyle = 'rgba(210,170,90,0.25)';
+    const diamondPositions = [
+      [TABLE_W * 0.25, RAIL / 2], [TABLE_W * 0.5, RAIL / 2], [TABLE_W * 0.75, RAIL / 2],
+      [TABLE_W * 0.25, TABLE_H - RAIL / 2], [TABLE_W * 0.5, TABLE_H - RAIL / 2], [TABLE_W * 0.75, TABLE_H - RAIL / 2]
+    ];
+    for (const [dx, dy] of diamondPositions) {
+      ctx.beginPath();
+      ctx.moveTo(dx, dy - 2);
+      ctx.lineTo(dx + 3, dy);
+      ctx.lineTo(dx, dy + 2);
+      ctx.lineTo(dx - 3, dy);
+      ctx.closePath();
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function drawBalls() {
     for (const b of state.balls) {
       if (!b.inPlay) continue;
       ctx.fillStyle = 'rgba(0,0,0,0.35)';
@@ -841,174 +896,216 @@
       if (!b.inPlay) continue;
       drawBall(b);
     }
-
-    // Aim line (only during aiming, player turn)
-    if (state.gamePhase === 'aiming' && state.turn === 'player' && state.mode !== 'demo') {
-      const cue = state.balls[0];
-      if (cue.inPlay) {
-        ctx.strokeStyle = 'rgba(255,255,255,0.55)';
-        ctx.setLineDash([4, 6]);
-        ctx.lineWidth = 1.4;
-        ctx.beginPath();
-        ctx.moveTo(cue.x, cue.y);
-        ctx.lineTo(state.aimX, state.aimY);
-        ctx.stroke();
-        ctx.setLineDash([]);
-        // Cue stick
-        const dx = state.aimX - cue.x;
-        const dy = state.aimY - cue.y;
-        const d = Math.hypot(dx, dy) || 1;
-        const ux = dx / d, uy = dy / d;
-        const back = 18 + (1 - state.power) * 30;
-        const len = 140;
-        ctx.strokeStyle = '#d9a679';
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.moveTo(cue.x - ux * back, cue.y - uy * back);
-        ctx.lineTo(cue.x - ux * (back + len), cue.y - uy * (back + len));
-        ctx.stroke();
-      }
-    }
-
-    // Called pocket marker
-    if (state.calledPocket != null) {
-      const p = POCKETS[state.calledPocket];
-      ctx.strokeStyle = '#f7c948';
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, POCKET_R + 6, 0, Math.PI * 2);
-      ctx.stroke();
-    }
-
-    ctx.restore();
-
-    // ---------- Overlay UI (in screen space) -------------------------------
-    drawOverlay();
   }
 
   function drawBall(b) {
-    const c = BALL_COLORS[b.n];
     ctx.save();
-    // Base color
-    ctx.fillStyle = c;
+
+    // Base color with radial shading (dark edge, bright highlight)
+    const base = BALL_COLORS[b.n];
+    const shade = ctx.createRadialGradient(
+      b.x - BALL_R * 0.4, b.y - BALL_R * 0.4, BALL_R * 0.1,
+      b.x, b.y, BALL_R * 1.1
+    );
+    shade.addColorStop(0,   lighten(base, 0.45));
+    shade.addColorStop(0.4, base);
+    shade.addColorStop(1,   darken(base, 0.55));
+    ctx.fillStyle = shade;
     ctx.beginPath();
     ctx.arc(b.x, b.y, BALL_R, 0, Math.PI * 2);
     ctx.fill();
+
+    // Stripe (9-15): white band across middle, colored caps preserved
     if (b.n >= 9 && b.n <= 15) {
-      // Stripe: white band top and bottom
-      ctx.fillStyle = '#f5ecd7';
-      ctx.beginPath();
-      ctx.arc(b.x, b.y, BALL_R, Math.PI * 0.85, Math.PI * 0.15, true);
-      ctx.arc(b.x, b.y, BALL_R, Math.PI * 1.15, Math.PI * 1.85, false);
-      ctx.closePath();
-      // Simpler: draw two caps
+      ctx.save();
       ctx.beginPath();
       ctx.arc(b.x, b.y, BALL_R, 0, Math.PI * 2);
       ctx.clip();
-      ctx.fillStyle = '#f5ecd7';
-      ctx.fillRect(b.x - BALL_R, b.y - BALL_R, BALL_R * 2, BALL_R * 0.45);
-      ctx.fillRect(b.x - BALL_R, b.y + BALL_R * 0.55, BALL_R * 2, BALL_R * 0.45);
+      // White band
+      const bandGrad = ctx.createRadialGradient(
+        b.x - BALL_R * 0.4, b.y - BALL_R * 0.4, BALL_R * 0.1,
+        b.x, b.y, BALL_R * 1.1
+      );
+      bandGrad.addColorStop(0,   '#ffffff');
+      bandGrad.addColorStop(0.5, '#e8dcc3');
+      bandGrad.addColorStop(1,   '#9e8a62');
+      ctx.fillStyle = bandGrad;
+      ctx.fillRect(b.x - BALL_R, b.y - BALL_R * 0.45, BALL_R * 2, BALL_R * 0.9);
+      ctx.restore();
     }
-    // Number circle
+
+    // Number badge (white disc with black number)
     if (b.n !== 0) {
-      ctx.fillStyle = '#f5ecd7';
+      ctx.fillStyle = '#f8f1dc';
       ctx.beginPath();
-      ctx.arc(b.x, b.y, BALL_R * 0.45, 0, Math.PI * 2);
+      ctx.arc(b.x, b.y, BALL_R * 0.48, 0, Math.PI * 2);
       ctx.fill();
+      // Badge inner shadow
+      ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+      ctx.lineWidth = 0.6;
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, BALL_R * 0.48, 0, Math.PI * 2);
+      ctx.stroke();
       ctx.fillStyle = '#111';
       ctx.font = 'bold 9px Georgia, serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(String(b.n), b.x, b.y + 1);
+      ctx.fillText(String(b.n), b.x, b.y + 0.5);
     }
-    // Highlight
-    ctx.fillStyle = 'rgba(255,255,255,0.25)';
+
+    // Specular highlight (bright glint)
+    const specGrad = ctx.createRadialGradient(
+      b.x - BALL_R * 0.4, b.y - BALL_R * 0.4, 0,
+      b.x - BALL_R * 0.4, b.y - BALL_R * 0.4, BALL_R * 0.55
+    );
+    specGrad.addColorStop(0,   'rgba(255,255,255,0.85)');
+    specGrad.addColorStop(0.4, 'rgba(255,255,255,0.25)');
+    specGrad.addColorStop(1,   'rgba(255,255,255,0)');
+    ctx.fillStyle = specGrad;
     ctx.beginPath();
-    ctx.arc(b.x - BALL_R * 0.35, b.y - BALL_R * 0.35, BALL_R * 0.35, 0, Math.PI * 2);
+    ctx.arc(b.x, b.y, BALL_R, 0, Math.PI * 2);
     ctx.fill();
+
+    // Rim darkening (subtle outline)
+    ctx.strokeStyle = 'rgba(0,0,0,0.35)';
+    ctx.lineWidth = 0.6;
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, BALL_R - 0.3, 0, Math.PI * 2);
+    ctx.stroke();
+
     ctx.restore();
   }
 
+  // Color helpers for ball shading
+  function hexToRgb(h) {
+    const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(h);
+    if (!m) return { r: 128, g: 128, b: 128 };
+    return { r: parseInt(m[1], 16), g: parseInt(m[2], 16), b: parseInt(m[3], 16) };
+  }
+  function lighten(h, amt) {
+    const c = hexToRgb(h);
+    return `rgb(${Math.min(255, c.r + (255 - c.r) * amt)|0},${Math.min(255, c.g + (255 - c.g) * amt)|0},${Math.min(255, c.b + (255 - c.b) * amt)|0})`;
+  }
+  function darken(h, amt) {
+    const c = hexToRgb(h);
+    return `rgb(${Math.max(0, c.r * (1 - amt))|0},${Math.max(0, c.g * (1 - amt))|0},${Math.max(0, c.b * (1 - amt))|0})`;
+  }
+
+  function drawAim() {
+    if (state.gamePhase !== 'aiming' || state.turn !== 'player' || state.ballInHand) return;
+    const cue = state.balls[0];
+    if (!cue.inPlay) return;
+
+    ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+    ctx.setLineDash([4, 6]);
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.moveTo(cue.x, cue.y);
+    ctx.lineTo(state.aimX, state.aimY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    const dx = state.aimX - cue.x;
+    const dy = state.aimY - cue.y;
+    const d = Math.hypot(dx, dy) || 1;
+    const ux = dx / d, uy = dy / d;
+    const back = 18 + (1 - state.power) * 30;
+    const len = 140;
+    ctx.strokeStyle = '#d9a679';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(cue.x - ux * back, cue.y - uy * back);
+    ctx.lineTo(cue.x - ux * (back + len), cue.y - uy * (back + len));
+    ctx.stroke();
+  }
+
+  function drawCalledPocket() {
+    if (state.calledPocket == null) return;
+    const p = POCKETS[state.calledPocket];
+    ctx.strokeStyle = '#f7c948';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, POCKET_R + 6, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
   function drawOverlay() {
-    // Dialogue bubble (vs mode)
+    const W = canvas.width;
+    const H = canvas.height;
+
+    // Dialogue — positioned in the bottom reserve, above controls
+    const dialogueH = 64;
+    const dialogueY = H - 24 - 6 - 48 - 6 - dialogueH;  // above turn bar + controls
     if (state.mode === 'vs' && state.dialogue && state.dialogueTimer > 0) {
-      const W = canvas.width;
-      const text = state.dialogue;
       ctx.save();
-      ctx.font = '13px Georgia, serif';
-      ctx.textAlign = 'left';
-      ctx.textBaseline = 'top';
-      const maxW = Math.min(W - 24, 380);
-      const lines = wrapText(text, maxW - 20);
-      const boxH = 12 + lines.length * 17;
-      const boxW = maxW;
-      const bx = 12;
-      const by = 12;
-      ctx.fillStyle = 'rgba(20,12,8,0.82)';
-      ctx.strokeStyle = 'rgba(210,170,110,0.55)';
+      ctx.fillStyle = 'rgba(20,12,8,0.90)';
+      ctx.strokeStyle = 'rgba(210,170,110,0.6)';
       ctx.lineWidth = 1;
-      roundRect(ctx, bx, by, boxW, boxH, 6);
+      roundRect(ctx, 8, dialogueY, W - 16, dialogueH, 8);
       ctx.fill();
       ctx.stroke();
       ctx.fillStyle = '#ebdab3';
       ctx.font = 'italic bold 11px Georgia, serif';
-      ctx.fillText('ALISTAIR', bx + 10, by + 4);
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'top';
+      ctx.fillText('ALISTAIR', 18, dialogueY + 6);
       ctx.fillStyle = '#e8dcc3';
       ctx.font = '13px Georgia, serif';
-      for (let i = 0; i < lines.length; i++) {
-        ctx.fillText(lines[i], bx + 10, by + 20 + i * 17);
+      const lines = wrapText(state.dialogue, W - 36);
+      for (let i = 0; i < lines.length && i < 2; i++) {
+        ctx.fillText(lines[i], 18, dialogueY + 24 + i * 17);
       }
       ctx.restore();
       state.dialogueTimer--;
+      hud.dialogueBox = { x: 8, y: dialogueY, w: W - 16, h: dialogueH };
+    } else {
+      hud.dialogueBox = null;
     }
 
-    // Turn indicator + groups
-    const W = canvas.width;
-    const H = canvas.height;
+    // Turn indicator bar at very bottom
+    const indH = 24;
     ctx.save();
-    ctx.font = '12px Georgia, serif';
-    ctx.textBaseline = 'bottom';
-    ctx.fillStyle = 'rgba(20,12,8,0.78)';
-    ctx.fillRect(0, H - 28, W, 28);
+    ctx.fillStyle = 'rgba(20,12,8,0.85)';
+    ctx.fillRect(0, H - indH, W, indH);
     ctx.fillStyle = '#e8dcc3';
+    ctx.font = '11px Georgia, serif';
+    ctx.textBaseline = 'middle';
     ctx.textAlign = 'left';
     const turnLabel = state.mode === 'vs'
       ? (state.turn === 'player' ? 'YOUR TURN' : 'ALISTAIR')
       : 'PRACTICE';
-    ctx.fillText(turnLabel, 10, H - 9);
+    ctx.fillText(turnLabel, 10, H - indH / 2);
+    ctx.textAlign = 'center';
     if (!state.openTable) {
       const pg = state.playerGroup ? state.playerGroup.toUpperCase() : '';
       const ag = state.alistairGroup ? state.alistairGroup.toUpperCase() : '';
-      ctx.textAlign = 'center';
-      ctx.fillText(`You: ${pg}   |   Alistair: ${ag}`, W / 2, H - 9);
+      ctx.fillText(`You: ${pg}  |  Alistair: ${ag}`, W / 2, H - indH / 2);
     } else {
-      ctx.textAlign = 'center';
-      ctx.fillText('OPEN TABLE', W / 2, H - 9);
+      ctx.fillText('OPEN TABLE', W / 2, H - indH / 2);
     }
     if (state.ballInHand && state.turn === 'player') {
       ctx.textAlign = 'right';
       ctx.fillStyle = '#f7c948';
-      ctx.fillText('BALL IN HAND — tap to place cue ball', W - 10, H - 9);
+      ctx.fillText('BALL IN HAND', W - 10, H - indH / 2);
     }
     ctx.restore();
 
-    // Call pocket prompt
+    // Call pocket overlay
     if (state.showCallPocket) {
       ctx.save();
-      ctx.fillStyle = 'rgba(20,12,8,0.85)';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = 'rgba(20,12,8,0.65)';
+      ctx.fillRect(0, 0, W, H);
       ctx.fillStyle = '#f7c948';
-      ctx.font = 'bold 16px Georgia, serif';
+      ctx.font = 'bold 14px Georgia, serif';
       ctx.textAlign = 'center';
-      ctx.fillText('TAP A POCKET TO CALL YOUR EIGHT-BALL SHOT', canvas.width / 2, canvas.height / 2);
-      // Highlight pockets
-      ctx.translate((canvas.width - TABLE_W * scaleFactor) / 2, (canvas.height - TABLE_H * scaleFactor) / 2);
-      ctx.scale(scaleFactor, scaleFactor);
-      for (const p of POCKETS) {
+      ctx.fillText('TAP A POCKET TO CALL YOUR 8-BALL SHOT', W / 2, 40);
+      for (let i = 0; i < POCKETS.length; i++) {
+        const p = POCKETS[i];
+        const s = tableToScreen(p.x, p.y);
         ctx.strokeStyle = '#f7c948';
         ctx.lineWidth = 3;
         ctx.beginPath();
-        ctx.arc(p.x, p.y, POCKET_R + 4, 0, Math.PI * 2);
+        ctx.arc(s.x, s.y, (POCKET_R + 6) * tableScale, 0, Math.PI * 2);
         ctx.stroke();
       }
       ctx.restore();
@@ -1018,38 +1115,124 @@
     if (state.gamePhase === 'gameover') {
       ctx.save();
       ctx.fillStyle = 'rgba(10,6,4,0.88)';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillRect(0, 0, W, H);
       ctx.fillStyle = '#ebdab3';
       ctx.textAlign = 'center';
       ctx.font = 'bold 22px Georgia, serif';
       const title = state.mode === 'vs'
         ? (state.winner === 'player' ? 'YOU WIN' : 'ALISTAIR WINS')
         : 'RACK COMPLETE';
-      ctx.fillText(title, canvas.width / 2, canvas.height / 2 - 20);
+      ctx.fillText(title, W / 2, H / 2 - 30);
       ctx.font = 'italic 13px Georgia, serif';
       ctx.fillStyle = '#c9b98a';
-      ctx.fillText(state.loseReason || '', canvas.width / 2, canvas.height / 2 + 6);
+      ctx.fillText(state.loseReason || '', W / 2, H / 2);
       ctx.fillStyle = '#f7c948';
       ctx.font = '12px Georgia, serif';
-      ctx.fillText('Tap to play again  ·  Long-press to exit', canvas.width / 2, canvas.height / 2 + 34);
+      ctx.fillText('Tap to play again', W / 2, H / 2 + 30);
       ctx.restore();
     }
   }
 
-  function roundRect(ctx, x, y, w, h, r) {
+  function drawHUD() {
+    hud.shootBtn = null;
+    hud.powerBar = null;
+    hud.spinBall = null;
+    if (!state || state.gamePhase !== 'aiming' || state.turn !== 'player') return;
+    if (state.showCallPocket || state.ballInHand) return;
+
+    const W = canvas.width;
+    const H = canvas.height;
+
+    // Controls sit between dialogue (if any) and turn indicator
+    const ctrlH = 48;
+    const ctrlTop = H - 24 - 6 - ctrlH;   // above 24px turn bar + 6px gap
+
+    // SHOOT button — left third
+    const shootW = Math.min(130, W * 0.36);
+    const shootX = 10;
+    const shootY = ctrlTop;
+    ctx.save();
+    ctx.fillStyle = '#7c2a1a';
+    roundRect(ctx, shootX, shootY, shootW, ctrlH, 6);
+    ctx.fill();
+    ctx.strokeStyle = '#d9a679';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.fillStyle = '#f5ecd7';
+    ctx.font = 'bold 15px Georgia, serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('SHOOT', shootX + shootW / 2, shootY + ctrlH / 2);
+    ctx.restore();
+    hud.shootBtn = { x: shootX, y: shootY, w: shootW, h: ctrlH };
+
+    // POWER bar — middle
+    const spinR = 22;
+    const spinCx = W - spinR - 14;
+    const spinCy = shootY + ctrlH / 2;
+    const pbX = shootX + shootW + 14;
+    const pbY = shootY + 6;
+    const pbW = Math.max(40, (spinCx - spinR - 6) - pbX - 14);
+    const pbH = ctrlH - 12;
+    ctx.save();
+    ctx.fillStyle = 'rgba(0,0,0,0.55)';
+    ctx.fillRect(pbX, pbY, pbW, pbH);
+    const fillW = pbW * state.power;
+    const pg = ctx.createLinearGradient(pbX, 0, pbX + pbW, 0);
+    pg.addColorStop(0, '#f7c948');
+    pg.addColorStop(1, '#c0392b');
+    ctx.fillStyle = pg;
+    ctx.fillRect(pbX, pbY, fillW, pbH);
+    ctx.strokeStyle = '#8a6b2e';
+    ctx.strokeRect(pbX, pbY, pbW, pbH);
+    ctx.fillStyle = '#e8dcc3';
+    ctx.font = '9px Georgia, serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText('POWER  (drag)', pbX + pbW / 2, pbY - 2);
+    ctx.restore();
+    hud.powerBar = { x: pbX, y: pbY, w: pbW, h: pbH };
+
+    // SPIN ball — right
+    ctx.save();
+    ctx.fillStyle = 'rgba(0,0,0,0.55)';
     ctx.beginPath();
-    ctx.moveTo(x + r, y);
-    ctx.arcTo(x + w, y, x + w, y + h, r);
-    ctx.arcTo(x + w, y + h, x, y + h, r);
-    ctx.arcTo(x, y + h, x, y, r);
-    ctx.arcTo(x, y, x + w, y, r);
-    ctx.closePath();
+    ctx.arc(spinCx, spinCy, spinR + 2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#f5ecd7';
+    ctx.beginPath();
+    ctx.arc(spinCx, spinCy, spinR, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#8a6b2e';
+    ctx.stroke();
+    ctx.fillStyle = '#c0392b';
+    ctx.beginPath();
+    ctx.arc(spinCx + state.spinX * (spinR - 4), spinCy + state.spinY * (spinR - 4), 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#e8dcc3';
+    ctx.font = '9px Georgia, serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText('SPIN', spinCx, spinCy - spinR - 2);
+    ctx.restore();
+    hud.spinBall = { cx: spinCx, cy: spinCy, r: spinR };
+  }
+
+  function roundRect(c, x, y, w, h, r) {
+    c.beginPath();
+    c.moveTo(x + r, y);
+    c.arcTo(x + w, y, x + w, y + h, r);
+    c.arcTo(x + w, y + h, x, y + h, r);
+    c.arcTo(x, y + h, x, y, r);
+    c.arcTo(x, y, x + w, y, r);
+    c.closePath();
   }
 
   function wrapText(text, maxW) {
     const words = text.split(' ');
     const lines = [];
     let cur = '';
+    ctx.font = '13px Georgia, serif';
     for (const w of words) {
       const test = cur ? cur + ' ' + w : w;
       if (ctx.measureText(test).width > maxW && cur) {
@@ -1064,404 +1247,286 @@
   }
 
   // ---------- Input --------------------------------------------------------
-  function canvasToTable(x, y) {
+  function getEventPoint(e) {
+    const rect = canvas.getBoundingClientRect();
+    let clientX, clientY;
+    if (e.touches && e.touches.length) { clientX = e.touches[0].clientX; clientY = e.touches[0].clientY; }
+    else if (e.changedTouches && e.changedTouches.length) { clientX = e.changedTouches[0].clientX; clientY = e.changedTouches[0].clientY; }
+    else { clientX = e.clientX; clientY = e.clientY; }
+    return {
+      x: (clientX - rect.left) * (canvas.width / rect.width),
+      y: (clientY - rect.top) * (canvas.height / rect.height)
+    };
+  }
+
+  function hitRect(x, y, r) { return r && x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h; }
+  function hitCircle(x, y, c) { return c && Math.hypot(x - c.cx, y - c.cy) <= c.r; }
+
+  function onPointerDown(e) {
+    if (e.cancelable) e.preventDefault();
+    const p = getEventPoint(e);
+
+    if (modeSelectActive) {
+      if (!modeSelectRegions) return;
+      if (hitRect(p.x, p.y, modeSelectRegions.solo)) {
+        modeSelectActive = false;
+        newGame('solo');
+      } else if (hitRect(p.x, p.y, modeSelectRegions.vs)) {
+        modeSelectActive = false;
+        newGame('vs');
+      } else if (hitRect(p.x, p.y, modeSelectRegions.exit)) {
+        closeBilliards();
+      }
+      return;
+    }
+
+    if (!state) return;
+
+    if (state.gamePhase === 'gameover') {
+      newGame(state.mode);
+      return;
+    }
+
+    if (state.showCallPocket) {
+      const tp = screenToTable(p.x, p.y);
+      let nearest = -1, nd = 9999;
+      for (let i = 0; i < POCKETS.length; i++) {
+        const d = Math.hypot(tp.x - POCKETS[i].x, tp.y - POCKETS[i].y);
+        if (d < nd) { nd = d; nearest = i; }
+      }
+      if (nd < POCKET_R + 60) {
+        state.calledPocket = nearest;
+        state.showCallPocket = false;
+        setTimeout(takeShot, 150);
+      }
+      return;
+    }
+
+    if (state.gamePhase === 'aiming' && state.turn === 'player' && !state.ballInHand) {
+      if (hitRect(p.x, p.y, hud.shootBtn)) { takeShot(); return; }
+      if (hitRect(p.x, p.y, hud.powerBar)) { powerDragging = true; updatePowerFromX(p.x); return; }
+      if (hitCircle(p.x, p.y, hud.spinBall)) { spinDragging = true; updateSpin(p.x, p.y); return; }
+    }
+
+    if (state.ballInHand && state.turn === 'player' && state.gamePhase === 'aiming') {
+      const tp = screenToTable(p.x, p.y);
+      if (tp.x > PLAY_X0 + BALL_R && tp.x < PLAY_X1 - BALL_R &&
+          tp.y > PLAY_Y0 + BALL_R && tp.y < PLAY_Y1 - BALL_R) {
+        let ok = true;
+        for (const b of state.balls) {
+          if (!b.inPlay || b.n === 0) continue;
+          if (Math.hypot(tp.x - b.x, tp.y - b.y) < BALL_R * 2 + 1) { ok = false; break; }
+        }
+        if (ok) {
+          state.balls[0].x = tp.x;
+          state.balls[0].y = tp.y;
+          state.ballInHand = false;
+          return;
+        }
+      }
+    }
+
+    if (state.gamePhase === 'aiming' && state.turn === 'player' && !state.ballInHand) {
+      const tp = screenToTable(p.x, p.y);
+      state.aimX = tp.x;
+      state.aimY = tp.y;
+    }
+  }
+
+  function onPointerMove(e) {
+    if (!state) return;
+    if (e.cancelable && (powerDragging || spinDragging)) e.preventDefault();
+    const p = getEventPoint(e);
+
+    if (powerDragging) { updatePowerFromX(p.x); return; }
+    if (spinDragging) { updateSpin(p.x, p.y); return; }
+
+    if (state.gamePhase === 'aiming' && state.turn === 'player' &&
+        !state.ballInHand && !state.showCallPocket) {
+      if (hitRect(p.x, p.y, hud.shootBtn)) return;
+      if (hitRect(p.x, p.y, hud.powerBar)) return;
+      if (hitCircle(p.x, p.y, hud.spinBall)) return;
+      if (hud.dialogueBox && hitRect(p.x, p.y, hud.dialogueBox)) return;
+      const tp = screenToTable(p.x, p.y);
+      state.aimX = tp.x;
+      state.aimY = tp.y;
+    }
+  }
+
+  function onPointerUp() {
+    powerDragging = false;
+    spinDragging = false;
+  }
+
+  function updatePowerFromX(x) {
+    if (!hud.powerBar) return;
+    const t = Math.max(0, Math.min(1, (x - hud.powerBar.x) / hud.powerBar.w));
+    state.power = t;
+  }
+
+  function updateSpin(x, y) {
+    if (!hud.spinBall) return;
+    const dx = (x - hud.spinBall.cx) / (hud.spinBall.r - 4);
+    const dy = (y - hud.spinBall.cy) / (hud.spinBall.r - 4);
+    const d = Math.hypot(dx, dy);
+    const clamp = d > 1 ? 1 / d : 1;
+    state.spinX = dx * clamp;
+    state.spinY = dy * clamp;
+  }
+
+  // ---------- Mode select --------------------------------------------------
+  function drawModeSelect() {
+    if (!ctx || !canvas) return;
     const W = canvas.width;
     const H = canvas.height;
-    const sx = W / TABLE_W;
-    const sy = H / TABLE_H;
-    const s = Math.min(sx, sy);
-    const ox = (W - TABLE_W * s) / 2;
-    const oy = (H - TABLE_H * s) / 2;
-    return { x: (x - ox) / s, y: (y - oy) / s };
-  }
+    ctx.clearRect(0, 0, W, H);
 
-  let powerDragging = false;
-  let spinDragging = false;
-  let pressTimer = null;
-
-  function bindInput() {
-    const pointerDown = (e) => {
-      if (!state) return;
-      const rect = canvas.getBoundingClientRect();
-      const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
-      const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
-      const pt = canvasToTable(x, y);
-
-      // Game over → restart
-      if (state.gamePhase === 'gameover') {
-        newGame(state.mode);
-        render();
-        return;
-      }
-
-      // Call pocket
-      if (state.showCallPocket) {
-        let nearest = -1, nd = 999;
-        for (let i = 0; i < POCKETS.length; i++) {
-          const d = Math.hypot(pt.x - POCKETS[i].x, pt.y - POCKETS[i].y);
-          if (d < nd) { nd = d; nearest = i; }
-        }
-        if (nd < POCKET_R + 30) {
-          state.calledPocket = nearest;
-          state.showCallPocket = false;
-          render();
-          setTimeout(takeShot, 150);
-        }
-        return;
-      }
-
-      // Ball in hand placement
-      if (state.ballInHand && state.turn === 'player' && state.gamePhase === 'aiming') {
-        if (pt.x > PLAY_X0 + BALL_R && pt.x < PLAY_X1 - BALL_R &&
-            pt.y > PLAY_Y0 + BALL_R && pt.y < PLAY_Y1 - BALL_R) {
-          // Check not overlapping another ball
-          let ok = true;
-          for (const b of state.balls) {
-            if (!b.inPlay || b.n === 0) continue;
-            if (Math.hypot(pt.x - b.x, pt.y - b.y) < BALL_R * 2 + 1) { ok = false; break; }
-          }
-          if (ok) {
-            const cue = state.balls[0];
-            cue.x = pt.x;
-            cue.y = pt.y;
-            state.ballInHand = false;
-            render();
-            return;
-          }
-        }
-      }
-
-      if (state.gamePhase !== 'aiming' || state.turn !== 'player') return;
-
-      // Power slider region (right edge)
-      if (x > canvas.width - 60) {
-        powerDragging = true;
-        updatePowerFromY(y);
-        return;
-      }
-      // Spin region (bottom-right ball overlay)
-      const spinCx = canvas.width - 90;
-      const spinCy = canvas.height - 90;
-      if (Math.hypot(x - spinCx, y - spinCy) < 32) {
-        spinDragging = true;
-        updateSpin(x, y, spinCx, spinCy);
-        return;
-      }
-
-      // Otherwise: aim
-      state.aimX = pt.x;
-      state.aimY = pt.y;
-      render();
-    };
-
-    const pointerMove = (e) => {
-      if (!state) return;
-      const rect = canvas.getBoundingClientRect();
-      const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
-      const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
-      if (powerDragging) { updatePowerFromY(y); return; }
-      if (spinDragging) {
-        updateSpin(x, y, canvas.width - 90, canvas.height - 90);
-        return;
-      }
-      if (state.gamePhase === 'aiming' && state.turn === 'player' && !state.ballInHand && !state.showCallPocket) {
-        const pt = canvasToTable(x, y);
-        state.aimX = pt.x;
-        state.aimY = pt.y;
-        render();
-      }
-    };
-
-    const pointerUp = () => {
-      powerDragging = false;
-      spinDragging = false;
-    };
-
-    canvas.addEventListener('mousedown', pointerDown);
-    canvas.addEventListener('mousemove', pointerMove);
-    canvas.addEventListener('mouseup', pointerUp);
-    canvas.addEventListener('touchstart', (e) => { e.preventDefault(); pointerDown(e); }, { passive: false });
-    canvas.addEventListener('touchmove', (e) => { e.preventDefault(); pointerMove(e); }, { passive: false });
-    canvas.addEventListener('touchend', pointerUp);
-  }
-
-  function updatePowerFromY(y) {
-    const top = 40;
-    const bot = canvas.height - 50;
-    const t = Math.max(0, Math.min(1, (bot - y) / (bot - top)));
-    state.power = t;
-    render();
-  }
-
-  function updateSpin(x, y, cx, cy) {
-    const dx = (x - cx) / 28;
-    const dy = (y - cy) / 28;
-    const d = Math.hypot(dx, dy);
-    const clamped = d > 1 ? 1 / d : 1;
-    state.spinX = dx * clamped;
-    state.spinY = dy * clamped;
-    render();
-  }
-
-  // ---------- HUD controls drawing (power bar, spin, shoot) ---------------
-  function drawHUD() {
-    if (!state || state.gamePhase !== 'aiming' || state.turn !== 'player') return;
-    ctx.save();
-    // Power bar
-    const bx = canvas.width - 50;
-    const by = 40;
-    const bw = 22;
-    const bh = canvas.height - 100;
-    ctx.fillStyle = 'rgba(0,0,0,0.55)';
-    ctx.fillRect(bx, by, bw, bh);
-    const fillH = bh * state.power;
-    const pg = ctx.createLinearGradient(bx, by + bh - fillH, bx, by + bh);
-    pg.addColorStop(0, '#f7c948');
-    pg.addColorStop(1, '#c0392b');
-    ctx.fillStyle = pg;
-    ctx.fillRect(bx, by + bh - fillH, bw, fillH);
-    ctx.strokeStyle = '#8a6b2e';
-    ctx.strokeRect(bx, by, bw, bh);
-    ctx.fillStyle = '#e8dcc3';
-    ctx.font = '10px Georgia, serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('POWER', bx + bw / 2, by - 6);
-
-    // Spin ball
-    const cx = canvas.width - 90;
-    const cy = canvas.height - 90;
-    ctx.fillStyle = 'rgba(0,0,0,0.55)';
-    ctx.beginPath();
-    ctx.arc(cx, cy, 32, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = '#8a6b2e';
-    ctx.stroke();
-    ctx.fillStyle = '#f5ecd7';
-    ctx.beginPath();
-    ctx.arc(cx, cy, 28, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#c0392b';
-    ctx.beginPath();
-    ctx.arc(cx + state.spinX * 20, cy + state.spinY * 20, 5, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#e8dcc3';
-    ctx.font = '10px Georgia, serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('SPIN', cx, cy - 40);
-
-    // Shoot button
-    const shootW = 100, shootH = 40;
-    const sx = 20;
-    const sy = canvas.height - 70;
-    ctx.fillStyle = '#7c2a1a';
-    roundRect(ctx, sx, sy, shootW, shootH, 6);
-    ctx.fill();
-    ctx.strokeStyle = '#d9a679';
-    ctx.stroke();
-    ctx.fillStyle = '#f5ecd7';
-    ctx.font = 'bold 14px Georgia, serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('SHOOT', sx + shootW / 2, sy + shootH / 2);
-
-    state._shootBtn = { x: sx, y: sy, w: shootW, h: shootH };
-    ctx.restore();
-  }
-
-  // Extend input to detect shoot button and mode buttons
-  const origBind = bindInput;
-  bindInput = function () {
-    origBind();
-    canvas.addEventListener('mousedown', onHudTap);
-    canvas.addEventListener('touchstart', onHudTap, { passive: false });
-  };
-
-  function onHudTap(e) {
-    if (!state) return;
-    const rect = canvas.getBoundingClientRect();
-    const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
-    const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
-    // Shoot button
-    const sb = state._shootBtn;
-    if (sb && x >= sb.x && x <= sb.x + sb.w && y >= sb.y && y <= sb.y + sb.h) {
-      if (state.gamePhase === 'aiming' && state.turn === 'player' && !state.ballInHand) {
-        takeShot();
-      }
-    }
-  }
-
-  // ---------- Main loop ----------------------------------------------------
-  function loop() {
-    if (!state) return;
-    if (state.gamePhase === 'simulating') {
-      step();
-    }
-    render();
-    drawHUD();
-    rafId = requestAnimationFrame(loop);
-  }
-
-  // ---------- Mode select screen ------------------------------------------
-  function drawModeSelect() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    // Background
-    const g = ctx.createRadialGradient(canvas.width/2, canvas.height/2, 40, canvas.width/2, canvas.height/2, canvas.width);
+    const g = ctx.createRadialGradient(W/2, H/2, 40, W/2, H/2, Math.max(W, H));
     g.addColorStop(0, '#2a1206');
     g.addColorStop(1, '#0a0503');
     ctx.fillStyle = g;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillRect(0, 0, W, H);
 
     ctx.fillStyle = '#ebdab3';
     ctx.textAlign = 'center';
-    ctx.font = 'italic bold 22px Georgia, serif';
-    ctx.fillText('THE BILLIARD TABLE', canvas.width / 2, 52);
-    ctx.font = 'italic 13px Georgia, serif';
+    ctx.font = 'italic bold 20px Georgia, serif';
+    const titleY = Math.max(60, H * 0.14);
+    ctx.fillText('THE BILLIARD TABLE', W / 2, titleY);
+    ctx.font = 'italic 12px Georgia, serif';
     ctx.fillStyle = '#c9b98a';
-    ctx.fillText('The felt is honest. Most things in this house are not.', canvas.width / 2, 78);
+    const tagLines = wrapText('The felt is honest. Most things in this house are not.', W - 40);
+    let tagY = titleY + 28;
+    for (const l of tagLines) { ctx.fillText(l, W / 2, tagY); tagY += 16; }
 
-    const cw = Math.min(280, canvas.width - 60);
-    const cx = canvas.width / 2 - cw / 2;
-    const soloY = 120;
-    const vsY = 200;
+    // Compute button layout — always fits in available vertical space
+    const cw = Math.min(300, W - 40);
+    const cx = W / 2 - cw / 2;
+    const btnH = 66;
+    const gap = 14;
+    const exitH = 40;
+    const totalH = btnH * 2 + gap * 2 + exitH;
+    const availTop = tagY + 20;
+    const availBot = H - 30;
+    const availH = availBot - availTop;
+    // If cramped (tiny screen), stack anyway starting from availTop
+    let stackTop;
+    if (totalH > availH) {
+      stackTop = availTop;
+    } else {
+      stackTop = availTop + (availH - totalH) / 2;
+    }
 
-    // Solo button
+    const soloY = stackTop;
+    const vsY = soloY + btnH + gap;
+    const exitY = vsY + btnH + gap;
+
     ctx.fillStyle = '#4a1808';
-    roundRect(ctx, cx, soloY, cw, 60, 8);
+    roundRect(ctx, cx, soloY, cw, btnH, 8);
     ctx.fill();
     ctx.strokeStyle = '#d9a679';
     ctx.lineWidth = 1;
     ctx.stroke();
     ctx.fillStyle = '#f5ecd7';
     ctx.font = 'bold 15px Georgia, serif';
-    ctx.fillText('SOLO PRACTICE', canvas.width / 2, soloY + 24);
+    ctx.fillText('SOLO PRACTICE', W / 2, soloY + 26);
     ctx.fillStyle = '#c9b98a';
     ctx.font = 'italic 11px Georgia, serif';
-    ctx.fillText('Rack. Break. Play at your own pace.', canvas.width / 2, soloY + 44);
+    ctx.fillText('Rack. Break. Play at your own pace.', W / 2, soloY + 48);
 
-    // Vs Alistair
     ctx.fillStyle = '#4a1808';
-    roundRect(ctx, cx, vsY, cw, 60, 8);
+    roundRect(ctx, cx, vsY, cw, btnH, 8);
     ctx.fill();
     ctx.strokeStyle = '#d9a679';
     ctx.stroke();
     ctx.fillStyle = '#f5ecd7';
     ctx.font = 'bold 15px Georgia, serif';
-    ctx.fillText('CHALLENGE ALISTAIR', canvas.width / 2, vsY + 24);
+    ctx.fillText('CHALLENGE ALISTAIR', W / 2, vsY + 26);
     ctx.fillStyle = '#c9b98a';
     ctx.font = 'italic 11px Georgia, serif';
-    ctx.fillText('A game, then. Loser owes a truthful answer.', canvas.width / 2, vsY + 44);
+    ctx.fillText('Loser owes a truthful answer.', W / 2, vsY + 48);
 
-    // Exit
-    ctx.fillStyle = 'transparent';
     ctx.strokeStyle = '#8a6b2e';
-    roundRect(ctx, cx, vsY + 80, cw, 40, 6);
-    ctx.stroke();
+    ctx.lineWidth = 1;
+    ctx.strokeRect(cx, exitY, cw, exitH);
     ctx.fillStyle = '#c9b98a';
     ctx.font = '12px Georgia, serif';
-    ctx.fillText('LEAVE THE TABLE', canvas.width / 2, vsY + 106);
+    ctx.fillText('LEAVE THE TABLE', W / 2, exitY + exitH / 2 + 4);
 
     modeSelectRegions = {
-      solo: { x: cx, y: soloY, w: cw, h: 60 },
-      vs:   { x: cx, y: vsY,   w: cw, h: 60 },
-      exit: { x: cx, y: vsY + 80, w: cw, h: 40 }
+      solo: { x: cx, y: soloY, w: cw, h: btnH },
+      vs:   { x: cx, y: vsY,   w: cw, h: btnH },
+      exit: { x: cx, y: exitY, w: cw, h: exitH }
     };
   }
 
-  let modeSelectRegions = null;
-  let modeSelectActive = false;
-
-  function hitRegion(x, y, r) {
-    return r && x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h;
+  // ---------- Loop ---------------------------------------------------------
+  function loop() {
+    if (!canvas) return;
+    if (modeSelectActive) {
+      drawModeSelect();
+    } else if (state) {
+      if (state.gamePhase === 'simulating') step();
+      render();
+    }
+    rafId = requestAnimationFrame(loop);
   }
 
-  function onModeSelectTap(e) {
-    if (!modeSelectActive) return;
-    const rect = canvas.getBoundingClientRect();
-    const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
-    const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
-    if (hitRegion(x, y, modeSelectRegions.solo)) {
-      modeSelectActive = false;
-      newGame('solo');
-      loop();
-      return;
-    }
-    if (hitRegion(x, y, modeSelectRegions.vs)) {
-      modeSelectActive = false;
-      newGame('vs');
-      loop();
-      return;
-    }
-    if (hitRegion(x, y, modeSelectRegions.exit)) {
-      closeBilliards();
-    }
-  }
-
-  // ---------- Public: open / close ----------------------------------------
+  // ---------- Open / Close -------------------------------------------------
   function openBilliards() {
     if (modal) return;
     modal = document.createElement('div');
     modal.id = 'nocturne-billiards';
     modal.style.cssText = [
-      'position:fixed',
-      'inset:0',
-      'z-index:9999',
-      'background:rgba(5,3,2,0.96)',
-      'display:flex',
-      'align-items:center',
-      'justify-content:center',
-      'flex-direction:column'
+      'position:fixed','inset:0','z-index:9999',
+      'background:radial-gradient(ellipse at center, #1a0e07 0%, #0a0503 50%, #000 100%)',
+      'overflow:hidden','touch-action:none',
+      'display:flex','align-items:stretch','justify-content:stretch'
     ].join(';');
 
-    // Close button
     const close = document.createElement('button');
     close.textContent = '× CLOSE';
     close.style.cssText = [
-      'position:absolute',
-      'top:12px',
-      'right:12px',
-      'background:rgba(40,20,10,0.8)',
-      'color:#ebdab3',
-      'border:1px solid #8a6b2e',
-      'padding:6px 12px',
-      'font-family:Georgia, serif',
-      'font-size:12px',
-      'cursor:pointer',
-      'z-index:2'
+      'position:absolute','top:10px','right:10px',
+      'background:rgba(40,20,10,0.85)','color:#ebdab3',
+      'border:1px solid #8a6b2e','padding:6px 12px',
+      'font-family:Georgia, serif','font-size:12px',
+      'cursor:pointer','z-index:2','border-radius:4px'
     ].join(';');
     close.addEventListener('click', closeBilliards);
+    close.addEventListener('touchend', (e) => { e.preventDefault(); closeBilliards(); });
 
     canvas = document.createElement('canvas');
-    canvas.style.cssText = 'display:block;max-width:100vw;max-height:100vh;touch-action:none';
+    canvas.style.cssText = 'display:block;touch-action:none;width:100%;height:100%;';
     modal.appendChild(canvas);
     modal.appendChild(close);
     document.body.appendChild(modal);
 
-    fitCanvas();
     ctx = canvas.getContext('2d');
+    fitCanvas();
     window.addEventListener('resize', fitCanvas);
+    window.addEventListener('orientationchange', fitCanvas);
 
-    // Mode select
     modeSelectActive = true;
-    drawModeSelect();
-    canvas.addEventListener('mousedown', onModeSelectTap);
-    canvas.addEventListener('touchstart', (e) => { e.preventDefault(); onModeSelectTap(e); }, { passive: false });
 
-    // Main input
-    bindInput();
+    canvas.addEventListener('mousedown', onPointerDown);
+    canvas.addEventListener('mousemove', onPointerMove);
+    canvas.addEventListener('mouseup', onPointerUp);
+    canvas.addEventListener('touchstart', onPointerDown, { passive: false });
+    canvas.addEventListener('touchmove', onPointerMove, { passive: false });
+    canvas.addEventListener('touchend', onPointerUp);
+    canvas.addEventListener('touchcancel', onPointerUp);
+
+    loop();
   }
 
   function fitCanvas() {
     if (!canvas) return;
-    const maxW = Math.min(window.innerWidth - 16, 900);
-    const maxH = Math.min(window.innerHeight - 16, 500);
-    // Keep aspect close to 2:1
-    let w = maxW;
-    let h = w / 2;
-    if (h > maxH) { h = maxH; w = h * 2; }
-    canvas.width = Math.floor(w);
-    canvas.height = Math.floor(h);
-    if (modeSelectActive) drawModeSelect();
-    else if (state) render();
+    const w = Math.floor(window.innerWidth);
+    const h = Math.floor(window.innerHeight);
+    canvas.width = w;
+    canvas.height = h;
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
   }
 
   function closeBilliards() {
@@ -1473,10 +1538,12 @@
     ctx = null;
     state = null;
     modeSelectActive = false;
+    powerDragging = false;
+    spinDragging = false;
     window.removeEventListener('resize', fitCanvas);
+    window.removeEventListener('orientationchange', fitCanvas);
   }
 
-  // Expose
   window.openBilliards = openBilliards;
   window.closeBilliards = closeBilliards;
 
