@@ -1980,6 +1980,9 @@ function tapObject(objectId, tapX, tapY) {
   if (objectId === 'billiard-table-obj') {
     if (typeof window.openBilliards === 'function') {
       window.openBilliards();
+    } else {
+      showToast('Billiards script not loaded. Add <script src="%PUBLIC_URL%/billiards.js"></script> to index.html.');
+      console.error('[billiards] window.openBilliards is undefined — billiards.js is not loaded');
     }
     return;
   }
