@@ -36,6 +36,13 @@ const ROOM_ASSET_MAP = {
   'wine-cellar':       'room/nocturne-room-wine-cellar-bg.jpg',
   'maids-quarters':    'room/nocturne-room-maids-quarters-bg.png',
   'groundskeeper-cottage': 'room/nocturne-room-groundskeeper-cottage-bg.png',
+  // ── EAST WING (past the study) ─────────────────────────────
+  'map-room':          'room/nocturne-room-map-bg.png',
+  'dining-room':       'room/nocturne-dining-room-bg.png',
+  'trophy-room':       'room/nocturne-room-trophy-bg.png',
+  'billiard-room':     'room/nocturne-room-billiard-bg.png',
+  'weapons-room':      'room/nocturne-room-weapons-bg.png',
+  'conservatory':      'room/nocturne-conservatory-bg.png',
   'c1-arrival':        'room/nocturne-room-c1-antechamber.png',
   'c2-portraits':      'room/nocturne-room-c2-portraits-bg.jpg',
   'c3-original':       'room/nocturne-room-c3-original-bg.jpg',
@@ -281,6 +288,18 @@ const ROOM_DESCRIPTIONS = {
 
   "groundskeeper-cottage": "Thomas Hatch has been here thirty years. The cottage shows it — not in damage but in the particular order of a man who knows exactly where everything is and has never needed to think about it.\n\nTools on the wall. A table. A lantern. The window faces the garden and the terrace beyond it and the balcony above that.\n\nHe is at the door when you arrive. He was expecting someone eventually.",
 
+  "map-room":      "A cartography study. Wall maps of territories Ashworth did business in and several he did not. A globe older than the country it was made in. The desk is strewn with charts that have been consulted recently and returned to the wrong order.\n\nOne map is pinned open. It shows nothing of interest. It has been pinned open for the benefit of anyone who walks in.",
+
+  "dining-room":   "The long table is set for forty. Nobody sat here tonight. The candles are lit anyway — tall tapers, fresh, burning down with the measured patience of a room that was never intended to be used.\n\nTwo places at the head have napkins folded differently from the rest. The Steward's hand, or someone imitating it.\n\nThe food was prepared. The food was never served. Someone decided, late in the afternoon, that dinner would not happen tonight. That decision was not announced.",
+
+  "trophy-room":   "The Estate's private museum. Glass cases. Antlered heads. A mounted bird on the mantle with a yellowed label in Ashworth's handwriting. A leather armchair positioned to face the fire and nothing else.\n\nMost of these specimens were acquired legally. Most.\n\nOne case near the back is empty. The velvet inside shows the outline of whatever used to sit there. The outline is recent. The dust on the shelf is not.",
+
+  "billiard-room": "The table is set mid-game. Colored balls clustered at one end. Two cues laid across the felt — one chalked, one not. Whoever was playing left before the rack was finished.\n\nThe bar cabinet at the back is locked. The key is not on its hook. The decanters behind the glass are half-full in a pattern that suggests regular use by the same two hands.\n\nThe portraits watch the table. None of them watch the door.",
+
+  "weapons-room":  "An armory kept as decoration. Flintlocks mounted in pairs along the panelling. Two cavalry sabres crossed above the fireplace. Candelabras burning on both cabinets — fresh tapers, recently lit, too many for the room's actual use.\n\nThe muskets are decorative. The swords are not. One of the sabres was taken down and replaced within the last hour. The hook is clean where it should be dusty.\n\nNothing was taken from this room tonight. Something was returned to it.",
+
+  "conservatory":  "Glass roof. Iron frame. The candles in the wall sconces are lit but the room is cold — the glass leaks heat the way the Estate leaks information.\n\nA small iron table with two chairs, pulled close. The seat of one is still warm. The seat of the other is not, and was not.\n\nBeyond the glass, the garden is dark. You can see your own reflection in the panels above, and behind it, faintly, the silhouette of someone who is not in the room with you. Then the candle gutters and the silhouette is yours after all. Probably.",
+
   "tunnel-passage":"Old stone. A single lantern on a hook, warm and recently used. The passage connects two houses built around something older than either.",
   "c1-arrival":    "A list of names. Ashworth's is at the bottom. Tonight's date is written at the top in a hand that knew the date before it was known by the Estate. A grand piano in the centre of the room. The Archivist is playing. They play when they are nervous. They will not say they are nervous.",
   "c2-portraits":  "Hooks on the walls. Nothing hung. The Compact does not keep portraits. Every hook is the same size. Every hook is empty. The uniformity is not accident — it is argument.",
@@ -336,6 +355,13 @@ const CHARACTER_POSITIONS = {
   "wine-cellar":  [],
   "maids-quarters":    ["vivienne"],
   "groundskeeper-cottage": ["hatch"],
+  // ── EAST WING (past study, no NPCs) ────────────────────────
+  "map-room":          [],
+  "dining-room":       [],
+  "trophy-room":       [],
+  "billiard-room":     [],
+  "weapons-room":      [],
+  "conservatory":      [],
   // ── COMPACT ────────────────────────────────────────────────
   "c1-arrival":        ["archivist"],
   "c3-original":       ["sovereign"],
@@ -366,6 +392,8 @@ function initRooms() {
     // Estate
     'foyer','gallery','study','archive-path','terrace',
     'maids-quarters','groundskeeper-cottage',
+    // East wing (past study)
+    'map-room','dining-room','trophy-room','billiard-room','weapons-room','conservatory',
     'ballroom','balcony','antechamber','stage','library','physicians','smoking','vault',
     'wine-cellar','tunnel-passage',
     'c1-arrival','c2-portraits','c3-original','c4-register','c5-correspondence',
@@ -999,6 +1027,7 @@ function _preloadAssets() {
     'foyer','ballroom','study','antechamber','gallery','library',
     'smoking','physicians','terrace','balcony','archive-path',
     'vault','wine-cellar','maids-quarters','groundskeeper-cottage',
+    'map-room','dining-room','trophy-room','billiard-room','weapons-room','conservatory',
     'stage','tunnel-passage',
     'c1-arrival','c2-portraits','c3-original','c4-register',
     'c5-correspondence','c6-tunnel','c7-study','c8-gallery',
@@ -1037,6 +1066,12 @@ const ROOM_PARALLAX = {
   'tunnel-passage':        { y: 20 },
   'maids-quarters':        { y: 15 },
   'groundskeeper-cottage': { y: 15 },
+  'map-room':              { y: 15 },
+  'dining-room':           { y: 15 },
+  'trophy-room':           { y: 15 },
+  'billiard-room':         { y: 15 },
+  'weapons-room':          { y: 15 },
+  'conservatory':          { y: 20 },
   '_default':              { y: 0 },
 };
 

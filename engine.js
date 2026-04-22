@@ -105,6 +105,13 @@ const gameState = {
     "tunnel-passage":  { state: "undiscovered",  completed: false },
     "maids-quarters":  { state: "undiscovered",  completed: false },
     "groundskeeper-cottage": { state: "undiscovered", completed: false },
+    // ── EAST WING (past study) ──
+    "map-room":        { state: "undiscovered",  completed: false },
+    "dining-room":     { state: "undiscovered",  completed: false },
+    "trophy-room":     { state: "undiscovered",  completed: false },
+    "billiard-room":   { state: "undiscovered",  completed: false },
+    "weapons-room":    { state: "undiscovered",  completed: false },
+    "conservatory":    { state: "undiscovered",  completed: false },
     "c1-arrival":      { state: "undiscovered",  completed: false },
     "c3-original":     { state: "undiscovered",  completed: false },
     "c5-correspondence":{ state: "undiscovered", completed: false },
@@ -223,7 +230,7 @@ const ROOM_ADJACENCY = {
   // ── ESTATE ─────────────────────────────────────────────────
   "foyer":             ["gallery", "study"],
   "gallery":           ["foyer", "archive-path"],
-  "study":             ["foyer"],
+  "study":             ["foyer", "map-room", "dining-room"],
   "archive-path":      ["gallery", "terrace"],
   "balcony":           ["ballroom"],
   "terrace":           ["archive-path", "ballroom", "maids-quarters", "groundskeeper-cottage"],
@@ -240,6 +247,16 @@ const ROOM_ADJACENCY = {
   // Staff rooms — accessible from terrace
   "maids-quarters":    ["terrace"],
   "groundskeeper-cottage": ["terrace"],
+  // ── EAST WING — two symmetric 3-room chains branching from study, looped at the far end ──
+  // Study → map-room → trophy-room → weapons-room ─┐
+  //                                                 ├─ (weapons ↔ conservatory)
+  // Study → dining-room → billiard-room → conservatory ─┘
+  "map-room":          ["study", "trophy-room"],
+  "dining-room":       ["study", "billiard-room"],
+  "trophy-room":       ["map-room", "weapons-room"],
+  "billiard-room":     ["dining-room", "conservatory"],
+  "weapons-room":      ["trophy-room", "conservatory"],
+  "conservatory":      ["billiard-room", "weapons-room"],
   // Compact — all open simultaneously on tunnel arrival
   "c6-tunnel":         ["c1-arrival","wine-cellar"],
   "c1-arrival":        ["c6-tunnel","c7-study","c3-original","c5-correspondence","c8-gallery"],
