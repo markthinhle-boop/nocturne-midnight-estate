@@ -1207,10 +1207,17 @@ function updateMapRoom(roomId) {
   if (el.classList.contains('map-secret')) cls += ' map-secret';
   if (isCurrent) cls += ' current';
   el.setAttribute('class', cls);
+
+  // Pure fog of war — hide undiscovered rooms entirely (except secrets which handle their own visibility above)
+  if (roomId !== 'wine-cellar' && roomId !== 'hedge-path') {
+    el.style.display = (room.state === 'undiscovered') ? 'none' : '';
+  }
 }
 
 function updateCurrentRoomOnMap() {
   Object.keys(gameState.rooms).forEach(roomId => updateMapRoom(roomId));
+  _revealEstateCorridorsIfReady();
+  _revealCompactCorridorsIfReady();
 }
 
 function handleMapUpdate({ roomId, special }) {
@@ -1218,6 +1225,7 @@ function handleMapUpdate({ roomId, special }) {
     updateMapRoom(roomId);
     addMapDropDot(roomId);
     if (roomId.startsWith('c')) _revealCompactCorridorsIfReady();
+    else _revealEstateCorridorsIfReady();
   }
 }
 
@@ -1270,6 +1278,43 @@ function _revealCompactCorridorsIfReady() {
     { id: 'mcl-c1-c8',  a: 'c1-arrival',         b: 'c8-gallery'        },
     { id: 'mcl-c3-c5',  a: 'c3-original',        b: 'c5-correspondence' },
     { id: 'mcl-c7-c8',  a: 'c7-study',           b: 'c8-gallery'        },
+  ];
+  CORRIDOR_LINES.forEach(({ id, a, b }) => {
+    const line = document.getElementById(id);
+    if (!line) return;
+    const stateA = gameState.rooms[a]?.state;
+    const stateB = gameState.rooms[b]?.state;
+    const bothKnown = stateA && stateA !== 'undiscovered' && stateB && stateB !== 'undiscovered';
+    line.style.display = bothKnown ? '' : 'none';
+  });
+}
+
+function _revealEstateCorridorsIfReady() {
+  // Estate corridors — each line visible only when BOTH endpoint rooms are discovered.
+  // Pure fog of war: nothing connects to rooms the player hasn't reached.
+  const CORRIDOR_LINES = [
+    { id: 'mle-foyer-gallery',              a: 'foyer',        b: 'gallery' },
+    { id: 'mle-foyer-study',                a: 'foyer',        b: 'study' },
+    { id: 'mle-gallery-terrace',            a: 'gallery',      b: 'terrace' },
+    { id: 'mle-terrace-ballroom',           a: 'terrace',      b: 'ballroom' },
+    { id: 'mle-terrace-maids-quarters',     a: 'terrace',      b: 'maids-quarters' },
+    { id: 'mle-terrace-groundskeeper-cottage', a: 'terrace',   b: 'groundskeeper-cottage' },
+    { id: 'mle-ballroom-stage',             a: 'ballroom',     b: 'stage' },
+    { id: 'mle-ballroom-balcony',           a: 'ballroom',     b: 'balcony' },
+    { id: 'mle-ballroom-antechamber',       a: 'ballroom',     b: 'antechamber' },
+    { id: 'mle-antechamber-library',        a: 'antechamber',  b: 'library' },
+    { id: 'mle-antechamber-physicians',     a: 'antechamber',  b: 'physicians' },
+    { id: 'mle-library-smoking',            a: 'library',      b: 'smoking' },
+    { id: 'mle-physicians-archive-path',    a: 'physicians',   b: 'archive-path' },
+    { id: 'mle-smoking-archive-path',       a: 'smoking',      b: 'archive-path' },
+    { id: 'mle-smoking-vault',              a: 'smoking',      b: 'vault' },
+    { id: 'mle-study-map-room',             a: 'study',        b: 'map-room' },
+    { id: 'mle-map-room-dining-room',       a: 'map-room',     b: 'dining-room' },
+    { id: 'mle-map-room-trophy-room',       a: 'map-room',     b: 'trophy-room' },
+    { id: 'mle-dining-room-billiard-room',  a: 'dining-room',  b: 'billiard-room' },
+    { id: 'mle-trophy-room-weapons-room',   a: 'trophy-room',  b: 'weapons-room' },
+    { id: 'mle-billiard-room-conservatory', a: 'billiard-room',b: 'conservatory' },
+    { id: 'mle-weapons-room-conservatory',  a: 'weapons-room', b: 'conservatory' },
   ];
   CORRIDOR_LINES.forEach(({ id, a, b }) => {
     const line = document.getElementById(id);

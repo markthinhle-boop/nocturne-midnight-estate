@@ -360,58 +360,36 @@
           </filter>
         </defs>
 
-        <!-- Corridor connection lines — drawn beneath rooms -->
+        <!-- Corridor connection lines — drawn beneath rooms. All hidden until endpoints discovered. -->
         <g id="map-corridors" stroke="#1e1c18" stroke-width="8" stroke-linecap="round">
           <!-- ═══ FREE TIER ═══ -->
-          <!-- Foyer → Gallery -->
-          <line x1="172" y1="52" x2="140" y2="88"/>
-          <!-- Foyer → Study -->
-          <line x1="208" y1="52" x2="228" y2="88"/>
-          <!-- Gallery → Terrace (direct — Archive no longer bridges them) -->
-          <line x1="130" y1="126" x2="160" y2="208"/>
-          <!-- Terrace → Ballroom (free, now solid) -->
-          <line x1="176" y1="243" x2="176" y2="268"/>
-          <!-- Terrace → Maid's Quarters (right) -->
-          <line x1="214" y1="225" x2="230" y2="225"/>
-          <!-- Terrace → Groundskeeper Cottage (left) -->
-          <line x1="138" y1="225" x2="130" y2="225"/>
-          <!-- Ballroom → Stage (west, free) -->
-          <line x1="104" y1="292" x2="112" y2="292"/>
-          <!-- Ballroom → Balcony (east, free) -->
-          <line x1="248" y1="292" x2="256" y2="292"/>
-          <!-- Ballroom → Antechamber (south center, free finale) -->
-          <line x1="180" y1="316" x2="180" y2="348"/>
-          <!-- ═══ PAYWALL — dashed lines from Antechamber to paid tier ═══ -->
-          <!-- Antechamber → Library (paywall dashed, west) -->
-          <line x1="156" y1="386" x2="120" y2="406" stroke-dasharray="4 3" stroke="#1a1814"/>
-          <!-- Antechamber → Physicians (paywall dashed, east) -->
-          <line x1="204" y1="386" x2="240" y2="406" stroke-dasharray="4 3" stroke="#1a1814"/>
+          <line id="mle-foyer-gallery"              x1="172" y1="52"  x2="140" y2="88"  style="display:none;"/>
+          <line id="mle-foyer-study"                x1="208" y1="52"  x2="228" y2="88"  style="display:none;"/>
+          <line id="mle-gallery-terrace"            x1="130" y1="126" x2="160" y2="208" style="display:none;"/>
+          <line id="mle-terrace-ballroom"           x1="176" y1="243" x2="176" y2="268" style="display:none;"/>
+          <line id="mle-terrace-maids-quarters"     x1="214" y1="225" x2="230" y2="225" style="display:none;"/>
+          <line id="mle-terrace-groundskeeper-cottage" x1="138" y1="225" x2="130" y2="225" style="display:none;"/>
+          <line id="mle-ballroom-stage"             x1="104" y1="292" x2="112" y2="292" style="display:none;"/>
+          <line id="mle-ballroom-balcony"           x1="248" y1="292" x2="256" y2="292" style="display:none;"/>
+          <line id="mle-ballroom-antechamber"       x1="180" y1="316" x2="180" y2="348" style="display:none;"/>
+          <!-- ═══ PAYWALL — dashed lines from Antechamber ═══ -->
+          <line id="mle-antechamber-library"        x1="156" y1="386" x2="120" y2="406" stroke-dasharray="4 3" stroke="#1a1814" style="display:none;"/>
+          <line id="mle-antechamber-physicians"     x1="204" y1="386" x2="240" y2="406" stroke-dasharray="4 3" stroke="#1a1814" style="display:none;"/>
           <!-- ═══ PAID TIER ═══ -->
-          <!-- Library → Smoking (vertical, west col) -->
-          <line x1="104" y1="444" x2="104" y2="466"/>
-          <!-- Physicians → Archive (vertical, east col) -->
-          <line x1="256" y1="444" x2="256" y2="466"/>
-          <!-- Smoking ↔ Archive (horizontal row 2 cross-link) -->
-          <line x1="144" y1="485" x2="216" y2="485"/>
-          <!-- Smoking → Vault (vertical, west col deepest) -->
-          <line x1="104" y1="504" x2="104" y2="526"/>
+          <line id="mle-library-smoking"            x1="104" y1="444" x2="104" y2="466" style="display:none;"/>
+          <line id="mle-physicians-archive-path"    x1="256" y1="444" x2="256" y2="466" style="display:none;"/>
+          <line id="mle-smoking-archive-path"       x1="144" y1="485" x2="216" y2="485" style="display:none;"/>
+          <line id="mle-smoking-vault"              x1="104" y1="504" x2="104" y2="526" style="display:none;"/>
           <!-- Vault → Wine Cellar (secret — hidden until cellarFound, not drawn) -->
           <!-- Archive → Hedge Path (secret — hidden until hedgeGapFound, not drawn) -->
           <!-- ═══════════ EAST WING CORRIDORS ═══════════ -->
-          <!-- Long hallway: Study → east wing (a visible connecting corridor) -->
-          <line x1="280" y1="107" x2="370" y2="107"/>
-          <!-- Row 1 horizontal: Map Room → Dining Room -->
-          <line x1="440" y1="107" x2="450" y2="107"/>
-          <!-- East wing Row 1 → Row 2 (vertical, inner col) -->
-          <line x1="405" y1="126" x2="405" y2="160"/>
-          <!-- East wing Row 1 → Row 2 (vertical, outer col) -->
-          <line x1="485" y1="126" x2="485" y2="160"/>
-          <!-- East wing Row 2 → Row 3 (vertical, inner col) -->
-          <line x1="405" y1="198" x2="405" y2="232"/>
-          <!-- East wing Row 2 → Row 3 (vertical, outer col) -->
-          <line x1="485" y1="198" x2="485" y2="232"/>
-          <!-- East wing loop close: Armory ↔ Glasshouse (horizontal at bottom) -->
-          <line x1="440" y1="251" x2="450" y2="251"/>
+          <line id="mle-study-map-room"             x1="280" y1="107" x2="370" y2="107" style="display:none;"/>
+          <line id="mle-map-room-dining-room"       x1="440" y1="107" x2="450" y2="107" style="display:none;"/>
+          <line id="mle-map-room-trophy-room"       x1="405" y1="126" x2="405" y2="160" style="display:none;"/>
+          <line id="mle-dining-room-billiard-room"  x1="485" y1="126" x2="485" y2="160" style="display:none;"/>
+          <line id="mle-trophy-room-weapons-room"   x1="405" y1="198" x2="405" y2="232" style="display:none;"/>
+          <line id="mle-billiard-room-conservatory" x1="485" y1="198" x2="485" y2="232" style="display:none;"/>
+          <line id="mle-weapons-room-conservatory"  x1="440" y1="251" x2="450" y2="251" style="display:none;"/>
         </g>
 
         <!-- FREE TIER ROOMS -->
