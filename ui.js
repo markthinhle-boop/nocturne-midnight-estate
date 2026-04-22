@@ -2562,8 +2562,8 @@ const NAV_LAYOUT = {
   // Row 3: weapons-room → conservatory (cross-linked, loop close)
   'map-room':     { rows: [['study'], ['dining-room', 'trophy-room']],                               split: 1 },
   'dining-room':  { rows: [['map-room'], ['billiard-room']],                                         split: 1 },
-  'trophy-room':  { rows: [['map-room'], ['billiard-room', 'weapons-room']],                         split: 1 },
-  'billiard-room':{ rows: [['dining-room', 'trophy-room'], ['conservatory']],                        split: 1 },
+  'trophy-room':  { rows: [['map-room'], ['weapons-room']],                                         split: 1 },
+  'billiard-room':{ rows: [['dining-room'], ['conservatory']],                                       split: 1 },
   'weapons-room': { rows: [['trophy-room'], ['conservatory']],                                       split: 1 },
   'conservatory': { rows: [['billiard-room'], ['weapons-room']],                                     split: 1 },
   'archive-path': { rows: [['gallery'], ['lectern', 'terrace']],                                     split: 1 },

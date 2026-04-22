@@ -254,8 +254,8 @@ const ROOM_ADJACENCY = {
   // Armory ↔ Glasshouse (loop close at far south)
   "map-room":          ["study", "dining-room", "trophy-room"],
   "dining-room":       ["map-room", "billiard-room"],
-  "trophy-room":       ["map-room", "billiard-room", "weapons-room"],
-  "billiard-room":     ["dining-room", "trophy-room", "conservatory"],
+  "trophy-room":       ["map-room", "weapons-room"],
+  "billiard-room":     ["dining-room", "conservatory"],
   "weapons-room":      ["trophy-room", "conservatory"],
   "conservatory":      ["billiard-room", "weapons-room"],
   // Compact — all open simultaneously on tunnel arrival
