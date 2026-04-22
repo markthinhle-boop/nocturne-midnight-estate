@@ -2543,7 +2543,8 @@ const ROOM_NAMES = {
   'c8-gallery': 'The Gallery',
 };
 
-const PAID_ROOMS = ['antechamber','stage','library','physicians','smoking'];
+const PAID_ROOMS = ['library','physicians','smoking','archive-path','vault'];
+// antechamber + stage + balcony moved to free tier (paywall after antechamber, not before)
 // wine-cellar excluded — only reachable via vault panel drag, already past paywall
 
 // ── MAP-MIRRORING NAV LAYOUT ───────────────────────────────
@@ -2555,28 +2556,26 @@ const NAV_LAYOUT = {
   // ── ESTATE ─────────────────────────────────────────────────
   'foyer':        { rows: [['gallery', 'study']],                                                    split: 0 },
   'gallery':      { rows: [['foyer'], ['terrace']],                                                   split: 1 },
-  'study':        { rows: [['foyer'], ['archive-path', 'map-room']],                                  split: 1 },
+  'study':        { rows: [['foyer'], ['map-room']],                                                 split: 1 },
   // ── EAST WING — symmetric chain matches the map layout ──
-  // Row 1: map-room → dining-room (study is entry; trophy below map)
-  // Row 2: trophy-room → billiard-room (cross-linked)
-  // Row 3: weapons-room → conservatory (cross-linked, loop close)
   'map-room':     { rows: [['study'], ['dining-room', 'trophy-room']],                               split: 1 },
   'dining-room':  { rows: [['map-room'], ['billiard-room']],                                         split: 1 },
   'trophy-room':  { rows: [['map-room'], ['weapons-room']],                                         split: 1 },
   'billiard-room':{ rows: [['dining-room'], ['conservatory']],                                       split: 1 },
   'weapons-room': { rows: [['trophy-room'], ['conservatory']],                                       split: 1 },
   'conservatory': { rows: [['billiard-room'], ['weapons-room']],                                     split: 1 },
-  'archive-path': { rows: [['study']],                                                               split: 1 },
+  'archive-path': { rows: [['physicians', 'smoking']],                                                split: 0 },
   'lectern':      { rows: [['archive-path']],                                                        split: 1 },
   'terrace':      { rows: [['gallery'], ['ballroom'], ['maids-quarters', 'groundskeeper-cottage']], split: 1 },
   'maids-quarters': { rows: [['terrace'], ['groundskeeper-cottage']], split: 1 },
   'groundskeeper-cottage': { rows: [['terrace'], ['maids-quarters']], split: 1 },
-  'ballroom':     { rows: [['terrace'], ['antechamber', 'stage', 'library'], ['physicians', 'smoking']], split: 1 },
-  'antechamber':  { rows: [['ballroom']],                                                            split: 1 },
+  'ballroom':     { rows: [['terrace'], ['stage', 'balcony'], ['antechamber']],                      split: 1 },
+  'antechamber':  { rows: [['ballroom'], ['library', 'physicians']],                                 split: 1 },
   'stage':        { rows: [['ballroom']],                                                            split: 1 },
-  'library':      { rows: [['ballroom']],                                                            split: 1 },
-  'physicians':   { rows: [['ballroom']],                                                            split: 1 },
-  'smoking':      { rows: [['ballroom'], ['vault']],                                                 split: 1 },
+  'balcony':      { rows: [['ballroom']],                                                            split: 1 },
+  'library':      { rows: [['antechamber'], ['smoking']],                                            split: 1 },
+  'physicians':   { rows: [['antechamber'], ['archive-path']],                                       split: 1 },
+  'smoking':      { rows: [['library', 'archive-path'], ['vault']],                                  split: 1 },
   'vault':        { rows: [['smoking'], ['wine-cellar']],                                            split: 1 },
   'wine-cellar':  { rows: [['vault']],                                                               split: 1 },
   // ── COMPACT ────────────────────────────────────────────────

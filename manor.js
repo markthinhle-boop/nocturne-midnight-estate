@@ -963,7 +963,7 @@ function handleMapRoomTap(roomId) {
     || gameState.rooms[gameState.currentRoom]?.completed;
   if (!canLeave) return; // silent — nav tabs will show "Examine the room"
 
-  const paid = ["antechamber","stage","library","physicians","smoking","vault","wine-cellar","balcony"];
+  const paid = ["library","physicians","smoking","archive-path","vault","wine-cellar"];
   if (paid.includes(roomId) && !gameState.paidTierUnlocked) { openPaywall(); closeMap(); return; }
 
   closeMap();

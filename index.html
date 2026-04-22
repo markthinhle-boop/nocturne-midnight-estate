@@ -362,36 +362,41 @@
 
         <!-- Corridor connection lines — drawn beneath rooms -->
         <g id="map-corridors" stroke="#1e1c18" stroke-width="8" stroke-linecap="round">
+          <!-- ═══ FREE TIER ═══ -->
           <!-- Foyer → Gallery -->
           <line x1="172" y1="52" x2="140" y2="88"/>
           <!-- Foyer → Study -->
           <line x1="208" y1="52" x2="228" y2="88"/>
           <!-- Gallery → Terrace (direct — Archive no longer bridges them) -->
           <line x1="130" y1="126" x2="160" y2="208"/>
-          <!-- Study → Archive (dead-end south branch) -->
-          <line x1="240" y1="126" x2="240" y2="148"/>
-          <!-- Terrace → Ballroom (paywall) -->
-          <line x1="176" y1="243" x2="176" y2="268" stroke-dasharray="4 3" stroke="#1a1814"/>
-          <!-- Ballroom → Antechamber -->
-          <line x1="148" y1="318" x2="100" y2="348"/>
-          <!-- Ballroom → Stage -->
-          <line x1="180" y1="318" x2="180" y2="348"/>
-          <!-- Ballroom → Library -->
-          <line x1="212" y1="318" x2="252" y2="348"/>
-          <!-- Smoking → Vault -->
-          <line x1="180" y1="456" x2="180" y2="478"/>
-          <!-- Ballroom → Physicians -->
-          <line x1="148" y1="318" x2="88"  y2="418"/>
-          <!-- Ballroom → Smoking -->
-          <line x1="180" y1="318" x2="180" y2="418"/>
+          <!-- Terrace → Ballroom (free, now solid) -->
+          <line x1="176" y1="243" x2="176" y2="268"/>
           <!-- Terrace → Maid's Quarters (right) -->
           <line x1="214" y1="225" x2="230" y2="225"/>
           <!-- Terrace → Groundskeeper Cottage (left) -->
           <line x1="138" y1="225" x2="130" y2="225"/>
-          <!-- Vault → Wine Cellar (secret — hidden until cellarFound) -->
-          <!-- Not drawn — secret -->
-          <!-- Archive → Hedge Path (secret — hidden until hedgeGapFound) -->
-          <!-- Not drawn — secret -->
+          <!-- Ballroom → Stage (west, free) -->
+          <line x1="104" y1="292" x2="112" y2="292"/>
+          <!-- Ballroom → Balcony (east, free) -->
+          <line x1="248" y1="292" x2="256" y2="292"/>
+          <!-- Ballroom → Antechamber (south center, free finale) -->
+          <line x1="180" y1="316" x2="180" y2="348"/>
+          <!-- ═══ PAYWALL — dashed lines from Antechamber to paid tier ═══ -->
+          <!-- Antechamber → Library (paywall dashed, west) -->
+          <line x1="156" y1="386" x2="120" y2="406" stroke-dasharray="4 3" stroke="#1a1814"/>
+          <!-- Antechamber → Physicians (paywall dashed, east) -->
+          <line x1="204" y1="386" x2="240" y2="406" stroke-dasharray="4 3" stroke="#1a1814"/>
+          <!-- ═══ PAID TIER ═══ -->
+          <!-- Library → Smoking (vertical, west col) -->
+          <line x1="104" y1="444" x2="104" y2="466"/>
+          <!-- Physicians → Archive (vertical, east col) -->
+          <line x1="256" y1="444" x2="256" y2="466"/>
+          <!-- Smoking ↔ Archive (horizontal row 2 cross-link) -->
+          <line x1="144" y1="485" x2="216" y2="485"/>
+          <!-- Smoking → Vault (vertical, west col deepest) -->
+          <line x1="104" y1="504" x2="104" y2="526"/>
+          <!-- Vault → Wine Cellar (secret — hidden until cellarFound, not drawn) -->
+          <!-- Archive → Hedge Path (secret — hidden until hedgeGapFound, not drawn) -->
           <!-- ═══════════ EAST WING CORRIDORS ═══════════ -->
           <!-- Long hallway: Study → east wing (a visible connecting corridor) -->
           <line x1="280" y1="107" x2="370" y2="107"/>
@@ -432,10 +437,10 @@
         </g>
 
         <g class="map-room undiscovered" id="mr-archive-path" data-room="archive-path">
-          <rect x="200" y="148" width="80" height="38" rx="3"/>
-          <text x="240" y="163" text-anchor="middle" class="map-room-label">ARCHIVE</text>
-          <text x="240" y="177" text-anchor="middle" class="map-room-sub">case 3</text>
-          <circle class="map-current-dot" cx="240" cy="167" r="3"/>
+          <rect x="216" y="466" width="80" height="38" rx="3"/>
+          <text x="256" y="481" text-anchor="middle" class="map-room-label">ARCHIVE</text>
+          <text x="256" y="495" text-anchor="middle" class="map-room-sub">case 3</text>
+          <circle class="map-current-dot" cx="256" cy="485" r="3"/>
         </g>
 
         <g class="map-room undiscovered" id="mr-lectern" data-room="lectern">
@@ -482,53 +487,61 @@
         </g>
 
         <g class="map-room undiscovered" id="mr-antechamber" data-room="antechamber">
-          <rect x="36" y="348" width="80" height="38" rx="3"/>
-          <text x="76" y="363" text-anchor="middle" class="map-room-label">ANTECHAMBER</text>
-          <text x="76" y="377" text-anchor="middle" class="map-room-sub">pemberton-hale</text>
-          <circle class="map-current-dot" cx="76" cy="367" r="3"/>
-        </g>
-
-        <g class="map-room undiscovered" id="mr-stage" data-room="stage">
           <rect x="144" y="348" width="72" height="38" rx="3"/>
-          <text x="180" y="363" text-anchor="middle" class="map-room-label">THE STAGE</text>
-          <text x="180" y="377" text-anchor="middle" class="map-room-sub">accusation</text>
+          <text x="180" y="363" text-anchor="middle" class="map-room-label">ANTECHAMBER</text>
+          <text x="180" y="377" text-anchor="middle" class="map-room-sub">pemberton-hale</text>
           <circle class="map-current-dot" cx="180" cy="367" r="3"/>
         </g>
 
+        <g class="map-room undiscovered" id="mr-stage" data-room="stage">
+          <rect x="36" y="268" width="68" height="48" rx="3"/>
+          <text x="70" y="286" text-anchor="middle" class="map-room-label">THE STAGE</text>
+          <text x="70" y="300" text-anchor="middle" class="map-room-sub">accusation</text>
+          <circle class="map-current-dot" cx="70" cy="290" r="3"/>
+        </g>
+
+        <!-- Balcony — east of ballroom, free tier (push scene) -->
+        <g class="map-room undiscovered" id="mr-balcony" data-room="balcony">
+          <rect x="256" y="268" width="68" height="48" rx="3"/>
+          <text x="290" y="286" text-anchor="middle" class="map-room-label">BALCONY</text>
+          <text x="290" y="300" text-anchor="middle" class="map-room-sub">7:45 pm</text>
+          <circle class="map-current-dot" cx="290" cy="290" r="3"/>
+        </g>
+
         <g class="map-room undiscovered" id="mr-library" data-room="library">
-          <rect x="244" y="348" width="80" height="38" rx="3"/>
-          <text x="284" y="363" text-anchor="middle" class="map-room-label">LIBRARY</text>
-          <text x="284" y="377" text-anchor="middle" class="map-room-sub">sir greaves</text>
-          <circle class="map-current-dot" cx="284" cy="367" r="3"/>
+          <rect x="64" y="406" width="80" height="38" rx="3"/>
+          <text x="104" y="421" text-anchor="middle" class="map-room-label">LIBRARY</text>
+          <text x="104" y="435" text-anchor="middle" class="map-room-sub">sir greaves</text>
+          <circle class="map-current-dot" cx="104" cy="425" r="3"/>
         </g>
 
         <g class="map-room undiscovered" id="mr-physicians" data-room="physicians">
-          <rect x="36" y="418" width="80" height="38" rx="3"/>
-          <text x="76" y="433" text-anchor="middle" class="map-room-label">PHYSICIANS</text>
-          <text x="76" y="447" text-anchor="middle" class="map-room-sub">dr. crane</text>
-          <circle class="map-current-dot" cx="76" cy="437" r="3"/>
+          <rect x="216" y="406" width="80" height="38" rx="3"/>
+          <text x="256" y="421" text-anchor="middle" class="map-room-label">PHYSICIANS</text>
+          <text x="256" y="435" text-anchor="middle" class="map-room-sub">dr. crane</text>
+          <circle class="map-current-dot" cx="256" cy="425" r="3"/>
         </g>
 
         <g class="map-room undiscovered" id="mr-smoking" data-room="smoking">
-          <rect x="144" y="418" width="72" height="38" rx="3"/>
-          <text x="180" y="433" text-anchor="middle" class="map-room-label">SMOKING</text>
-          <text x="180" y="447" text-anchor="middle" class="map-room-sub">the baron</text>
-          <circle class="map-current-dot" cx="180" cy="437" r="3"/>
+          <rect x="64" y="466" width="80" height="38" rx="3"/>
+          <text x="104" y="481" text-anchor="middle" class="map-room-label">SMOKING</text>
+          <text x="104" y="495" text-anchor="middle" class="map-room-sub">the baron</text>
+          <circle class="map-current-dot" cx="104" cy="485" r="3"/>
         </g>
 
         <g class="map-room undiscovered" id="mr-vault" data-room="vault">
-          <rect x="144" y="478" width="72" height="38" rx="3"/>
-          <text x="180" y="493" text-anchor="middle" class="map-room-label">THE VAULT</text>
-          <text x="180" y="507" text-anchor="middle" class="map-room-sub">17 arrangements</text>
-          <circle class="map-current-dot" cx="180" cy="497" r="3"/>
+          <rect x="64" y="526" width="80" height="38" rx="3"/>
+          <text x="104" y="541" text-anchor="middle" class="map-room-label">THE VAULT</text>
+          <text x="104" y="555" text-anchor="middle" class="map-room-sub">17 arrangements</text>
+          <circle class="map-current-dot" cx="104" cy="545" r="3"/>
         </g>
 
         <!-- SECRET — wine cellar. display:none until cellarFound -->
         <g class="map-room undiscovered map-secret" id="mr-wine-cellar" data-room="wine-cellar" style="display:none;">
-          <rect x="144" y="558" width="72" height="38" rx="3"/>
-          <text x="180" y="573" text-anchor="middle" class="map-room-label">WINE CELLAR</text>
-          <text x="180" y="587" text-anchor="middle" class="map-room-sub">below the vault</text>
-          <circle class="map-current-dot" cx="180" cy="577" r="3"/>
+          <rect x="64" y="586" width="80" height="38" rx="3"/>
+          <text x="104" y="601" text-anchor="middle" class="map-room-label">WINE CELLAR</text>
+          <text x="104" y="615" text-anchor="middle" class="map-room-sub">below the vault</text>
+          <circle class="map-current-dot" cx="104" cy="605" r="3"/>
         </g>
 
         <!-- ═══════════════ EAST WING ═══════════════ -->

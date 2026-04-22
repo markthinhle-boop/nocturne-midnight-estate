@@ -230,23 +230,30 @@ const ROOM_ADJACENCY = {
   // ── ESTATE ─────────────────────────────────────────────────
   "foyer":             ["gallery", "study"],
   "gallery":           ["foyer", "terrace"],
-  "study":             ["foyer", "map-room", "archive-path"],
-  "archive-path":      ["study"],
-  "balcony":           ["ballroom"],
+  "study":             ["foyer", "map-room"],
   "terrace":           ["gallery", "ballroom", "maids-quarters", "groundskeeper-cottage"],
-  "ballroom":          ["antechamber", "stage", "library", "physicians", "smoking", "terrace", "balcony"],
-  "antechamber":       ["ballroom"],
+  "maids-quarters":    ["terrace"],
+  "groundskeeper-cottage": ["terrace"],
+  // Ballroom free-tier hub. Balcony + Stage hang off as free branches (Stage still gate-locked by accusation flow).
+  // Antechamber is the last free-tier room — paywall triggers on exits south of Antechamber.
+  "ballroom":          ["terrace", "balcony", "stage", "antechamber"],
+  "balcony":           ["ballroom"],
   "stage":             ["ballroom"],
-  "library":           ["ballroom"],
-  "physicians":        ["ballroom"],
-  "smoking":           ["ballroom", "vault"],
+  "antechamber":       ["ballroom", "library", "physicians"],
+  // ── PAID TIER — south of Antechamber ──
+  // Antechamber → Library + Physicians (row 1)
+  // Library → Smoking (inner col, south)
+  // Physicians → Archive (outer col, south)
+  // Smoking ↔ Archive (horizontal cross-link)
+  // Smoking → Vault → Wine Cellar (deepest spine)
+  "library":           ["antechamber", "smoking"],
+  "physicians":        ["antechamber", "archive-path"],
+  "smoking":           ["library", "archive-path", "vault"],
+  "archive-path":      ["physicians", "smoking"],
   "vault":             ["smoking", "wine-cellar"],
   // Secret — NO adjacency. Wine cellar is the only Compact entrance.
   "wine-cellar":       ["vault"],
   "tunnel-passage":    [],
-  // Staff rooms — accessible from terrace
-  "maids-quarters":    ["terrace"],
-  "groundskeeper-cottage": ["terrace"],
   // ── EAST WING — symmetric 2×3 grid attached to Study by a corridor ──
   // Study → Map Room → Dining Room (row 1, chains east)
   // Map Room → Trophy Room → Armory (inner column, chains south)
@@ -2089,7 +2096,7 @@ function clearEssentialGlow(objectId) {
 
 // ── ROOM NAVIGATION ────────────────────────────────────────
 function navigateTo(roomId) {
-  const PAID_ROOMS = ['antechamber','stage','library','physicians','smoking','vault','wine-cellar'];
+  const PAID_ROOMS = ['library','physicians','smoking','archive-path','vault','wine-cellar'];
   if (PAID_ROOMS.includes(roomId) && !gameState.paidTierUnlocked) {
     if (typeof openPaywall === 'function') openPaywall();
     return;
