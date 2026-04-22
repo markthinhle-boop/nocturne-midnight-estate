@@ -352,7 +352,7 @@
     <div id="map-svg-container">
 
       <!-- ESTATE MAP -->
-      <svg id="map-svg-estate" viewBox="0 0 360 640" xmlns="http://www.w3.org/2000/svg">
+      <svg id="map-svg-estate" viewBox="0 0 520 640" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <filter id="map-glow">
             <feGaussianBlur stdDeviation="1.5" result="blur"/>
@@ -393,6 +393,24 @@
           <!-- Not drawn — secret -->
           <!-- Archive → Hedge Path (secret — hidden until hedgeGapFound) -->
           <!-- Not drawn — secret -->
+          <!-- ═══════════ EAST WING CORRIDORS ═══════════ -->
+          <!-- Long hallway: Study → east wing (a visible connecting corridor) -->
+          <line x1="280" y1="107" x2="370" y2="107"/>
+          <!-- Row 1 horizontal: Map Room → Dining Room -->
+          <line x1="440" y1="107" x2="450" y2="107"/>
+          <!-- Row 1 inner: Map Room at (405, 107); Row 1 outer: Dining at (485, 107) -->
+          <!-- East wing Row 1 → Row 2 (vertical, inner col) -->
+          <line x1="405" y1="126" x2="405" y2="160"/>
+          <!-- East wing Row 1 → Row 2 (vertical, outer col) -->
+          <line x1="485" y1="126" x2="485" y2="160"/>
+          <!-- Row 2 horizontal: Trophy → Billiard -->
+          <line x1="440" y1="179" x2="450" y2="179"/>
+          <!-- East wing Row 2 → Row 3 (vertical, inner col) -->
+          <line x1="405" y1="198" x2="405" y2="232"/>
+          <!-- East wing Row 2 → Row 3 (vertical, outer col) -->
+          <line x1="485" y1="198" x2="485" y2="232"/>
+          <!-- East wing loop close: Armory ↔ Glasshouse (horizontal at bottom) -->
+          <line x1="440" y1="251" x2="450" y2="251"/>
         </g>
 
         <!-- FREE TIER ROOMS -->
@@ -515,6 +533,55 @@
           <text x="180" y="573" text-anchor="middle" class="map-room-label">WINE CELLAR</text>
           <text x="180" y="587" text-anchor="middle" class="map-room-sub">below the vault</text>
           <circle class="map-current-dot" cx="180" cy="577" r="3"/>
+        </g>
+
+        <!-- ═══════════════ EAST WING ═══════════════ -->
+        <!-- Attached to the Study by a long connecting corridor. -->
+        <!-- Two symmetric columns × three rows. Inner col center x=405, outer col center x=485. -->
+
+        <!-- Row 1 -->
+        <g class="map-room undiscovered" id="mr-map-room" data-room="map-room">
+          <rect x="370" y="88" width="70" height="38" rx="3"/>
+          <text x="405" y="103" text-anchor="middle" class="map-room-label">MAP ROOM</text>
+          <text x="405" y="117" text-anchor="middle" class="map-room-sub">cartography</text>
+          <circle class="map-current-dot" cx="405" cy="107" r="3"/>
+        </g>
+
+        <g class="map-room undiscovered" id="mr-dining-room" data-room="dining-room">
+          <rect x="450" y="88" width="70" height="38" rx="3"/>
+          <text x="485" y="103" text-anchor="middle" class="map-room-label">DINING</text>
+          <text x="485" y="117" text-anchor="middle" class="map-room-sub">set for forty</text>
+          <circle class="map-current-dot" cx="485" cy="107" r="3"/>
+        </g>
+
+        <!-- Row 2 -->
+        <g class="map-room undiscovered" id="mr-trophy-room" data-room="trophy-room">
+          <rect x="370" y="160" width="70" height="38" rx="3"/>
+          <text x="405" y="175" text-anchor="middle" class="map-room-label">TROPHY</text>
+          <text x="405" y="189" text-anchor="middle" class="map-room-sub">collection</text>
+          <circle class="map-current-dot" cx="405" cy="179" r="3"/>
+        </g>
+
+        <g class="map-room undiscovered" id="mr-billiard-room" data-room="billiard-room">
+          <rect x="450" y="160" width="70" height="38" rx="3"/>
+          <text x="485" y="175" text-anchor="middle" class="map-room-label">BILLIARD</text>
+          <text x="485" y="189" text-anchor="middle" class="map-room-sub">mid-game</text>
+          <circle class="map-current-dot" cx="485" cy="179" r="3"/>
+        </g>
+
+        <!-- Row 3 -->
+        <g class="map-room undiscovered" id="mr-weapons-room" data-room="weapons-room">
+          <rect x="370" y="232" width="70" height="38" rx="3"/>
+          <text x="405" y="247" text-anchor="middle" class="map-room-label">ARMORY</text>
+          <text x="405" y="261" text-anchor="middle" class="map-room-sub">flintlocks</text>
+          <circle class="map-current-dot" cx="405" cy="251" r="3"/>
+        </g>
+
+        <g class="map-room undiscovered" id="mr-conservatory" data-room="conservatory">
+          <rect x="450" y="232" width="70" height="38" rx="3"/>
+          <text x="485" y="247" text-anchor="middle" class="map-room-label">GLASSHOUSE</text>
+          <text x="485" y="261" text-anchor="middle" class="map-room-sub">garden</text>
+          <circle class="map-current-dot" cx="485" cy="251" r="3"/>
         </g>
 
         <!-- TUNNEL — completely absent. Never shown. Not even faint. -->

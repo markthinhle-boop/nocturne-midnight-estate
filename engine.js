@@ -230,7 +230,7 @@ const ROOM_ADJACENCY = {
   // ── ESTATE ─────────────────────────────────────────────────
   "foyer":             ["gallery", "study"],
   "gallery":           ["foyer", "archive-path"],
-  "study":             ["foyer", "map-room", "dining-room"],
+  "study":             ["foyer", "map-room"],
   "archive-path":      ["gallery", "terrace"],
   "balcony":           ["ballroom"],
   "terrace":           ["archive-path", "ballroom", "maids-quarters", "groundskeeper-cottage"],
@@ -247,14 +247,15 @@ const ROOM_ADJACENCY = {
   // Staff rooms — accessible from terrace
   "maids-quarters":    ["terrace"],
   "groundskeeper-cottage": ["terrace"],
-  // ── EAST WING — two symmetric 3-room chains branching from study, looped at the far end ──
-  // Study → map-room → trophy-room → weapons-room ─┐
-  //                                                 ├─ (weapons ↔ conservatory)
-  // Study → dining-room → billiard-room → conservatory ─┘
-  "map-room":          ["study", "trophy-room"],
-  "dining-room":       ["study", "billiard-room"],
-  "trophy-room":       ["map-room", "weapons-room"],
-  "billiard-room":     ["dining-room", "conservatory"],
+  // ── EAST WING — symmetric 2×3 grid attached to Study by a corridor ──
+  // Study → Map Room → Dining Room (row 1, chains east)
+  // Map Room → Trophy Room → Armory (inner column, chains south)
+  // Dining Room → Billiard Room → Glasshouse (outer column, chains south)
+  // Armory ↔ Glasshouse (loop close at far south)
+  "map-room":          ["study", "dining-room", "trophy-room"],
+  "dining-room":       ["map-room", "billiard-room"],
+  "trophy-room":       ["map-room", "billiard-room", "weapons-room"],
+  "billiard-room":     ["dining-room", "trophy-room", "conservatory"],
   "weapons-room":      ["trophy-room", "conservatory"],
   "conservatory":      ["billiard-room", "weapons-room"],
   // Compact — all open simultaneously on tunnel arrival

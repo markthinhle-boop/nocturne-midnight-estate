@@ -2555,12 +2555,15 @@ const NAV_LAYOUT = {
   // ── ESTATE ─────────────────────────────────────────────────
   'foyer':        { rows: [['gallery', 'study']],                                                    split: 0 },
   'gallery':      { rows: [['foyer'], ['archive-path']],                                             split: 1 },
-  'study':        { rows: [['foyer'], ['map-room', 'dining-room']],                                  split: 1 },
-  // ── EAST WING — symmetric nav layout mirrors map ──
-  'map-room':     { rows: [['study'], ['trophy-room']],                                              split: 1 },
-  'dining-room':  { rows: [['study'], ['billiard-room']],                                            split: 1 },
-  'trophy-room':  { rows: [['map-room'], ['weapons-room']],                                          split: 1 },
-  'billiard-room':{ rows: [['dining-room'], ['conservatory']],                                       split: 1 },
+  'study':        { rows: [['foyer'], ['map-room']],                                                split: 1 },
+  // ── EAST WING — symmetric chain matches the map layout ──
+  // Row 1: map-room → dining-room (study is entry; trophy below map)
+  // Row 2: trophy-room → billiard-room (cross-linked)
+  // Row 3: weapons-room → conservatory (cross-linked, loop close)
+  'map-room':     { rows: [['study'], ['dining-room', 'trophy-room']],                               split: 1 },
+  'dining-room':  { rows: [['map-room'], ['billiard-room']],                                         split: 1 },
+  'trophy-room':  { rows: [['map-room'], ['billiard-room', 'weapons-room']],                         split: 1 },
+  'billiard-room':{ rows: [['dining-room', 'trophy-room'], ['conservatory']],                        split: 1 },
   'weapons-room': { rows: [['trophy-room'], ['conservatory']],                                       split: 1 },
   'conservatory': { rows: [['billiard-room'], ['weapons-room']],                                     split: 1 },
   'archive-path': { rows: [['gallery'], ['lectern', 'terrace']],                                     split: 1 },
