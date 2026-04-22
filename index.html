@@ -9,7 +9,7 @@
   <meta name="theme-color" content="#0A0A0A">
   <title>Nocturne: Midnight Estate</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%230A0A0A' stroke='%23B8960C' stroke-width='3'/><text y='65' x='50' text-anchor='middle' font-size='50' fill='%23B8960C'>N</text></svg>">
-  <link rel="stylesheet" href="%PUBLIC_URL%/styles.css">
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 <div id="app">
@@ -22,7 +22,7 @@
 
   <!-- ── SCREEN 2: TITLE ───────────────────────────────── -->
   <div id="screen-title" class="screen">
-    <div class="franchise-seal"><img src="%PUBLIC_URL%/assets/UI/nocturne-seal.png" style="width:60px;height:60px;object-fit:contain;" onerror="this.style.display='none'"></div>
+    <div class="franchise-seal"><img src="assets/UI/nocturne-seal.png" style="width:60px;height:60px;object-fit:contain;" onerror="this.style.display='none'"></div>
     <div class="title-rule"></div>
     <div class="game-title">Nocturne</div>
     <div class="game-subtitle">Midnight Estate</div>
@@ -47,19 +47,19 @@
       </div>
       <div class="mask-cards">
         <div class="mask-card" data-rank="aspirant">
-          <img src="%PUBLIC_URL%/assets/UI/nocturne-mask-aspirant.png" style="width:48px;height:48px;object-fit:contain;" onerror="this.style.display='none'">
+          <img src="assets/UI/nocturne-mask-aspirant.png" style="width:48px;height:48px;object-fit:contain;" onerror="this.style.display='none'">
           <div class="mask-name">Aspirant</div>
           <div class="mask-desc">The Estate has not yet decided what to make of you. It will find that useful.</div>
           <div class="mask-pill">Lenient judgment · Characters warm</div>
         </div>
         <div class="mask-card selected" data-rank="envoy">
-          <img src="%PUBLIC_URL%/assets/UI/nocturne-mask-envoy.png" style="width:48px;height:48px;object-fit:contain;" onerror="this.style.display='none'">
+          <img src="assets/UI/nocturne-mask-envoy.png" style="width:48px;height:48px;object-fit:contain;" onerror="this.style.display='none'">
           <div class="mask-name">Envoy</div>
           <div class="mask-desc">You were sent. The Estate will not ask by whom. It will watch what you do instead.</div>
           <div class="mask-pill">Standard judgment · Characters cautious</div>
         </div>
         <div class="mask-card" data-rank="cavalier">
-          <img src="%PUBLIC_URL%/assets/UI/nocturne-mask-cavalier.png" style="width:48px;height:48px;object-fit:contain;" onerror="this.style.display='none'">
+          <img src="assets/UI/nocturne-mask-cavalier.png" style="width:48px;height:48px;object-fit:contain;" onerror="this.style.display='none'">
           <div class="mask-name">Cavalier</div>
           <div class="mask-desc">A formal rank within the Estate. The gold edge is recognised. Members will expect more from you — and give less away.</div>
           <div class="mask-pill">Firm judgment · Characters demanding</div>
@@ -171,7 +171,7 @@
 
     <div id="train-invitation-screen" style="display:none;">
       <div id="invitation-card-visual">
-        <img src="%PUBLIC_URL%/assets/UI/nocturne-invitation-card.png"
+        <img src="assets/UI/nocturne-invitation-card.png"
              style="width:180px;height:auto;object-fit:contain;"
              onerror="this.style.opacity='0.4'">
       </div>
@@ -418,42 +418,36 @@
         <g class="map-room undiscovered" id="mr-foyer" data-room="foyer">
           <rect x="144" y="18" width="72" height="38" rx="3"/>
           <text x="180" y="33" text-anchor="middle" class="map-room-label">FOYER</text>
-          <text x="180" y="47" text-anchor="middle" class="map-room-sub">entrance</text>
           <circle class="map-current-dot" cx="180" cy="37" r="3"/>
         </g>
 
         <g class="map-room undiscovered" id="mr-gallery" data-room="gallery">
           <rect x="80" y="88" width="80" height="38" rx="3"/>
           <text x="120" y="103" text-anchor="middle" class="map-room-label">GALLERY</text>
-          <text x="120" y="117" text-anchor="middle" class="map-room-sub">portraits</text>
           <circle class="map-current-dot" cx="120" cy="107" r="3"/>
         </g>
 
         <g class="map-room undiscovered" id="mr-study" data-room="study">
           <rect x="200" y="88" width="80" height="38" rx="3"/>
           <text x="240" y="103" text-anchor="middle" class="map-room-label">THE STUDY</text>
-          <text x="240" y="117" text-anchor="middle" class="map-room-sub">lady ashworth</text>
           <circle class="map-current-dot" cx="240" cy="107" r="3"/>
         </g>
 
         <g class="map-room undiscovered" id="mr-archive-path" data-room="archive-path">
           <rect x="216" y="466" width="80" height="38" rx="3"/>
           <text x="256" y="481" text-anchor="middle" class="map-room-label">ARCHIVE</text>
-          <text x="256" y="495" text-anchor="middle" class="map-room-sub">case 3</text>
           <circle class="map-current-dot" cx="256" cy="485" r="3"/>
         </g>
 
         <g class="map-room undiscovered" id="mr-lectern" data-room="lectern">
           <rect x="36" y="208" width="68" height="34" rx="3"/>
           <text x="70" y="222" text-anchor="middle" class="map-room-label">LECTERN</text>
-          <text x="70" y="234" text-anchor="middle" class="map-room-sub">the register</text>
           <circle class="map-current-dot" cx="70" cy="225" r="3"/>
         </g>
 
         <g class="map-room undiscovered" id="mr-terrace" data-room="terrace">
           <rect x="138" y="208" width="76" height="34" rx="3"/>
           <text x="176" y="222" text-anchor="middle" class="map-room-label">TERRACE</text>
-          <text x="176" y="234" text-anchor="middle" class="map-room-sub">garden</text>
           <circle class="map-current-dot" cx="176" cy="225" r="3"/>
         </g>
 
@@ -475,28 +469,24 @@
         <g class="map-room undiscovered map-secret" id="mr-hedge-path" data-room="hedge-path" style="display:none;">
           <rect x="36" y="160" width="40" height="26" rx="3"/>
           <text x="56" y="172" text-anchor="middle" class="map-room-label" style="font-size:7px;">THE PATH</text>
-          <text x="56" y="181" text-anchor="middle" class="map-room-sub" style="font-size:6px;">secret</text>
         </g>
 
         <!-- PAID TIER ROOMS -->
         <g class="map-room undiscovered" id="mr-ballroom" data-room="ballroom">
           <rect x="112" y="268" width="136" height="48" rx="3"/>
           <text x="180" y="286" text-anchor="middle" class="map-room-label">THE BALLROOM</text>
-          <text x="180" y="300" text-anchor="middle" class="map-room-sub">8:01 pm · the body</text>
           <circle class="map-current-dot" cx="180" cy="290" r="3"/>
         </g>
 
         <g class="map-room undiscovered" id="mr-antechamber" data-room="antechamber">
           <rect x="144" y="348" width="72" height="38" rx="3"/>
           <text x="180" y="363" text-anchor="middle" class="map-room-label">ANTECHAMBER</text>
-          <text x="180" y="377" text-anchor="middle" class="map-room-sub">pemberton-hale</text>
           <circle class="map-current-dot" cx="180" cy="367" r="3"/>
         </g>
 
         <g class="map-room undiscovered" id="mr-stage" data-room="stage">
           <rect x="36" y="268" width="68" height="48" rx="3"/>
           <text x="70" y="286" text-anchor="middle" class="map-room-label">THE STAGE</text>
-          <text x="70" y="300" text-anchor="middle" class="map-room-sub">accusation</text>
           <circle class="map-current-dot" cx="70" cy="290" r="3"/>
         </g>
 
@@ -504,35 +494,30 @@
         <g class="map-room undiscovered" id="mr-balcony" data-room="balcony">
           <rect x="256" y="268" width="68" height="48" rx="3"/>
           <text x="290" y="286" text-anchor="middle" class="map-room-label">BALCONY</text>
-          <text x="290" y="300" text-anchor="middle" class="map-room-sub">7:45 pm</text>
           <circle class="map-current-dot" cx="290" cy="290" r="3"/>
         </g>
 
         <g class="map-room undiscovered" id="mr-library" data-room="library">
           <rect x="64" y="406" width="80" height="38" rx="3"/>
           <text x="104" y="421" text-anchor="middle" class="map-room-label">LIBRARY</text>
-          <text x="104" y="435" text-anchor="middle" class="map-room-sub">sir greaves</text>
           <circle class="map-current-dot" cx="104" cy="425" r="3"/>
         </g>
 
         <g class="map-room undiscovered" id="mr-physicians" data-room="physicians">
           <rect x="216" y="406" width="80" height="38" rx="3"/>
           <text x="256" y="421" text-anchor="middle" class="map-room-label">PHYSICIANS</text>
-          <text x="256" y="435" text-anchor="middle" class="map-room-sub">dr. crane</text>
           <circle class="map-current-dot" cx="256" cy="425" r="3"/>
         </g>
 
         <g class="map-room undiscovered" id="mr-smoking" data-room="smoking">
           <rect x="64" y="466" width="80" height="38" rx="3"/>
           <text x="104" y="481" text-anchor="middle" class="map-room-label">SMOKING</text>
-          <text x="104" y="495" text-anchor="middle" class="map-room-sub">the baron</text>
           <circle class="map-current-dot" cx="104" cy="485" r="3"/>
         </g>
 
         <g class="map-room undiscovered" id="mr-vault" data-room="vault">
           <rect x="64" y="526" width="80" height="38" rx="3"/>
           <text x="104" y="541" text-anchor="middle" class="map-room-label">THE VAULT</text>
-          <text x="104" y="555" text-anchor="middle" class="map-room-sub">17 arrangements</text>
           <circle class="map-current-dot" cx="104" cy="545" r="3"/>
         </g>
 
@@ -540,7 +525,6 @@
         <g class="map-room undiscovered map-secret" id="mr-wine-cellar" data-room="wine-cellar" style="display:none;">
           <rect x="64" y="586" width="80" height="38" rx="3"/>
           <text x="104" y="601" text-anchor="middle" class="map-room-label">WINE CELLAR</text>
-          <text x="104" y="615" text-anchor="middle" class="map-room-sub">below the vault</text>
           <circle class="map-current-dot" cx="104" cy="605" r="3"/>
         </g>
 
@@ -552,14 +536,12 @@
         <g class="map-room undiscovered" id="mr-map-room" data-room="map-room">
           <rect x="370" y="88" width="70" height="38" rx="3"/>
           <text x="405" y="103" text-anchor="middle" class="map-room-label">MAP ROOM</text>
-          <text x="405" y="117" text-anchor="middle" class="map-room-sub">cartography</text>
           <circle class="map-current-dot" cx="405" cy="107" r="3"/>
         </g>
 
         <g class="map-room undiscovered" id="mr-dining-room" data-room="dining-room">
           <rect x="450" y="88" width="70" height="38" rx="3"/>
           <text x="485" y="103" text-anchor="middle" class="map-room-label">DINING</text>
-          <text x="485" y="117" text-anchor="middle" class="map-room-sub">set for forty</text>
           <circle class="map-current-dot" cx="485" cy="107" r="3"/>
         </g>
 
@@ -567,14 +549,12 @@
         <g class="map-room undiscovered" id="mr-trophy-room" data-room="trophy-room">
           <rect x="370" y="160" width="70" height="38" rx="3"/>
           <text x="405" y="175" text-anchor="middle" class="map-room-label">TROPHY</text>
-          <text x="405" y="189" text-anchor="middle" class="map-room-sub">collection</text>
           <circle class="map-current-dot" cx="405" cy="179" r="3"/>
         </g>
 
         <g class="map-room undiscovered" id="mr-billiard-room" data-room="billiard-room">
           <rect x="450" y="160" width="70" height="38" rx="3"/>
           <text x="485" y="175" text-anchor="middle" class="map-room-label">BILLIARD</text>
-          <text x="485" y="189" text-anchor="middle" class="map-room-sub">mid-game</text>
           <circle class="map-current-dot" cx="485" cy="179" r="3"/>
         </g>
 
@@ -582,14 +562,12 @@
         <g class="map-room undiscovered" id="mr-weapons-room" data-room="weapons-room">
           <rect x="370" y="232" width="70" height="38" rx="3"/>
           <text x="405" y="247" text-anchor="middle" class="map-room-label">ARMORY</text>
-          <text x="405" y="261" text-anchor="middle" class="map-room-sub">flintlocks</text>
           <circle class="map-current-dot" cx="405" cy="251" r="3"/>
         </g>
 
         <g class="map-room undiscovered" id="mr-conservatory" data-room="conservatory">
           <rect x="450" y="232" width="70" height="38" rx="3"/>
           <text x="485" y="247" text-anchor="middle" class="map-room-label">GLASSHOUSE</text>
-          <text x="485" y="261" text-anchor="middle" class="map-room-sub">garden</text>
           <circle class="map-current-dot" cx="485" cy="251" r="3"/>
         </g>
 
@@ -626,7 +604,6 @@
         <g class="map-room undiscovered" id="mr-c6-tunnel" data-room="c6-tunnel">
           <rect x="134" y="10" width="92" height="38" rx="3"/>
           <text x="180" y="25" text-anchor="middle" class="map-room-label">TUNNEL MOUTH</text>
-          <text x="180" y="39" text-anchor="middle" class="map-room-sub">entry</text>
           <circle class="map-current-dot" cx="180" cy="29" r="3"/>
         </g>
 
@@ -634,7 +611,6 @@
         <g class="map-room undiscovered" id="mr-c1-arrival" data-room="c1-arrival">
           <rect x="134" y="89" width="92" height="38" rx="3"/>
           <text x="180" y="104" text-anchor="middle" class="map-room-label">ARRIVAL</text>
-          <text x="180" y="118" text-anchor="middle" class="map-room-sub">the archivist</text>
           <circle class="map-current-dot" cx="180" cy="108" r="3"/>
         </g>
 
@@ -642,14 +618,12 @@
         <g class="map-room undiscovered" id="mr-c3-original" data-room="c3-original">
           <rect x="34" y="169" width="92" height="38" rx="3"/>
           <text x="80" y="184" text-anchor="middle" class="map-room-label">ORIGINAL</text>
-          <text x="80" y="198" text-anchor="middle" class="map-room-sub">the sovereign</text>
           <circle class="map-current-dot" cx="80" cy="188" r="3"/>
         </g>
 
         <g class="map-room undiscovered" id="mr-c7-study" data-room="c7-study">
           <rect x="234" y="169" width="92" height="38" rx="3"/>
           <text x="280" y="184" text-anchor="middle" class="map-room-label">THE STUDY</text>
-          <text x="280" y="198" text-anchor="middle" class="map-room-sub">the envoy</text>
           <circle class="map-current-dot" cx="280" cy="188" r="3"/>
         </g>
 
@@ -657,14 +631,12 @@
         <g class="map-room undiscovered" id="mr-c5-correspondence" data-room="c5-correspondence">
           <rect x="34" y="249" width="92" height="38" rx="3"/>
           <text x="80" y="264" text-anchor="middle" class="map-room-label">LETTERS</text>
-          <text x="80" y="278" text-anchor="middle" class="map-room-sub">correspondence</text>
           <circle class="map-current-dot" cx="80" cy="268" r="3"/>
         </g>
 
         <g class="map-room undiscovered" id="mr-c8-gallery" data-room="c8-gallery">
           <rect x="234" y="249" width="92" height="38" rx="3"/>
           <text x="280" y="264" text-anchor="middle" class="map-room-label">GALLERY</text>
-          <text x="280" y="278" text-anchor="middle" class="map-room-sub">the heir</text>
           <circle class="map-current-dot" cx="280" cy="268" r="3"/>
         </g>
 
@@ -755,31 +727,31 @@
 </div><!-- /app -->
 
 <!-- ── SCRIPTS ────────────────────────────────────────────── -->
-<script src="%PUBLIC_URL%/engine.js"></script>
-<script src="%PUBLIC_URL%/onboarding.js"></script>
-<script src="%PUBLIC_URL%/sounds.js"></script>
-<script src="%PUBLIC_URL%/manor.js"></script>
-<script src="%PUBLIC_URL%/characters.js"></script>
-<script src="%PUBLIC_URL%/paid-tier.js"></script>
-<script src="%PUBLIC_URL%/puzzles.js"></script>
-<script src="%PUBLIC_URL%/inventory.js"></script>
-<script src="%PUBLIC_URL%/map.js"></script>
-<script src="%PUBLIC_URL%/verdict.js"></script>
-<script src="%PUBLIC_URL%/tunnel.js"></script>
-<script src="%PUBLIC_URL%/train.js"></script>
-<script src="%PUBLIC_URL%/train-voice.js"></script>
-<script src="%PUBLIC_URL%/compact.js"></script>
-<script src="%PUBLIC_URL%/compact-characters.js"></script>
-<script src="%PUBLIC_URL%/notepad.js"></script>
-<script src="%PUBLIC_URL%/board.js"></script>
-<script src="%PUBLIC_URL%/ambient.js"></script>
+<script src="engine.js"></script>
+<script src="onboarding.js"></script>
+<script src="sounds.js"></script>
+<script src="manor.js"></script>
+<script src="characters.js"></script>
+<script src="paid-tier.js"></script>
+<script src="puzzles.js"></script>
+<script src="inventory.js"></script>
+<script src="map.js"></script>
+<script src="verdict.js"></script>
+<script src="tunnel.js"></script>
+<script src="train.js"></script>
+<script src="train-voice.js"></script>
+<script src="compact.js"></script>
+<script src="compact-characters.js"></script>
+<script src="notepad.js"></script>
+<script src="board.js"></script>
+<script src="ambient.js"></script>
 
-<script src="%PUBLIC_URL%/ui.js"></script>
-<script src="%PUBLIC_URL%/rowe.js"></script>
-<script src="%PUBLIC_URL%/interrogation.js"></script>
-<script src="%PUBLIC_URL%/behavioral_logger.js"></script>
-<script src="%PUBLIC_URL%/nis.js"></script>
-<script src="%PUBLIC_URL%/career.js"></script>
+<script src="ui.js"></script>
+<script src="rowe.js"></script>
+<script src="interrogation.js"></script>
+<script src="behavioral_logger.js"></script>
+<script src="nis.js"></script>
+<script src="career.js"></script>
 
 <!-- Stubs for incomplete modules -->
 <script>
