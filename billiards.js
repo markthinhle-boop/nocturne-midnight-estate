@@ -204,6 +204,157 @@
       "Ashworth never played. Said it was undignified. He was wrong about a lot of things.",
       "The trick is to see the next shot before you take this one.",
       "Patience, Grey. The table rewards it. So does this house."
+    ],
+
+    // ---- Adaptive voice by confidence zone ----
+    confidentTerse: [
+      "Mm.",
+      "As expected.",
+      "Predictable.",
+      "Next.",
+      "Keep up.",
+      "Fine.",
+      "Hm.",
+      "Was there any doubt?",
+      "Routine.",
+      "The outcome was never in question."
+    ],
+    confidentDismissive: [
+      "You're trying. I can see that. It's not enough.",
+      "Your best isn't my average, Grey.",
+      "This is the part where most men concede.",
+      "If this is your ceiling, we'll be done in ten minutes.",
+      "Nothing about this is difficult. Not for me.",
+      "You're not bad. You're just not good."
+    ],
+    tenseAnalytical: [
+      "You're leaving me the 4 in the corner. Thank you.",
+      "Straight line on the 6. I'll take it.",
+      "The cue ball sits awkwardly. I'll play position, not power.",
+      "Two-way shot. If I miss, you're locked up.",
+      "I can pot this, or I can make sure you can't. Choose for me.",
+      "Angles. The table is about angles.",
+      "I see four shots ahead of this one. You should try it.",
+      "Tight. But workable."
+    ],
+    tenseProbing: [
+      "You're playing differently this frame. Why?",
+      "You were aggressive earlier. Now you're not.",
+      "That's the second time you've avoided the bottom rail.",
+      "You've stopped going for the hard cuts. Smart. Boring, but smart.",
+      "Your hand is steadier than I expected. Someone taught you.",
+      "I'm watching you watch me. Stop it.",
+      "You hesitate before the 6. Did something happen on a 6 before?"
+    ],
+    losingFrustrated: [
+      "No.",
+      "That was mine. That was a dead ball and I missed it.",
+      "This isn't the table. This is me.",
+      "I'm playing like I've never held a cue before.",
+      "Unacceptable.",
+      "I'm going to need a moment.",
+      "You're in my head now. I'll admit that."
+    ],
+    losingRevealing: [
+      "I lost a match like this once, in Edinburgh. I don't talk about it.",
+      "You remind me of someone I used to play. He beat me too.",
+      "I'm not used to being behind. I don't know what my face is doing.",
+      "The felt is the same temperature it always is. I'm the variable.",
+      "You've found something in my game. I'm curious what it is.",
+      "Everything I do now, you're expecting. That's not a good sign for me."
+    ],
+    losingResigned: [
+      "Take the frame, Grey. You've earned it.",
+      "I can feel the match slipping. It's almost peaceful.",
+      "Not my night. Not my table, tonight.",
+      "You play with a quiet I don't have access to right now.",
+      "Whatever happens next, you've already changed the evening."
+    ],
+    tiltedAggressive: [
+      "Fine. Let's make this faster.",
+      "I'm swinging. Don't stand too close.",
+      "To hell with position. I want the ball in the pocket.",
+      "Enough chess. This is a fight now.",
+      "You want power? Watch this."
+    ],
+    momentumRunning: [
+      "Another.",
+      "And another.",
+      "I can do this until you stop watching.",
+      "The run has a shape. I'm inside it.",
+      "Don't interrupt me. I'm working."
+    ],
+    safetyPlayed: [
+      "A safety. I'm not proud of it, but it's correct.",
+      "Hidden. Find that if you can.",
+      "You'll need a kick. Good luck.",
+      "Defense is a form of respect. You've earned some.",
+      "Locked up. Your move, Grey."
+    ],
+    breakoutAttempt: [
+      "My balls are clustered. I have to break them out.",
+      "This is going to look reckless. It isn't.",
+      "Controlled chaos.",
+      "If I don't break this cluster now, I won't get another chance."
+    ],
+    onEightRun: [
+      "One ball. The black. Call the pocket, Grey. I'm calling mine.",
+      "Bottom right. Then the handshake.",
+      "I've played this pocket a thousand times. It's almost rude.",
+      "The eight. The whole evening, in one stroke."
+    ],
+    frameWonTerse: [
+      "Frame.",
+      "Mine.",
+      "One-nil. Rack them.",
+      "Continuing.",
+      "Good. That's one.",
+      "Tidy frame. Next."
+    ],
+    frameWonGracious: [
+      "Close frame, Grey. Well played.",
+      "You made me work for that.",
+      "Hm. That should have been yours.",
+      "Closer than I'd like. Rack them.",
+      "You're making me honest."
+    ],
+    frameLostTerse: [
+      "Take it.",
+      "Yours.",
+      "Rack them. I'm not done.",
+      "A frame. One frame. We continue.",
+      "Annoying. Not conclusive."
+    ],
+    frameLostResigned: [
+      "You deserved that one.",
+      "I saw that frame getting away from me. I couldn't stop it.",
+      "Take the frame. I'll be ready for the next.",
+      "Well played, Grey. Genuinely."
+    ],
+    matchWonProud: [
+      "Match. Good game, Grey.",
+      "You had moments. Not enough of them.",
+      "Drinks are on me. Not a reward — a consolation.",
+      "A fair match. I enjoyed it more than I expected."
+    ],
+    matchWonHumble: [
+      "That was closer than the score suggests. You're better than most.",
+      "I didn't expect to sweat through that one. I did.",
+      "Well played, Grey. I mean that.",
+      "You've got something. Come back when you've sharpened it."
+    ],
+    matchLostFirstTime: [
+      "Well. You won.",
+      "I don't lose often. Tonight, I did.",
+      "You've got the rest of the evening to enjoy that. Use it well.",
+      "That's a genuine defeat. Rare. I'll sit with it.",
+      "You beat me, Grey. I'll remember."
+    ],
+    matchLostGracious: [
+      "Good match. You played the better game tonight.",
+      "Hand on my shoulder, Grey. I mean it. That was earned.",
+      "I owe you that truthful answer. Ask carefully.",
+      "You're dangerous at this table. I should have noticed earlier."
     ]
   };
 
@@ -211,6 +362,90 @@
     const arr = DIALOGUE[cat];
     if (!arr || !arr.length) return '';
     return arr[Math.floor(Math.random() * arr.length)];
+  }
+
+  // ---------- Sound (WebAudio, synthesized) -------------------------------
+  // Billiards sound palette: cue hit (sharp tock), ball-ball click (bright),
+  // cushion thud (low), pocket drop (descending wood knock).
+  let audioCtx = null;
+  function ensureAudio() {
+    if (audioCtx) return audioCtx;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return null;
+    try { audioCtx = new AC(); } catch (e) { return null; }
+    return audioCtx;
+  }
+
+  // Resume audio on first user gesture (mobile autoplay policy)
+  function unlockAudio() {
+    const ac = ensureAudio();
+    if (ac && ac.state === 'suspended') ac.resume();
+  }
+
+  // Short tock used for cue strike / ball click. Pitch varies with velocity.
+  function playClick(velocity) {
+    const ac = ensureAudio();
+    if (!ac) return;
+    const now = ac.currentTime;
+    // Volume scales with impact energy
+    const v = Math.max(0.05, Math.min(1, velocity / 8));
+    // Bright noise burst with short band-pass
+    const buf = ac.createBuffer(1, Math.floor(ac.sampleRate * 0.06), ac.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < data.length; i++) {
+      const t = i / data.length;
+      data[i] = (Math.random() * 2 - 1) * Math.exp(-t * 22) * 0.6;
+    }
+    const src = ac.createBufferSource();
+    src.buffer = buf;
+    const bp = ac.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.value = 2400 + Math.random() * 600;
+    bp.Q.value = 4;
+    const g = ac.createGain();
+    g.gain.value = 0.35 * v;
+    src.connect(bp); bp.connect(g); g.connect(ac.destination);
+    src.start(now);
+    src.stop(now + 0.08);
+  }
+
+  // Low thud for cushion hits.
+  function playThud(velocity) {
+    const ac = ensureAudio();
+    if (!ac) return;
+    const now = ac.currentTime;
+    const v = Math.max(0.1, Math.min(1, velocity / 10));
+    const osc = ac.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(140, now);
+    osc.frequency.exponentialRampToValueAtTime(60, now + 0.12);
+    const g = ac.createGain();
+    g.gain.setValueAtTime(0.0001, now);
+    g.gain.exponentialRampToValueAtTime(0.3 * v, now + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + 0.18);
+    osc.connect(g); g.connect(ac.destination);
+    osc.start(now);
+    osc.stop(now + 0.2);
+  }
+
+  // Pocket drop — descending woody knock.
+  function playPocket() {
+    const ac = ensureAudio();
+    if (!ac) return;
+    const now = ac.currentTime;
+    const osc = ac.createOscillator();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(280, now);
+    osc.frequency.exponentialRampToValueAtTime(90, now + 0.25);
+    const g = ac.createGain();
+    g.gain.setValueAtTime(0.0001, now);
+    g.gain.exponentialRampToValueAtTime(0.35, now + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + 0.35);
+    osc.connect(g); g.connect(ac.destination);
+    osc.start(now);
+    osc.stop(now + 0.4);
+    // Tail: a softer secondary click
+    setTimeout(() => playClick(3), 180);
   }
 
   // ---------- Module state -------------------------------------------------
@@ -223,20 +458,286 @@
 
   // Layout
   let viewMode = 'landscape';  // 'landscape' | 'portrait'
-  let tableScale = 1;
+  let tableScale = 1;       // base fit-to-screen scale
   let tableOffsetX = 0;
   let tableOffsetY = 0;
+  // User-controlled zoom (1.0 = fit, max 3.0), pan in table-space units
+  let zoomLevel = 1;
+  let panTX = 0;             // pan center in table space X
+  let panTY = 0;             // pan center in table space Y
+  let panInitialized = false;
+  // Pinch state
+  let pinchStartDist = 0;
+  let pinchStartZoom = 1;
+  let pinchCenterTable = null;  // table-space center point at pinch start
+
+  // ---------- Match & psychology ------------------------------------------
+  // match lives across multiple frames. state is one frame.
+  let match = null;
+
+  function newMatch(format) {
+    // format: 3 | 5 | 7 (best-of)
+    const toWin = Math.ceil(format / 2);
+    match = {
+      format: format,
+      toWin: toWin,
+      playerFrames: 0,
+      alistairFrames: 0,
+      breakAlternates: true,   // alternating break each frame
+      nextBreaker: 'player',   // who breaks the first frame
+
+      // Psychology (persists across frames)
+      composure: 0.85,         // high = calm, low = nervy (affects aim noise)
+      momentum: 0,             // -1..+1 (negative = player momentum, positive = Alistair)
+      tilt: 0,                 // 0..1 (Alistair's frustration)
+      confidence: 0.6,         // 0..1 (long-moving — governs voice)
+
+      // Dossier — player read, accumulated across frames
+      dossier: newDossier(),
+
+      // UI
+      showInterstitial: false,
+      interstitialText: null,
+      showMatchEnd: false
+    };
+  }
+
+  function newDossier() {
+    return {
+      shotsTaken: 0,
+      shotsPotted: 0,
+      scratches: 0,
+      totalPower: 0,             // sum of power [0..1] per shot
+      cutShots: 0,               // shots with |angle| > 20°
+      straightShots: 0,          // shots with |angle| <= 20°
+      pocketHistory: [0,0,0,0,0,0],  // times each pocket targeted
+      topHalfShots: 0,
+      bottomHalfShots: 0,
+      hardPots: 0,               // attempted shots rated difficulty > 0.6
+      easyMisses: 0,             // missed shots rated difficulty < 0.4
+      scratchedBalls: [],        // which ball numbers were on the table when scratch happened
+      safetiesPlayed: 0,
+      eightBallApproaches: 0,
+      eightBallWins: 0,
+      brokeAllClusters: false
+    };
+  }
+
+  // Update psychology based on shot outcome
+  function updatePsych(shooter, outcome) {
+    // outcome: { sankOwn, sankOpp, scratched, foul, difficulty (0-1), wasEasy, wasHard }
+    const m = match; if (!m) return;
+
+    if (shooter === 'player') {
+      // Player success → Alistair's composure drops slightly, momentum shifts against him
+      if (outcome.sankOwn && !outcome.foul) {
+        m.momentum = Math.max(-1, m.momentum - 0.2);
+        m.composure = Math.max(0, m.composure - 0.03);
+      }
+      if (outcome.scratched) {
+        m.momentum = Math.min(1, m.momentum + 0.15);
+        m.composure = Math.min(1, m.composure + 0.05);
+      }
+      if (!outcome.sankOwn && !outcome.scratched) {
+        // Player miss — slight Alistair confidence
+        m.momentum = Math.min(1, m.momentum + 0.08);
+      }
+    } else {
+      // Alistair's shot
+      if (outcome.sankOwn && !outcome.foul) {
+        m.momentum = Math.min(1, m.momentum + 0.25);
+        m.composure = Math.min(1, m.composure + 0.04);
+        m.tilt = Math.max(0, m.tilt - 0.15);
+      }
+      if (outcome.scratched) {
+        m.momentum = Math.max(-1, m.momentum - 0.3);
+        m.composure = Math.max(0, m.composure - 0.15);
+        m.tilt = Math.min(1, m.tilt + 0.35);
+      }
+      if (outcome.wasEasy && !outcome.sankOwn) {
+        // Missed a gimme
+        m.tilt = Math.min(1, m.tilt + 0.25);
+        m.composure = Math.max(0, m.composure - 0.08);
+      }
+      if (!outcome.sankOwn && !outcome.scratched && !outcome.wasEasy) {
+        // Normal miss — slight tilt
+        m.tilt = Math.min(1, m.tilt + 0.08);
+      }
+    }
+
+    // Natural decay of tilt per shot (he calms down over time)
+    m.tilt *= 0.92;
+  }
+
+  // Update dossier when PLAYER takes a shot
+  function updateDossier(shotInfo) {
+    // shotInfo: { power, firstContactBall, sankOwn, scratched, targetPocket, difficulty, angleRad, targetY }
+    const d = match.dossier;
+    d.shotsTaken++;
+    d.totalPower += shotInfo.power;
+    if (shotInfo.sankOwn) d.shotsPotted++;
+    if (shotInfo.scratched) {
+      d.scratches++;
+      // Record which balls were on the table at scratch time
+      for (const b of state.balls) {
+        if (b.inPlay && b.n !== 0) d.scratchedBalls.push(b.n);
+      }
+    }
+    // Cut vs straight
+    const ang = Math.abs(shotInfo.angleRad || 0);
+    if (ang > 20 * Math.PI / 180) d.cutShots++;
+    else d.straightShots++;
+    // Pocket
+    if (shotInfo.targetPocket != null && shotInfo.targetPocket >= 0 && shotInfo.targetPocket < 6) {
+      d.pocketHistory[shotInfo.targetPocket]++;
+    }
+    // Table half
+    if (shotInfo.targetY != null) {
+      if (shotInfo.targetY < TABLE_H / 2) d.topHalfShots++;
+      else d.bottomHalfShots++;
+    }
+    // Difficulty classification
+    if (shotInfo.difficulty != null) {
+      if (shotInfo.difficulty > 0.6) d.hardPots++;
+      if (shotInfo.difficulty < 0.4 && !shotInfo.sankOwn) d.easyMisses++;
+    }
+  }
+
+  // Generate "Alistair's notes on you" — flavor text from the dossier
+  function generateNotes() {
+    if (!match) return [];
+    const d = match.dossier;
+    const notes = [];
+    if (d.shotsTaken < 3) {
+      notes.push('"Too early to say. I\'m watching."');
+      return notes;
+    }
+
+    const potRate = d.shotsPotted / Math.max(1, d.shotsTaken);
+    const avgPower = d.totalPower / Math.max(1, d.shotsTaken);
+    const cutRatio = d.cutShots / Math.max(1, d.cutShots + d.straightShots);
+    const riskIndex = d.hardPots / Math.max(1, d.shotsTaken);
+
+    if (potRate > 0.55) notes.push('"You pot at ' + (potRate * 100 | 0) + '%. That\'s good. I don\'t like it."');
+    else if (potRate < 0.25) notes.push('"Your pot rate is ' + (potRate * 100 | 0) + '%. That\'s not playing — that\'s hoping."');
+    else notes.push('"You\'re potting at ' + (potRate * 100 | 0) + '%. Steady. Workable."');
+
+    if (avgPower > 0.7) notes.push('"You\'re hitting hard. That\'s either confidence or panic. I\'m not sure which."');
+    else if (avgPower < 0.4) notes.push('"You play soft. Touch, not force. Interesting choice."');
+
+    if (cutRatio > 0.65) notes.push('"You favor cuts. You\'ll avoid dead-straight shots — I\'ve seen you do it twice."');
+    else if (cutRatio < 0.3) notes.push('"You line up straight shots whenever you can. When I leave you an angle, you hesitate."');
+
+    if (d.scratches >= 2) {
+      const common = findMostCommon(d.scratchedBalls);
+      if (common !== null) {
+        notes.push('"You\'ve scratched twice on the ' + common + '. There\'s something in that ball you don\'t trust."');
+      } else {
+        notes.push('"' + d.scratches + ' scratches. You\'re rushing. Slow down."');
+      }
+    }
+
+    // Pocket preference
+    const maxPi = d.pocketHistory.indexOf(Math.max(...d.pocketHistory));
+    if (d.pocketHistory[maxPi] >= 3) {
+      const pName = ['top-left','top-middle','top-right','bottom-left','bottom-middle','bottom-right'][maxPi];
+      notes.push('"You keep going to the ' + pName + ' pocket. If I close it off, where do you go?"');
+    }
+
+    // Table half bias
+    if (d.topHalfShots > d.bottomHalfShots * 2) {
+      notes.push('"You\'re playing the top half of the table. The bottom feels uncomfortable to you."');
+    } else if (d.bottomHalfShots > d.topHalfShots * 2) {
+      notes.push('"You stay south. The top of the table is where I\'ll leave you next."');
+    }
+
+    // Risk index
+    if (riskIndex > 0.4) notes.push('"You\'ll take difficult shots. I respect that. I also exploit it."');
+    else if (riskIndex < 0.15) notes.push('"You play percentages. That\'s fine, until the percentages require you to try."');
+
+    if (d.easyMisses >= 2) {
+      notes.push('"You\'ve missed shots you should have potted. Focus slipped. I noticed."');
+    }
+
+    return notes;
+  }
+
+  function findMostCommon(arr) {
+    if (!arr.length) return null;
+    const counts = {};
+    let best = null, bestCount = 0;
+    for (const v of arr) {
+      counts[v] = (counts[v] || 0) + 1;
+      if (counts[v] > bestCount) { bestCount = counts[v]; best = v; }
+    }
+    return bestCount >= 2 ? best : null;
+  }
+
+  // Pick voice category based on current confidence + context
+  function voiceZone() {
+    if (!match) return 'neutral';
+    if (match.tilt > 0.6) return 'tilted';
+    if (match.confidence > 0.7) return 'confident';
+    if (match.confidence < 0.3) return 'losing';
+    return 'tense';
+  }
+
+  function sayAdaptive(context) {
+    // context: 'shotSuccess' | 'shotMiss' | 'scratch' | 'idle' | 'eight' | 'frameWon' | 'frameLost'
+    const zone = voiceZone();
+    let cat = null;
+
+    if (context === 'shotSuccess') {
+      if (zone === 'confident') cat = Math.random() < 0.6 ? 'confidentTerse' : 'goodShotAlistair';
+      else if (zone === 'tense') cat = Math.random() < 0.5 ? 'tenseAnalytical' : 'goodShotAlistair';
+      else if (zone === 'losing') cat = 'losingRevealing';
+      else if (zone === 'tilted') cat = 'tiltedAggressive';
+      else cat = 'goodShotAlistair';
+      if (match && Math.abs(match.momentum) > 0.5 && match.momentum > 0) {
+        if (Math.random() < 0.3) cat = 'momentumRunning';
+      }
+    } else if (context === 'shotMiss') {
+      if (zone === 'tilted') cat = 'tiltedAggressive';
+      else if (zone === 'losing') cat = Math.random() < 0.5 ? 'losingFrustrated' : 'losingResigned';
+      else cat = 'missedAlistair';
+    } else if (context === 'scratch') {
+      cat = zone === 'losing' ? 'losingFrustrated' : 'scratchAlistair';
+    } else if (context === 'idle') {
+      if (zone === 'confident') cat = Math.random() < 0.5 ? 'confidentDismissive' : 'confidentTerse';
+      else if (zone === 'tense') cat = Math.random() < 0.5 ? 'tenseProbing' : 'tenseAnalytical';
+      else if (zone === 'losing') cat = 'losingRevealing';
+      else cat = 'contemplative';
+    } else if (context === 'eight') {
+      cat = 'onEightRun';
+    } else if (context === 'safety') {
+      cat = 'safetyPlayed';
+    } else if (context === 'breakout') {
+      cat = 'breakoutAttempt';
+    } else if (context === 'frameWon') {
+      cat = zone === 'losing' ? 'frameWonGracious' : 'frameWonTerse';
+    } else if (context === 'frameLost') {
+      cat = zone === 'losing' ? 'frameLostResigned' : 'frameLostTerse';
+    }
+    if (cat) say(cat);
+  }
 
   // HUD regions in SCREEN space
   let hud = {
     shootBtn: null,
     powerBar: null,
     spinBall: null,
-    dialogueBox: null
+    dialogueBox: null,
+    zoomIn: null,
+    zoomOut: null,
+    zoomReset: null
   };
 
   let modeSelectRegions = null;
   let modeSelectActive = false;
+  let formatSelectActive = false;
+  let formatSelectRegions = null;
+  let interstitialRegions = null;
+  let matchEndRegions = null;
 
   let powerDragging = false;
   let spinDragging = false;
@@ -265,6 +766,11 @@
     state.balls[0].x = PLAY_X0 + PLAY_W * 0.25;
     state.balls[0].y = TABLE_H / 2;
     if (mode === 'vs') setTimeout(() => say('preMatch'), 150);
+    // Reset zoom/pan on new game
+    zoomLevel = 1;
+    panTX = TABLE_W / 2;
+    panTY = TABLE_H / 2;
+    panInitialized = true;
   }
 
   function makeRack() {
@@ -296,7 +802,8 @@
     const cue = state.balls[0];
     if (!cue.inPlay) return;
 
-    if (state.turn === 'player' && isOnEight('player') && !state.calledPocket && state.calledPocket !== 0) {
+    if (state.mode === 'vs' && state.turn === 'player' && isOnEight('player') &&
+        state.calledPocket === null) {
       state.showCallPocket = true;
       return;
     }
@@ -315,6 +822,7 @@
     state.gamePhase = 'simulating';
     shotStartTime = performance.now();
     if (state.turn === 'player') state.playerStats.shotsTaken++;
+    playClick(speed);  // cue strike
   }
 
   function step() {
@@ -335,10 +843,10 @@
 
     for (const b of balls) {
       if (!b.inPlay) continue;
-      if (b.x < PLAY_X0 + BALL_R) { b.x = PLAY_X0 + BALL_R; b.vx = -b.vx * CUSHION_DAMP; b.spinX *= 0.5; }
-      if (b.x > PLAY_X1 - BALL_R) { b.x = PLAY_X1 - BALL_R; b.vx = -b.vx * CUSHION_DAMP; b.spinX *= 0.5; }
-      if (b.y < PLAY_Y0 + BALL_R) { b.y = PLAY_Y0 + BALL_R; b.vy = -b.vy * CUSHION_DAMP; b.spinY *= 0.5; }
-      if (b.y > PLAY_Y1 - BALL_R) { b.y = PLAY_Y1 - BALL_R; b.vy = -b.vy * CUSHION_DAMP; b.spinY *= 0.5; }
+      if (b.x < PLAY_X0 + BALL_R) { const v = Math.abs(b.vx); b.x = PLAY_X0 + BALL_R; b.vx = -b.vx * CUSHION_DAMP; b.spinX *= 0.5; if (v > 1) playThud(v); }
+      if (b.x > PLAY_X1 - BALL_R) { const v = Math.abs(b.vx); b.x = PLAY_X1 - BALL_R; b.vx = -b.vx * CUSHION_DAMP; b.spinX *= 0.5; if (v > 1) playThud(v); }
+      if (b.y < PLAY_Y0 + BALL_R) { const v = Math.abs(b.vy); b.y = PLAY_Y0 + BALL_R; b.vy = -b.vy * CUSHION_DAMP; b.spinY *= 0.5; if (v > 1) playThud(v); }
+      if (b.y > PLAY_Y1 - BALL_R) { const v = Math.abs(b.vy); b.y = PLAY_Y1 - BALL_R; b.vy = -b.vy * CUSHION_DAMP; b.spinY *= 0.5; if (v > 1) playThud(v); }
     }
 
     for (let i = 0; i < balls.length; i++) {
@@ -366,6 +874,8 @@
           b.vx += p * nx; b.vy += p * ny;
           if (a.n === 0) { b.vx += a.spinX * 0.4; b.vy += a.spinY * 0.4; a.spinX *= 0.3; a.spinY *= 0.3; }
           if (b.n === 0) { a.vx += b.spinX * 0.4; a.vy += b.spinY * 0.4; b.spinX *= 0.3; b.spinY *= 0.3; }
+          // Click volume based on relative normal velocity
+          playClick(Math.abs(avn - bvn));
         }
       }
     }
@@ -379,22 +889,32 @@
           b.vx = 0; b.vy = 0;
           b.pocketedAt = p;
           state.pocketedThisShot.push(b);
+          playPocket();
           break;
         }
       }
     }
 
+    // More aggressive stop: use squared magnitude; also snap-to-zero anything crawling
     let allStopped = true;
+    const MIN_SQ = MIN_SPEED * MIN_SPEED;
     for (const b of balls) {
       if (!b.inPlay) continue;
-      if (Math.abs(b.vx) > MIN_SPEED || Math.abs(b.vy) > MIN_SPEED) { allStopped = false; break; }
+      const sq = b.vx * b.vx + b.vy * b.vy;
+      if (sq < MIN_SQ) { b.vx = 0; b.vy = 0; continue; }
+      allStopped = false;
     }
 
-    if (performance.now() - shotStartTime > 12000) allStopped = true;
+    if (performance.now() - shotStartTime > 8000) {
+      // Hard timeout — force everything to stop
+      for (const b of balls) { b.vx = 0; b.vy = 0; b.spinX = 0; b.spinY = 0; }
+      allStopped = true;
+    }
     if (allStopped) resolveShot();
   }
 
   function resolveShot() {
+    if (!state || state.gamePhase !== 'simulating') return;  // re-entry guard
     const pocketed = state.pocketedThisShot;
     const shooter = state.turn;
     const cueBall = state.balls[0];
@@ -418,7 +938,7 @@
       }
     }
 
-    if (eightSunk) {
+    if (eightSunk && state.mode === 'vs') {
       const shooterOnEight = isOnEight(shooter);
       if (!shooterOnEight) { endGame(other(shooter), 'Early eight ball'); return; }
       if (cueScratched) { endGame(other(shooter), 'Cue scratch on eight'); return; }
@@ -434,6 +954,22 @@
       }
       endGame(shooter, 'Eight ball sunk legally');
       return;
+    }
+    // Solo: sinking the 8 when all others are cleared = rack complete; otherwise ignore
+    if (eightSunk && state.mode === 'solo') {
+      const anyOthersLeft = state.balls.some(b => b.inPlay && b.n !== 0 && b.n !== 8);
+      if (!anyOthersLeft) { endGame('player', 'Rack cleared'); return; }
+      // Early 8 in solo: respot it on the foot spot, continue playing
+      const eight = state.balls.find(b => b.n === 8);
+      if (eight) {
+        eight.inPlay = true;
+        eight.pocketed = false;
+        eight.x = PLAY_X0 + PLAY_W * 0.72;
+        eight.y = TABLE_H / 2;
+        eight.vx = 0; eight.vy = 0;
+        // Remove from pocketedThisShot list
+        state.pocketedThisShot = state.pocketedThisShot.filter(b => b.n !== 8);
+      }
     }
 
     const shooterGroup = shooter === 'player' ? state.playerGroup : state.alistairGroup;
@@ -464,6 +1000,53 @@
       if (cueScratched) state.playerStats.scratches++;
     }
 
+    // Dossier update (player shots only, vs mode)
+    if (state.mode === 'vs' && shooter === 'player' && match) {
+      // Compute shot characteristics
+      const dx = state.aimX - cueBall.x;
+      const dy = state.aimY - cueBall.y;
+      const shotAng = Math.atan2(dy, dx);
+      // Estimate target pocket by finding nearest pocket to a pocketed ball, or aim line
+      let targetPocket = null;
+      if (pocketed.length > 0) {
+        const p = pocketed[0].pocketedAt;
+        if (p) {
+          for (let i = 0; i < POCKETS.length; i++) {
+            if (Math.hypot(p.x - POCKETS[i].x, p.y - POCKETS[i].y) < 5) { targetPocket = i; break; }
+          }
+        }
+      }
+      // Difficulty estimate: use firstContact angle if available
+      let difficulty = 0.5;
+      if (state.firstContact != null) {
+        // Rough heuristic: longer shots are harder
+        const d = Math.hypot(state.aimX - cueBall.x, state.aimY - cueBall.y);
+        difficulty = Math.min(1, d / 500);
+      }
+      updateDossier({
+        power: state.power,
+        firstContactBall: state.firstContact,
+        sankOwn: sankOwn,
+        scratched: cueScratched,
+        targetPocket: targetPocket,
+        difficulty: difficulty,
+        angleRad: shotAng,
+        targetY: state.aimY
+      });
+    }
+
+    // Psych update (vs mode)
+    if (state.mode === 'vs' && match) {
+      updatePsych(shooter, {
+        sankOwn: sankOwn,
+        sankOpp: sankOpp,
+        scratched: cueScratched,
+        foul: foul,
+        wasEasy: false,
+        wasHard: false
+      });
+    }
+
     if (cueScratched) {
       cueBall.inPlay = true;
       cueBall.pocketed = false;
@@ -480,9 +1063,10 @@
         else if (sankOwn) say('sunkPlayerBall');
         else say('missedPlayer');
       } else {
-        if (cueScratched) say('scratchAlistair');
-        else if (sankOwn) say('goodShotAlistair');
-        else say('missedAlistair');
+        // Use adaptive voice for Alistair's own shots
+        if (cueScratched) sayAdaptive('scratch');
+        else if (sankOwn) sayAdaptive('shotSuccess');
+        else sayAdaptive('shotMiss');
       }
     }
 
@@ -490,7 +1074,11 @@
     state.showCallPocket = false;
 
     const continueTurn = sankOwn && !foul;
-    if (!continueTurn) {
+    if (state.mode === 'solo') {
+      // Solo: turn always stays on player; fouls still give ball in hand for consistency
+      state.turn = 'player';
+      state.ballInHand = foul;
+    } else if (!continueTurn) {
       state.turn = other(shooter);
       state.ballInHand = foul;
     } else {
@@ -501,6 +1089,7 @@
     state.gamePhase = 'aiming';
 
     if (state.mode === 'vs' && state.turn === 'alistair') {
+      state._alistairTurnStart = performance.now();
       setTimeout(alistairMove, 900 + Math.random() * 700);
     }
   }
@@ -521,14 +1110,94 @@
     state.gamePhase = 'gameover';
     state.winner = winner;
     state.loseReason = reason;
-    if (state.mode === 'vs') {
-      if (winner === 'player') {
-        if (reason.indexOf('Early') >= 0 || reason.indexOf('Wrong') >= 0 || reason.indexOf('scratch') >= 0) say('alistairLostEight');
-        else say('playerWonEight');
-      } else {
-        if (reason.indexOf('Eight ball sunk') >= 0) say('alistairWonEight');
-        else say('playerLostEight');
-      }
+
+    // Solo: one-and-done
+    if (state.mode !== 'vs') return;
+
+    // Vs mode: update match state
+    if (!match) return;   // safety
+
+    if (winner === 'player') {
+      match.playerFrames++;
+      match.confidence = Math.max(0, match.confidence - 0.18);
+      sayAdaptive('frameLost');
+    } else {
+      match.alistairFrames++;
+      match.confidence = Math.min(1, match.confidence + 0.15);
+      sayAdaptive('frameWon');
+    }
+
+    // Reset per-frame psych pressure
+    match.momentum = 0;
+    match.tilt = Math.max(0, match.tilt * 0.5);
+    match.composure = Math.min(1, match.composure + 0.15);
+
+    // Decide: match over, or next frame
+    if (match.playerFrames >= match.toWin) {
+      match.showMatchEnd = true;
+      state.gamePhase = 'matchend';
+      state.winner = 'player';
+      // Match-lost dialogue
+      setTimeout(() => {
+        if (match.confidence < 0.3) say('matchLostGracious');
+        else say('matchLostFirstTime');
+      }, 200);
+    } else if (match.alistairFrames >= match.toWin) {
+      match.showMatchEnd = true;
+      state.gamePhase = 'matchend';
+      state.winner = 'alistair';
+      setTimeout(() => {
+        if (match.confidence > 0.75) say('matchWonProud');
+        else say('matchWonHumble');
+      }, 200);
+    } else {
+      // Interstitial screen with score + notes, then next frame
+      match.showInterstitial = true;
+      state.gamePhase = 'interstitial';
+      match.interstitialNotes = generateNotes();
+      // Alternate breaks
+      match.nextBreaker = match.nextBreaker === 'player' ? 'alistair' : 'player';
+    }
+  }
+
+  function startNextFrame() {
+    if (!match) return;
+    match.showInterstitial = false;
+    const breaker = match.nextBreaker;
+    // Rebuild state (new rack) while preserving match
+    state = {
+      mode: 'vs',
+      balls: makeRack(),
+      aimX: PLAY_X1 - 100,
+      aimY: TABLE_H / 2,
+      power: 0.5,
+      spinX: 0, spinY: 0,
+      turn: breaker,
+      playerGroup: null, alistairGroup: null,
+      openTable: true,
+      ballInHand: false,
+      gamePhase: 'aiming',
+      firstContact: null,
+      pocketedThisShot: [],
+      winner: null, loseReason: null,
+      playerStats: { shotsTaken: 0, shotsMissed: 0, ballsSunk: 0, scratches: 0,
+                     skill: state && state.playerStats ? state.playerStats.skill : 0.5 },
+      calledPocket: null,
+      showCallPocket: false,
+      dialogue: '', dialogueTimer: 0
+    };
+    state.balls[0].x = PLAY_X0 + PLAY_W * 0.25;
+    state.balls[0].y = TABLE_H / 2;
+
+    // Reset zoom for new frame
+    zoomLevel = 1;
+    panTX = TABLE_W / 2;
+    panTY = TABLE_H / 2;
+
+    // If Alistair breaks, schedule his move
+    if (breaker === 'alistair') {
+      state._alistairTurnStart = performance.now();
+      setTimeout(alistairMove, 1200);
     }
   }
 
@@ -544,65 +1213,230 @@
   function alistairMove() {
     if (!state || state.gamePhase !== 'aiming') return;
     if (state.turn !== 'alistair') return;
+    state._alistairTurnStart = 0;
 
     const cue = state.balls[0];
     if (state.ballInHand) {
-      cue.x = PLAY_X0 + PLAY_W * 0.25;
-      cue.y = TABLE_H / 2;
+      // Place cue strategically — next to a candidate ball for best opening
+      const myBalls = getAlistairCandidates();
+      if (myBalls.length > 0) {
+        // Pick the ball closest to the kitchen line, place cue near it
+        const target = myBalls[0];
+        cue.x = Math.max(PLAY_X0 + BALL_R + 2, Math.min(PLAY_X1 - BALL_R - 2, target.x - 60));
+        cue.y = Math.max(PLAY_Y0 + BALL_R + 2, Math.min(PLAY_Y1 - BALL_R - 2, target.y));
+      } else {
+        cue.x = PLAY_X0 + PLAY_W * 0.25;
+        cue.y = TABLE_H / 2;
+      }
       state.ballInHand = false;
     }
 
+    const plan = chooseAlistairShot();
+    const playerSkill = state.playerStats.skill;
+    const aiSkill = computeAISkill(playerSkill);
+    // Tilt adds noise and reduces control
+    const tiltNoise = match ? match.tilt * 30 : 0;
+    const noise = (1 - aiSkill) * 55 + tiltNoise;
+
+    state.aimX = plan.aimX + (Math.random() - 0.5) * noise;
+    state.aimY = plan.aimY + (Math.random() - 0.5) * noise;
+    state.power = plan.power;
+    state.spinX = plan.spinX || 0;
+    state.spinY = plan.spinY || 0;
+    if (plan.calledPocket != null) state.calledPocket = plan.calledPocket;
+
+    // Voice
+    if (plan.type === 'safety') sayAdaptive('safety');
+    else if (plan.type === 'breakout') sayAdaptive('breakout');
+    else if (plan.type === 'eight') sayAdaptive('eight');
+    else if (Math.random() < 0.35) sayAdaptive('idle');
+
+    setTimeout(() => takeShot(), 600 + Math.random() * 500);
+  }
+
+  function computeAISkill(playerSkill) {
+    // Adaptive difficulty with match-psych modifiers.
+    let skill = Math.max(0.3, Math.min(0.95, playerSkill + 0.2));
+    if (match) {
+      // Winning → tighter aim. Losing → reveals openings for player.
+      skill += (match.momentum * 0.08);
+      skill += (match.composure - 0.5) * 0.1;
+      skill -= match.tilt * 0.2;
+    }
+    return Math.max(0.25, Math.min(0.97, skill));
+  }
+
+  function getAlistairCandidates() {
     const onEight = isOnEight('alistair');
-    let candidates = [];
+    const cands = [];
     for (const b of state.balls) {
       if (!b.inPlay || b.n === 0) continue;
       if (onEight && b.n !== 8) continue;
       if (!onEight && b.n === 8) continue;
       if (!onEight && !state.openTable && state.alistairGroup && ballType(b.n) !== state.alistairGroup) continue;
       if (state.openTable && b.n === 8) continue;
-      candidates.push(b);
+      cands.push(b);
     }
-    if (candidates.length === 0) {
-      for (const b of state.balls) if (b.inPlay && b.n !== 0) candidates.push(b);
+    if (cands.length === 0) {
+      for (const b of state.balls) if (b.inPlay && b.n !== 0) cands.push(b);
     }
+    return cands;
+  }
 
-    let best = null;
+  // ---------- Strategic shot selection -----------------------------------
+  // Evaluates board state and returns a plan:
+  //   { type, aimX, aimY, power, spinX, spinY, calledPocket, difficulty }
+  function chooseAlistairShot() {
+    const cue = state.balls[0];
+    const onEight = isOnEight('alistair');
+    const candidates = getAlistairCandidates();
+
+    // 1. Enumerate all shot options
+    const options = [];
     for (const ball of candidates) {
       for (let pi = 0; pi < POCKETS.length; pi++) {
-        const p = POCKETS[pi];
-        const score = scoreShot(cue, ball, p);
-        if (!best || score > best.score) best = { ball, pocket: p, pi, score };
+        const pk = POCKETS[pi];
+        const s = scoreShot(cue, ball, pk);
+        if (s > -1000) {
+          const g = ghostBall(ball, pk);
+          const d1 = Math.hypot(g.x - cue.x, g.y - cue.y);
+          const d2 = Math.hypot(pk.x - ball.x, pk.y - ball.y);
+          // Angle between cue direction and ball-to-pocket
+          const v1x = g.x - cue.x, v1y = g.y - cue.y;
+          const v2x = pk.x - ball.x, v2y = pk.y - ball.y;
+          const cos = (v1x * v2x + v1y * v2y) / ((Math.hypot(v1x,v1y) || 1) * (Math.hypot(v2x,v2y) || 1));
+          const difficulty = Math.max(0, Math.min(1, 1 - cos)) * 0.5 + Math.min(1, (d1 + d2) / 900) * 0.5;
+          options.push({ ball, pocket: pk, pi, score: s, difficulty, d1, d2 });
+        }
       }
     }
 
-    const playerSkill = state.playerStats.skill;
-    const aiSkill = Math.max(0.3, Math.min(0.95, playerSkill + 0.2));
-    const noise = (1 - aiSkill) * 60;
-
-    let targetX, targetY;
-    if (best && best.score > -1000) {
-      const ghost = ghostBall(best.ball, best.pocket);
-      targetX = ghost.x + (Math.random() - 0.5) * noise;
-      targetY = ghost.y + (Math.random() - 0.5) * noise;
-      if (onEight) state.calledPocket = best.pi;
-    } else {
-      targetX = cue.x + (Math.random() - 0.5) * 400;
-      targetY = cue.y + (Math.random() - 0.5) * 200;
+    // 2. On the eight — always offense, pick highest-score
+    if (onEight) {
+      options.sort((a, b) => b.score - a.score);
+      const best = options[0];
+      if (best) {
+        const g = ghostBall(best.ball, best.pocket);
+        return {
+          type: 'eight',
+          aimX: g.x, aimY: g.y,
+          power: 0.55 + Math.random() * 0.15,
+          calledPocket: best.pi,
+          difficulty: best.difficulty
+        };
+      }
+      // No shot — random push
+      return { type: 'fallback', aimX: cue.x + 200, aimY: cue.y + 100, power: 0.5 };
     }
 
-    state.aimX = targetX;
-    state.aimY = targetY;
-    state.power = 0.55 + Math.random() * 0.25 + aiSkill * 0.1;
-    state.spinX = 0; state.spinY = 0;
+    // 3. Check for cluster — Alistair's own balls clumped together
+    const clustered = detectCluster(getAlistairOwnBalls());
+    if (clustered && Math.random() < 0.55) {
+      // Try to find a shot that breaks the cluster while potting
+      const cBall = clustered.ball;
+      for (const opt of options) {
+        if (opt.ball === cBall) {
+          // Take this shot with extra power to break out
+          const g = ghostBall(opt.ball, opt.pocket);
+          return {
+            type: 'breakout',
+            aimX: g.x, aimY: g.y,
+            power: Math.min(0.95, 0.65 + opt.difficulty * 0.3),
+            difficulty: opt.difficulty
+          };
+        }
+      }
+    }
 
-    const myBalls = countGroup('alistair');
-    const yourBalls = countGroup('player');
-    if (onEight) say('alistairEightApproach');
-    else if (myBalls < yourBalls) say('playerLeading');
-    else if (yourBalls < myBalls && Math.random() < 0.4) say('alistairLeading');
-    else if (Math.random() < 0.2) say('contemplative');
+    // 4. Rank options by goodness (score + shot-type modifier)
+    options.sort((a, b) => b.score - a.score);
+    const best = options[0];
 
-    setTimeout(() => takeShot(), 600 + Math.random() * 400);
+    // 5. Safety decision — if best shot is hard and match pressure is on, play safe
+    const pressure = match ? (match.alistairFrames + match.playerFrames) / match.format : 0;
+    const tooHard = !best || best.difficulty > 0.7;
+    const shouldSafe = tooHard && (pressure > 0.3) && match && match.tilt < 0.5 && Math.random() < 0.55;
+    if (shouldSafe) {
+      const safety = planSafety(cue);
+      if (safety) {
+        match.dossier.safetiesPlayed++;
+        return safety;
+      }
+    }
+
+    // 6. Two-way shot — if best is medium-hard, play it with pace that leaves safety on miss
+    const twoWay = best && best.difficulty > 0.4 && best.difficulty < 0.7 && Math.random() < 0.4;
+    if (twoWay) {
+      const g = ghostBall(best.ball, best.pocket);
+      return {
+        type: 'two-way',
+        aimX: g.x, aimY: g.y,
+        power: 0.5 + Math.random() * 0.1,   // softer = stays in place if miss
+        difficulty: best.difficulty
+      };
+    }
+
+    // 7. Default: pure offense — aim at ghost, choose power for position
+    if (best) {
+      const g = ghostBall(best.ball, best.pocket);
+      // Power based on distance and whether we want position control
+      const distance = best.d1 + best.d2;
+      const tiltFactor = match ? match.tilt : 0;
+      const basePower = 0.4 + Math.min(0.4, distance / 1200);
+      return {
+        type: 'offense',
+        aimX: g.x, aimY: g.y,
+        power: Math.min(0.95, basePower + tiltFactor * 0.3 + Math.random() * 0.1),
+        difficulty: best.difficulty
+      };
+    }
+
+    // 8. Nothing — defensive random
+    return { type: 'fallback', aimX: cue.x + (Math.random() - 0.5) * 300, aimY: cue.y + (Math.random() - 0.5) * 200, power: 0.4 };
+  }
+
+  function getAlistairOwnBalls() {
+    if (!state.alistairGroup || state.openTable) return [];
+    return state.balls.filter(b => b.inPlay && b.n !== 0 && b.n !== 8 && ballType(b.n) === state.alistairGroup);
+  }
+
+  // Detect if Alistair's balls are clustered (two or more within ~40px of each other)
+  function detectCluster(balls) {
+    if (balls.length < 2) return null;
+    for (let i = 0; i < balls.length; i++) {
+      for (let j = i + 1; j < balls.length; j++) {
+        const d = Math.hypot(balls[i].x - balls[j].x, balls[i].y - balls[j].y);
+        if (d < 40) return { ball: balls[i], other: balls[j] };
+      }
+    }
+    return null;
+  }
+
+  // Plan a safety shot — hit own ball lightly, leave cue ball behind an opponent ball
+  function planSafety(cue) {
+    const myBalls = getAlistairOwnBalls();
+    if (myBalls.length === 0) return null;
+    const oppBalls = state.balls.filter(b => b.inPlay && b.n !== 0 && b.n !== 8 &&
+      (state.openTable || ballType(b.n) !== state.alistairGroup));
+    if (oppBalls.length === 0) return null;
+
+    // Pick an own ball to hit at low velocity
+    const target = myBalls[Math.floor(Math.random() * myBalls.length)];
+    // Pick an opponent ball to hide behind (farthest from cue)
+    oppBalls.sort((a, b) => Math.hypot(b.x - cue.x, b.y - cue.y) - Math.hypot(a.x - cue.x, a.y - cue.y));
+    const hideBehind = oppBalls[0];
+
+    // Aim slightly past the own ball so the cue glances and rolls toward hide position
+    const dx = target.x - cue.x;
+    const dy = target.y - cue.y;
+    const d = Math.hypot(dx, dy) || 1;
+    return {
+      type: 'safety',
+      aimX: target.x + (dx / d) * BALL_R * 1.8,
+      aimY: target.y + (dy / d) * BALL_R * 1.8,
+      power: 0.18 + Math.random() * 0.1,
+      difficulty: 0.5
+    };
   }
 
   function countGroup(who) {
@@ -666,32 +1500,64 @@
     const W = canvas.width;
     const H = canvas.height;
     const topPad = 8;
-    const bottomPad = 180;  // dialogue (70) + controls (48) + turn bar (24) + gaps
+    const bottomPad = 180;
     const sidePad = 8;
+    const availW = W - sidePad * 2;
+    const availH = H - topPad - bottomPad;
+    // View region center on screen
+    const viewCx = W / 2;
+    const viewCy = topPad + availH / 2;
 
+    let baseScale;
     if (W >= H) {
       viewMode = 'landscape';
-      const availW = W - sidePad * 2;
-      const availH = H - topPad - bottomPad;
-      const sx = availW / TABLE_W;
-      const sy = availH / TABLE_H;
-      tableScale = Math.min(sx, sy);
-      const drawW = TABLE_W * tableScale;
-      const drawH = TABLE_H * tableScale;
-      tableOffsetX = sidePad + (availW - drawW) / 2;
-      tableOffsetY = topPad + (availH - drawH) / 2;
+      baseScale = Math.min(availW / TABLE_W, availH / TABLE_H);
     } else {
       viewMode = 'portrait';
-      const availW = W - sidePad * 2;
-      const availH = H - topPad - bottomPad;
-      // Rotated: table's long axis becomes vertical on screen
-      const sx = availW / TABLE_H;       // horizontal fits TABLE_H
-      const sy = availH / TABLE_W;       // vertical fits TABLE_W
-      tableScale = Math.min(sx, sy);
-      const drawW = TABLE_H * tableScale;
-      const drawH = TABLE_W * tableScale;
-      tableOffsetX = sidePad + (availW - drawW) / 2;
-      tableOffsetY = topPad + (availH - drawH) / 2;
+      baseScale = Math.min(availW / TABLE_H, availH / TABLE_W);
+    }
+
+    if (!panInitialized) {
+      panTX = TABLE_W / 2;
+      panTY = TABLE_H / 2;
+      panInitialized = true;
+    }
+
+    // Effective scale applies user zoom on top of fit-to-screen
+    tableScale = baseScale * zoomLevel;
+
+    // Compute offsets so that (panTX, panTY) in table-space maps to viewCenter on screen
+    if (viewMode === 'landscape') {
+      tableOffsetX = viewCx - panTX * tableScale;
+      tableOffsetY = viewCy - panTY * tableScale;
+    } else {
+      // In portrait, the rotation maps table(tx,ty) -> screen(ox + ty*s, oy + (TABLE_W-tx)*s)
+      // Solving for offsets so that (panTX, panTY) -> (viewCx, viewCy):
+      //   viewCx = tableOffsetX + panTY * tableScale
+      //   viewCy = tableOffsetY + (TABLE_W - panTX) * tableScale
+      tableOffsetX = viewCx - panTY * tableScale;
+      tableOffsetY = viewCy - (TABLE_W - panTX) * tableScale;
+    }
+
+    // Clamp pan so the table can't leave the visible region entirely
+    clampPan(availW, availH, viewCx, viewCy);
+  }
+
+  function clampPan(availW, availH, viewCx, viewCy) {
+    // Keep at least ~30% of the table visible by limiting how far panCenter can move
+    // away from the true table center (TABLE_W/2, TABLE_H/2).
+    // Allowable movement range depends on zoomLevel: more zoom = more allowable pan.
+    const maxOffsetX = (TABLE_W / 2) * (1 - 1 / zoomLevel) + 40;
+    const maxOffsetY = (TABLE_H / 2) * (1 - 1 / zoomLevel) + 40;
+    panTX = Math.max(TABLE_W / 2 - maxOffsetX, Math.min(TABLE_W / 2 + maxOffsetX, panTX));
+    panTY = Math.max(TABLE_H / 2 - maxOffsetY, Math.min(TABLE_H / 2 + maxOffsetY, panTY));
+    // Recompute offsets after clamp
+    if (viewMode === 'landscape') {
+      tableOffsetX = viewCx - panTX * tableScale;
+      tableOffsetY = viewCy - panTY * tableScale;
+    } else {
+      tableOffsetX = viewCx - panTY * tableScale;
+      tableOffsetY = viewCy - (TABLE_W - panTX) * tableScale;
     }
   }
 
@@ -1071,12 +1937,23 @@
     ctx.font = '11px Georgia, serif';
     ctx.textBaseline = 'middle';
     ctx.textAlign = 'left';
-    const turnLabel = state.mode === 'vs'
-      ? (state.turn === 'player' ? 'YOUR TURN' : 'ALISTAIR')
-      : 'PRACTICE';
+    let turnLabel;
+    if (state.mode !== 'vs') {
+      turnLabel = 'PRACTICE';
+    } else if (state.turn === 'player') {
+      turnLabel = state.gamePhase === 'simulating' ? 'SHOT IN PLAY...' : 'YOUR TURN';
+    } else {
+      turnLabel = state.gamePhase === 'simulating' ? 'ALISTAIR SHOOTING...' : 'ALISTAIR THINKING...';
+    }
     ctx.fillText(turnLabel, 10, H - indH / 2);
     ctx.textAlign = 'center';
-    if (!state.openTable) {
+    if (state.mode === 'vs' && match) {
+      // Show frame score + group info
+      const pg = state.playerGroup ? state.playerGroup.toUpperCase() : '';
+      const ag = state.alistairGroup ? state.alistairGroup.toUpperCase() : '';
+      const groupInfo = state.openTable ? 'OPEN TABLE' : `${pg}  ·  ${ag}`;
+      ctx.fillText(`${match.playerFrames} — ${match.alistairFrames}   |   ${groupInfo}`, W / 2, H - indH / 2);
+    } else if (!state.openTable) {
       const pg = state.playerGroup ? state.playerGroup.toUpperCase() : '';
       const ag = state.alistairGroup ? state.alistairGroup.toUpperCase() : '';
       ctx.fillText(`You: ${pg}  |  Alistair: ${ag}`, W / 2, H - indH / 2);
@@ -1111,6 +1988,9 @@
       ctx.restore();
     }
 
+    // Zoom controls — top-left (always visible, even for Alistair's turn so UI feels alive)
+    drawZoomButtons();
+
     // Game over
     if (state.gamePhase === 'gameover') {
       ctx.save();
@@ -1133,11 +2013,58 @@
     }
   }
 
+  function drawZoomButtons() {
+    const W = canvas.width;
+    // Position: top-left column, below the close button
+    const btnW = 40;
+    const btnH = 40;
+    const x = 10;
+    let y = 58;  // leave room for close button at top-right
+
+    const drawBtn = (yPos, label, disabled) => {
+      ctx.save();
+      ctx.fillStyle = disabled ? 'rgba(40,24,14,0.65)' : 'rgba(74,24,8,0.92)';
+      roundRect(ctx, x, yPos, btnW, btnH, 6);
+      ctx.fill();
+      ctx.strokeStyle = disabled ? 'rgba(138,107,46,0.4)' : '#d9a679';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.fillStyle = disabled ? '#7a6842' : '#f5ecd7';
+      ctx.font = 'bold 18px Georgia, serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(label, x + btnW / 2, yPos + btnH / 2 + 1);
+      ctx.restore();
+      return { x: x, y: yPos, w: btnW, h: btnH };
+    };
+
+    hud.zoomIn = drawBtn(y, '+', zoomLevel >= 3);
+    y += btnH + 6;
+    hud.zoomOut = drawBtn(y, '−', zoomLevel <= 1);
+    y += btnH + 6;
+    // Reset button only visible when zoomed
+    if (zoomLevel > 1.01) {
+      hud.zoomReset = drawBtn(y, '⟲', false);
+      // Smaller font for reset glyph
+      ctx.save();
+      ctx.fillStyle = '#f5ecd7';
+      ctx.font = 'bold 20px Georgia, serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('⟲', x + btnW / 2, y + btnH / 2 + 2);
+      ctx.restore();
+    } else {
+      hud.zoomReset = null;
+    }
+  }
+
   function drawHUD() {
     hud.shootBtn = null;
     hud.powerBar = null;
     hud.spinBall = null;
-    if (!state || state.gamePhase !== 'aiming' || state.turn !== 'player') return;
+    if (!state) return;
+    if (state.gamePhase === 'interstitial' || state.gamePhase === 'matchend') return;
+    if (state.gamePhase !== 'aiming' || state.turn !== 'player') return;
     if (state.showCallPocket || state.ballInHand) return;
 
     const W = canvas.width;
@@ -1264,7 +2191,27 @@
 
   function onPointerDown(e) {
     if (e.cancelable) e.preventDefault();
+    unlockAudio();  // mobile audio unlock
+
+    // Pinch detection (two touches)
+    if (e.touches && e.touches.length === 2) {
+      beginPinch(e);
+      return;
+    }
+
     const p = getEventPoint(e);
+
+    // Zoom buttons — only during active game play, not during menu/interstitial/matchend
+    const inPlay = state && !formatSelectActive && !modeSelectActive &&
+                   state.gamePhase !== 'interstitial' && state.gamePhase !== 'matchend';
+    if (inPlay) {
+      if (hitRect(p.x, p.y, hud.zoomIn))    { applyZoom(zoomLevel * 1.4); return; }
+      if (hitRect(p.x, p.y, hud.zoomOut))   { applyZoom(zoomLevel / 1.4); return; }
+      if (hitRect(p.x, p.y, hud.zoomReset)) { applyZoom(1); panTX = TABLE_W / 2; panTY = TABLE_H / 2; return; }
+    } else {
+      // Clear stale regions so they can't intercept taps on overlay screens
+      hud.zoomIn = null; hud.zoomOut = null; hud.zoomReset = null;
+    }
 
     if (modeSelectActive) {
       if (!modeSelectRegions) return;
@@ -1273,14 +2220,63 @@
         newGame('solo');
       } else if (hitRect(p.x, p.y, modeSelectRegions.vs)) {
         modeSelectActive = false;
-        newGame('vs');
+        formatSelectActive = true;
       } else if (hitRect(p.x, p.y, modeSelectRegions.exit)) {
         closeBilliards();
       }
       return;
     }
 
+    if (formatSelectActive) {
+      if (!formatSelectRegions) return;
+      if (hitRect(p.x, p.y, formatSelectRegions.bo3)) {
+        formatSelectActive = false;
+        newMatch(3);
+        newGame('vs');
+      } else if (hitRect(p.x, p.y, formatSelectRegions.bo5)) {
+        formatSelectActive = false;
+        newMatch(5);
+        newGame('vs');
+      } else if (hitRect(p.x, p.y, formatSelectRegions.bo7)) {
+        formatSelectActive = false;
+        newMatch(7);
+        newGame('vs');
+      } else if (hitRect(p.x, p.y, formatSelectRegions.back)) {
+        formatSelectActive = false;
+        modeSelectActive = true;
+      }
+      return;
+    }
+
     if (!state) return;
+
+    // Interstitial — tap to continue
+    if (state.gamePhase === 'interstitial' && match && match.showInterstitial) {
+      if (interstitialRegions && hitRect(p.x, p.y, interstitialRegions.continue)) {
+        startNextFrame();
+        return;
+      }
+      // Any tap outside the Continue button just continues too
+      startNextFrame();
+      return;
+    }
+
+    // Match end — tap to return to menu
+    if (state.gamePhase === 'matchend') {
+      if (matchEndRegions && hitRect(p.x, p.y, matchEndRegions.menu)) {
+        state = null;
+        match = null;
+        modeSelectActive = true;
+        return;
+      }
+      if (matchEndRegions && hitRect(p.x, p.y, matchEndRegions.rematch)) {
+        const fmt = match.format;
+        newMatch(fmt);
+        newGame('vs');
+        return;
+      }
+      return;
+    }
 
     if (state.gamePhase === 'gameover') {
       newGame(state.mode);
@@ -1327,6 +2323,10 @@
     }
 
     if (state.gamePhase === 'aiming' && state.turn === 'player' && !state.ballInHand) {
+      // Don't change aim if tap is on zoom buttons (already handled earlier)
+      if (hitRect(p.x, p.y, hud.zoomIn)) return;
+      if (hitRect(p.x, p.y, hud.zoomOut)) return;
+      if (hitRect(p.x, p.y, hud.zoomReset)) return;
       const tp = screenToTable(p.x, p.y);
       state.aimX = tp.x;
       state.aimY = tp.y;
@@ -1335,6 +2335,12 @@
 
   function onPointerMove(e) {
     if (!state) return;
+    // Pinch update
+    if (e.touches && e.touches.length === 2 && pinchStartDist > 0) {
+      if (e.cancelable) e.preventDefault();
+      updatePinch(e);
+      return;
+    }
     if (e.cancelable && (powerDragging || spinDragging)) e.preventDefault();
     const p = getEventPoint(e);
 
@@ -1346,6 +2352,9 @@
       if (hitRect(p.x, p.y, hud.shootBtn)) return;
       if (hitRect(p.x, p.y, hud.powerBar)) return;
       if (hitCircle(p.x, p.y, hud.spinBall)) return;
+      if (hitRect(p.x, p.y, hud.zoomIn)) return;
+      if (hitRect(p.x, p.y, hud.zoomOut)) return;
+      if (hitRect(p.x, p.y, hud.zoomReset)) return;
       if (hud.dialogueBox && hitRect(p.x, p.y, hud.dialogueBox)) return;
       const tp = screenToTable(p.x, p.y);
       state.aimX = tp.x;
@@ -1356,6 +2365,52 @@
   function onPointerUp() {
     powerDragging = false;
     spinDragging = false;
+    pinchStartDist = 0;
+    pinchCenterTable = null;
+  }
+
+  // ---------- Zoom / pan helpers ------------------------------------------
+  function applyZoom(newZoom) {
+    zoomLevel = Math.max(1, Math.min(3, newZoom));
+    if (zoomLevel <= 1.01) {
+      // Snap to center when fully zoomed out
+      panTX = TABLE_W / 2;
+      panTY = TABLE_H / 2;
+    } else if (state) {
+      // Center on cue ball when zooming in from 1x
+      const cue = state.balls[0];
+      if (cue && cue.inPlay) {
+        panTX = cue.x;
+        panTY = cue.y;
+      }
+    }
+  }
+
+  function beginPinch(e) {
+    const t1 = e.touches[0], t2 = e.touches[1];
+    pinchStartDist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+    pinchStartZoom = zoomLevel;
+    // Compute table-space point at pinch midpoint
+    const rect = canvas.getBoundingClientRect();
+    const cx = (t1.clientX + t2.clientX) / 2;
+    const cy = (t1.clientY + t2.clientY) / 2;
+    const sx = (cx - rect.left) * (canvas.width / rect.width);
+    const sy = (cy - rect.top) * (canvas.height / rect.height);
+    pinchCenterTable = screenToTable(sx, sy);
+    // Cancel drags
+    powerDragging = false;
+    spinDragging = false;
+  }
+
+  function updatePinch(e) {
+    if (!pinchStartDist || !pinchCenterTable) return;
+    const t1 = e.touches[0], t2 = e.touches[1];
+    const d = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+    const newZoom = Math.max(1, Math.min(3, pinchStartZoom * (d / pinchStartDist)));
+    zoomLevel = newZoom;
+    // Keep the table-space point under the finger midpoint stable
+    panTX = pinchCenterTable.x;
+    panTY = pinchCenterTable.y;
   }
 
   function updatePowerFromX(x) {
@@ -1459,13 +2514,297 @@
     };
   }
 
+  function drawFormatSelect() {
+    if (!ctx || !canvas) return;
+    const W = canvas.width;
+    const H = canvas.height;
+    ctx.clearRect(0, 0, W, H);
+    const g = ctx.createRadialGradient(W/2, H/2, 40, W/2, H/2, Math.max(W, H));
+    g.addColorStop(0, '#2a1206');
+    g.addColorStop(1, '#0a0503');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+
+    ctx.fillStyle = '#ebdab3';
+    ctx.textAlign = 'center';
+    ctx.font = 'italic bold 20px Georgia, serif';
+    const titleY = Math.max(60, H * 0.14);
+    ctx.fillText('CHOOSE YOUR STAKES', W / 2, titleY);
+    ctx.font = 'italic 12px Georgia, serif';
+    ctx.fillStyle = '#c9b98a';
+    let tagY = titleY + 26;
+    const lines = wrapText('Alistair will remember what you taught him. Choose carefully.', W - 40);
+    for (const l of lines) { ctx.fillText(l, W / 2, tagY); tagY += 16; }
+
+    const cw = Math.min(320, W - 40);
+    const cx = W / 2 - cw / 2;
+    const btnH = 64;
+    const gap = 12;
+    const backH = 40;
+    const totalH = btnH * 3 + gap * 3 + backH;
+    const availTop = tagY + 20;
+    const availH = H - 30 - availTop;
+    let y = availH > totalH ? availTop + (availH - totalH) / 2 : availTop;
+
+    const drawFormatBtn = (yy, title, subtitle) => {
+      ctx.fillStyle = '#4a1808';
+      roundRect(ctx, cx, yy, cw, btnH, 8);
+      ctx.fill();
+      ctx.strokeStyle = '#d9a679';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.fillStyle = '#f5ecd7';
+      ctx.font = 'bold 15px Georgia, serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(title, W / 2, yy + 26);
+      ctx.fillStyle = '#c9b98a';
+      ctx.font = 'italic 11px Georgia, serif';
+      ctx.fillText(subtitle, W / 2, yy + 46);
+      return { x: cx, y: yy, w: cw, h: btnH };
+    };
+
+    const bo3 = drawFormatBtn(y, 'BEST OF 3', 'First to 2 frames. Quick.');
+    y += btnH + gap;
+    const bo5 = drawFormatBtn(y, 'BEST OF 5', 'First to 3 frames. The proper match.');
+    y += btnH + gap;
+    const bo7 = drawFormatBtn(y, 'BEST OF 7', 'First to 4 frames. Test of endurance.');
+    y += btnH + gap;
+
+    ctx.strokeStyle = '#8a6b2e';
+    ctx.strokeRect(cx, y, cw, backH);
+    ctx.fillStyle = '#c9b98a';
+    ctx.font = '12px Georgia, serif';
+    ctx.fillText('← BACK', W / 2, y + backH / 2 + 4);
+
+    formatSelectRegions = {
+      bo3: bo3, bo5: bo5, bo7: bo7,
+      back: { x: cx, y: y, w: cw, h: backH }
+    };
+  }
+
+  function drawInterstitial() {
+    if (!ctx || !canvas || !match) return;
+    const W = canvas.width;
+    const H = canvas.height;
+    ctx.clearRect(0, 0, W, H);
+    const g = ctx.createRadialGradient(W/2, H/2, 40, W/2, H/2, Math.max(W, H));
+    g.addColorStop(0, '#2a1206');
+    g.addColorStop(1, '#0a0503');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+
+    ctx.fillStyle = '#ebdab3';
+    ctx.textAlign = 'center';
+    ctx.font = 'italic bold 18px Georgia, serif';
+    const titleY = Math.max(50, H * 0.10);
+    ctx.fillText('BETWEEN FRAMES', W / 2, titleY);
+
+    // Score display
+    ctx.font = 'bold 36px Georgia, serif';
+    ctx.fillStyle = '#f5ecd7';
+    ctx.fillText(match.playerFrames + '   —   ' + match.alistairFrames, W / 2, titleY + 54);
+    ctx.font = 'italic 11px Georgia, serif';
+    ctx.fillStyle = '#c9b98a';
+    ctx.fillText('YOU         ALISTAIR', W / 2, titleY + 74);
+
+    // Format label
+    ctx.font = '12px Georgia, serif';
+    ctx.fillStyle = '#8a6b2e';
+    const needed = match.toWin;
+    const tail = 'Best of ' + match.format + ' — first to ' + needed;
+    ctx.fillText(tail, W / 2, titleY + 92);
+
+    // "Alistair's notes on you"
+    const notesTop = titleY + 120;
+    ctx.font = 'italic bold 13px Georgia, serif';
+    ctx.fillStyle = '#d9a679';
+    ctx.fillText("ALISTAIR'S NOTES ON YOU", W / 2, notesTop);
+
+    ctx.font = '12px Georgia, serif';
+    ctx.fillStyle = '#e8dcc3';
+    ctx.textAlign = 'left';
+    const notes = match.interstitialNotes || [];
+    const padX = 22;
+    let ny = notesTop + 22;
+    const maxW = W - padX * 2;
+    for (const note of notes.slice(0, 6)) {
+      const wrapped = wrapText(note, maxW);
+      for (const l of wrapped) {
+        ctx.fillText(l, padX, ny);
+        ny += 16;
+      }
+      ny += 4;
+    }
+
+    // Psych meter — Alistair's confidence bar
+    const meterY = Math.min(H - 110, ny + 16);
+    ctx.textAlign = 'center';
+    ctx.font = 'italic 11px Georgia, serif';
+    ctx.fillStyle = '#8a6b2e';
+    ctx.fillText('ALISTAIR\'S COMPOSURE', W / 2, meterY);
+    const mw = Math.min(260, W - 60);
+    const mx = W / 2 - mw / 2;
+    const my = meterY + 8;
+    const mh = 10;
+    ctx.fillStyle = 'rgba(0,0,0,0.6)';
+    ctx.fillRect(mx, my, mw, mh);
+    const conf = match.confidence;
+    const fill = mw * conf;
+    const gradM = ctx.createLinearGradient(mx, 0, mx + mw, 0);
+    gradM.addColorStop(0, '#c0392b');
+    gradM.addColorStop(1, '#f7c948');
+    ctx.fillStyle = gradM;
+    ctx.fillRect(mx, my, fill, mh);
+    ctx.strokeStyle = '#8a6b2e';
+    ctx.strokeRect(mx, my, mw, mh);
+
+    // Continue button
+    const contW = Math.min(220, W - 40);
+    const contH = 48;
+    const contX = W / 2 - contW / 2;
+    const contY = H - 80;
+    ctx.fillStyle = '#4a1808';
+    roundRect(ctx, contX, contY, contW, contH, 6);
+    ctx.fill();
+    ctx.strokeStyle = '#d9a679';
+    ctx.stroke();
+    ctx.fillStyle = '#f5ecd7';
+    ctx.font = 'bold 14px Georgia, serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('RACK THE NEXT FRAME', W / 2, contY + contH / 2);
+
+    // Breaker indicator
+    ctx.font = 'italic 11px Georgia, serif';
+    ctx.fillStyle = '#c9b98a';
+    ctx.textBaseline = 'alphabetic';
+    const breakLabel = match.nextBreaker === 'player' ? 'You break' : 'Alistair breaks';
+    ctx.fillText(breakLabel, W / 2, contY - 8);
+
+    interstitialRegions = { continue: { x: contX, y: contY, w: contW, h: contH } };
+  }
+
+  function drawMatchEnd() {
+    if (!ctx || !canvas || !match) return;
+    const W = canvas.width;
+    const H = canvas.height;
+    ctx.clearRect(0, 0, W, H);
+    const g = ctx.createRadialGradient(W/2, H/2, 40, W/2, H/2, Math.max(W, H));
+    g.addColorStop(0, '#2a1206');
+    g.addColorStop(1, '#050201');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+
+    const playerWon = match.playerFrames > match.alistairFrames;
+    ctx.fillStyle = playerWon ? '#f7c948' : '#ebdab3';
+    ctx.textAlign = 'center';
+    ctx.font = 'italic bold 26px Georgia, serif';
+    const titleY = Math.max(60, H * 0.14);
+    ctx.fillText(playerWon ? 'YOU WON THE MATCH' : 'ALISTAIR WINS', W / 2, titleY);
+
+    // Final score
+    ctx.font = 'bold 44px Georgia, serif';
+    ctx.fillStyle = '#f5ecd7';
+    ctx.fillText(match.playerFrames + '  —  ' + match.alistairFrames, W / 2, titleY + 64);
+
+    // Final stats
+    const d = match.dossier;
+    const potRate = d.shotsTaken ? (d.shotsPotted / d.shotsTaken * 100) | 0 : 0;
+    const avgPower = d.shotsTaken ? (d.totalPower / d.shotsTaken * 100) | 0 : 0;
+    ctx.font = '12px Georgia, serif';
+    ctx.fillStyle = '#c9b98a';
+    let sy = titleY + 108;
+    ctx.textAlign = 'left';
+    const padX = 32;
+    const stats = [
+      'YOUR FINAL LINE',
+      '  Pot rate:     ' + potRate + '%',
+      '  Scratches:   ' + d.scratches,
+      '  Avg power:   ' + avgPower + '%',
+      '  Hard shots:  ' + d.hardPots + ' attempted',
+      '  Cuts / straights:  ' + d.cutShots + ' / ' + d.straightShots,
+      '  Safeties by Alistair:  ' + d.safetiesPlayed
+    ];
+    for (const s of stats) {
+      if (s.indexOf('YOUR') === 0) { ctx.fillStyle = '#d9a679'; ctx.font = 'italic bold 12px Georgia, serif'; }
+      else { ctx.fillStyle = '#e8dcc3'; ctx.font = '12px Georgia, serif'; }
+      ctx.fillText(s, padX, sy);
+      sy += 18;
+    }
+    sy += 10;
+
+    // Alistair's closing note
+    ctx.fillStyle = '#d9a679';
+    ctx.font = 'italic bold 12px Georgia, serif';
+    ctx.fillText("ALISTAIR'S READ", padX, sy);
+    sy += 18;
+    ctx.fillStyle = '#e8dcc3';
+    ctx.font = 'italic 12px Georgia, serif';
+    const notes = generateNotes().slice(0, 3);
+    const maxW = W - padX * 2;
+    for (const note of notes) {
+      const lines = wrapText(note, maxW);
+      for (const l of lines) {
+        ctx.fillText(l, padX, sy);
+        sy += 16;
+      }
+      sy += 4;
+    }
+
+    // Buttons
+    const bw = Math.min(160, (W - 60) / 2);
+    const bh = 44;
+    const gap = 16;
+    const totalW = bw * 2 + gap;
+    const bx0 = W / 2 - totalW / 2;
+    const by = H - bh - 20;
+
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#4a1808';
+    roundRect(ctx, bx0, by, bw, bh, 6);
+    ctx.fill();
+    ctx.strokeStyle = '#d9a679';
+    ctx.stroke();
+    ctx.fillStyle = '#f5ecd7';
+    ctx.font = 'bold 13px Georgia, serif';
+    ctx.fillText('REMATCH', bx0 + bw / 2, by + bh / 2);
+
+    const bx1 = bx0 + bw + gap;
+    ctx.fillStyle = '#2a1206';
+    roundRect(ctx, bx1, by, bw, bh, 6);
+    ctx.fill();
+    ctx.strokeStyle = '#8a6b2e';
+    ctx.stroke();
+    ctx.fillStyle = '#c9b98a';
+    ctx.fillText('MAIN MENU', bx1 + bw / 2, by + bh / 2);
+
+    matchEndRegions = {
+      rematch: { x: bx0, y: by, w: bw, h: bh },
+      menu:    { x: bx1, y: by, w: bw, h: bh }
+    };
+  }
+
   // ---------- Loop ---------------------------------------------------------
   function loop() {
     if (!canvas) return;
     if (modeSelectActive) {
       drawModeSelect();
+    } else if (formatSelectActive) {
+      drawFormatSelect();
+    } else if (state && state.gamePhase === 'interstitial') {
+      drawInterstitial();
+    } else if (state && state.gamePhase === 'matchend') {
+      drawMatchEnd();
     } else if (state) {
       if (state.gamePhase === 'simulating') step();
+      // Watchdog: if Alistair's turn has been pending too long, kick it
+      if (state.mode === 'vs' && state.turn === 'alistair' &&
+          state.gamePhase === 'aiming' && state._alistairTurnStart &&
+          performance.now() - state._alistairTurnStart > 4000) {
+        state._alistairTurnStart = 0;
+        alistairMove();
+      }
       render();
     }
     rafId = requestAnimationFrame(loop);
