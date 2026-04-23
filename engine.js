@@ -49,7 +49,7 @@ const FIXED_TRUTH = {
 // ── ACCUSABLE CHARACTERS ───────────────────────────────────
 const ACCUSABLE_CHARACTERS = [
   "pemberton-hale", "steward", "crane",
-  "baron", "surgeon", "northcott"
+  "baron", "surgeon", "northcott", "ashworth"
 ];
 
 // ── GAME SETTINGS ──────────────────────────────────────────

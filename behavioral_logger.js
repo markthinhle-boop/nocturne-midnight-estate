@@ -93,6 +93,19 @@ const INFORMATION_NODES = {
   'ashworth_died_801':                { category: 'times',     weight: 1.5, event: 'ballroom_visited',                  display: '8:01PM -- Lord Ashworth found dead at the lectern',           accusation_target: null       },
   'greaves_library_700':              { category: 'times',     weight: 1.5, event: 'greaves_q1_answered',               display: '7:00PM -- Greaves locked Library door, remained until Gavel', accusation_target: null       },
 
+  // ── TIMELINE SPINE NODES — core conviction gates (one per suspect per pedestal) ─
+  // These are the true-timeline nodes that REQUIRED_EVIDENCE and TIMELINES gate on.
+  // Missing display metadata here = blank FBI board entry when player marks them.
+  'surgeon_admits_balcony_level':     { category: 'people',    weight: 1.5, event: 'surgeon_q5_answered',                display: 'Surgeon admits being at balcony level before assembly',       accusation_target: 'surgeon'  },
+  'vivienne_push_witnessed':          { category: 'actions',   weight: 1.5, event: 'vivienne_branch_c_answered',         display: 'Vivienne saw one man push another from the balcony -- 7:45PM',accusation_target: 'surgeon'  },
+  'crane_first_visit_ashworth_alive': { category: 'people',    weight: 1.3, event: 'crane_q3_answered',                  display: 'Crane confirms Ashworth alive, floor clear at 7:05PM',        accusation_target: 'crane'    },
+  'crane_said_nothing_after_discovery':{ category: 'actions',   weight: 1.3, event: 'crane_q7_answered',                 display: "Crane found Surgeon's mask at 8:01PM -- said nothing",       accusation_target: 'crane'    },
+  'crane_two_reasons':                { category: 'people',    weight: 1.3, event: 'crane_branch_b_cb3_answered',        display: 'Crane built the plan -- Surgeon used it -- neither told the other', accusation_target: 'crane'    },
+  'ph_altered_register_for_clause_not_self':{ category: 'actions', weight: 1.3, event: 'ph_branch_a_pa3_answered',        display: 'PH altered Register to protect immunity clause -- not self',  accusation_target: 'pemberton-hale' },
+  'steward_route_past_physicians_room':{ category: 'people',   weight: 1.0, event: 'baron_branch_b_bb2_answered',        display: 'Steward never takes route past Physicians Room -- tonight he did', accusation_target: 'steward'  },
+  'northcott_two_absences':           { category: 'actions',   weight: 1.3, event: 'northcott_q10_answered',             display: 'Northcott absent from post twice -- 7:15PM and 7:55PM',      accusation_target: 'northcott'},
+  'surgeon_contact_refused':          { category: 'actions',   weight: 1.3, event: 'surgeon_branch_a_sa3_answered',      display: 'Surgeon refused contact at cottage at 7:35PM -- first "no"',  accusation_target: 'surgeon'  },
+
   // ── SURFACE LIE NODES — stated false timelines (phase 1 board) ───────────
   'surgeon_claims_745_assembly':      { category: 'times',     weight: 0.8, event: 'surgeon_q9_answered',                display: 'Surgeon claims 7:45PM -- entered Ballroom with assembly',     accusation_target: null       },
   'crane_claims_801_arrival':         { category: 'times',     weight: 0.8, event: 'crane_q1_answered',                  display: 'Crane claims 8:01PM -- called after body found',             accusation_target: null       },
