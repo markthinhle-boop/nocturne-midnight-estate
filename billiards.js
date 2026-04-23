@@ -450,26 +450,11 @@
 
   // ---------- Module state -------------------------------------------------
   let state = null;
-  let canvas = null;
-  let ctx = null;
-  let modal = null;
-  let rafId = null;
   let shotStartTime = 0;
+  // canvas, ctx, modal, rafId declared in v2 rendering section below
 
-  // Layout
-  let viewMode = 'landscape';  // 'landscape' | 'portrait'
-  let tableScale = 1;       // base fit-to-screen scale
-  let tableOffsetX = 0;
-  let tableOffsetY = 0;
-  // User-controlled zoom (1.0 = fit, max 3.0), pan in table-space units
-  let zoomLevel = 1;
-  let panTX = 0;             // pan center in table space X
-  let panTY = 0;             // pan center in table space Y
-  let panInitialized = false;
-  // Pinch state
-  let pinchStartDist = 0;
-  let pinchStartZoom = 1;
-  let pinchCenterTable = null;  // table-space center point at pinch start
+  // Layout state (3D perspective) — computed per frame in render()
+  // Populated with: cornerScreen[4], tableScale, perspectiveM, inversePerspectiveM
 
   // ---------- Match & psychology ------------------------------------------
   // match lives across multiple frames. state is one frame.
@@ -766,11 +751,6 @@
     state.balls[0].x = PLAY_X0 + PLAY_W * 0.25;
     state.balls[0].y = TABLE_H / 2;
     if (mode === 'vs') setTimeout(() => say('preMatch'), 150);
-    // Reset zoom/pan on new game
-    zoomLevel = 1;
-    panTX = TABLE_W / 2;
-    panTY = TABLE_H / 2;
-    panInitialized = true;
   }
 
   function makeRack() {
@@ -1189,11 +1169,6 @@
     state.balls[0].x = PLAY_X0 + PLAY_W * 0.25;
     state.balls[0].y = TABLE_H / 2;
 
-    // Reset zoom for new frame
-    zoomLevel = 1;
-    panTX = TABLE_W / 2;
-    panTY = TABLE_H / 2;
-
     // If Alistair breaks, schedule his move
     if (breaker === 'alistair') {
       state._alistairTurnStart = performance.now();
@@ -1488,664 +1463,697 @@
     state.dialogueTimer = 320;
   }
 
-  // ---------- Coordinate mapping ------------------------------------------
-  // Portrait mode: table rotated 90° CCW.
-  //   Table-space (tx, ty) → screen (sx, sy):
-  //     sx = offsetX + ty * scale
-  //     sy = offsetY + (TABLE_W - tx) * scale    (table x-axis runs upward on screen)
-  //   Screen (sx, sy) → table (tx, ty):
-  //     ty = (sx - offsetX) / scale
-  //     tx = TABLE_W - (sy - offsetY) / scale
-  function computeLayout() {
+  // ==========================================================================
+  // v2 RENDERING + INPUT — pseudo-3D table, drag-cue-ball aiming, large balls
+  // ==========================================================================
+
+  // ---------- 3D Projection ------------------------------------------------
+  // We place the table in a world coordinate system with origin at table center,
+  // table lying in the XZ plane (Y is up). The camera sits in front of and above
+  // the table, looking down at a ~25° tilt, and projects to screen.
+  //
+  // World: table spans x ∈ [-TW/2..+TW/2], z ∈ [-TH/2..+TH/2], Y=0 (surface)
+  // Where TW = TABLE_W, TH = TABLE_H (internal units)
+  //
+  // Projection params updated per frame in computeLayout3D():
+  //   cam.tiltRad, cam.eyeHeight, cam.distance, cam.focal, cam.screenCx, cam.screenCy
+
+  const cam = {
+    tiltRad: 0,        // table tilted back around world X axis
+    eyeHeight: 0,      // camera height above table center (world Y)
+    distance: 0,       // camera Z distance from table center
+    focal: 0,          // focal length for perspective projection
+    screenCx: 0,       // screen center X
+    screenCy: 0,       // screen center Y
+    scale: 1           // master scale for all screen output
+  };
+
+  // Table corners in world space: [-TW/2, 0, +TH/2] (front-left near camera), etc.
+  // After projection, these 4 corners define the on-screen trapezoid.
+
+  // Project world (wx, wy, wz) → screen (sx, sy). wy=0 for ball/pocket positions.
+  function projectWorld(wx, wy, wz) {
+    // 1. Rotate around world X axis by tiltRad (tilt the table back)
+    //    Input: (wx, wy, wz). After tilt: y' = wy*cos - wz*sin, z' = wy*sin + wz*cos
+    const c = Math.cos(cam.tiltRad), s = Math.sin(cam.tiltRad);
+    const ry = wy * c - wz * s;
+    const rz = wy * s + wz * c;
+    // 2. Translate so camera sits at origin, looking down +Z: camera is at (0, eyeHeight, -distance)
+    //    So in camera frame: x_c = wx, y_c = ry - eyeHeight, z_c = rz + distance
+    const xc = wx;
+    const yc = ry - cam.eyeHeight;
+    const zc = rz + cam.distance;
+    // 3. Perspective projection
+    const f = cam.focal / Math.max(0.0001, zc);
+    const sx = cam.screenCx + xc * f;
+    const sy = cam.screenCy + yc * f;
+    return { x: sx, y: sy, depth: zc, scale: f };
+  }
+
+  // Table-space (tx, ty) — game coordinates where tx∈[0,TABLE_W], ty∈[0,TABLE_H]
+  // — mapped to world (wx, 0, wz).
+  function tableToWorld(tx, ty) {
+    // Table center is at world origin.
+    return { x: tx - TABLE_W / 2, y: 0, z: ty - TABLE_H / 2 };
+  }
+
+  // Inverse mapping: screen pixel → table coordinate (for input).
+  // We ray-cast from camera through the screen point, intersect with table plane (y=0).
+  function screenToTable(sx, sy) {
+    // Undo the screen-space translation/scale
+    const xc_over_f = (sx - cam.screenCx);  // = xc * f, so xc/zc = this / cam.focal
+    const yc_over_f = (sy - cam.screenCy);
+    // Ray direction in camera frame: (xc_over_f/focal, yc_over_f/focal, 1)
+    const rdx = xc_over_f / cam.focal;
+    const rdy = yc_over_f / cam.focal;
+    const rdz = 1;
+    // Camera origin in camera frame is (0,0,0); ray = origin + t*dir.
+    // In world frame (before camera translation): camera was at (0, eyeHeight, -distance).
+    // A point P_cam = (xc, yc, zc) corresponds to P_world_tilted = (xc, yc + eyeHeight, zc - distance)
+    // Then un-tilt: P_world = rotateX(-tiltRad) * P_world_tilted
+    // We want to find t such that the resulting world Y = 0.
+    //
+    // Simplification: walk along the ray and pick t where un-tilted y = 0.
+    // Let P(t) = (rdx*t, rdy*t + eyeHeight, rdz*t - distance) (in pre-tilt world frame)
+    // Un-tilt: world_y = (rdy*t + eyeHeight) * cos(tiltRad) - (rdz*t - distance) * (-sin(tiltRad))
+    //                  = (rdy*t + eyeHeight) * cos + (rdz*t - distance) * sin
+    // Wait — rotation was applied IN projection, so undo it in reverse order:
+    //   projected went: world → tilt → translate. Inverse: translate back → un-tilt.
+    //
+    // Actually simplest: compute world_y as a linear function of t, solve for t where it = 0.
+    // In camera frame P = (rdx*t, rdy*t, rdz*t). Add camera position in world-tilted: (0, eyeHeight, -distance)
+    //   P_tilted_world = (rdx*t, rdy*t + eyeHeight, rdz*t - distance)
+    // Un-tilt (rotate by -tiltRad around X): y_world = y_tilted*cos + z_tilted*sin
+    //                                         z_world = -y_tilted*sin + z_tilted*cos
+    // Solve y_world = 0:
+    //   (rdy*t + eyeHeight) * cos(tilt) + (rdz*t - distance) * sin(tilt) = 0
+    //   t * (rdy*cos + rdz*sin) = -eyeHeight*cos + distance*sin
+    //   t = (distance*sin - eyeHeight*cos) / (rdy*cos + rdz*sin)
+    const c = Math.cos(cam.tiltRad), s = Math.sin(cam.tiltRad);
+    const denom = rdy * c + rdz * s;
+    if (Math.abs(denom) < 1e-6) return { x: -1, y: -1 };
+    const t = (cam.distance * s - cam.eyeHeight * c) / denom;
+    if (t <= 0) return { x: -1, y: -1 };
+    // Compute world point
+    const xt = rdx * t;
+    const yt = rdy * t + cam.eyeHeight;
+    const zt = rdz * t - cam.distance;
+    const worldZ = -yt * s + zt * c;
+    // Now worldX = xt (rotation around X doesn't change X), worldZ as above
+    const worldX = xt;
+    // Convert back to table coords
+    const tx = worldX + TABLE_W / 2;
+    const ty = worldZ + TABLE_H / 2;
+    return { x: tx, y: ty };
+  }
+
+  function computeLayout3D() {
     const W = canvas.width;
     const H = canvas.height;
-    const topPad = 8;
-    const bottomPad = 180;
-    const sidePad = 8;
-    const availW = W - sidePad * 2;
-    const availH = H - topPad - bottomPad;
-    // View region center on screen
-    const viewCx = W / 2;
-    const viewCy = topPad + availH / 2;
+    // Reserve: top 80 for dialogue/score, bottom 120 for controls, small side padding.
+    const topReserve = 80;
+    const bottomReserve = 120;
+    const availW = W - 24;
+    const availH = H - topReserve - bottomReserve;
 
-    let baseScale;
-    if (W >= H) {
-      viewMode = 'landscape';
-      baseScale = Math.min(availW / TABLE_W, availH / TABLE_H);
-    } else {
-      viewMode = 'portrait';
-      baseScale = Math.min(availW / TABLE_H, availH / TABLE_W);
-    }
+    // Pick a tilt and distance that make the table fill the available area.
+    // Tilt angle (stronger on portrait, lighter on landscape so you don't see too much rail).
+    const portrait = H > W;
+    cam.tiltRad = portrait ? (28 * Math.PI / 180) : (22 * Math.PI / 180);
 
-    if (!panInitialized) {
-      panTX = TABLE_W / 2;
-      panTY = TABLE_H / 2;
-      panInitialized = true;
-    }
+    // Camera looks at the center of the table. Place camera so the projected
+    // table roughly fits availW × availH.
+    // Simple approach: pick a "scale" such that TABLE_W fits in availW at the far edge.
+    // Perspective makes far edge slightly narrower; we want near edge ≤ availW.
+    // Use a heuristic: baseScale = availW / TABLE_W * 0.95
+    const baseScale = Math.min(availW / TABLE_W, availH / (TABLE_H * Math.cos(cam.tiltRad)));
+    // Focal length controls perspective strength. Higher focal = less exaggerated.
+    cam.focal = 900;
+    // Distance: derived from focal so that a 1-unit-wide object at table center
+    // projects at baseScale pixels wide.
+    //   screen_width_at_z = focal / z; want this to equal baseScale
+    //   z = focal / baseScale  (this is the Z of the table center in camera frame)
+    cam.distance = cam.focal / baseScale;
+    // Eye height: raise camera so tilt shows the top rail. Rough rule: h = tan(tilt) * distance * 0.25
+    cam.eyeHeight = cam.distance * Math.tan(cam.tiltRad) * 0.25;
 
-    // Effective scale applies user zoom on top of fit-to-screen
-    tableScale = baseScale * zoomLevel;
-
-    // Compute offsets so that (panTX, panTY) in table-space maps to viewCenter on screen
-    if (viewMode === 'landscape') {
-      tableOffsetX = viewCx - panTX * tableScale;
-      tableOffsetY = viewCy - panTY * tableScale;
-    } else {
-      // In portrait, the rotation maps table(tx,ty) -> screen(ox + ty*s, oy + (TABLE_W-tx)*s)
-      // Solving for offsets so that (panTX, panTY) -> (viewCx, viewCy):
-      //   viewCx = tableOffsetX + panTY * tableScale
-      //   viewCy = tableOffsetY + (TABLE_W - panTX) * tableScale
-      tableOffsetX = viewCx - panTY * tableScale;
-      tableOffsetY = viewCy - (TABLE_W - panTX) * tableScale;
-    }
-
-    // Clamp pan so the table can't leave the visible region entirely
-    clampPan(availW, availH, viewCx, viewCy);
+    // Screen center — biased slightly downward because we reserve top space for UI
+    cam.screenCx = W / 2;
+    cam.screenCy = topReserve + availH / 2;
+    cam.scale = baseScale;
   }
 
-  function clampPan(availW, availH, viewCx, viewCy) {
-    // Keep at least ~30% of the table visible by limiting how far panCenter can move
-    // away from the true table center (TABLE_W/2, TABLE_H/2).
-    // Allowable movement range depends on zoomLevel: more zoom = more allowable pan.
-    const maxOffsetX = (TABLE_W / 2) * (1 - 1 / zoomLevel) + 40;
-    const maxOffsetY = (TABLE_H / 2) * (1 - 1 / zoomLevel) + 40;
-    panTX = Math.max(TABLE_W / 2 - maxOffsetX, Math.min(TABLE_W / 2 + maxOffsetX, panTX));
-    panTY = Math.max(TABLE_H / 2 - maxOffsetY, Math.min(TABLE_H / 2 + maxOffsetY, panTY));
-    // Recompute offsets after clamp
-    if (viewMode === 'landscape') {
-      tableOffsetX = viewCx - panTX * tableScale;
-      tableOffsetY = viewCy - panTY * tableScale;
-    } else {
-      tableOffsetX = viewCx - panTY * tableScale;
-      tableOffsetY = viewCy - (TABLE_W - panTX) * tableScale;
-    }
-  }
+  // ---------- Rendering ----------------------------------------------------
 
-  function screenToTable(sx, sy) {
-    if (viewMode === 'landscape') {
-      return {
-        x: (sx - tableOffsetX) / tableScale,
-        y: (sy - tableOffsetY) / tableScale
-      };
-    }
-    return {
-      x: TABLE_W - (sy - tableOffsetY) / tableScale,
-      y: (sx - tableOffsetX) / tableScale
-    };
-  }
-
-  function tableToScreen(tx, ty) {
-    if (viewMode === 'landscape') {
-      return { x: tableOffsetX + tx * tableScale, y: tableOffsetY + ty * tableScale };
-    }
-    return { x: tableOffsetX + ty * tableScale, y: tableOffsetY + (TABLE_W - tx) * tableScale };
-  }
-
-  // ---------- Render -------------------------------------------------------
   function render() {
     if (!ctx || !state) return;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    computeLayout();
+    const W = canvas.width;
+    const H = canvas.height;
 
-    ctx.save();
-    if (viewMode === 'landscape') {
-      ctx.translate(tableOffsetX, tableOffsetY);
-      ctx.scale(tableScale, tableScale);
-    } else {
-      // Rotate so table-space (0,0) ends up at screen (offsetX + 0*scale, offsetY + TABLE_W*scale)
-      // and table-space (TABLE_W, 0) ends up at screen (offsetX, offsetY)
-      ctx.translate(tableOffsetX, tableOffsetY + TABLE_W * tableScale);
-      ctx.rotate(-Math.PI / 2);
-      ctx.scale(tableScale, tableScale);
-    }
+    // Background — warm candlelit darkness
+    const bg = ctx.createRadialGradient(W/2, H/2, 40, W/2, H/2, Math.max(W, H));
+    bg.addColorStop(0, '#1a0e07');
+    bg.addColorStop(1, '#050201');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, W, H);
 
-    drawTable();
-    drawBalls();
-    drawAim();
-    drawCalledPocket();
+    computeLayout3D();
 
-    ctx.restore();
+    drawTable3D();
+    drawPocketsTop();  // separate pass for pocket dark wells so balls can occlude them properly
+    drawBallShadows();
+    drawBallsSorted();
+    drawAimLine();
+    drawCalledPocketMarker();
 
-    drawOverlay();
-    drawHUD();
+    drawTopBar();
+    drawDialogueBubble();
+    drawControlsBottom();
+    drawCallPocketPrompt();
+    drawGameOverOverlay();
   }
 
-  function drawTable() {
-    // ---- Outer table body shadow (falls onto the floor) ----
+  // Table rendering: a tilted trapezoid in 3D, plus raised rails as thin 3D blocks.
+  function drawTable3D() {
+    // Compute the 4 corners of the playfield in world space (at y=0)
+    const corners = [
+      projectWorld(-TABLE_W/2, 0, -TABLE_H/2),   // far-left  (upper-left on screen)
+      projectWorld( TABLE_W/2, 0, -TABLE_H/2),   // far-right (upper-right)
+      projectWorld( TABLE_W/2, 0,  TABLE_H/2),   // near-right (lower-right)
+      projectWorld(-TABLE_W/2, 0,  TABLE_H/2)    // near-left (lower-left)
+    ];
+
+    // Table body (rails extending down) — draw the side walls for depth.
+    // For simplicity: draw an extruded box beneath the table top.
+    const railHeight = 22;
+    const bottomCorners = [
+      projectWorld(-TABLE_W/2, -railHeight, -TABLE_H/2),
+      projectWorld( TABLE_W/2, -railHeight, -TABLE_H/2),
+      projectWorld( TABLE_W/2, -railHeight,  TABLE_H/2),
+      projectWorld(-TABLE_W/2, -railHeight,  TABLE_H/2)
+    ];
+
+    // Shadow on the ground beneath the table
     ctx.save();
-    ctx.fillStyle = 'rgba(0,0,0,0.55)';
-    ctx.fillRect(-16, TABLE_H - 6, TABLE_W + 32, 28);
-    ctx.restore();
-
-    // ---- Rail / cushion base (deep mahogany) ----
-    // Draw full table block first, then carve out playfield
-    const railGrad = ctx.createLinearGradient(0, 0, 0, TABLE_H);
-    railGrad.addColorStop(0,   '#1a0a03');
-    railGrad.addColorStop(0.3, '#3a1a08');
-    railGrad.addColorStop(0.5, '#4a220c');
-    railGrad.addColorStop(0.7, '#3a1a08');
-    railGrad.addColorStop(1,   '#140703');
-    ctx.fillStyle = railGrad;
-    ctx.fillRect(0, 0, TABLE_W, TABLE_H);
-
-    // Subtle wood grain on rails (horizontal streaks)
-    ctx.save();
-    ctx.globalAlpha = 0.12;
-    ctx.strokeStyle = '#000';
-    ctx.lineWidth = 0.5;
-    for (let i = 0; i < 6; i++) {
-      const yTop = 4 + i * 4;
-      ctx.beginPath();
-      ctx.moveTo(0, yTop);
-      ctx.bezierCurveTo(TABLE_W * 0.3, yTop + (Math.sin(i) * 1.5), TABLE_W * 0.7, yTop - (Math.cos(i) * 1.5), TABLE_W, yTop);
-      ctx.stroke();
-      const yBot = TABLE_H - 4 - i * 4;
-      ctx.beginPath();
-      ctx.moveTo(0, yBot);
-      ctx.bezierCurveTo(TABLE_W * 0.4, yBot + (Math.cos(i) * 1.5), TABLE_W * 0.6, yBot - (Math.sin(i) * 1.5), TABLE_W, yBot);
-      ctx.stroke();
-    }
-    ctx.restore();
-
-    // Rail highlight edges (thin brass/gold trim along inner cushion line)
-    ctx.save();
-    ctx.strokeStyle = 'rgba(180,140,80,0.35)';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(PLAY_X0 - 1, PLAY_Y0 - 1, PLAY_W + 2, PLAY_H + 2);
-    ctx.restore();
-
-    // ---- Playfield: crimson felt with lamp glow ----
-    // Base felt
-    ctx.fillStyle = '#6b1a0c';
-    ctx.fillRect(PLAY_X0, PLAY_Y0, PLAY_W, PLAY_H);
-
-    // Lamp light falloff — centered warm ellipse (the hanging lamp above)
-    const lampGrad = ctx.createRadialGradient(
-      TABLE_W / 2, TABLE_H / 2, 30,
-      TABLE_W / 2, TABLE_H / 2, TABLE_W * 0.55
-    );
-    lampGrad.addColorStop(0,   'rgba(255, 200, 130, 0.32)');
-    lampGrad.addColorStop(0.3, 'rgba(200, 120,  60, 0.15)');
-    lampGrad.addColorStop(0.7, 'rgba(40,  10,   5, 0.25)');
-    lampGrad.addColorStop(1,   'rgba(10,   4,   2, 0.55)');
-    ctx.fillStyle = lampGrad;
-    ctx.fillRect(PLAY_X0, PLAY_Y0, PLAY_W, PLAY_H);
-
-    // Subtle felt grain (two-direction noise via sparse lines)
-    ctx.save();
-    ctx.globalAlpha = 0.05;
-    ctx.strokeStyle = '#2a0a03';
-    ctx.lineWidth = 0.4;
-    for (let y = PLAY_Y0 + 4; y < PLAY_Y1; y += 6) {
-      ctx.beginPath();
-      ctx.moveTo(PLAY_X0, y + Math.sin(y * 0.1) * 0.5);
-      ctx.lineTo(PLAY_X1, y + Math.cos(y * 0.1) * 0.5);
-      ctx.stroke();
-    }
-    ctx.restore();
-
-    // Inner cushion bevel shadow (felt edge drops into cushion)
-    ctx.save();
-    ctx.strokeStyle = 'rgba(0,0,0,0.55)';
-    ctx.lineWidth = 3;
+    ctx.fillStyle = 'rgba(0,0,0,0.5)';
     ctx.beginPath();
-    ctx.moveTo(PLAY_X0, PLAY_Y0);
-    ctx.lineTo(PLAY_X1, PLAY_Y0);
-    ctx.moveTo(PLAY_X0, PLAY_Y1);
-    ctx.lineTo(PLAY_X1, PLAY_Y1);
-    ctx.moveTo(PLAY_X0, PLAY_Y0);
-    ctx.lineTo(PLAY_X0, PLAY_Y1);
-    ctx.moveTo(PLAY_X1, PLAY_Y0);
-    ctx.lineTo(PLAY_X1, PLAY_Y1);
+    ctx.moveTo(bottomCorners[0].x - 14, bottomCorners[0].y + 4);
+    ctx.lineTo(bottomCorners[1].x + 14, bottomCorners[1].y + 4);
+    ctx.lineTo(bottomCorners[2].x + 20, bottomCorners[2].y + 14);
+    ctx.lineTo(bottomCorners[3].x - 20, bottomCorners[3].y + 14);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+
+    // Front rail side (visible as a brown band beneath the near edge)
+    ctx.save();
+    const sideGrad = ctx.createLinearGradient(0, corners[2].y, 0, bottomCorners[2].y);
+    sideGrad.addColorStop(0, '#3a1c08');
+    sideGrad.addColorStop(1, '#1a0a03');
+    ctx.fillStyle = sideGrad;
+    ctx.beginPath();
+    ctx.moveTo(corners[3].x, corners[3].y);
+    ctx.lineTo(corners[2].x, corners[2].y);
+    ctx.lineTo(bottomCorners[2].x, bottomCorners[2].y);
+    ctx.lineTo(bottomCorners[3].x, bottomCorners[3].y);
+    ctx.closePath();
+    ctx.fill();
+    // Left and right side walls (partial visibility)
+    ctx.beginPath();
+    ctx.moveTo(corners[0].x, corners[0].y);
+    ctx.lineTo(corners[3].x, corners[3].y);
+    ctx.lineTo(bottomCorners[3].x, bottomCorners[3].y);
+    ctx.lineTo(bottomCorners[0].x, bottomCorners[0].y);
+    ctx.closePath();
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(corners[1].x, corners[1].y);
+    ctx.lineTo(corners[2].x, corners[2].y);
+    ctx.lineTo(bottomCorners[2].x, bottomCorners[2].y);
+    ctx.lineTo(bottomCorners[1].x, bottomCorners[1].y);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+
+    // Draw the rail surface (top of the walnut frame, around the playfield)
+    const railInset = 30;  // table internal units — rail thickness in world
+    const playCorners = [
+      projectWorld(-TABLE_W/2 + railInset, 0, -TABLE_H/2 + railInset),
+      projectWorld( TABLE_W/2 - railInset, 0, -TABLE_H/2 + railInset),
+      projectWorld( TABLE_W/2 - railInset, 0,  TABLE_H/2 - railInset),
+      projectWorld(-TABLE_W/2 + railInset, 0,  TABLE_H/2 - railInset)
+    ];
+
+    // Fill the rail ring (outer trapezoid minus inner trapezoid)
+    ctx.save();
+    const railGrad = ctx.createLinearGradient(corners[0].x, corners[0].y, corners[2].x, corners[2].y);
+    railGrad.addColorStop(0, '#2a1408');
+    railGrad.addColorStop(0.5, '#4a2410');
+    railGrad.addColorStop(1, '#201008');
+    ctx.fillStyle = railGrad;
+    ctx.beginPath();
+    ctx.moveTo(corners[0].x, corners[0].y);
+    ctx.lineTo(corners[1].x, corners[1].y);
+    ctx.lineTo(corners[2].x, corners[2].y);
+    ctx.lineTo(corners[3].x, corners[3].y);
+    ctx.closePath();
+    ctx.moveTo(playCorners[0].x, playCorners[0].y);
+    ctx.lineTo(playCorners[3].x, playCorners[3].y);
+    ctx.lineTo(playCorners[2].x, playCorners[2].y);
+    ctx.lineTo(playCorners[1].x, playCorners[1].y);
+    ctx.closePath();
+    ctx.fill('evenodd');
+
+    // Brass trim on inner rail edge
+    ctx.strokeStyle = 'rgba(210,170,90,0.6)';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(playCorners[0].x, playCorners[0].y);
+    ctx.lineTo(playCorners[1].x, playCorners[1].y);
+    ctx.lineTo(playCorners[2].x, playCorners[2].y);
+    ctx.lineTo(playCorners[3].x, playCorners[3].y);
+    ctx.closePath();
     ctx.stroke();
     ctx.restore();
 
-    // ---- Pockets with brass rings and dark wells ----
-    for (const p of POCKETS) {
-      // Outer brass ring (carved into rail)
-      const ringGrad = ctx.createRadialGradient(p.x, p.y - 2, POCKET_R * 0.4, p.x, p.y, POCKET_R + 4);
-      ringGrad.addColorStop(0,   '#5a3a10');
-      ringGrad.addColorStop(0.6, '#3a2208');
-      ringGrad.addColorStop(1,   '#1a0a02');
-      ctx.fillStyle = ringGrad;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, POCKET_R + 2, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Pocket well (black)
-      const wellGrad = ctx.createRadialGradient(p.x, p.y - 3, 1, p.x, p.y, POCKET_R);
-      wellGrad.addColorStop(0,   '#1a0a04');
-      wellGrad.addColorStop(1,   '#000');
-      ctx.fillStyle = wellGrad;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, POCKET_R - 2, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Subtle brass rim highlight (top edge catches light)
-      ctx.save();
-      ctx.strokeStyle = 'rgba(210,170,90,0.35)';
-      ctx.lineWidth = 0.8;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, POCKET_R, Math.PI * 1.1, Math.PI * 1.9);
-      ctx.stroke();
-      ctx.restore();
-    }
-
-    // ---- Corner diamond inlays on rails (period detail) ----
+    // Felt (playfield) — crimson with lamp glow
     ctx.save();
-    ctx.fillStyle = 'rgba(210,170,90,0.25)';
-    const diamondPositions = [
-      [TABLE_W * 0.25, RAIL / 2], [TABLE_W * 0.5, RAIL / 2], [TABLE_W * 0.75, RAIL / 2],
-      [TABLE_W * 0.25, TABLE_H - RAIL / 2], [TABLE_W * 0.5, TABLE_H - RAIL / 2], [TABLE_W * 0.75, TABLE_H - RAIL / 2]
-    ];
-    for (const [dx, dy] of diamondPositions) {
-      ctx.beginPath();
-      ctx.moveTo(dx, dy - 2);
-      ctx.lineTo(dx + 3, dy);
-      ctx.lineTo(dx, dy + 2);
-      ctx.lineTo(dx - 3, dy);
-      ctx.closePath();
-      ctx.fill();
-    }
+    ctx.beginPath();
+    ctx.moveTo(playCorners[0].x, playCorners[0].y);
+    ctx.lineTo(playCorners[1].x, playCorners[1].y);
+    ctx.lineTo(playCorners[2].x, playCorners[2].y);
+    ctx.lineTo(playCorners[3].x, playCorners[3].y);
+    ctx.closePath();
+    ctx.clip();
+
+    // Base felt color
+    ctx.fillStyle = '#6b1a0c';
+    const minX = Math.min(playCorners[0].x, playCorners[3].x);
+    const maxX = Math.max(playCorners[1].x, playCorners[2].x);
+    const minY = playCorners[0].y;
+    const maxY = playCorners[2].y;
+    ctx.fillRect(minX - 20, minY - 20, maxX - minX + 40, maxY - minY + 40);
+
+    // Lamp glow overhead (project center + glow radius)
+    const center = projectWorld(0, 0, 0);
+    const glow = ctx.createRadialGradient(
+      center.x, center.y, 20,
+      center.x, center.y, Math.max(maxX - minX, maxY - minY) * 0.55
+    );
+    glow.addColorStop(0,   'rgba(255, 200, 130, 0.35)');
+    glow.addColorStop(0.4, 'rgba(200, 120,  60, 0.15)');
+    glow.addColorStop(1,   'rgba(20, 8, 4, 0.5)');
+    ctx.fillStyle = glow;
+    ctx.fillRect(minX - 20, minY - 20, maxX - minX + 40, maxY - minY + 40);
     ctx.restore();
   }
 
-  function drawBalls() {
-    for (const b of state.balls) {
-      if (!b.inPlay) continue;
-      ctx.fillStyle = 'rgba(0,0,0,0.35)';
+  // Draw pocket wells (black circles) on top of felt. Balls drawn AFTER this so they sit inside.
+  function drawPocketsTop() {
+    const pocketWorldR = 28;  // table-space radius of the pocket mouth
+    for (const p of POCKETS) {
+      const world = tableToWorld(p.x, p.y);
+      const c = projectWorld(world.x, 0, world.z);
+      const rx = pocketWorldR * c.scale;
+      const ry = rx * Math.cos(cam.tiltRad);  // foreshortened vertical
+      // Brass bezel ring
+      ctx.save();
+      ctx.fillStyle = '#2a1806';
       ctx.beginPath();
-      ctx.arc(b.x + 2, b.y + 3, BALL_R, 0, Math.PI * 2);
+      ctx.ellipse(c.x, c.y, rx * 1.15, ry * 1.15, 0, 0, Math.PI * 2);
       ctx.fill();
-    }
-    for (const b of state.balls) {
-      if (!b.inPlay) continue;
-      drawBall(b);
+      ctx.strokeStyle = 'rgba(210,170,90,0.5)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      // Well (black interior)
+      const wellGrad = ctx.createRadialGradient(c.x, c.y - ry * 0.2, 1, c.x, c.y, rx);
+      wellGrad.addColorStop(0, '#0a0402');
+      wellGrad.addColorStop(1, '#000');
+      ctx.fillStyle = wellGrad;
+      ctx.beginPath();
+      ctx.ellipse(c.x, c.y, rx, ry, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
     }
   }
 
-  function drawBall(b) {
-    ctx.save();
+  // Shadows drawn in a separate pass on the felt, under all balls (so none shadow over another).
+  function drawBallShadows() {
+    for (const b of state.balls) {
+      if (!b.inPlay) continue;
+      const world = tableToWorld(b.x, b.y);
+      // Offset shadow slightly forward (+z) and in world-down direction
+      const sp = projectWorld(world.x + 2, -0.5, world.z + 3);
+      const rx = BALL_R_WORLD * sp.scale;
+      const ry = rx * Math.cos(cam.tiltRad);
+      ctx.save();
+      ctx.fillStyle = 'rgba(0,0,0,0.4)';
+      ctx.beginPath();
+      ctx.ellipse(sp.x, sp.y + 2, rx * 1.1, ry * 1.2, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+  }
 
-    // Base color with radial shading (dark edge, bright highlight)
-    const base = BALL_COLORS[b.n];
-    const shade = ctx.createRadialGradient(
-      b.x - BALL_R * 0.4, b.y - BALL_R * 0.4, BALL_R * 0.1,
-      b.x, b.y, BALL_R * 1.1
+  // World-space ball radius — we render balls larger than the logical BALL_R so they're visible.
+  const BALL_R_WORLD = 18;   // was 10 — scaled up for visibility
+
+  // Sort balls by depth so nearer balls draw over farther ones (correct 3D occlusion).
+  function drawBallsSorted() {
+    const list = state.balls.filter(b => b.inPlay).map(b => {
+      const w = tableToWorld(b.x, b.y);
+      return { ball: b, world: w };
+    });
+    // Depth = camera-space z AFTER tilt. Higher z = farther.
+    const c = Math.cos(cam.tiltRad), s = Math.sin(cam.tiltRad);
+    for (const item of list) {
+      const rz = item.world.y * s + item.world.z * c;
+      item.depth = rz + cam.distance;
+    }
+    list.sort((a, b) => b.depth - a.depth);  // far → near
+    for (const item of list) {
+      drawBall3D(item.ball, item.world);
+    }
+  }
+
+  // Draw a single ball as a 3D-shaded sphere.
+  function drawBall3D(b, world) {
+    const surface = projectWorld(world.x, 0, world.z);            // center of ball on felt
+    const top = projectWorld(world.x, BALL_R_WORLD, world.z);     // top of ball
+    // Visual radius: average of surface and top screen distance, to approximate sphere.
+    const rScreen = Math.max(6, Math.hypot(top.x - surface.x, top.y - surface.y) * 0.85 + BALL_R_WORLD * surface.scale * 0.6);
+    // Ball center on screen — midway between surface and top for a believable look
+    const cx = (surface.x + top.x) / 2;
+    const cy = (surface.y + top.y) / 2;
+
+    const color = BALL_COLORS[b.n];
+
+    ctx.save();
+    // Base shaded sphere — radial gradient from upper-left highlight to lower-right shadow
+    const base = ctx.createRadialGradient(
+      cx - rScreen * 0.35, cy - rScreen * 0.4, rScreen * 0.1,
+      cx, cy, rScreen
     );
-    shade.addColorStop(0,   lighten(base, 0.45));
-    shade.addColorStop(0.4, base);
-    shade.addColorStop(1,   darken(base, 0.55));
-    ctx.fillStyle = shade;
+    base.addColorStop(0,   lighten(color, 0.55));
+    base.addColorStop(0.4, color);
+    base.addColorStop(1,   darken(color, 0.6));
+    ctx.fillStyle = base;
     ctx.beginPath();
-    ctx.arc(b.x, b.y, BALL_R, 0, Math.PI * 2);
+    ctx.arc(cx, cy, rScreen, 0, Math.PI * 2);
     ctx.fill();
 
-    // Stripe (9-15): white band across middle, colored caps preserved
+    // Stripe band for 9-15
     if (b.n >= 9 && b.n <= 15) {
       ctx.save();
       ctx.beginPath();
-      ctx.arc(b.x, b.y, BALL_R, 0, Math.PI * 2);
+      ctx.arc(cx, cy, rScreen, 0, Math.PI * 2);
       ctx.clip();
-      // White band
       const bandGrad = ctx.createRadialGradient(
-        b.x - BALL_R * 0.4, b.y - BALL_R * 0.4, BALL_R * 0.1,
-        b.x, b.y, BALL_R * 1.1
+        cx - rScreen * 0.35, cy - rScreen * 0.4, rScreen * 0.1,
+        cx, cy, rScreen
       );
-      bandGrad.addColorStop(0,   '#ffffff');
-      bandGrad.addColorStop(0.5, '#e8dcc3');
-      bandGrad.addColorStop(1,   '#9e8a62');
+      bandGrad.addColorStop(0, '#ffffff');
+      bandGrad.addColorStop(0.6, '#e8dcc3');
+      bandGrad.addColorStop(1, '#9e8a62');
       ctx.fillStyle = bandGrad;
-      ctx.fillRect(b.x - BALL_R, b.y - BALL_R * 0.45, BALL_R * 2, BALL_R * 0.9);
+      ctx.fillRect(cx - rScreen, cy - rScreen * 0.42, rScreen * 2, rScreen * 0.84);
       ctx.restore();
     }
 
-    // Number badge (white disc with black number)
+    // Number badge
     if (b.n !== 0) {
       ctx.fillStyle = '#f8f1dc';
       ctx.beginPath();
-      ctx.arc(b.x, b.y, BALL_R * 0.48, 0, Math.PI * 2);
+      ctx.arc(cx, cy, rScreen * 0.42, 0, Math.PI * 2);
       ctx.fill();
-      // Badge inner shadow
-      ctx.strokeStyle = 'rgba(0,0,0,0.2)';
-      ctx.lineWidth = 0.6;
-      ctx.beginPath();
-      ctx.arc(b.x, b.y, BALL_R * 0.48, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(0,0,0,0.25)';
+      ctx.lineWidth = 0.8;
       ctx.stroke();
       ctx.fillStyle = '#111';
-      ctx.font = 'bold 9px Georgia, serif';
+      ctx.font = 'bold ' + Math.floor(rScreen * 0.7) + 'px Georgia, serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(String(b.n), b.x, b.y + 0.5);
+      ctx.fillText(String(b.n), cx, cy + 0.5);
     }
 
-    // Specular highlight (bright glint)
-    const specGrad = ctx.createRadialGradient(
-      b.x - BALL_R * 0.4, b.y - BALL_R * 0.4, 0,
-      b.x - BALL_R * 0.4, b.y - BALL_R * 0.4, BALL_R * 0.55
+    // Specular highlight
+    const spec = ctx.createRadialGradient(
+      cx - rScreen * 0.4, cy - rScreen * 0.45, 0,
+      cx - rScreen * 0.4, cy - rScreen * 0.45, rScreen * 0.55
     );
-    specGrad.addColorStop(0,   'rgba(255,255,255,0.85)');
-    specGrad.addColorStop(0.4, 'rgba(255,255,255,0.25)');
-    specGrad.addColorStop(1,   'rgba(255,255,255,0)');
-    ctx.fillStyle = specGrad;
+    spec.addColorStop(0,   'rgba(255,255,255,0.8)');
+    spec.addColorStop(0.4, 'rgba(255,255,255,0.2)');
+    spec.addColorStop(1,   'rgba(255,255,255,0)');
+    ctx.fillStyle = spec;
     ctx.beginPath();
-    ctx.arc(b.x, b.y, BALL_R, 0, Math.PI * 2);
+    ctx.arc(cx, cy, rScreen, 0, Math.PI * 2);
     ctx.fill();
 
-    // Rim darkening (subtle outline)
-    ctx.strokeStyle = 'rgba(0,0,0,0.35)';
-    ctx.lineWidth = 0.6;
+    // Rim darkening
+    ctx.strokeStyle = 'rgba(0,0,0,0.4)';
+    ctx.lineWidth = 0.8;
     ctx.beginPath();
-    ctx.arc(b.x, b.y, BALL_R - 0.3, 0, Math.PI * 2);
+    ctx.arc(cx, cy, rScreen - 0.3, 0, Math.PI * 2);
     ctx.stroke();
-
     ctx.restore();
+
+    // Store for hit testing
+    b._screen = { x: cx, y: cy, r: rScreen };
   }
 
-  // Color helpers for ball shading
-  function hexToRgb(h) {
-    const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(h);
-    if (!m) return { r: 128, g: 128, b: 128 };
-    return { r: parseInt(m[1], 16), g: parseInt(m[2], 16), b: parseInt(m[3], 16) };
-  }
-  function lighten(h, amt) {
-    const c = hexToRgb(h);
-    return `rgb(${Math.min(255, c.r + (255 - c.r) * amt)|0},${Math.min(255, c.g + (255 - c.g) * amt)|0},${Math.min(255, c.b + (255 - c.b) * amt)|0})`;
-  }
-  function darken(h, amt) {
-    const c = hexToRgb(h);
-    return `rgb(${Math.max(0, c.r * (1 - amt))|0},${Math.max(0, c.g * (1 - amt))|0},${Math.max(0, c.b * (1 - amt))|0})`;
-  }
-
-  function drawAim() {
-    if (state.gamePhase !== 'aiming' || state.turn !== 'player' || state.ballInHand) return;
+  // ---------- Aim line -----------------------------------------------------
+  function drawAimLine() {
+    if (state.gamePhase !== 'aiming') return;
+    if (state.turn !== 'player') return;
+    if (state.ballInHand) return;
     const cue = state.balls[0];
     if (!cue.inPlay) return;
 
-    ctx.strokeStyle = 'rgba(255,255,255,0.55)';
-    ctx.setLineDash([4, 6]);
-    ctx.lineWidth = 1.4;
+    // Aim direction in table space
+    const dx = state.aimX - cue.x;
+    const dy = state.aimY - cue.y;
+    const d = Math.hypot(dx, dy);
+    if (d < 0.1) return;
+    const ux = dx / d, uy = dy / d;
+
+    // Extend line from cue ball toward aim point, in table space, projected
+    const startWorld = tableToWorld(cue.x + ux * BALL_R, cue.y + uy * BALL_R);
+    const endWorld = tableToWorld(cue.x + ux * 600, cue.y + uy * 600);
+    const start = projectWorld(startWorld.x, BALL_R_WORLD * 0.3, startWorld.z);
+    const end = projectWorld(endWorld.x, BALL_R_WORLD * 0.3, endWorld.z);
+
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+    ctx.setLineDash([6, 8]);
+    ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(cue.x, cue.y);
-    ctx.lineTo(state.aimX, state.aimY);
+    ctx.moveTo(start.x, start.y);
+    ctx.lineTo(end.x, end.y);
     ctx.stroke();
     ctx.setLineDash([]);
 
-    const dx = state.aimX - cue.x;
-    const dy = state.aimY - cue.y;
-    const d = Math.hypot(dx, dy) || 1;
-    const ux = dx / d, uy = dy / d;
-    const back = 18 + (1 - state.power) * 30;
-    const len = 140;
+    // Cue stick rendered behind cue ball (opposite direction)
+    const stickBackWorld = tableToWorld(cue.x - ux * (BALL_R * 2 + state.power * 40 + 20), cue.y - uy * (BALL_R * 2 + state.power * 40 + 20));
+    const stickTipWorld = tableToWorld(cue.x - ux * BALL_R, cue.y - uy * BALL_R);
+    const stickBack = projectWorld(stickBackWorld.x, BALL_R_WORLD * 0.6, stickBackWorld.z);
+    const stickTip = projectWorld(stickTipWorld.x, BALL_R_WORLD * 0.6, stickTipWorld.z);
+    const stickFarWorld = tableToWorld(cue.x - ux * (BALL_R * 2 + state.power * 40 + 180), cue.y - uy * (BALL_R * 2 + state.power * 40 + 180));
+    const stickFar = projectWorld(stickFarWorld.x, BALL_R_WORLD * 0.6, stickFarWorld.z);
     ctx.strokeStyle = '#d9a679';
-    ctx.lineWidth = 3;
+    ctx.lineWidth = 4;
+    ctx.lineCap = 'round';
     ctx.beginPath();
-    ctx.moveTo(cue.x - ux * back, cue.y - uy * back);
-    ctx.lineTo(cue.x - ux * (back + len), cue.y - uy * (back + len));
+    ctx.moveTo(stickTip.x, stickTip.y);
+    ctx.lineTo(stickFar.x, stickFar.y);
     ctx.stroke();
+    // Cue tip
+    ctx.strokeStyle = '#c9b98a';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(stickTip.x, stickTip.y);
+    ctx.lineTo(stickBack.x, stickBack.y);
+    ctx.stroke();
+    ctx.restore();
   }
 
-  function drawCalledPocket() {
+  function drawCalledPocketMarker() {
     if (state.calledPocket == null) return;
     const p = POCKETS[state.calledPocket];
+    const world = tableToWorld(p.x, p.y);
+    const c = projectWorld(world.x, 0, world.z);
+    ctx.save();
     ctx.strokeStyle = '#f7c948';
     ctx.lineWidth = 3;
     ctx.beginPath();
-    ctx.arc(p.x, p.y, POCKET_R + 6, 0, Math.PI * 2);
+    ctx.ellipse(c.x, c.y, 26 * c.scale, 26 * c.scale * Math.cos(cam.tiltRad), 0, 0, Math.PI * 2);
     ctx.stroke();
+    ctx.restore();
   }
 
-  function drawOverlay() {
+  // ---------- Top bar (score) + dialogue bubble at top --------------------
+  function drawTopBar() {
     const W = canvas.width;
-    const H = canvas.height;
-
-    // Dialogue — positioned in the bottom reserve, above controls
-    const dialogueH = 64;
-    const dialogueY = H - 24 - 6 - 48 - 6 - dialogueH;  // above turn bar + controls
-    if (state.mode === 'vs' && state.dialogue && state.dialogueTimer > 0) {
-      ctx.save();
-      ctx.fillStyle = 'rgba(20,12,8,0.90)';
-      ctx.strokeStyle = 'rgba(210,170,110,0.6)';
-      ctx.lineWidth = 1;
-      roundRect(ctx, 8, dialogueY, W - 16, dialogueH, 8);
-      ctx.fill();
-      ctx.stroke();
-      ctx.fillStyle = '#ebdab3';
-      ctx.font = 'italic bold 11px Georgia, serif';
-      ctx.textAlign = 'left';
-      ctx.textBaseline = 'top';
-      ctx.fillText('ALISTAIR', 18, dialogueY + 6);
-      ctx.fillStyle = '#e8dcc3';
-      ctx.font = '13px Georgia, serif';
-      const lines = wrapText(state.dialogue, W - 36);
-      for (let i = 0; i < lines.length && i < 2; i++) {
-        ctx.fillText(lines[i], 18, dialogueY + 24 + i * 17);
-      }
-      ctx.restore();
-      state.dialogueTimer--;
-      hud.dialogueBox = { x: 8, y: dialogueY, w: W - 16, h: dialogueH };
-    } else {
-      hud.dialogueBox = null;
-    }
-
-    // Turn indicator bar at very bottom
-    const indH = 24;
     ctx.save();
     ctx.fillStyle = 'rgba(20,12,8,0.85)';
-    ctx.fillRect(0, H - indH, W, indH);
+    ctx.fillRect(0, 0, W, 28);
     ctx.fillStyle = '#e8dcc3';
     ctx.font = '11px Georgia, serif';
     ctx.textBaseline = 'middle';
-    ctx.textAlign = 'left';
-    let turnLabel;
-    if (state.mode !== 'vs') {
-      turnLabel = 'PRACTICE';
-    } else if (state.turn === 'player') {
-      turnLabel = state.gamePhase === 'simulating' ? 'SHOT IN PLAY...' : 'YOUR TURN';
-    } else {
-      turnLabel = state.gamePhase === 'simulating' ? 'ALISTAIR SHOOTING...' : 'ALISTAIR THINKING...';
-    }
-    ctx.fillText(turnLabel, 10, H - indH / 2);
-    ctx.textAlign = 'center';
     if (state.mode === 'vs' && match) {
-      // Show frame score + group info
-      const pg = state.playerGroup ? state.playerGroup.toUpperCase() : '';
-      const ag = state.alistairGroup ? state.alistairGroup.toUpperCase() : '';
-      const groupInfo = state.openTable ? 'OPEN TABLE' : `${pg}  ·  ${ag}`;
-      ctx.fillText(`${match.playerFrames} — ${match.alistairFrames}   |   ${groupInfo}`, W / 2, H - indH / 2);
-    } else if (!state.openTable) {
-      const pg = state.playerGroup ? state.playerGroup.toUpperCase() : '';
-      const ag = state.alistairGroup ? state.alistairGroup.toUpperCase() : '';
-      ctx.fillText(`You: ${pg}  |  Alistair: ${ag}`, W / 2, H - indH / 2);
-    } else {
-      ctx.fillText('OPEN TABLE', W / 2, H - indH / 2);
-    }
-    if (state.ballInHand && state.turn === 'player') {
+      ctx.textAlign = 'left';
+      ctx.fillText('Bo' + match.format + '  ·  ' + (state.turn === 'player' ? 'YOUR TURN' : (state.gamePhase === 'simulating' ? 'ALISTAIR SHOOTING…' : 'ALISTAIR THINKING…')), 10, 14);
+      ctx.textAlign = 'center';
+      ctx.font = 'bold 14px Georgia, serif';
+      ctx.fillStyle = '#f5ecd7';
+      ctx.fillText(match.playerFrames + ' — ' + match.alistairFrames, W / 2, 15);
+      ctx.font = '11px Georgia, serif';
       ctx.textAlign = 'right';
-      ctx.fillStyle = '#f7c948';
-      ctx.fillText('BALL IN HAND', W - 10, H - indH / 2);
+      ctx.fillStyle = '#c9b98a';
+      const grp = state.openTable ? 'OPEN' : (state.playerGroup || '').toUpperCase() + ' vs ' + (state.alistairGroup || '').toUpperCase();
+      ctx.fillText(grp, W - 10, 14);
+    } else {
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#e8dcc3';
+      ctx.fillText('PRACTICE', W / 2, 14);
     }
     ctx.restore();
-
-    // Call pocket overlay
-    if (state.showCallPocket) {
-      ctx.save();
-      ctx.fillStyle = 'rgba(20,12,8,0.65)';
-      ctx.fillRect(0, 0, W, H);
-      ctx.fillStyle = '#f7c948';
-      ctx.font = 'bold 14px Georgia, serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('TAP A POCKET TO CALL YOUR 8-BALL SHOT', W / 2, 40);
-      for (let i = 0; i < POCKETS.length; i++) {
-        const p = POCKETS[i];
-        const s = tableToScreen(p.x, p.y);
-        ctx.strokeStyle = '#f7c948';
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.arc(s.x, s.y, (POCKET_R + 6) * tableScale, 0, Math.PI * 2);
-        ctx.stroke();
-      }
-      ctx.restore();
-    }
-
-    // Zoom controls — top-left (always visible, even for Alistair's turn so UI feels alive)
-    drawZoomButtons();
-
-    // Game over
-    if (state.gamePhase === 'gameover') {
-      ctx.save();
-      ctx.fillStyle = 'rgba(10,6,4,0.88)';
-      ctx.fillRect(0, 0, W, H);
-      ctx.fillStyle = '#ebdab3';
-      ctx.textAlign = 'center';
-      ctx.font = 'bold 22px Georgia, serif';
-      const title = state.mode === 'vs'
-        ? (state.winner === 'player' ? 'YOU WIN' : 'ALISTAIR WINS')
-        : 'RACK COMPLETE';
-      ctx.fillText(title, W / 2, H / 2 - 30);
-      ctx.font = 'italic 13px Georgia, serif';
-      ctx.fillStyle = '#c9b98a';
-      ctx.fillText(state.loseReason || '', W / 2, H / 2);
-      ctx.fillStyle = '#f7c948';
-      ctx.font = '12px Georgia, serif';
-      ctx.fillText('Tap to play again', W / 2, H / 2 + 30);
-      ctx.restore();
-    }
   }
 
-  function drawZoomButtons() {
+  function drawDialogueBubble() {
+    if (state.mode !== 'vs') return;
+    if (!state.dialogue || state.dialogueTimer <= 0) return;
     const W = canvas.width;
-    // Position: top-left column, below the close button
-    const btnW = 40;
-    const btnH = 40;
-    const x = 10;
-    let y = 58;  // leave room for close button at top-right
-
-    const drawBtn = (yPos, label, disabled) => {
-      ctx.save();
-      ctx.fillStyle = disabled ? 'rgba(40,24,14,0.65)' : 'rgba(74,24,8,0.92)';
-      roundRect(ctx, x, yPos, btnW, btnH, 6);
-      ctx.fill();
-      ctx.strokeStyle = disabled ? 'rgba(138,107,46,0.4)' : '#d9a679';
-      ctx.lineWidth = 1;
-      ctx.stroke();
-      ctx.fillStyle = disabled ? '#7a6842' : '#f5ecd7';
-      ctx.font = 'bold 18px Georgia, serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(label, x + btnW / 2, yPos + btnH / 2 + 1);
-      ctx.restore();
-      return { x: x, y: yPos, w: btnW, h: btnH };
-    };
-
-    hud.zoomIn = drawBtn(y, '+', zoomLevel >= 3);
-    y += btnH + 6;
-    hud.zoomOut = drawBtn(y, '−', zoomLevel <= 1);
-    y += btnH + 6;
-    // Reset button only visible when zoomed
-    if (zoomLevel > 1.01) {
-      hud.zoomReset = drawBtn(y, '⟲', false);
-      // Smaller font for reset glyph
-      ctx.save();
-      ctx.fillStyle = '#f5ecd7';
-      ctx.font = 'bold 20px Georgia, serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('⟲', x + btnW / 2, y + btnH / 2 + 2);
-      ctx.restore();
-    } else {
-      hud.zoomReset = null;
+    const boxY = 34;
+    const boxH = 44;
+    ctx.save();
+    ctx.fillStyle = 'rgba(20,12,8,0.92)';
+    ctx.strokeStyle = 'rgba(210,170,110,0.6)';
+    ctx.lineWidth = 1;
+    roundRectBilliards(ctx, 8, boxY, W - 16, boxH, 6);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = '#ebdab3';
+    ctx.font = 'italic bold 10px Georgia, serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText('ALISTAIR', 18, boxY + 4);
+    ctx.fillStyle = '#e8dcc3';
+    ctx.font = '12px Georgia, serif';
+    const lines = wrapTextBilliards(ctx, state.dialogue, W - 36);
+    for (let i = 0; i < lines.length && i < 2; i++) {
+      ctx.fillText(lines[i], 18, boxY + 18 + i * 14);
     }
+    ctx.restore();
+    state.dialogueTimer--;
   }
 
-  function drawHUD() {
-    hud.shootBtn = null;
-    hud.powerBar = null;
-    hud.spinBall = null;
-    if (!state) return;
-    if (state.gamePhase === 'interstitial' || state.gamePhase === 'matchend') return;
-    if (state.gamePhase !== 'aiming' || state.turn !== 'player') return;
-    if (state.showCallPocket || state.ballInHand) return;
+  // ---------- Bottom controls ---------------------------------------------
+  // SHOOT button left, power slider vertical right, close button top-right.
+  const hudLayout = {};
 
+  function drawControlsBottom() {
+    if (state.gamePhase !== 'aiming') return;
+    if (state.turn !== 'player' || state.ballInHand) return;
+    if (state.showCallPocket) return;
     const W = canvas.width;
     const H = canvas.height;
 
-    // Controls sit between dialogue (if any) and turn indicator
-    const ctrlH = 48;
-    const ctrlTop = H - 24 - 6 - ctrlH;   // above 24px turn bar + 6px gap
-
-    // SHOOT button — left third
-    const shootW = Math.min(130, W * 0.36);
-    const shootX = 10;
-    const shootY = ctrlTop;
+    // SHOOT button (big, bottom-left)
+    const sw = Math.min(180, W * 0.4);
+    const sh = 60;
+    const sx = 16;
+    const sy = H - sh - 20;
     ctx.save();
     ctx.fillStyle = '#7c2a1a';
-    roundRect(ctx, shootX, shootY, shootW, ctrlH, 6);
+    roundRectBilliards(ctx, sx, sy, sw, sh, 8);
     ctx.fill();
     ctx.strokeStyle = '#d9a679';
     ctx.lineWidth = 1.5;
     ctx.stroke();
     ctx.fillStyle = '#f5ecd7';
-    ctx.font = 'bold 15px Georgia, serif';
+    ctx.font = 'bold 20px Georgia, serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('SHOOT', shootX + shootW / 2, shootY + ctrlH / 2);
+    ctx.fillText('SHOOT', sx + sw / 2, sy + sh / 2);
     ctx.restore();
-    hud.shootBtn = { x: shootX, y: shootY, w: shootW, h: ctrlH };
+    hudLayout.shootBtn = { x: sx, y: sy, w: sw, h: sh };
 
-    // POWER bar — middle
-    const spinR = 22;
-    const spinCx = W - spinR - 14;
-    const spinCy = shootY + ctrlH / 2;
-    const pbX = shootX + shootW + 14;
-    const pbY = shootY + 6;
-    const pbW = Math.max(40, (spinCx - spinR - 6) - pbX - 14);
-    const pbH = ctrlH - 12;
+    // Power slider (vertical, right edge)
+    const pbw = 32;
+    const pbh = Math.min(220, H * 0.42);
+    const pbx = W - pbw - 16;
+    const pby = H - pbh - 20;
     ctx.save();
-    ctx.fillStyle = 'rgba(0,0,0,0.55)';
-    ctx.fillRect(pbX, pbY, pbW, pbH);
-    const fillW = pbW * state.power;
-    const pg = ctx.createLinearGradient(pbX, 0, pbX + pbW, 0);
+    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    roundRectBilliards(ctx, pbx, pby, pbw, pbh, 6);
+    ctx.fill();
+    const fillH = pbh * state.power;
+    const pg = ctx.createLinearGradient(0, pby + pbh, 0, pby);
     pg.addColorStop(0, '#f7c948');
     pg.addColorStop(1, '#c0392b');
     ctx.fillStyle = pg;
-    ctx.fillRect(pbX, pbY, fillW, pbH);
+    ctx.fillRect(pbx, pby + pbh - fillH, pbw, fillH);
     ctx.strokeStyle = '#8a6b2e';
-    ctx.strokeRect(pbX, pbY, pbW, pbH);
+    ctx.lineWidth = 1;
+    ctx.strokeRect(pbx, pby, pbw, pbh);
     ctx.fillStyle = '#e8dcc3';
-    ctx.font = '9px Georgia, serif';
+    ctx.font = '10px Georgia, serif';
     ctx.textAlign = 'center';
-    ctx.textBaseline = 'bottom';
-    ctx.fillText('POWER  (drag)', pbX + pbW / 2, pbY - 2);
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillText('POWER', pbx + pbw / 2, pby - 4);
     ctx.restore();
-    hud.powerBar = { x: pbX, y: pbY, w: pbW, h: pbH };
-
-    // SPIN ball — right
-    ctx.save();
-    ctx.fillStyle = 'rgba(0,0,0,0.55)';
-    ctx.beginPath();
-    ctx.arc(spinCx, spinCy, spinR + 2, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#f5ecd7';
-    ctx.beginPath();
-    ctx.arc(spinCx, spinCy, spinR, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = '#8a6b2e';
-    ctx.stroke();
-    ctx.fillStyle = '#c0392b';
-    ctx.beginPath();
-    ctx.arc(spinCx + state.spinX * (spinR - 4), spinCy + state.spinY * (spinR - 4), 4, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#e8dcc3';
-    ctx.font = '9px Georgia, serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'bottom';
-    ctx.fillText('SPIN', spinCx, spinCy - spinR - 2);
-    ctx.restore();
-    hud.spinBall = { cx: spinCx, cy: spinCy, r: spinR };
+    hudLayout.powerBar = { x: pbx, y: pby, w: pbw, h: pbh };
   }
 
-  function roundRect(c, x, y, w, h, r) {
+  function drawCallPocketPrompt() {
+    if (!state.showCallPocket) return;
+    const W = canvas.width;
+    const H = canvas.height;
+    ctx.save();
+    ctx.fillStyle = 'rgba(20,12,8,0.7)';
+    ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#f7c948';
+    ctx.font = 'bold 14px Georgia, serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('TAP A POCKET TO CALL YOUR 8-BALL SHOT', W / 2, 60);
+    for (let i = 0; i < POCKETS.length; i++) {
+      const p = POCKETS[i];
+      const world = tableToWorld(p.x, p.y);
+      const c = projectWorld(world.x, 0, world.z);
+      ctx.strokeStyle = '#f7c948';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.ellipse(c.x, c.y, 28 * c.scale, 28 * c.scale * Math.cos(cam.tiltRad), 0, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawGameOverOverlay() {
+    if (state.gamePhase !== 'gameover') return;
+    const W = canvas.width;
+    const H = canvas.height;
+    ctx.save();
+    ctx.fillStyle = 'rgba(10,6,4,0.88)';
+    ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#ebdab3';
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 24px Georgia, serif';
+    const title = state.mode === 'vs'
+      ? (state.winner === 'player' ? 'YOU WIN THE FRAME' : 'ALISTAIR WINS THE FRAME')
+      : 'RACK COMPLETE';
+    ctx.fillText(title, W / 2, H / 2 - 30);
+    ctx.font = 'italic 13px Georgia, serif';
+    ctx.fillStyle = '#c9b98a';
+    ctx.fillText(state.loseReason || '', W / 2, H / 2);
+    ctx.fillStyle = '#f7c948';
+    ctx.font = '12px Georgia, serif';
+    ctx.fillText('Tap to continue', W / 2, H / 2 + 30);
+    ctx.restore();
+  }
+
+  // ---------- Helpers ------------------------------------------------------
+  function roundRectBilliards(c, x, y, w, h, r) {
     c.beginPath();
     c.moveTo(x + r, y);
     c.arcTo(x + w, y, x + w, y + h, r);
@@ -2155,134 +2163,53 @@
     c.closePath();
   }
 
-  function wrapText(text, maxW) {
+  function wrapTextBilliards(cc, text, maxW) {
     const words = text.split(' ');
     const lines = [];
     let cur = '';
-    ctx.font = '13px Georgia, serif';
     for (const w of words) {
       const test = cur ? cur + ' ' + w : w;
-      if (ctx.measureText(test).width > maxW && cur) {
-        lines.push(cur);
-        cur = w;
-      } else {
-        cur = test;
-      }
+      if (cc.measureText(test).width > maxW && cur) { lines.push(cur); cur = w; }
+      else cur = test;
     }
     if (cur) lines.push(cur);
     return lines;
   }
 
   // ---------- Input --------------------------------------------------------
+  let dragMode = null;   // 'aim' | 'power' | null
+  let lastPointerX = 0, lastPointerY = 0;
+
   function getEventPoint(e) {
     const rect = canvas.getBoundingClientRect();
-    let clientX, clientY;
-    if (e.touches && e.touches.length) { clientX = e.touches[0].clientX; clientY = e.touches[0].clientY; }
-    else if (e.changedTouches && e.changedTouches.length) { clientX = e.changedTouches[0].clientX; clientY = e.changedTouches[0].clientY; }
-    else { clientX = e.clientX; clientY = e.clientY; }
+    let cx, cy;
+    if (e.touches && e.touches.length) { cx = e.touches[0].clientX; cy = e.touches[0].clientY; }
+    else if (e.changedTouches && e.changedTouches.length) { cx = e.changedTouches[0].clientX; cy = e.changedTouches[0].clientY; }
+    else { cx = e.clientX; cy = e.clientY; }
     return {
-      x: (clientX - rect.left) * (canvas.width / rect.width),
-      y: (clientY - rect.top) * (canvas.height / rect.height)
+      x: (cx - rect.left) * (canvas.width / rect.width),
+      y: (cy - rect.top) * (canvas.height / rect.height)
     };
   }
 
   function hitRect(x, y, r) { return r && x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h; }
-  function hitCircle(x, y, c) { return c && Math.hypot(x - c.cx, y - c.cy) <= c.r; }
 
   function onPointerDown(e) {
     if (e.cancelable) e.preventDefault();
-    unlockAudio();  // mobile audio unlock
-
-    // Pinch detection (two touches)
-    if (e.touches && e.touches.length === 2) {
-      beginPinch(e);
-      return;
-    }
-
+    unlockAudio();
     const p = getEventPoint(e);
+    lastPointerX = p.x; lastPointerY = p.y;
 
-    // Zoom buttons — only during active game play, not during menu/interstitial/matchend
-    const inPlay = state && !formatSelectActive && !modeSelectActive &&
-                   state.gamePhase !== 'interstitial' && state.gamePhase !== 'matchend';
-    if (inPlay) {
-      if (hitRect(p.x, p.y, hud.zoomIn))    { applyZoom(zoomLevel * 1.4); return; }
-      if (hitRect(p.x, p.y, hud.zoomOut))   { applyZoom(zoomLevel / 1.4); return; }
-      if (hitRect(p.x, p.y, hud.zoomReset)) { applyZoom(1); panTX = TABLE_W / 2; panTY = TABLE_H / 2; return; }
-    } else {
-      // Clear stale regions so they can't intercept taps on overlay screens
-      hud.zoomIn = null; hud.zoomOut = null; hud.zoomReset = null;
-    }
-
-    if (modeSelectActive) {
-      if (!modeSelectRegions) return;
-      if (hitRect(p.x, p.y, modeSelectRegions.solo)) {
-        modeSelectActive = false;
-        newGame('solo');
-      } else if (hitRect(p.x, p.y, modeSelectRegions.vs)) {
-        modeSelectActive = false;
-        formatSelectActive = true;
-      } else if (hitRect(p.x, p.y, modeSelectRegions.exit)) {
-        closeBilliards();
-      }
-      return;
-    }
-
-    if (formatSelectActive) {
-      if (!formatSelectRegions) return;
-      if (hitRect(p.x, p.y, formatSelectRegions.bo3)) {
-        formatSelectActive = false;
-        newMatch(3);
-        newGame('vs');
-      } else if (hitRect(p.x, p.y, formatSelectRegions.bo5)) {
-        formatSelectActive = false;
-        newMatch(5);
-        newGame('vs');
-      } else if (hitRect(p.x, p.y, formatSelectRegions.bo7)) {
-        formatSelectActive = false;
-        newMatch(7);
-        newGame('vs');
-      } else if (hitRect(p.x, p.y, formatSelectRegions.back)) {
-        formatSelectActive = false;
-        modeSelectActive = true;
-      }
-      return;
-    }
-
+    // Mode select / format select / interstitial / match end handled by screen dispatch
+    if (screenRouter_onDown(p)) return;
     if (!state) return;
-
-    // Interstitial — tap to continue
-    if (state.gamePhase === 'interstitial' && match && match.showInterstitial) {
-      if (interstitialRegions && hitRect(p.x, p.y, interstitialRegions.continue)) {
-        startNextFrame();
-        return;
-      }
-      // Any tap outside the Continue button just continues too
-      startNextFrame();
-      return;
-    }
-
-    // Match end — tap to return to menu
-    if (state.gamePhase === 'matchend') {
-      if (matchEndRegions && hitRect(p.x, p.y, matchEndRegions.menu)) {
-        state = null;
-        match = null;
-        modeSelectActive = true;
-        return;
-      }
-      if (matchEndRegions && hitRect(p.x, p.y, matchEndRegions.rematch)) {
-        const fmt = match.format;
-        newMatch(fmt);
-        newGame('vs');
-        return;
-      }
-      return;
-    }
 
     if (state.gamePhase === 'gameover') {
       newGame(state.mode);
       return;
     }
 
+    // Call pocket
     if (state.showCallPocket) {
       const tp = screenToTable(p.x, p.y);
       let nearest = -1, nd = 9999;
@@ -2290,7 +2217,7 @@
         const d = Math.hypot(tp.x - POCKETS[i].x, tp.y - POCKETS[i].y);
         if (d < nd) { nd = d; nearest = i; }
       }
-      if (nd < POCKET_R + 60) {
+      if (nd < 60) {
         state.calledPocket = nearest;
         state.showCallPocket = false;
         setTimeout(takeShot, 150);
@@ -2298,13 +2225,10 @@
       return;
     }
 
-    if (state.gamePhase === 'aiming' && state.turn === 'player' && !state.ballInHand) {
-      if (hitRect(p.x, p.y, hud.shootBtn)) { takeShot(); return; }
-      if (hitRect(p.x, p.y, hud.powerBar)) { powerDragging = true; updatePowerFromX(p.x); return; }
-      if (hitCircle(p.x, p.y, hud.spinBall)) { spinDragging = true; updateSpin(p.x, p.y); return; }
-    }
+    if (state.gamePhase !== 'aiming' || state.turn !== 'player') return;
 
-    if (state.ballInHand && state.turn === 'player' && state.gamePhase === 'aiming') {
+    // Ball-in-hand: tap to place cue ball
+    if (state.ballInHand) {
       const tp = screenToTable(p.x, p.y);
       if (tp.x > PLAY_X0 + BALL_R && tp.x < PLAY_X1 - BALL_R &&
           tp.y > PLAY_Y0 + BALL_R && tp.y < PLAY_Y1 - BALL_R) {
@@ -2317,520 +2241,306 @@
           state.balls[0].x = tp.x;
           state.balls[0].y = tp.y;
           state.ballInHand = false;
-          return;
         }
       }
+      return;
     }
 
-    if (state.gamePhase === 'aiming' && state.turn === 'player' && !state.ballInHand) {
-      // Don't change aim if tap is on zoom buttons (already handled earlier)
-      if (hitRect(p.x, p.y, hud.zoomIn)) return;
-      if (hitRect(p.x, p.y, hud.zoomOut)) return;
-      if (hitRect(p.x, p.y, hud.zoomReset)) return;
-      const tp = screenToTable(p.x, p.y);
-      state.aimX = tp.x;
-      state.aimY = tp.y;
+    // SHOOT button
+    if (hitRect(p.x, p.y, hudLayout.shootBtn)) {
+      takeShot();
+      return;
     }
+
+    // Power slider
+    if (hitRect(p.x, p.y, hudLayout.powerBar)) {
+      dragMode = 'power';
+      updatePowerFromY(p.y);
+      return;
+    }
+
+    // Otherwise: aim — track drag to rotate aim around cue ball
+    dragMode = 'aim';
+    updateAimFromPointer(p);
   }
 
   function onPointerMove(e) {
-    if (!state) return;
-    // Pinch update
-    if (e.touches && e.touches.length === 2 && pinchStartDist > 0) {
-      if (e.cancelable) e.preventDefault();
-      updatePinch(e);
-      return;
-    }
-    if (e.cancelable && (powerDragging || spinDragging)) e.preventDefault();
+    if (!state || !dragMode) return;
+    if (e.cancelable) e.preventDefault();
     const p = getEventPoint(e);
-
-    if (powerDragging) { updatePowerFromX(p.x); return; }
-    if (spinDragging) { updateSpin(p.x, p.y); return; }
-
-    if (state.gamePhase === 'aiming' && state.turn === 'player' &&
-        !state.ballInHand && !state.showCallPocket) {
-      if (hitRect(p.x, p.y, hud.shootBtn)) return;
-      if (hitRect(p.x, p.y, hud.powerBar)) return;
-      if (hitCircle(p.x, p.y, hud.spinBall)) return;
-      if (hitRect(p.x, p.y, hud.zoomIn)) return;
-      if (hitRect(p.x, p.y, hud.zoomOut)) return;
-      if (hitRect(p.x, p.y, hud.zoomReset)) return;
-      if (hud.dialogueBox && hitRect(p.x, p.y, hud.dialogueBox)) return;
-      const tp = screenToTable(p.x, p.y);
-      state.aimX = tp.x;
-      state.aimY = tp.y;
-    }
+    if (dragMode === 'power') updatePowerFromY(p.y);
+    else if (dragMode === 'aim') updateAimFromPointer(p);
   }
 
-  function onPointerUp() {
-    powerDragging = false;
-    spinDragging = false;
-    pinchStartDist = 0;
-    pinchCenterTable = null;
-  }
+  function onPointerUp() { dragMode = null; }
 
-  // ---------- Zoom / pan helpers ------------------------------------------
-  function applyZoom(newZoom) {
-    zoomLevel = Math.max(1, Math.min(3, newZoom));
-    if (zoomLevel <= 1.01) {
-      // Snap to center when fully zoomed out
-      panTX = TABLE_W / 2;
-      panTY = TABLE_H / 2;
-    } else if (state) {
-      // Center on cue ball when zooming in from 1x
-      const cue = state.balls[0];
-      if (cue && cue.inPlay) {
-        panTX = cue.x;
-        panTY = cue.y;
-      }
-    }
-  }
-
-  function beginPinch(e) {
-    const t1 = e.touches[0], t2 = e.touches[1];
-    pinchStartDist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
-    pinchStartZoom = zoomLevel;
-    // Compute table-space point at pinch midpoint
-    const rect = canvas.getBoundingClientRect();
-    const cx = (t1.clientX + t2.clientX) / 2;
-    const cy = (t1.clientY + t2.clientY) / 2;
-    const sx = (cx - rect.left) * (canvas.width / rect.width);
-    const sy = (cy - rect.top) * (canvas.height / rect.height);
-    pinchCenterTable = screenToTable(sx, sy);
-    // Cancel drags
-    powerDragging = false;
-    spinDragging = false;
-  }
-
-  function updatePinch(e) {
-    if (!pinchStartDist || !pinchCenterTable) return;
-    const t1 = e.touches[0], t2 = e.touches[1];
-    const d = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
-    const newZoom = Math.max(1, Math.min(3, pinchStartZoom * (d / pinchStartDist)));
-    zoomLevel = newZoom;
-    // Keep the table-space point under the finger midpoint stable
-    panTX = pinchCenterTable.x;
-    panTY = pinchCenterTable.y;
-  }
-
-  function updatePowerFromX(x) {
-    if (!hud.powerBar) return;
-    const t = Math.max(0, Math.min(1, (x - hud.powerBar.x) / hud.powerBar.w));
+  function updatePowerFromY(y) {
+    if (!hudLayout.powerBar) return;
+    const pb = hudLayout.powerBar;
+    const t = Math.max(0, Math.min(1, (pb.y + pb.h - y) / pb.h));
     state.power = t;
   }
 
-  function updateSpin(x, y) {
-    if (!hud.spinBall) return;
-    const dx = (x - hud.spinBall.cx) / (hud.spinBall.r - 4);
-    const dy = (y - hud.spinBall.cy) / (hud.spinBall.r - 4);
-    const d = Math.hypot(dx, dy);
-    const clamp = d > 1 ? 1 / d : 1;
-    state.spinX = dx * clamp;
-    state.spinY = dy * clamp;
+  function updateAimFromPointer(p) {
+    // Tap point in table space becomes the aim target; direction = (aim - cue).
+    const tp = screenToTable(p.x, p.y);
+    if (tp.x < 0 || tp.y < 0) return;
+    state.aimX = tp.x;
+    state.aimY = tp.y;
   }
 
-  // ---------- Mode select --------------------------------------------------
-  function drawModeSelect() {
-    if (!ctx || !canvas) return;
-    const W = canvas.width;
-    const H = canvas.height;
-    ctx.clearRect(0, 0, W, H);
+  // ---------- Screens (mode, format, interstitial, match end) -------------
+  // Simple stacked-button screens. Reuses structure from old code.
+  const screenRouter = { mode: null, format: null, interstitial: null, matchEnd: null };
+  let screenState = 'modeSelect';   // 'modeSelect' | 'formatSelect' | 'game' | 'interstitial' | 'matchEnd'
 
-    const g = ctx.createRadialGradient(W/2, H/2, 40, W/2, H/2, Math.max(W, H));
-    g.addColorStop(0, '#2a1206');
-    g.addColorStop(1, '#0a0503');
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, W, H);
-
-    ctx.fillStyle = '#ebdab3';
-    ctx.textAlign = 'center';
-    ctx.font = 'italic bold 20px Georgia, serif';
-    const titleY = Math.max(60, H * 0.14);
-    ctx.fillText('THE BILLIARD TABLE', W / 2, titleY);
-    ctx.font = 'italic 12px Georgia, serif';
-    ctx.fillStyle = '#c9b98a';
-    const tagLines = wrapText('The felt is honest. Most things in this house are not.', W - 40);
-    let tagY = titleY + 28;
-    for (const l of tagLines) { ctx.fillText(l, W / 2, tagY); tagY += 16; }
-
-    // Compute button layout — always fits in available vertical space
-    const cw = Math.min(300, W - 40);
-    const cx = W / 2 - cw / 2;
-    const btnH = 66;
-    const gap = 14;
-    const exitH = 40;
-    const totalH = btnH * 2 + gap * 2 + exitH;
-    const availTop = tagY + 20;
-    const availBot = H - 30;
-    const availH = availBot - availTop;
-    // If cramped (tiny screen), stack anyway starting from availTop
-    let stackTop;
-    if (totalH > availH) {
-      stackTop = availTop;
-    } else {
-      stackTop = availTop + (availH - totalH) / 2;
-    }
-
-    const soloY = stackTop;
-    const vsY = soloY + btnH + gap;
-    const exitY = vsY + btnH + gap;
-
-    ctx.fillStyle = '#4a1808';
-    roundRect(ctx, cx, soloY, cw, btnH, 8);
-    ctx.fill();
-    ctx.strokeStyle = '#d9a679';
-    ctx.lineWidth = 1;
-    ctx.stroke();
-    ctx.fillStyle = '#f5ecd7';
-    ctx.font = 'bold 15px Georgia, serif';
-    ctx.fillText('SOLO PRACTICE', W / 2, soloY + 26);
-    ctx.fillStyle = '#c9b98a';
-    ctx.font = 'italic 11px Georgia, serif';
-    ctx.fillText('Rack. Break. Play at your own pace.', W / 2, soloY + 48);
-
-    ctx.fillStyle = '#4a1808';
-    roundRect(ctx, cx, vsY, cw, btnH, 8);
-    ctx.fill();
-    ctx.strokeStyle = '#d9a679';
-    ctx.stroke();
-    ctx.fillStyle = '#f5ecd7';
-    ctx.font = 'bold 15px Georgia, serif';
-    ctx.fillText('CHALLENGE ALISTAIR', W / 2, vsY + 26);
-    ctx.fillStyle = '#c9b98a';
-    ctx.font = 'italic 11px Georgia, serif';
-    ctx.fillText('Loser owes a truthful answer.', W / 2, vsY + 48);
-
-    ctx.strokeStyle = '#8a6b2e';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(cx, exitY, cw, exitH);
-    ctx.fillStyle = '#c9b98a';
-    ctx.font = '12px Georgia, serif';
-    ctx.fillText('LEAVE THE TABLE', W / 2, exitY + exitH / 2 + 4);
-
-    modeSelectRegions = {
-      solo: { x: cx, y: soloY, w: cw, h: btnH },
-      vs:   { x: cx, y: vsY,   w: cw, h: btnH },
-      exit: { x: cx, y: exitY, w: cw, h: exitH }
-    };
+  function drawScreens() {
+    if (screenState === 'modeSelect') drawModeSelect();
+    else if (screenState === 'formatSelect') drawFormatSelect();
+    else if (screenState === 'interstitial') drawInterstitial();
+    else if (screenState === 'matchEnd') drawMatchEnd();
   }
 
-  function drawFormatSelect() {
-    if (!ctx || !canvas) return;
-    const W = canvas.width;
-    const H = canvas.height;
-    ctx.clearRect(0, 0, W, H);
+  function screenBg() {
+    const W = canvas.width, H = canvas.height;
     const g = ctx.createRadialGradient(W/2, H/2, 40, W/2, H/2, Math.max(W, H));
-    g.addColorStop(0, '#2a1206');
-    g.addColorStop(1, '#0a0503');
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, W, H);
+    g.addColorStop(0, '#2a1206'); g.addColorStop(1, '#0a0503');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  }
 
-    ctx.fillStyle = '#ebdab3';
-    ctx.textAlign = 'center';
-    ctx.font = 'italic bold 20px Georgia, serif';
-    const titleY = Math.max(60, H * 0.14);
-    ctx.fillText('CHOOSE YOUR STAKES', W / 2, titleY);
-    ctx.font = 'italic 12px Georgia, serif';
-    ctx.fillStyle = '#c9b98a';
-    let tagY = titleY + 26;
-    const lines = wrapText('Alistair will remember what you taught him. Choose carefully.', W - 40);
-    for (const l of lines) { ctx.fillText(l, W / 2, tagY); tagY += 16; }
-
+  function stackButtons(startY, btns) {
+    const W = canvas.width, H = canvas.height;
     const cw = Math.min(320, W - 40);
     const cx = W / 2 - cw / 2;
-    const btnH = 64;
-    const gap = 12;
-    const backH = 40;
-    const totalH = btnH * 3 + gap * 3 + backH;
-    const availTop = tagY + 20;
-    const availH = H - 30 - availTop;
-    let y = availH > totalH ? availTop + (availH - totalH) / 2 : availTop;
-
-    const drawFormatBtn = (yy, title, subtitle) => {
-      ctx.fillStyle = '#4a1808';
-      roundRect(ctx, cx, yy, cw, btnH, 8);
+    const bh = 62, gap = 12;
+    const total = btns.length * bh + (btns.length - 1) * gap;
+    const avail = H - 40 - startY;
+    let y = avail > total ? startY + (avail - total) / 2 : startY;
+    const rs = {};
+    for (const b of btns) {
+      ctx.fillStyle = b.primary ? '#4a1808' : '#2a1206';
+      roundRectBilliards(ctx, cx, y, cw, bh, 8);
       ctx.fill();
-      ctx.strokeStyle = '#d9a679';
+      ctx.strokeStyle = b.primary ? '#d9a679' : '#8a6b2e';
       ctx.lineWidth = 1;
       ctx.stroke();
       ctx.fillStyle = '#f5ecd7';
       ctx.font = 'bold 15px Georgia, serif';
       ctx.textAlign = 'center';
-      ctx.fillText(title, W / 2, yy + 26);
-      ctx.fillStyle = '#c9b98a';
-      ctx.font = 'italic 11px Georgia, serif';
-      ctx.fillText(subtitle, W / 2, yy + 46);
-      return { x: cx, y: yy, w: cw, h: btnH };
-    };
+      ctx.textBaseline = 'alphabetic';
+      ctx.fillText(b.title, W / 2, y + 26);
+      if (b.subtitle) {
+        ctx.fillStyle = '#c9b98a';
+        ctx.font = 'italic 11px Georgia, serif';
+        ctx.fillText(b.subtitle, W / 2, y + 45);
+      }
+      rs[b.key] = { x: cx, y, w: cw, h: bh };
+      y += bh + gap;
+    }
+    return rs;
+  }
 
-    const bo3 = drawFormatBtn(y, 'BEST OF 3', 'First to 2 frames. Quick.');
-    y += btnH + gap;
-    const bo5 = drawFormatBtn(y, 'BEST OF 5', 'First to 3 frames. The proper match.');
-    y += btnH + gap;
-    const bo7 = drawFormatBtn(y, 'BEST OF 7', 'First to 4 frames. Test of endurance.');
-    y += btnH + gap;
-
-    ctx.strokeStyle = '#8a6b2e';
-    ctx.strokeRect(cx, y, cw, backH);
+  function drawModeSelect() {
+    screenBg();
+    const W = canvas.width, H = canvas.height;
+    ctx.fillStyle = '#ebdab3'; ctx.textAlign = 'center';
+    ctx.font = 'italic bold 22px Georgia, serif';
+    const titleY = Math.max(60, H * 0.13);
+    ctx.fillText('THE BILLIARD TABLE', W / 2, titleY);
+    ctx.font = 'italic 12px Georgia, serif';
     ctx.fillStyle = '#c9b98a';
-    ctx.font = '12px Georgia, serif';
-    ctx.fillText('← BACK', W / 2, y + backH / 2 + 4);
+    ctx.fillText('The felt is honest. Most things in this house are not.', W / 2, titleY + 24);
+    screenRouter.mode = stackButtons(titleY + 50, [
+      { key: 'solo', title: 'SOLO PRACTICE', subtitle: 'Rack. Break. Play at your own pace.', primary: true },
+      { key: 'vs',   title: 'CHALLENGE ALISTAIR', subtitle: 'Loser owes a truthful answer.', primary: true },
+      { key: 'exit', title: 'LEAVE THE TABLE', subtitle: null, primary: false }
+    ]);
+  }
 
-    formatSelectRegions = {
-      bo3: bo3, bo5: bo5, bo7: bo7,
-      back: { x: cx, y: y, w: cw, h: backH }
-    };
+  function drawFormatSelect() {
+    screenBg();
+    const W = canvas.width, H = canvas.height;
+    ctx.fillStyle = '#ebdab3'; ctx.textAlign = 'center';
+    ctx.font = 'italic bold 20px Georgia, serif';
+    const titleY = Math.max(60, H * 0.12);
+    ctx.fillText('CHOOSE YOUR STAKES', W / 2, titleY);
+    ctx.font = 'italic 12px Georgia, serif';
+    ctx.fillStyle = '#c9b98a';
+    ctx.fillText('Alistair will remember what you taught him.', W / 2, titleY + 22);
+    screenRouter.format = stackButtons(titleY + 48, [
+      { key: 'bo3', title: 'BEST OF 3', subtitle: 'First to 2. Quick.', primary: true },
+      { key: 'bo5', title: 'BEST OF 5', subtitle: 'First to 3. The proper match.', primary: true },
+      { key: 'bo7', title: 'BEST OF 7', subtitle: 'First to 4. Test of endurance.', primary: true },
+      { key: 'back', title: '← BACK', subtitle: null, primary: false }
+    ]);
   }
 
   function drawInterstitial() {
-    if (!ctx || !canvas || !match) return;
-    const W = canvas.width;
-    const H = canvas.height;
-    ctx.clearRect(0, 0, W, H);
-    const g = ctx.createRadialGradient(W/2, H/2, 40, W/2, H/2, Math.max(W, H));
-    g.addColorStop(0, '#2a1206');
-    g.addColorStop(1, '#0a0503');
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, W, H);
-
-    ctx.fillStyle = '#ebdab3';
-    ctx.textAlign = 'center';
+    screenBg();
+    const W = canvas.width, H = canvas.height;
+    ctx.fillStyle = '#ebdab3'; ctx.textAlign = 'center';
     ctx.font = 'italic bold 18px Georgia, serif';
     const titleY = Math.max(50, H * 0.10);
     ctx.fillText('BETWEEN FRAMES', W / 2, titleY);
+    ctx.font = 'bold 40px Georgia, serif'; ctx.fillStyle = '#f5ecd7';
+    ctx.fillText(match.playerFrames + '  —  ' + match.alistairFrames, W / 2, titleY + 56);
+    ctx.font = 'italic 11px Georgia, serif'; ctx.fillStyle = '#c9b98a';
+    ctx.fillText('YOU         ALISTAIR', W / 2, titleY + 76);
 
-    // Score display
-    ctx.font = 'bold 36px Georgia, serif';
-    ctx.fillStyle = '#f5ecd7';
-    ctx.fillText(match.playerFrames + '   —   ' + match.alistairFrames, W / 2, titleY + 54);
-    ctx.font = 'italic 11px Georgia, serif';
-    ctx.fillStyle = '#c9b98a';
-    ctx.fillText('YOU         ALISTAIR', W / 2, titleY + 74);
-
-    // Format label
-    ctx.font = '12px Georgia, serif';
-    ctx.fillStyle = '#8a6b2e';
-    const needed = match.toWin;
-    const tail = 'Best of ' + match.format + ' — first to ' + needed;
-    ctx.fillText(tail, W / 2, titleY + 92);
-
-    // "Alistair's notes on you"
-    const notesTop = titleY + 120;
+    const notesTop = titleY + 110;
     ctx.font = 'italic bold 13px Georgia, serif';
     ctx.fillStyle = '#d9a679';
     ctx.fillText("ALISTAIR'S NOTES ON YOU", W / 2, notesTop);
-
-    ctx.font = '12px Georgia, serif';
-    ctx.fillStyle = '#e8dcc3';
+    ctx.font = '12px Georgia, serif'; ctx.fillStyle = '#e8dcc3';
     ctx.textAlign = 'left';
-    const notes = match.interstitialNotes || [];
-    const padX = 22;
+    const notes = match.interstitialNotes || generateNotes();
+    match.interstitialNotes = notes;
     let ny = notesTop + 22;
-    const maxW = W - padX * 2;
-    for (const note of notes.slice(0, 6)) {
-      const wrapped = wrapText(note, maxW);
-      for (const l of wrapped) {
-        ctx.fillText(l, padX, ny);
-        ny += 16;
-      }
+    for (const n of notes.slice(0, 6)) {
+      const lines = wrapTextBilliards(ctx, n, W - 40);
+      for (const l of lines) { ctx.fillText(l, 20, ny); ny += 16; }
       ny += 4;
     }
 
-    // Psych meter — Alistair's confidence bar
-    const meterY = Math.min(H - 110, ny + 16);
-    ctx.textAlign = 'center';
-    ctx.font = 'italic 11px Georgia, serif';
-    ctx.fillStyle = '#8a6b2e';
-    ctx.fillText('ALISTAIR\'S COMPOSURE', W / 2, meterY);
-    const mw = Math.min(260, W - 60);
-    const mx = W / 2 - mw / 2;
-    const my = meterY + 8;
-    const mh = 10;
-    ctx.fillStyle = 'rgba(0,0,0,0.6)';
-    ctx.fillRect(mx, my, mw, mh);
-    const conf = match.confidence;
-    const fill = mw * conf;
-    const gradM = ctx.createLinearGradient(mx, 0, mx + mw, 0);
-    gradM.addColorStop(0, '#c0392b');
-    gradM.addColorStop(1, '#f7c948');
-    ctx.fillStyle = gradM;
-    ctx.fillRect(mx, my, fill, mh);
-    ctx.strokeStyle = '#8a6b2e';
-    ctx.strokeRect(mx, my, mw, mh);
-
-    // Continue button
-    const contW = Math.min(220, W - 40);
-    const contH = 48;
-    const contX = W / 2 - contW / 2;
-    const contY = H - 80;
+    const cw = Math.min(240, W - 40);
+    const ch = 48;
+    const cxb = W / 2 - cw / 2;
+    const cyb = H - 80;
     ctx.fillStyle = '#4a1808';
-    roundRect(ctx, contX, contY, contW, contH, 6);
-    ctx.fill();
-    ctx.strokeStyle = '#d9a679';
-    ctx.stroke();
-    ctx.fillStyle = '#f5ecd7';
-    ctx.font = 'bold 14px Georgia, serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('RACK THE NEXT FRAME', W / 2, contY + contH / 2);
-
-    // Breaker indicator
-    ctx.font = 'italic 11px Georgia, serif';
-    ctx.fillStyle = '#c9b98a';
-    ctx.textBaseline = 'alphabetic';
-    const breakLabel = match.nextBreaker === 'player' ? 'You break' : 'Alistair breaks';
-    ctx.fillText(breakLabel, W / 2, contY - 8);
-
-    interstitialRegions = { continue: { x: contX, y: contY, w: contW, h: contH } };
+    roundRectBilliards(ctx, cxb, cyb, cw, ch, 6); ctx.fill();
+    ctx.strokeStyle = '#d9a679'; ctx.stroke();
+    ctx.fillStyle = '#f5ecd7'; ctx.font = 'bold 14px Georgia, serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('RACK THE NEXT FRAME', W / 2, cyb + ch / 2);
+    screenRouter.interstitial = { continue: { x: cxb, y: cyb, w: cw, h: ch } };
   }
 
   function drawMatchEnd() {
-    if (!ctx || !canvas || !match) return;
-    const W = canvas.width;
-    const H = canvas.height;
-    ctx.clearRect(0, 0, W, H);
-    const g = ctx.createRadialGradient(W/2, H/2, 40, W/2, H/2, Math.max(W, H));
-    g.addColorStop(0, '#2a1206');
-    g.addColorStop(1, '#050201');
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, W, H);
-
+    screenBg();
+    const W = canvas.width, H = canvas.height;
     const playerWon = match.playerFrames > match.alistairFrames;
     ctx.fillStyle = playerWon ? '#f7c948' : '#ebdab3';
     ctx.textAlign = 'center';
-    ctx.font = 'italic bold 26px Georgia, serif';
-    const titleY = Math.max(60, H * 0.14);
-    ctx.fillText(playerWon ? 'YOU WON THE MATCH' : 'ALISTAIR WINS', W / 2, titleY);
+    ctx.font = 'italic bold 24px Georgia, serif';
+    const titleY = Math.max(60, H * 0.12);
+    ctx.fillText(playerWon ? 'YOU WIN THE MATCH' : 'ALISTAIR WINS', W / 2, titleY);
+    ctx.font = 'bold 40px Georgia, serif'; ctx.fillStyle = '#f5ecd7';
+    ctx.fillText(match.playerFrames + '  —  ' + match.alistairFrames, W / 2, titleY + 56);
 
-    // Final score
-    ctx.font = 'bold 44px Georgia, serif';
-    ctx.fillStyle = '#f5ecd7';
-    ctx.fillText(match.playerFrames + '  —  ' + match.alistairFrames, W / 2, titleY + 64);
-
-    // Final stats
-    const d = match.dossier;
-    const potRate = d.shotsTaken ? (d.shotsPotted / d.shotsTaken * 100) | 0 : 0;
-    const avgPower = d.shotsTaken ? (d.totalPower / d.shotsTaken * 100) | 0 : 0;
-    ctx.font = '12px Georgia, serif';
-    ctx.fillStyle = '#c9b98a';
-    let sy = titleY + 108;
-    ctx.textAlign = 'left';
-    const padX = 32;
-    const stats = [
-      'YOUR FINAL LINE',
-      '  Pot rate:     ' + potRate + '%',
-      '  Scratches:   ' + d.scratches,
-      '  Avg power:   ' + avgPower + '%',
-      '  Hard shots:  ' + d.hardPots + ' attempted',
-      '  Cuts / straights:  ' + d.cutShots + ' / ' + d.straightShots,
-      '  Safeties by Alistair:  ' + d.safetiesPlayed
-    ];
-    for (const s of stats) {
-      if (s.indexOf('YOUR') === 0) { ctx.fillStyle = '#d9a679'; ctx.font = 'italic bold 12px Georgia, serif'; }
-      else { ctx.fillStyle = '#e8dcc3'; ctx.font = '12px Georgia, serif'; }
-      ctx.fillText(s, padX, sy);
-      sy += 18;
-    }
-    sy += 10;
-
-    // Alistair's closing note
-    ctx.fillStyle = '#d9a679';
-    ctx.font = 'italic bold 12px Georgia, serif';
-    ctx.fillText("ALISTAIR'S READ", padX, sy);
-    sy += 18;
-    ctx.fillStyle = '#e8dcc3';
-    ctx.font = 'italic 12px Georgia, serif';
     const notes = generateNotes().slice(0, 3);
-    const maxW = W - padX * 2;
-    for (const note of notes) {
-      const lines = wrapText(note, maxW);
-      for (const l of lines) {
-        ctx.fillText(l, padX, sy);
-        sy += 16;
-      }
-      sy += 4;
+    let ny = titleY + 110;
+    ctx.fillStyle = '#d9a679'; ctx.font = 'italic bold 12px Georgia, serif';
+    ctx.textAlign = 'left';
+    ctx.fillText("ALISTAIR'S READ", 24, ny);
+    ny += 22;
+    ctx.fillStyle = '#e8dcc3'; ctx.font = 'italic 12px Georgia, serif';
+    for (const n of notes) {
+      const lines = wrapTextBilliards(ctx, n, W - 48);
+      for (const l of lines) { ctx.fillText(l, 24, ny); ny += 16; }
+      ny += 4;
     }
 
-    // Buttons
-    const bw = Math.min(160, (W - 60) / 2);
-    const bh = 44;
-    const gap = 16;
-    const totalW = bw * 2 + gap;
-    const bx0 = W / 2 - totalW / 2;
+    const bw = Math.min(160, (W - 60) / 2), bh = 44, gap = 16;
+    const bx0 = W / 2 - (bw * 2 + gap) / 2;
     const by = H - bh - 20;
-
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillStyle = '#4a1808';
-    roundRect(ctx, bx0, by, bw, bh, 6);
-    ctx.fill();
-    ctx.strokeStyle = '#d9a679';
-    ctx.stroke();
-    ctx.fillStyle = '#f5ecd7';
-    ctx.font = 'bold 13px Georgia, serif';
+    roundRectBilliards(ctx, bx0, by, bw, bh, 6); ctx.fill();
+    ctx.strokeStyle = '#d9a679'; ctx.stroke();
+    ctx.fillStyle = '#f5ecd7'; ctx.font = 'bold 13px Georgia, serif';
     ctx.fillText('REMATCH', bx0 + bw / 2, by + bh / 2);
-
     const bx1 = bx0 + bw + gap;
     ctx.fillStyle = '#2a1206';
-    roundRect(ctx, bx1, by, bw, bh, 6);
-    ctx.fill();
-    ctx.strokeStyle = '#8a6b2e';
-    ctx.stroke();
+    roundRectBilliards(ctx, bx1, by, bw, bh, 6); ctx.fill();
+    ctx.strokeStyle = '#8a6b2e'; ctx.stroke();
     ctx.fillStyle = '#c9b98a';
     ctx.fillText('MAIN MENU', bx1 + bw / 2, by + bh / 2);
-
-    matchEndRegions = {
+    screenRouter.matchEnd = {
       rematch: { x: bx0, y: by, w: bw, h: bh },
       menu:    { x: bx1, y: by, w: bw, h: bh }
     };
   }
 
+  // Screen tap router — returns true if the tap was consumed by a screen.
+  function screenRouter_onDown(p) {
+    if (screenState === 'modeSelect') {
+      const r = screenRouter.mode;
+      if (!r) return true;
+      if (hitRect(p.x, p.y, r.solo)) { screenState = 'game'; newGame('solo'); return true; }
+      if (hitRect(p.x, p.y, r.vs))   { screenState = 'formatSelect'; return true; }
+      if (hitRect(p.x, p.y, r.exit)) { closeBilliards(); return true; }
+      return true;
+    }
+    if (screenState === 'formatSelect') {
+      const r = screenRouter.format;
+      if (!r) return true;
+      if (hitRect(p.x, p.y, r.bo3)) { newMatch(3); newGame('vs'); screenState = 'game'; return true; }
+      if (hitRect(p.x, p.y, r.bo5)) { newMatch(5); newGame('vs'); screenState = 'game'; return true; }
+      if (hitRect(p.x, p.y, r.bo7)) { newMatch(7); newGame('vs'); screenState = 'game'; return true; }
+      if (hitRect(p.x, p.y, r.back)) { screenState = 'modeSelect'; return true; }
+      return true;
+    }
+    if (screenState === 'interstitial') {
+      const r = screenRouter.interstitial;
+      if (!r || hitRect(p.x, p.y, r.continue)) {
+        startNextFrame();
+        screenState = 'game';
+        return true;
+      }
+      return true;
+    }
+    if (screenState === 'matchEnd') {
+      const r = screenRouter.matchEnd;
+      if (!r) return true;
+      if (hitRect(p.x, p.y, r.rematch)) { newMatch(match.format); newGame('vs'); screenState = 'game'; return true; }
+      if (hitRect(p.x, p.y, r.menu))    { match = null; state = null; screenState = 'modeSelect'; return true; }
+      return true;
+    }
+    return false;  // not on a screen — in-game, handle normally
+  }
+
+  // Hook endGame state transitions back into screenState
+  // (The existing endGame sets state.gamePhase to 'interstitial' or 'matchend')
+  function syncScreenFromState() {
+    if (!state) return;
+    if (state.gamePhase === 'interstitial' && screenState !== 'interstitial') screenState = 'interstitial';
+    if (state.gamePhase === 'matchend' && screenState !== 'matchEnd') screenState = 'matchEnd';
+  }
+
   // ---------- Loop ---------------------------------------------------------
   function loop() {
     if (!canvas) return;
-    if (modeSelectActive) {
-      drawModeSelect();
-    } else if (formatSelectActive) {
-      drawFormatSelect();
-    } else if (state && state.gamePhase === 'interstitial') {
-      drawInterstitial();
-    } else if (state && state.gamePhase === 'matchend') {
-      drawMatchEnd();
+    if (screenState === 'modeSelect' || screenState === 'formatSelect') {
+      drawScreens();
     } else if (state) {
-      if (state.gamePhase === 'simulating') step();
-      // Watchdog: if Alistair's turn has been pending too long, kick it
-      if (state.mode === 'vs' && state.turn === 'alistair' &&
-          state.gamePhase === 'aiming' && state._alistairTurnStart &&
-          performance.now() - state._alistairTurnStart > 4000) {
-        state._alistairTurnStart = 0;
-        alistairMove();
+      syncScreenFromState();
+      if (screenState === 'interstitial' || screenState === 'matchEnd') {
+        drawScreens();
+      } else {
+        if (state.gamePhase === 'simulating') step();
+        if (state.mode === 'vs' && state.turn === 'alistair' && state.gamePhase === 'aiming' &&
+            state._alistairTurnStart && performance.now() - state._alistairTurnStart > 4000) {
+          state._alistairTurnStart = 0;
+          alistairMove();
+        }
+        render();
       }
-      render();
     }
     rafId = requestAnimationFrame(loop);
   }
 
   // ---------- Open / Close -------------------------------------------------
+  let canvas = null, ctx = null, modal = null, rafId = null;
+
   function openBilliards() {
     if (modal) return;
     modal = document.createElement('div');
     modal.id = 'nocturne-billiards';
-    modal.style.cssText = [
-      'position:fixed','inset:0','z-index:9999',
-      'background:radial-gradient(ellipse at center, #1a0e07 0%, #0a0503 50%, #000 100%)',
-      'overflow:hidden','touch-action:none',
-      'display:flex','align-items:stretch','justify-content:stretch'
-    ].join(';');
+    modal.style.cssText = 'position:fixed;inset:0;z-index:9999;background:radial-gradient(ellipse at center,#1a0e07 0%,#0a0503 50%,#000 100%);overflow:hidden;touch-action:none;display:flex;';
 
     const close = document.createElement('button');
     close.textContent = '× CLOSE';
-    close.style.cssText = [
-      'position:absolute','top:10px','right:10px',
-      'background:rgba(40,20,10,0.85)','color:#ebdab3',
-      'border:1px solid #8a6b2e','padding:6px 12px',
-      'font-family:Georgia, serif','font-size:12px',
-      'cursor:pointer','z-index:2','border-radius:4px'
-    ].join(';');
+    close.style.cssText = 'position:absolute;top:10px;right:10px;background:rgba(40,20,10,0.85);color:#ebdab3;border:1px solid #8a6b2e;padding:6px 12px;font-family:Georgia,serif;font-size:12px;cursor:pointer;z-index:2;border-radius:4px;';
     close.addEventListener('click', closeBilliards);
     close.addEventListener('touchend', (e) => { e.preventDefault(); closeBilliards(); });
 
@@ -2845,7 +2555,9 @@
     window.addEventListener('resize', fitCanvas);
     window.addEventListener('orientationchange', fitCanvas);
 
-    modeSelectActive = true;
+    screenState = 'modeSelect';
+    state = null;
+    match = null;
 
     canvas.addEventListener('mousedown', onPointerDown);
     canvas.addEventListener('mousemove', onPointerMove);
@@ -2862,23 +2574,17 @@
     if (!canvas) return;
     const w = Math.floor(window.innerWidth);
     const h = Math.floor(window.innerHeight);
-    canvas.width = w;
-    canvas.height = h;
-    canvas.style.width = w + 'px';
-    canvas.style.height = h + 'px';
+    canvas.width = w; canvas.height = h;
+    canvas.style.width = w + 'px'; canvas.style.height = h + 'px';
   }
 
   function closeBilliards() {
     if (rafId) cancelAnimationFrame(rafId);
     rafId = null;
     if (modal && modal.parentNode) modal.parentNode.removeChild(modal);
-    modal = null;
-    canvas = null;
-    ctx = null;
-    state = null;
-    modeSelectActive = false;
-    powerDragging = false;
-    spinDragging = false;
+    modal = null; canvas = null; ctx = null; state = null;
+    screenState = 'modeSelect';
+    dragMode = null;
     window.removeEventListener('resize', fitCanvas);
     window.removeEventListener('orientationchange', fitCanvas);
   }

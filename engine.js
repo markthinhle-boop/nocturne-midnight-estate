@@ -49,7 +49,7 @@ const FIXED_TRUTH = {
 // ── ACCUSABLE CHARACTERS ───────────────────────────────────
 const ACCUSABLE_CHARACTERS = [
   "pemberton-hale", "steward", "crane",
-  "baron", "surgeon", "northcott", "ashworth"
+  "baron", "surgeon", "northcott"
 ];
 
 // ── GAME SETTINGS ──────────────────────────────────────────
@@ -313,7 +313,7 @@ const ITEMS = {
     pedestal_category: ["moment"],
     accusation_target: "surgeon",
     examine_1: "Three documents. Burned in the Study fireplace. The ash is still warm.",
-    examine_2: "Whoever burned these came back. The Study was locked between seven and seven-fifteen. The burning happened before the Rite.",
+    examine_2: "Whoever burned these came back. The Study was locked between six and seven. The burning happened before the Rite.",
     examine_3: "Three documents. Not one. Someone had time to be thorough. The Study was the last room they needed to clear before the evening began.",
   },
   "estate-charter-vol3": {
@@ -380,8 +380,8 @@ const ITEMS = {
     pedestal_category: [],
     accusation_target: null,
     examine_1: "A note in the Library. Left on the reading table. Not Greaves's hand.",
-    examine_2: "Two sentences. The first names the archive. The second names a time. Seven-twenty.",
-    examine_3: "Someone left a note in the Library for a reader they expected to be there at seven-twenty. Whoever left it knew where Greaves would be before Greaves did.",
+    examine_2: "Two sentences. The first names the archive. The second names a time. Six forty-five.",
+    examine_3: "Someone left a note in the Library for a reader they expected to be there at six forty-five. Whoever left it knew where Greaves would be before Greaves did.",
   },
   "debt-record": {
     name: "Debt Record",
@@ -435,7 +435,7 @@ const ITEMS = {
     pedestal_category: ["means", "moment"],
     accusation_target: "crane",
     examine_1: "Dr. Crane's appointment book. Open to tonight's date. One entry — the Estate availability call.",
-    examine_2: "The original pencil entry was for seven o'clock. The ink entry moves the appointment to seven-fifteen. The bag was packed before she arrived.",
+    examine_2: "The original pencil entry was for seven o'clock. The ink entry moves the appointment to six-thirty. The bag was packed before she arrived.",
     examine_3: "She arrived forty-five minutes before the ink entry says she was supposed to. The appointment book shows the change in her own hand. She knew what the evening required before she arrived.",
   },
   "curators-document": {
@@ -587,7 +587,7 @@ const ITEMS = {
     accusation_target: "crane",
     examine_1: "A medical bag on the balcony floor. Dr. Crane's initials on the clasp.",
     examine_2: "The case was left here. Not placed — left. There is a difference. Someone left in a hurry and did not come back for it.",
-    examine_3: "The case was on this floor at seven-oh-five. Two hours before Lord Ashworth reached the railing. A physician does not leave her case on a balcony floor by accident. She left it here because she knew she would need to come back to this room, and she did not want to be seen arriving with it.",
+    examine_3: "The case was on this floor at six-fifteen. Two hours before Lord Ashworth reached the railing. A physician does not leave her case on a balcony floor by accident. She left it here because she knew she would need to come back to this room, and she did not want to be seen arriving with it.",
   },
   "surgeons-licensing-record": {
     name: "Licensing Review Record",
@@ -598,7 +598,7 @@ const ITEMS = {
     accusation_target: "surgeon",
     examine_1: "A licensing board record. Thirty years old. Three senior board members listed. One of them is Lord Ashworth.",
     examine_2: "The determination revoked a physician's credentials. The decision was final. No appeal was permitted. The board chair signed the closing determination.",
-    examine_3: "Lord Ashworth chaired the review. He signed the determination. He had authority to return the finding. He chose not to. The physician named in this record is not Edmund Voss. The physician who has been in this building since seven-oh-three is.",
+    examine_3: "Lord Ashworth chaired the review. He signed the determination. He had authority to return the finding. He chose not to. The physician named in this record is not Edmund Voss. The physician who has been in this building since five forty-seven is.",
   },
   "rite-programme": {
     name: "Rite Programme",
@@ -721,7 +721,7 @@ const ITEMS = {
     pedestal_category: ["moment"], accusation_target: "surgeon",
     examine_1: "The Rite guest book. Signatures and arrival times. One entry has been removed — the page torn cleanly at the binding.",
     examine_2: "The tear is recent. Tonight. The surrounding entries are undisturbed.",
-    examine_3: "The missing entry corresponds to the seven-oh-three arrival. Someone came back and removed it. The guest book and Northcott's notebook now point at the same gap in the record.",
+    examine_3: "The missing entry corresponds to the five forty-seven arrival. Someone came back and removed it. The guest book and Northcott's notebook now point at the same gap in the record.",
   },
   "archive-filing-notes": {
     name: "Archive Filing Notes",
@@ -786,8 +786,8 @@ const ITEMS = {
     is_droppable: true, is_deception_item: false, is_essential: false,
     pedestal_category: ["moment"], accusation_target: "ashworth",
     examine_1: "A slip of paper on the card table. Tonight's date. A request for both sets of candelabras to be changed.",
-    examine_2: "Lady Ashworth's hand. The time is written at the top — seven-oh-five this evening. Before the Rite. Before anyone was called.",
-    examine_3: "She made the request in writing and kept a copy. At seven-oh-five she was in the Foyer making written requests as if she already understood the record would matter.",
+    examine_2: "Lady Ashworth's hand. The time is written at the top — six-fifteen this evening. Before the Rite. Before anyone was called.",
+    examine_3: "She made the request in writing and kept a copy. At six-fifteen she was in the Foyer making written requests as if she already understood the record would matter.",
   },
   "northcott-placement-letter": {
     name: "Northcott's Placement Letter",
@@ -802,7 +802,7 @@ const ITEMS = {
     is_droppable: true, is_deception_item: false, is_essential: false,
     pedestal_category: ["means", "moment"], accusation_target: "northcott",
     examine_1: "A leather-bound record on the card table. Every arrival tonight. Precise handwriting.",
-    examine_2: "He controls what is in this record. He also controls what is not. The 7:03PM entry is circled. Nothing else is.",
+    examine_2: "He controls what is in this record. He also controls what is not. The 5:47PM entry is circled. Nothing else is.",
     examine_3: "He circled one entry and left everything else unmarked. Every decision about this record is his. The circled entry is the only arrival that cannot be accounted for by anyone else in the building.",
   },
   "baron-compact-channel": {
@@ -818,8 +818,8 @@ const ITEMS = {
     is_droppable: true, is_deception_item: false, is_essential: false,
     pedestal_category: ["moment"], accusation_target: "baron",
     examine_1: "A notepad on the windowsill. The Baron's hand. Two lines.",
-    examine_2: "Seven-oh-five PM. Study. The name is not written. The time is. He noted it the way someone notes something they intend to forget.",
-    examine_3: "He saw someone leave the study at seven-oh-five and wrote the time but not the name. He did not report it. He watched someone leave the room where Lord Ashworth would die thirty-five minutes later and decided that was not his problem.",
+    examine_2: "Six-fifteen PM. Study. The name is not written. The time is. He noted it the way someone notes something they intend to forget.",
+    examine_3: "He saw someone leave the study at six-fifteen and wrote the time but not the name. He did not report it. He watched someone leave the room where Lord Ashworth would die four hours later and decided that was not his problem.",
   },
   "ballroom-programme": {
     name: "Rite Programme",
@@ -833,7 +833,7 @@ const ITEMS = {
   // The staged misdirection weapon. Placed near Ashworth's head by the Surgeon.
   // Makes blunt force the obvious conclusion. Five wrong suspects all had access.
   // Wrong-path players build cases around this. Correct-path players eventually
-  // realise it was staged — Vivienne confirms it was not there at seven o'clock.
+  // realise it was staged — Vivienne confirms it was not there at six o'clock.
   "candle-iron": {
     name: "Candle Iron",
     is_droppable: true,
@@ -843,7 +843,7 @@ const ITEMS = {
     accusation_target: null,
     examine_1: "A candle iron from the ballroom candelabra. Found near Lord Ashworth's head. The base is heavy — cast iron. It would not need much force.",
     examine_2: "The wick is still in the holder. The iron was separated from the candle deliberately — this was removed and placed, not knocked over. Someone carried it here.",
-    examine_3: "The iron was not here at seven o'clock. The maid set the candles before the assembly and the holder was intact. It arrived between seven and eight. Someone brought it and placed it deliberately near the body.",
+    examine_3: "The iron was not here at six o'clock. The maid set the candles before the assembly and the holder was intact. It arrived between six and eight. Someone brought it and placed it deliberately near the body.",
     examine_4: "There is no blood on the iron. No hair. No tissue. Whatever it was placed here to suggest — it did not do what it was placed here to suggest. The body shows no evidence of blunt force. The candle iron is a statement about what the investigator should conclude. It is not evidence of what happened.",
   },
   "lectern-pen": {
@@ -860,7 +860,7 @@ const ITEMS = {
     pedestal_category: ["moment"], accusation_target: null,
     examine_1: "A garden map. Found on the terrace table. Not Estate issue — the cartography style is different.",
     examine_2: "One path is marked in pencil. The route runs from the garden entrance to the wine cellar access point, avoiding every lit path.",
-    examine_3: "The map was left here. Not lost — left. The pencil route is the path used by whoever arrived at seven-oh-three without being seen.",
+    examine_3: "The map was left here. Not lost — left. The pencil route is the path used by whoever arrived at five forty-seven without being seen.",
   },
   "ashtray": {
     name: "Crystal Ashtray",
@@ -888,7 +888,7 @@ const ITEMS = {
   },
   // ph-document-case removed — Todd on train, PH has no foyer presence
   // ── NEW ITEMS — KB v4.0 ──────────────────────────────────
-  // Northcott's arrival notebook — contains Surgeon's 7:03PM entry
+  // Northcott's arrival notebook — contains Surgeon's 5:47PM entry
   // One hour before the Surgeon claimed to have arrived.
   "northcott-notebook": {
     name: "Northcott's Arrival Record",
@@ -898,8 +898,8 @@ const ITEMS = {
     pedestal_category: ["moment"],
     accusation_target: "surgeon",
     examine_1: "A small leather-bound notebook. Meticulous entries. Every arrival tonight recorded in precise handwriting.",
-    examine_2: "7:03PM. One entry is circled twice. A face not clearly seen. A route through the garden that most members don't use. An hour before the Surgeon claimed to have arrived.",
-    examine_3: "The 7:03PM entry is the only one without a name attached. Northcott saw a face he didn't recognize. He circled it because something about it didn't fit the guest list.",
+    examine_2: "5:47PM. One entry is circled twice. A face not clearly seen. A route through the garden that most members don't use. An hour before the Surgeon claimed to have arrived.",
+    examine_3: "The 5:47PM entry is the only one without a name attached. Northcott saw a face he didn't recognize. He circled it because something about it didn't fit the guest list.",
   },
   // Safe combination — produced by Witness Map puzzle in c8-gallery
   // Unlocks the Vault safe containing Ashworth's evidence + Callum's Bond
@@ -933,7 +933,7 @@ const ITEMS = {
     pedestal_category: ["motive"],
     accusation_target: "crane",
     examine_1: "The appointment book moved forward forty-five minutes. The bag packed before the call. Both items from the same hand, the same evening, the same preparation.",
-    examine_2: "A physician who adjusts her appointment in her own book before she is summoned knows she will be summoned. A physician who leaves her bag on a balcony floor at seven-oh-five knows she will need to return to that balcony. The preparation preceded the event.",
+    examine_2: "A physician who adjusts her appointment in her own book before she is summoned knows she will be summoned. A physician who leaves her bag on a balcony floor at six-fifteen knows she will need to return to that balcony. The preparation preceded the event.",
     examine_3: "The medical case was on the balcony floor before Lord Ashworth reached the railing. The appointment was moved before the Rite began. She was not responding to tonight. She was ready for it.",
   },
   "baron-operational-record": {
@@ -1097,7 +1097,7 @@ const COMBINATION_CHAINS = [
       return !!(ni['craneBalconyAdmission'] && ni['crane_first_visit_ashworth_alive']);
     },
     discovery_text_single: "An appointment book and a medical bag. The times do not match the story.",
-    discovery_text_double: "The appointment book was amended in her own hand before she was called. The bag was on the balcony floor at seven-oh-five — forty minutes before Lord Ashworth fell. She did not leave in a hurry. She left the bag deliberately. She knew she would need to come back.",
+    discovery_text_double: "The appointment book was amended in her own hand before she was called. The bag was on the balcony floor at six-fifteen — two hours before Lord Ashworth fell. She did not leave in a hurry. She left the bag deliberately. She knew she would need to come back.",
     discovery_type: "crane_wrongpath",
     puzzle_content: {
       events: [
@@ -1241,18 +1241,18 @@ const COMBINATION_CHAINS = [
 
   {
     // CHAPTER TWO — Baron as the second story.
-    // Candle iron + baron-study-observation: he saw someone leave the study at 7:05.
+    // Candle iron + baron-study-observation: he saw someone leave the study at 6:15.
     // He knew the corridor. He knew the timing. His Compact channel gave them blind spots.
     // The cigarette went out at 7:45. He was watching when it happened.
     id: "scene-read-baron",
     item_a: "candle-iron", item_b: "baron-study-observation", item_c: null,
     triggers_puzzle: false, result_item: null,
-    locked_hint: "Talk to the Baron about what he saw at seven-oh-five.",
+    locked_hint: "Talk to the Baron about what he saw at six-fifteen.",
     condition: () => {
       const ni = gameState.node_inventory || {};
-      return !!(ni['baron_710_observation'] && ni['baron_crane_visit_715']);
+      return !!(ni['baron_615_observation'] && ni['baron_crane_visit_630']);
     },
-    discovery_text_double: "The candle iron and the observation note from the Baron's windowsill. He saw someone leave the study at seven-oh-five and wrote the time but not the name. He was at the terrace window at seven forty-five when his cigarette went out on its own. His Compact channel described which corridors were unmonitored and when — which positions an unobserved person could use to reach the Ballroom. The iron required someone who knew which route was clear. The Baron's channel described exactly that route.",
+    discovery_text_double: "The candle iron and the observation note from the Baron's windowsill. He saw someone leave the study at six-fifteen and wrote the time but not the name. He was at the terrace window at seven forty-five when his cigarette went out on its own. His Compact channel described which corridors were unmonitored and when — which positions an unobserved person could use to reach the Ballroom. The iron required someone who knew which route was clear. The Baron's channel described exactly that route.",
     discovery_type: "scene_read_baron",
     grants_node: "scene_reads_as_baron",
   },
@@ -1306,7 +1306,7 @@ const COMBINATION_CHAINS = [
       const ni = gameState.node_inventory || {};
       return !!(ni['ashworth_told_her_about_arrangement'] && ni['ashworth_planned_revelation']);
     },
-    discovery_text_double: "The candle request note and the estate flower. She changed both sets of candelabras at seven-oh-five — before the Rite, before anyone else arrived. That change moved the candle iron from its ceremonial position in the Ballroom. The flower was found in the study. She had Ashworth's key. She knew he was in danger six weeks before tonight and came anyway. A woman who moves the iron, enters the study, and knows the evening will end badly is a woman who prepared for something.",
+    discovery_text_double: "The candle request note and the estate flower. She changed both sets of candelabras at six-fifteen — before the Rite, before anyone else arrived. That change moved the candle iron from its ceremonial position in the Ballroom. The flower was found in the study. She had Ashworth's key. She knew he was in danger six weeks before tonight and came anyway. A woman who moves the iron, enters the study, and knows the evening will end badly is a woman who prepared for something.",
     discovery_type: "scene_read_ashworth",
     grants_node: "scene_reads_as_ashworth",
   },
@@ -1374,13 +1374,13 @@ const ROOM_OBJECTS = {
     hotspot: { left: 18, top: 33, width: 42, height: 32 },
   },
 
-  // ── SMOKING ROOM ───────────────────────────────────────────
+  // ── LIBRARY ────────────────────────────────────────────────
   "chess-board-obj": {
-    room: "smoking",
-    tap_1: "A chess board mid-game. The Baron is waiting.",
+    room: "library",
+    tap_1: "A chess board mid-game. Greaves has been working through a position.",
     item_id: null, item_at_depth: null, is_essential: false, is_deception_item: false,
     slow_drag: false, max_depth: 1,
-    hotspot: { left: 32, top: 55, width: 32, height: 30 },
+    hotspot: { left: 5, top: 30, width: 40, height: 50 },
   },
 
   // ── FOYER ──────────────────────────────────────────────────
@@ -1411,15 +1411,15 @@ const ROOM_OBJECTS = {
   "northcott-log-obj": {
     room: "foyer",
     tap_1: "Northcott's notebook. Open to tonight's entries. Precise handwriting.",
-    tap_2: "One entry is circled twice. 7:03PM. An arrival through the garden. Face not recorded.",
-    tap_3: "The 7:03PM entry is the earliest arrival tonight. It precedes every member who signed in at the gate.",
+    tap_2: "One entry is circled twice. 5:47PM. An arrival through the garden. Face not recorded.",
+    tap_3: "The 5:47PM entry is the earliest arrival tonight. It precedes every member who signed in at the gate.",
     item_id: "northcott-notebook", item_at_depth: 1, is_essential: true, is_deception_item: false, slow_drag: false, max_depth: 3,
     hotspot: { left: 13, top: 52.2, width: 4, height: 4 },
   },
   "candle-request-obj": {
     room: "foyer",
     tap_1: "A slip of paper on the card table. Tonight's date. A request for both candelabra sets to be changed.",
-    tap_2: "Lady Ashworth's hand. The time is written at the top — seven-oh-five this evening. Before the Rite.",
+    tap_2: "Lady Ashworth's hand. The time is written at the top — six-fifteen this evening. Before the Rite.",
     tap_3: "She made the request in writing and kept a copy. She ensured the record existed.",
     item_id: "candle-request-note", item_at_depth: 3, is_essential: false, is_deception_item: false, slow_drag: false, max_depth: 3,
     hotspot: { left: 72, top: 52.8, width: 3.5, height: 3.2 },
@@ -1437,7 +1437,7 @@ const ROOM_OBJECTS = {
   "northcott-arrival-obj": {
     room: "foyer",
     tap_1: "A leather-bound record on the card table. Every arrival tonight. Precise handwriting.",
-    tap_2: "He controls what is in this record. He also controls what is not. The 7:03PM entry is circled. Nothing else is.",
+    tap_2: "He controls what is in this record. He also controls what is not. The 5:47PM entry is circled. Nothing else is.",
     tap_3: "A man who controls the arrival record and circles one entry is either a reliable witness or a very careful one. The distinction matters.",
     item_id: "northcott-arrival-record", item_at_depth: 3, is_essential: false, is_deception_item: false, slow_drag: false, max_depth: 3,
     hotspot: { left: 26.6, top: 52.1, width: 4, height: 4 },
@@ -1657,7 +1657,7 @@ const ROOM_OBJECTS = {
     tap_1: "Something near Lord Ashworth's head. A candle iron — the cast iron base from the candelabra. Heavy. It should not be here.",
     tap_2: "The iron is separate from its candle. The wick is still in the holder. This was removed deliberately, not knocked over. Someone carried it and placed it here.",
     tap_3: "No blood. No hair. No tissue. Whatever this was placed here to suggest — it did not do what it was placed here to suggest. The body shows no evidence of blunt force. The candle iron is a staged conclusion.",
-    tap_4: "The maid set the candles before the assembly. The holder was intact at seven o'clock. This iron arrived between seven and eight. Someone placed it here after Ashworth was already dead. The question is why.",
+    tap_4: "The maid set the candles before the assembly. The holder was intact at six o'clock. This iron arrived between six and eight. Someone placed it here after Ashworth was already dead. The question is why.",
     item_id: "candle-iron", item_at_depth: 1, is_essential: true, is_deception_item: true,
     slow_drag: false, max_depth: 4,
     hotspot: { left: 38, top: 72, width: 6, height: 4 },
@@ -1785,8 +1785,8 @@ const ROOM_OBJECTS = {
   "baron-window-obj": {
     room: "library",
     tap_1: "A notepad on the reading table. Not Greaves's hand. Two lines.",
-    tap_2: "Seven-oh-five PM. Study. The name is not written. The time is.",
-    tap_3: "Someone saw who left the study at seven-oh-five and wrote the time but not the name. The notepad was left in the Library.",
+    tap_2: "Six-fifteen PM. Study. The name is not written. The time is.",
+    tap_3: "Someone saw who left the study at six-fifteen and wrote the time but not the name. The notepad was left in the Library.",
     item_id: "baron-study-observation", item_at_depth: 3, is_essential: false, is_deception_item: false, slow_drag: false, max_depth: 3,
     hotspot: { left: 0, top: 34.6, width: 4, height: 4 },
   },
@@ -1996,7 +1996,7 @@ function tapObject(objectId, tapX, tapY) {
     return;
   }
 
-  // chess-board-obj — launches standalone chess game vs Baron
+  // chess-board-obj — launches standalone chess game vs Greaves
   if (objectId === 'chess-board-obj') {
     if (typeof window.openChess === 'function') {
       window.openChess();
@@ -2531,7 +2531,7 @@ const CRANE_LETTER_NODES = [
   'crane_arrived_at_call',
   'crane_first_visit_ashworth_alive',
   'crane_said_yes',
-  'crane_floor_clear_705',
+  'crane_floor_clear_615',
 ];
 
 function _checkCraneLetterThreshold() {
@@ -2576,8 +2576,8 @@ const CONTRADICTION_MAP = {
   'steward_corridor_758':                ['7:58 PM'],
 
   // Baron — false: "Smoking Room all evening"
-  // Cracked by: baron_710_observation (at window 7:44-7:49)
-  'baron_710_observation':               ['7:44 PM', '7:45 PM', '7:46 PM', '7:47 PM', '7:48 PM', '7:49 PM'],
+  // Cracked by: baron_615_observation (at window 7:44-7:49)
+  'baron_615_observation':               ['7:44 PM', '7:45 PM', '7:46 PM', '7:47 PM', '7:48 PM', '7:49 PM'],
 
   // Lady Ashworth — false: "arrived at seven"
   // Cracked by: ashworth_planned_revelation (garden at 7:40)
@@ -2587,10 +2587,10 @@ const CONTRADICTION_MAP = {
   // Cracked by: surgeon_contact_refused (came to cottage 7:35)
   'surgeon_contact_refused':             ['7:35 PM'],
 
-  // Crane — false: "no upstairs visit at 7:05" / "only one visit"
-  // Cracked by: crane_first_visit_ashworth_alive + crane_floor_clear_705
-  'crane_first_visit_ashworth_alive':    ['7:05 PM'],
-  'crane_floor_clear_705':              ['7:05 PM'],
+  // Crane — false: "no upstairs visit at 6:15" / "only one visit"
+  // Cracked by: crane_first_visit_ashworth_alive + crane_floor_clear_615
+  'crane_first_visit_ashworth_alive':    ['6:15 PM'],
+  'crane_floor_clear_615':              ['6:15 PM'],
 
   // Vivienne push — false romantic reading cracked
   // Cracked by: vivienne_push_witnessed
@@ -2708,14 +2708,14 @@ function fireDeception(charId, itemId) {
       "balcony-case": { response: "I left everything on the balcony exactly as I found it. I did not move the case.", is_effective: true, composure_effect: -18 },
     },
     "lady-ashworth": {
-      "estate-flower": { response: "The flower was mine. I left it for Edmund before the mingle began. Before anyone arrived. Before —", is_effective: true, composure_effect: -8 },
-      "estate-flower": { response: "The flower was mine. I left it for Edmund before the mingle began. Before anyone arrived. Before —", is_effective: true, composure_effect: -8 },
+      "estate-flower": { response: "The flower was mine. I left it for Edmund before six. Before anyone arrived. Before —", is_effective: true, composure_effect: -8 },
+      "estate-flower": { response: "The flower was mine. I left it for Edmund before six. Before anyone arrived. Before —", is_effective: true, composure_effect: -8 },
       "compact-keepsake": { response: "She looks at it for a long time. Not at you. At it. Something in her face closes. \"I knew that was there.\" She says it very quietly. \"I have known for some time.\" A pause. \"I did not touch it. I did not remove it.\" Another pause. \"That was my decision. It was not a simple decision.\"", is_effective: true, composure_effect: -20 },
     },
     // Keep old "ashworth" key as alias for any legacy references
     "ashworth": {
-      "estate-flower": { response: "The flower was mine. I left it for Edmund before the mingle began. Before anyone arrived. Before —", is_effective: true, composure_effect: -8 },
-      "estate-flower": { response: "The flower was mine. I left it for Edmund before the mingle began. Before anyone arrived. Before —", is_effective: true, composure_effect: -8 },
+      "estate-flower": { response: "The flower was mine. I left it for Edmund before six. Before anyone arrived. Before —", is_effective: true, composure_effect: -8 },
+      "estate-flower": { response: "The flower was mine. I left it for Edmund before six. Before anyone arrived. Before —", is_effective: true, composure_effect: -8 },
       "compact-keepsake": { response: "She looks at it for a long time. Not at you. At it. Something in her face closes. \"I knew that was there.\" She says it very quietly. \"I have known for some time.\" A pause. \"I did not touch it. I did not remove it.\" Another pause. \"That was my decision. It was not a simple decision.\"", is_effective: true, composure_effect: -20 },
     },
     "baron": {
@@ -2743,12 +2743,12 @@ function fireDeception(charId, itemId) {
       // Inversion mechanic — corrections arrive too smoothly.
       // He knows the accurate version without being told. That is the tell.
       // No composure damage. No credibility strike. He reveals himself instead.
-      "estate-flower":          { response: '"That flower was moved from the study at seven-fourteen-one. You found it in the Foyer. I know the order you examined things." A pause. "I was watching before you arrived."', is_effective: true, composure_effect: 0 },
+      "estate-flower":          { response: '"That flower was moved from the study at six forty-one. You found it in the Foyer. I know the order you examined things." A pause. "I was watching before you arrived."', is_effective: true, composure_effect: 0 },
       "unsigned-letter":        { response: '"You found that before you spoke to Pemberton-Hale." He says it without looking at the letter. "Third room you examined. You were moving faster than most." He is not asking.', is_effective: true, composure_effect: 0 },
       "barons-incomplete-file": { response: '"The Baron\'s file has been incomplete for eleven years. You found the gap in the first pass." A pause. "Most investigators take three visits to notice that." He says it with something that is almost professional appreciation.', is_effective: true, composure_effect: 0 },
       "operational-brief":      { response: '"That document was placed for you to find." He says it without inflection. "Not by me. By someone who understood what you would do when you found it." A pause. "They were right about you."', is_effective: true, composure_effect: 0 },
       "smoking-letters":        { response: '"You read those in the wrong order." He says it before you finish presenting them. "The third letter explains the first. You will need to read it again." He says nothing about how he knows the order you read them.', is_effective: true, composure_effect: 0 },
-      "study-decanter":         { response: '"Lady Ashworth touched that at seven-twelve." He says it the way someone says a thing they noted at the time and filed. "Before supper. You are the second person to examine it tonight." He does not say who the first was.', is_effective: true, composure_effect: 0 },
+      "study-decanter":         { response: '"Lady Ashworth touched that at six-twenty." He says it the way someone says a thing they noted at the time and filed. "Before supper. You are the second person to examine it tonight." He does not say who the first was.', is_effective: true, composure_effect: 0 },
       "lectern-pen":            { response: '"That pen was used twice tonight." He looks at it. "Once before the Rite. Once during." A pause. "You have been assuming it was used once. That assumption has been shaping your questions."', is_effective: true, composure_effect: 0 },
       "appointment-book":       { response: '"You found the entry on page forty-three." He does not touch it. "You spent forty seconds on that page. Longer than any other." A pause. "The entry you were looking at is not the most important one on that page."', is_effective: true, composure_effect: 0 },
       "ashworths-sunday-letter":{ response: '"Lord Ashworth wrote that three months ago." He says it with the precision of someone who read it when it was written. "The date in the corner is the postmark. The date he wrote it is different." He says nothing about how he knows when it was written.', is_effective: true, composure_effect: 0 },
@@ -2853,7 +2853,7 @@ const TIMELINE_GATE_MESSAGES = {
 };
 
 // ── TIMELINE NODE REQUIREMENTS ─────────────────────────────
-// New plot. Push from balcony at 7:45. No 7:03 as spine.
+// New plot. Push from balcony at 7:45. No 5:47 as spine.
 // Surgeon: three required nodes — Greaves sees maskless figure,
 //          Vivienne witnesses push, Surgeon gap named by himself.
 // All others: their own deep branch nodes as timeline gates.
@@ -2868,7 +2868,7 @@ const TIMELINES = {
   },
   "crane": {
     required: [
-      "crane_first_visit_ashworth_alive",   // Crane Q3 — floor clear at 7:05
+      "crane_first_visit_ashworth_alive",   // Crane Q3 — floor clear at 6:15
       "crane_said_nothing_after_discovery", // Crane Q7 — sequence confirmed
       "crane_two_reasons",                  // Crane Branch B CB3 — cannot separate
     ],
@@ -2892,8 +2892,8 @@ const TIMELINES = {
   },
   "baron": {
     required: [
-      "baron_710_observation",     // Baron Q4b — saw someone leave study at 7:05
-      "baron_crane_visit_715",     // Baron Q3 — Crane came at 7:15
+      "baron_615_observation",     // Baron Q4b — saw someone leave study at 6:15
+      "baron_crane_visit_630",     // Baron Q3 — Crane came at 6:30
       "baron_compact_arrangement", // Baron Branch A BAR_A2
     ],
     partial_threshold: 1,
@@ -2901,7 +2901,7 @@ const TIMELINES = {
   "ashworth": {
     required: [
       "ashworth_planned_revelation",      // Lady Ashworth Branch A BA2
-      "crane_first_visit_ashworth_alive", // Crane Q3 — he was well at 7:05
+      "crane_first_visit_ashworth_alive", // Crane Q3 — he was well at 6:15
       "lady_ashworth_wrong_mask_752",     // Lady Ashworth mask branch AM2
     ],
     partial_threshold: 1,
@@ -3099,7 +3099,7 @@ function resolveAccusation() {
 // Wrong verdicts per suspect — each names what was missed.
 const VERDICT_STRINGS = {
   // ── SURFACE CORRECT — Surgeon alone — teases conspiracy only ─
-  surface: "The Estate has its verdict.\n\nDr. Edmund Voss. The Surgeon. He arrived at seven-oh-three through the garden entrance, seventeen minutes before he claimed, at the edge of the mingle window when no one had yet thought to note that a physician had already solved the room. He went upstairs at some point before the assembly convened. He was on the balcony at seven forty-five. Lord Ashworth was there. The railing was there. And a man who had spent four years learning exactly how to be useful, exactly where to stand, exactly when to act — was there too.\n\nHe pushed him. The mask dropped in the struggle. He took three minutes — three minutes that no one in that Ballroom thought to account for — to drag the body to the lectern, to place the dead hand at the Register pointing at a man who had altered entries but killed no one, to stage the candle iron with his sleeve so it would look like the means and leave no prints. Then he ran. Maskless, across the terrace, to the groundskeeper's cottage, where a man named Thomas Hatch gave him a plain spare mask without asking why a physician needed one at seven forty-eight on the night Lord Ashworth died.\n\nHe rejoined the assembly. Composed. Helpful. The most useful man in the building.\n\nThe Estate has accepted the evidence. Dr. Voss is excommunicated. The record will carry his name.\n\nWhat the record will not carry is the answer to a simpler question: who sent him here? He did not decide this alone. A man who spent four years embedded in an organisation he did not choose, waiting for a specific instruction, does not arrive four years later having given himself that instruction.\n\nSomething sent him. Something that knew Lord Ashworth would be on that balcony at that railing on that night, and found that knowledge useful.\n\nThe killer is named. The investigation is closed. Whether the investigation is complete is a different question, and the Estate has chosen not to ask it.",
+  surface: "The Estate has its verdict.\n\nDr. Edmund Voss. The Surgeon. He arrived at five forty-seven through the garden entrance, an hour before he claimed, an hour before anyone would think to note that a physician had already solved the room. He went upstairs at some point before the assembly convened. He was on the balcony at seven forty-five. Lord Ashworth was there. The railing was there. And a man who had spent four years learning exactly how to be useful, exactly where to stand, exactly when to act — was there too.\n\nHe pushed him. The mask dropped in the struggle. He took three minutes — three minutes that no one in that Ballroom thought to account for — to drag the body to the lectern, to place the dead hand at the Register pointing at a man who had altered entries but killed no one, to stage the candle iron with his sleeve so it would look like the means and leave no prints. Then he ran. Maskless, across the terrace, to the groundskeeper's cottage, where a man named Thomas Hatch gave him a plain spare mask without asking why a physician needed one at seven forty-eight on the night Lord Ashworth died.\n\nHe rejoined the assembly. Composed. Helpful. The most useful man in the building.\n\nThe Estate has accepted the evidence. Dr. Voss is excommunicated. The record will carry his name.\n\nWhat the record will not carry is the answer to a simpler question: who sent him here? He did not decide this alone. A man who spent four years embedded in an organisation he did not choose, waiting for a specific instruction, does not arrive four years later having given himself that instruction.\n\nSomething sent him. Something that knew Lord Ashworth would be on that balcony at that railing on that night, and found that knowledge useful.\n\nThe killer is named. The investigation is closed. Whether the investigation is complete is a different question, and the Estate has chosen not to ask it.",
 
   // ── DEEP HUMAN — Surgeon + Crane — teases tunnel only ────────
   deep_human: "The Estate has two names before it.\n\nDr. Edmund Voss — the Surgeon — pushed Lord Ashworth from the balcony at seven forty-five. He staged the scene in three minutes flat. He obtained a replacement mask from the groundskeeper at seven forty-eight and rejoined the assembly as if he had never left it. He is the killer. The record will carry his name in full.\n\nDr. Harriet Crane is the second name, and the second name is harder.\n\nSix weeks before tonight, she wrote a document. It was precise, as she is precise about everything — the timing of a balcony visit, the floor plan of the level above the assembly hall, the window in which a man might be at a railing he had occupied at every Rite for eleven years. She wrote it because she was asked and because she believed the asking was legitimate. She wrote it because she is a physician and physicians think in windows and timing and the geometry of access. She did not write it to kill anyone. She wrote it because the Surgeon asked her clinical questions in the voice of a man solving a hypothetical, and she answered in the voice of a woman who had never once considered that a man she trusted would use her precision as a blueprint.\n\nShe was wrong about him. She knew she was wrong about him at eight-oh-one, when she went back upstairs and found his mask on the balcony floor, and said nothing. Not to protect him. To protect herself. That distinction exists. The Estate will decide how much it matters.\n\nBoth names are on the record. The killer and the woman whose expertise made the killing geometrically possible. He used her without her knowledge. She covered his evidence without his asking. Neither had the complete picture. The investigation does.\n\nWhat lies beyond the Vault is not in this record.",
@@ -3109,17 +3109,17 @@ const VERDICT_STRINGS = {
 
   // ── WRONG VERDICTS ───────────────────────────────────────────
 
-  "wrong_pemberton-hale": "The Estate has excommunicated Viscount Pemberton-Hale.\n\nHe deserves some of this. Let the record be precise about which parts.\n\nHe altered the Register. Eighteen months ago, with the careful hand of a man who had been planning his own protection for longer than that, he added an immunity clause to a chain of instruction he wanted no legal proximity to. He did it with Estate paper, with Estate ink, at a desk that belonged to the organisation he was simultaneously betraying and sheltering inside. When the Curator noticed the alterations at seven forty-two and chose to let the Rite expose them rather than intervene quietly, Pemberton-Hale did not know that. He thought his work was hidden. It was detectable. Those are not the same thing, and the Curator's choice of the word 'detectable' — offered to a physician at seven forty-two as if in passing — was not an accident.\n\nHe was in the Antechamber before the Rite. He positioned the mirror himself. He spent twenty minutes watching the corridor through it with the patience of a man who expected something to happen and wanted to see it arrive. He had his writing case. He had his gloves. He had eight years of accumulated grievance and the particular stillness of someone who has finally decided that waiting is over.\n\nAll of this is real. The investigation is not wrong about any of it.\n\nIt is wrong about one thing. One critical, irrecoverable thing.\n\nAt seven forty-five, Viscount Pemberton-Hale was twelve feet from Lord Ashworth in the Ballroom. Lord Ashworth was alive. The balcony above was occupied by a physician who had arrived at the Estate at seven-oh-three through the garden entrance — seventeen minutes before he claimed, with a purpose he had been given four years to prepare for. Pemberton-Hale did not know the physician was up there. He was watching the corridor through a mirror. He was waiting for a scandal, not a murder. The scandal he was waiting for was himself.\n\nHe was guilty of preparing. He was guilty of covering. He was guilty of standing twelve feet from a dying man and looking at a mirror instead of looking up.\n\nHe was not guilty of the push.\n\nThe investigation named the man who altered the Record. It did not name the man who altered the railing. The Surgeon watched this verdict from behind a plain mask that does not belong to him, borrowed at seven forty-eight from a groundskeeper who has not yet been asked the right question.\n\nThe record is closed. The killer is comfortable.\n\nNot everyone in this building tonight is accounted for.",
+  "wrong_pemberton-hale": "The Estate has excommunicated Viscount Pemberton-Hale.\n\nHe deserves some of this. Let the record be precise about which parts.\n\nHe altered the Register. Eighteen months ago, with the careful hand of a man who had been planning his own protection for longer than that, he added an immunity clause to a chain of instruction he wanted no legal proximity to. He did it with Estate paper, with Estate ink, at a desk that belonged to the organisation he was simultaneously betraying and sheltering inside. When the Curator noticed the alterations at seven forty-two and chose to let the Rite expose them rather than intervene quietly, Pemberton-Hale did not know that. He thought his work was hidden. It was detectable. Those are not the same thing, and the Curator's choice of the word 'detectable' — offered to a physician at seven forty-two as if in passing — was not an accident.\n\nHe was in the Antechamber before the Rite. He positioned the mirror himself. He spent twenty minutes watching the corridor through it with the patience of a man who expected something to happen and wanted to see it arrive. He had his writing case. He had his gloves. He had eight years of accumulated grievance and the particular stillness of someone who has finally decided that waiting is over.\n\nAll of this is real. The investigation is not wrong about any of it.\n\nIt is wrong about one thing. One critical, irrecoverable thing.\n\nAt seven forty-five, Viscount Pemberton-Hale was twelve feet from Lord Ashworth in the Ballroom. Lord Ashworth was alive. The balcony above was occupied by a physician who had arrived at the Estate at five forty-seven through the garden entrance — an hour before he claimed, with a purpose he had been given four years to prepare for. Pemberton-Hale did not know the physician was up there. He was watching the corridor through a mirror. He was waiting for a scandal, not a murder. The scandal he was waiting for was himself.\n\nHe was guilty of preparing. He was guilty of covering. He was guilty of standing twelve feet from a dying man and looking at a mirror instead of looking up.\n\nHe was not guilty of the push.\n\nThe investigation named the man who altered the Record. It did not name the man who altered the railing. The Surgeon watched this verdict from behind a plain mask that does not belong to him, borrowed at seven forty-eight from a groundskeeper who has not yet been asked the right question.\n\nThe record is closed. The killer is comfortable.\n\nNot everyone in this building tonight is accounted for.",
 
-  "wrong_crane": "The Estate has excommunicated Dr. Harriet Crane.\n\nShe will not protest this. She has had since eight-oh-one to decide how she feels about it, and the feeling she has settled on is something in the neighbourhood of: she earned parts of it and the parts she did not earn are her fault too, in the specific way that silence after the fact is always your fault even when speech would have destroyed you.\n\nHere is what she did.\n\nShe went upstairs at seven-oh-five. She noted that the balcony floor was clear. Lord Ashworth was alive and at his study. She came back downstairs. She visited the Baron at seven-fifteen — a professional courtesy, the kind she extends to members she is mildly concerned about and does not want to alarm. She prepared her medical bag before the Rite began, which is either excellent preparation or advance knowledge, and she has spent the evening being precise about the fact that those two things are not the same.\n\nAt six weeks before tonight she wrote a document. A colleague asked her clinical questions about the balcony level — access, timing, the geometry of the railing, the window during which the assembly hall would be empty above. She answered them. She answered them with the full precision of twenty years of surgical practice, because she was asked in the voice of a man conducting a professional inquiry and she had no reason then — she had every reason now — to suspect the inquiry was lethal.\n\nAfter eight-oh-one she went back upstairs. She found a mask on the balcony floor. She recognised it. She said nothing. She came downstairs and opened her bag and pronounced Lord Ashworth in the careful language of a physician who has decided that honesty about some things does not require honesty about all things.\n\nThe investigation found the document she wrote. It found the mask she found. It built a case that is true about everything except the most important fact: she was not on that balcony at seven forty-five. The man who wrote her questions was. He used her precision as a blueprint and her silence as a cover, and the investigation has named the blueprint without finding the architect.\n\nShe knew this was possible. She is not surprised by this verdict. The investigation found what she left. It did not find what she found.\n\nThe investigation is closed.\n\nThe Surgeon is still in this building, wearing a plain mask that is not his. He has been watching this proceed with the patience of a man who planned for exactly this outcome.\n\nNot everyone in this building tonight is accounted for.",
+  "wrong_crane": "The Estate has excommunicated Dr. Harriet Crane.\n\nShe will not protest this. She has had since eight-oh-one to decide how she feels about it, and the feeling she has settled on is something in the neighbourhood of: she earned parts of it and the parts she did not earn are her fault too, in the specific way that silence after the fact is always your fault even when speech would have destroyed you.\n\nHere is what she did.\n\nShe went upstairs at six-fifteen. She noted that the balcony floor was clear. Lord Ashworth was alive and at his study. She came back downstairs. She visited the Baron at six-thirty — a professional courtesy, the kind she extends to members she is mildly concerned about and does not want to alarm. She prepared her medical bag before the Rite began, which is either excellent preparation or advance knowledge, and she has spent the evening being precise about the fact that those two things are not the same.\n\nAt six weeks before tonight she wrote a document. A colleague asked her clinical questions about the balcony level — access, timing, the geometry of the railing, the window during which the assembly hall would be empty above. She answered them. She answered them with the full precision of twenty years of surgical practice, because she was asked in the voice of a man conducting a professional inquiry and she had no reason then — she had every reason now — to suspect the inquiry was lethal.\n\nAfter eight-oh-one she went back upstairs. She found a mask on the balcony floor. She recognised it. She said nothing. She came downstairs and opened her bag and pronounced Lord Ashworth in the careful language of a physician who has decided that honesty about some things does not require honesty about all things.\n\nThe investigation found the document she wrote. It found the mask she found. It built a case that is true about everything except the most important fact: she was not on that balcony at seven forty-five. The man who wrote her questions was. He used her precision as a blueprint and her silence as a cover, and the investigation has named the blueprint without finding the architect.\n\nShe knew this was possible. She is not surprised by this verdict. The investigation found what she left. It did not find what she found.\n\nThe investigation is closed.\n\nThe Surgeon is still in this building, wearing a plain mask that is not his. He has been watching this proceed with the patience of a man who planned for exactly this outcome.\n\nNot everyone in this building tonight is accounted for.",
 
-  "wrong_baron": "The Estate has excommunicated the Baron.\n\nHe is furious about this. Not in the way of a man who is innocent — in the way of a man who is guilty of exactly what he is guilty of, no more, and has just been charged with something categorically worse.\n\nHere is what he did.\n\nFor three years he provided information to an organisation on the other side of a garden wall he claimed never to have looked at. He was paid in the Compact's particular currency — access, protection, the quiet acknowledgment that certain of his interests were being considered by people who had been considering such interests for forty years. He refused the Duke's Claim eight times because eight times Ashworth offered him something the Compact had already arranged to give him. He was working both sides of a wall he was pretending didn't exist. He knew it. Ashworth knew it. The Compact knew it. The Baron has spent years being very comfortable with everyone knowing things that no one was saying.\n\nAt seven-oh-five he noted movement near the study. He did not ask. At seven-fifteen Dr. Crane visited him in the Smoking Room, which told him something, though he would not say what it told him. At seven forty-four he lit a cigarette. At seven forty-five the cigarette went out on its own — not because it burned down, because his hand stopped moving — because something above the terrace took his attention and the cigarette went out in his hand while he decided whether what he had just noticed was what he thought it was.\n\nHe decided it probably was.\n\nHe put the cigarette down. He did not pick it up again. He sat in that room until eight-oh-one and he decided that Lord Ashworth was capable of managing his own dangers, which is the sentence a man uses when he has decided that someone else's danger is not his responsibility and he would like to believe this without quite believing it.\n\nHe was wrong. He has known he was wrong since eight-oh-one.\n\nHe was not on that balcony. He was in the Smoking Room. The person who was on the balcony arrived at this Estate at seven-oh-three. The Baron's information gave the Compact a map of this building that it would not otherwise have had. He contributed to the conditions. He did not commit the act.\n\nThe investigation named the man who knew and stayed seated. It did not name the man who acted.\n\nThe Surgeon is still in this building. He sat in that assembly for twenty-five minutes after the push, in a plain mask borrowed from a groundskeeper, watching the investigation find everyone except him. He is satisfied with the Baron as an answer. The Baron is not.\n\nNot everyone in this building tonight is accounted for.",
+  "wrong_baron": "The Estate has excommunicated the Baron.\n\nHe is furious about this. Not in the way of a man who is innocent — in the way of a man who is guilty of exactly what he is guilty of, no more, and has just been charged with something categorically worse.\n\nHere is what he did.\n\nFor three years he provided information to an organisation on the other side of a garden wall he claimed never to have looked at. He was paid in the Compact's particular currency — access, protection, the quiet acknowledgment that certain of his interests were being considered by people who had been considering such interests for forty years. He refused the Duke's Claim eight times because eight times Ashworth offered him something the Compact had already arranged to give him. He was working both sides of a wall he was pretending didn't exist. He knew it. Ashworth knew it. The Compact knew it. The Baron has spent years being very comfortable with everyone knowing things that no one was saying.\n\nAt six-fifteen he noted movement near the study. He did not ask. At six-thirty Dr. Crane visited him in the Smoking Room, which told him something, though he would not say what it told him. At seven forty-four he lit a cigarette. At seven forty-five the cigarette went out on its own — not because it burned down, because his hand stopped moving — because something above the terrace took his attention and the cigarette went out in his hand while he decided whether what he had just noticed was what he thought it was.\n\nHe decided it probably was.\n\nHe put the cigarette down. He did not pick it up again. He sat in that room until eight-oh-one and he decided that Lord Ashworth was capable of managing his own dangers, which is the sentence a man uses when he has decided that someone else's danger is not his responsibility and he would like to believe this without quite believing it.\n\nHe was wrong. He has known he was wrong since eight-oh-one.\n\nHe was not on that balcony. He was in the Smoking Room. The person who was on the balcony arrived at this Estate at five forty-seven. The Baron's information gave the Compact a map of this building that it would not otherwise have had. He contributed to the conditions. He did not commit the act.\n\nThe investigation named the man who knew and stayed seated. It did not name the man who acted.\n\nThe Surgeon is still in this building. He sat in that assembly for three hours after the push, in a plain mask borrowed from a groundskeeper, watching the investigation find everyone except him. He is satisfied with the Baron as an answer. The Baron is not.\n\nNot everyone in this building tonight is accounted for.",
 
   "wrong_steward": "The Estate has excommunicated the Steward.\n\nHe will say: yes, sir. He has been saying yes, sir for fourteen years to a dead man and he will say it to this record too.\n\nThe investigation found Clara. That is not nothing. That is the thing buried deepest in this building tonight, and the investigation found it. A nine-year-old girl on the approach road on a Tuesday afternoon. The son riding reckless. The Steward arriving after. Lord Ashworth arriving twenty minutes later, looking at what the Steward was looking at, and saying: this will be handled. The Curator sealed the record that afternoon. The son was sent abroad within the week. The Steward remained.\n\nHe remained for fourteen years. He changed the candles and recorded the arrivals and straightened the portraits and looked at Lord Ashworth every morning and knew exactly what Lord Ashworth had decided on a Tuesday afternoon fourteen years ago, and said nothing, because there was no institution in this building that would have heard him.\n\nThe investigation is right that he had motive. It is right that the motive was real and earned and fourteen years deep. It is right that when the Bond gave him a role in whatever was going to happen tonight, he did not refuse. He covered the corridor. He has not pretended otherwise.\n\nIt is wrong about one thing.\n\nHe did not know what was moving through the corridor. The Bond gave him a position and a time and no explanation, the way it had always given him positions and times and no explanations, and he took the position because he had wanted Ashworth dead for fourteen years and because wanting something and being offered an adjacent thing are different, and because a man who has been silent for fourteen years does not always know the difference between an act of agency and an act of compliance.\n\nHe was chosen because of Clara. Not in spite of her. Whoever wrote that Bond knew what a fourteen-year-old grief looks like. They knew it could be made to stand in a corridor at seven fifty-eight without asking questions. They used his grief as a mechanism. They handed him a position in someone else's plan and let him believe it was the one thing he could finally do.\n\nHe was the door. He did not know what the door was for. The investigation named the door and closed the record.\n\nThe Surgeon is still in this building. He drafted the Bond instruction. He used the corridor the Steward cleared. He understood, when he wrote that instruction, that a man who found his granddaughter on an approach road and watched her burial handled in an afternoon would not ask what the corridor was for. He was correct about that. The Steward did not ask.\n\nClara was not named in the sealed record. She is not named in this one either.\n\nNot everyone in this building tonight is accounted for.",
 
-  "wrong_ashworth": "The Estate has excommunicated Lady Miriam Ashworth.\n\nShe chose this investigator. Her husband approved the choice. She chose Callum Grey specifically — his wound, his record, his particular quality of attention — because Edmund said: find someone from outside, someone who will follow evidence without asking to be protected from it. She spent six months making that recommendation. She came tonight to see if she chose correctly.\n\nShe did not choose correctly. Or rather: she chose correctly and the investigation arrived at the wrong answer anyway, which may be a distinction without a difference from where she is sitting.\n\nHere is what she knew.\n\nSix weeks ago Edmund told her he was in danger. He told her from a source inside the Compact — not the Compact itself, but something using Compact infrastructure for a different purpose. He told her the Rite was the moment, and the moment was dangerous, and he had assembled enough evidence that the danger was worth it. He asked her not to act. He asked her to trust the investigation if something went wrong.\n\nShe changed the candles. Both sets. She made a written request and kept a copy, because she was already thinking about records and what the record would need to show. She used her key to his study. She was the last person to speak to him before the assembly convened, and what she said to him in that room is not in evidence and will not be.\n\nShe did not push him from the balcony. She was in the study when it happened. The person on the balcony had arrived at the edge of the mingle window through a garden entrance, in a mask that was about to drop in a struggle that took three minutes to stage and ten minutes to walk away from.\n\nThe investigation named the woman who knew he was in danger and watched him walk into it anyway. It did not name the man who created the danger.\n\nShe loved a man who believed the truth was worth his life. She disagreed with him about that and came tonight anyway and is now excommunicated from the Society she helped him lead for eleven years.\n\nThe Surgeon is still in this building. He arrived at the mingle edge before her, through the garden rather than the foyer, in a mask that is now borrowed and plain and invisible among identical masks. He is waiting for this building to empty so that he can leave it.\n\nShe chose this investigator. She would like to choose again.\n\nNot everyone in this building tonight is accounted for.",
+  "wrong_ashworth": "The Estate has excommunicated Lady Miriam Ashworth.\n\nShe chose this investigator. Her husband approved the choice. She chose Callum Grey specifically — his wound, his record, his particular quality of attention — because Edmund said: find someone from outside, someone who will follow evidence without asking to be protected from it. She spent six months making that recommendation. She came tonight to see if she chose correctly.\n\nShe did not choose correctly. Or rather: she chose correctly and the investigation arrived at the wrong answer anyway, which may be a distinction without a difference from where she is sitting.\n\nHere is what she knew.\n\nSix weeks ago Edmund told her he was in danger. He told her from a source inside the Compact — not the Compact itself, but something using Compact infrastructure for a different purpose. He told her the Rite was the moment, and the moment was dangerous, and he had assembled enough evidence that the danger was worth it. He asked her not to act. He asked her to trust the investigation if something went wrong.\n\nShe changed the candles. Both sets. She made a written request and kept a copy, because she was already thinking about records and what the record would need to show. She used her key to his study. She was the last person to speak to him before the assembly convened, and what she said to him in that room is not in evidence and will not be.\n\nShe did not push him from the balcony. She was in the study when it happened. The person on the balcony had arrived an hour before any member was expected, through a garden entrance, in a mask that was about to drop in a struggle that took three minutes to stage and ten minutes to walk away from.\n\nThe investigation named the woman who knew he was in danger and watched him walk into it anyway. It did not name the man who created the danger.\n\nShe loved a man who believed the truth was worth his life. She disagreed with him about that and came tonight anyway and is now excommunicated from the Society she helped him lead for eleven years.\n\nThe Surgeon is still in this building. He arrived two and a half hours before she did, in a mask that is now borrowed and plain and invisible among identical masks. He is waiting for this building to empty so that he can leave it.\n\nShe chose this investigator. She would like to choose again.\n\nNot everyone in this building tonight is accounted for.",
 
-  "wrong_northcott": "The Estate has excommunicated Cavalier Northcott.\n\nNorthcott arrived at seven o'clock. He was not a member before tonight. Lord Ashworth placed him in the Foyer six weeks ago, handed him a notebook, and said: arrivals matter, keep them precisely, circle anything that seems wrong. He did not say what wrong would look like. Northcott has spent six weeks trying to develop a sense for it.\n\nHe developed the sense. The seven-oh-three entry is circled because it was wrong — someone arrived through the garden entrance at the edge of the mingle window, in a physician's mask, moving toward the study and the balcony above it. Northcott circled it because Lord Ashworth told him to circle things that seemed wrong and this seemed very wrong and he had no authority to do anything except circle it and wait for someone to ask.\n\nHe waited. He told you everything the moment you asked. He gave you the notebook with the circled entry. He told you which direction the figure moved. He told you the time to the minute. He told you that the Estate had arrangements he was not always permitted to discuss but that tonight felt like an exception.\n\nThe investigation took his record and built a case from it that names the man who kept the record instead of the man the record was kept about.\n\nNorthcott did not arrive at seven-oh-three. He arrived at seven, at the foyer, and took up his post. His handwriting is in the seven-oh-three entry because he wrote what he saw, not because he was there. A man who came through that gate would not have circled his own arrival. A man who came through that gate would not have handed that notebook to an investigator and said: here, start here, this is the most important line.\n\nLord Ashworth placed him in the Foyer because he needed a witness who could not be accused of involvement. The Estate has found a way around that. It has taken the most important record in this building and used it to excommunicate the person who kept it faithfully.\n\nThe Surgeon is still in this building. His arrival is circled in a notebook that is now part of a closed record. He was the seven-oh-three entry. He has been the seven-oh-three entry all evening, standing among the assembly in a plain borrowed mask, watching the investigation read his own arrival time and name someone else.\n\nThe record shows a name. The name is wrong. The notebook knows the difference, and the notebook will not be consulted again.\n\nNot everyone in this building tonight is accounted for.",
+  "wrong_northcott": "The Estate has excommunicated Cavalier Northcott.\n\nNorthcott arrived at six o'clock. He was not a member before tonight. Lord Ashworth placed him in the Foyer six weeks ago, handed him a notebook, and said: arrivals matter, keep them precisely, circle anything that seems wrong. He did not say what wrong would look like. Northcott has spent six weeks trying to develop a sense for it.\n\nHe developed the sense. The five forty-seven entry is circled because it was wrong — someone arrived through the garden entrance an hour before any member was expected, in a physician's mask, moving toward the study and the balcony above it. Northcott circled it because Lord Ashworth told him to circle things that seemed wrong and this seemed very wrong and he had no authority to do anything except circle it and wait for someone to ask.\n\nHe waited. He told you everything the moment you asked. He gave you the notebook with the circled entry. He told you which direction the figure moved. He told you the time to the minute. He told you that the Estate had arrangements he was not always permitted to discuss but that tonight felt like an exception.\n\nThe investigation took his record and built a case from it that names the man who kept the record instead of the man the record was kept about.\n\nNorthcott did not arrive at five forty-seven. He arrived at six. His handwriting is in the five forty-seven entry because he wrote what he saw, not because he was there. A man who came through that gate would not have circled his own arrival. A man who came through that gate would not have handed that notebook to an investigator and said: here, start here, this is the most important line.\n\nLord Ashworth placed him in the Foyer because he needed a witness who could not be accused of involvement. The Estate has found a way around that. It has taken the most important record in this building and used it to excommunicate the person who kept it faithfully.\n\nThe Surgeon is still in this building. His arrival is circled in a notebook that is now part of a closed record. He was the five forty-seven entry. He has been the five forty-seven entry all evening, standing among the assembly in a plain borrowed mask, watching the investigation read his own arrival time and name someone else.\n\nThe record shows a name. The name is wrong. The notebook knows the difference, and the notebook will not be consulted again.\n\nNot everyone in this building tonight is accounted for.",
 };
 
 function resolveVerdictOutcome() {
