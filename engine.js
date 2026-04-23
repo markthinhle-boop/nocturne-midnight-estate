@@ -1380,7 +1380,7 @@ const ROOM_OBJECTS = {
     tap_1: "A chess board mid-game. Greaves has been working through a position.",
     item_id: null, item_at_depth: null, is_essential: false, is_deception_item: false,
     slow_drag: false, max_depth: 1,
-    hotspot: { left: 32, top: 55, width: 32, height: 30 },
+    hotspot: { left: 15, top: 40, width: 22, height: 30 },
   },
 
   // ── FOYER ──────────────────────────────────────────────────

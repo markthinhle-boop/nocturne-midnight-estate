@@ -29,7 +29,7 @@ const ROOM_ASSET_MAP = {
   'ballroom':          'room/nocturne-room-ballroom-bg.png',
   'antechamber':       'room/nocturne-room-antechamber-bg.jpg',
   'stage':             'room/nocturne-room-stage-bg.jpg',
-  'library':           'room/nocturne-room-library-bg.jpg',
+  'library':           'room/nocturne-room-library-bg.png',
   'physicians':        'room/nocturne-room-physicians-bg.png',
   'smoking':           'room/nocturne-room-smoking-bg.jpg',
   'vault':             'room/nocturne-room-vault-bg.jpg',
