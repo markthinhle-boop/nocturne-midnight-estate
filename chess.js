@@ -1379,9 +1379,9 @@
   function computeBoardLayout() {
     const W = canvas.width;
     const H = canvas.height;
-    // Reserve top 50 for title/close, bottom 130 for dialogue + clocks + notes
-    const topPad = 50;
-    const bottomPad = 140;
+    // Reserve top for top-bar + indicator + dialogue, bottom for clocks
+    const topPad = 150;  // top bar (40) + indicator (28) + dialogue (60) + gaps
+    const bottomPad = 70;  // clocks (40) + gap (30)
     const sidePad = 12;
     const availW = W - sidePad * 2;
     const availH = H - topPad - bottomPad;
@@ -1422,27 +1422,108 @@
 
   function drawBoard(layout) {
     const { boardX, boardY, boardSize, sqSize } = layout;
-    // Outer frame (brass / mahogany inset)
+    const game = match && match.currentGame;
+
+    // ---- Outer frame: deep walnut with brass inlay ----
     ctx.save();
-    ctx.fillStyle = '#3a1a08';
-    ctx.fillRect(boardX - 8, boardY - 8, boardSize + 16, boardSize + 16);
-    ctx.strokeStyle = '#d9a679';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(boardX - 8, boardY - 8, boardSize + 16, boardSize + 16);
+    // Drop shadow under the whole board
+    ctx.fillStyle = 'rgba(0,0,0,0.55)';
+    ctx.fillRect(boardX - 12, boardY + boardSize + 4, boardSize + 24, 16);
+
+    // Outer wood frame (walnut with gradient)
+    const frameGrad = ctx.createLinearGradient(0, boardY - 14, 0, boardY + boardSize + 14);
+    frameGrad.addColorStop(0, '#2a1405');
+    frameGrad.addColorStop(0.5, '#4a220c');
+    frameGrad.addColorStop(1, '#1a0a03');
+    ctx.fillStyle = frameGrad;
+    ctx.fillRect(boardX - 14, boardY - 14, boardSize + 28, boardSize + 28);
+
+    // Wood grain streaks on the frame
+    ctx.save();
+    ctx.globalAlpha = 0.15;
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 0.5;
+    for (let i = 0; i < 5; i++) {
+      const offset = 2 + i * 3;
+      ctx.beginPath();
+      ctx.moveTo(boardX - 14, boardY - 14 + offset);
+      ctx.bezierCurveTo(
+        boardX + boardSize * 0.3, boardY - 14 + offset + Math.sin(i) * 2,
+        boardX + boardSize * 0.7, boardY - 14 + offset - Math.cos(i) * 2,
+        boardX + boardSize + 14, boardY - 14 + offset
+      );
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(boardX - 14, boardY + boardSize + 14 - offset);
+      ctx.bezierCurveTo(
+        boardX + boardSize * 0.4, boardY + boardSize + 14 - offset + Math.cos(i) * 2,
+        boardX + boardSize * 0.6, boardY + boardSize + 14 - offset - Math.sin(i) * 2,
+        boardX + boardSize + 14, boardY + boardSize + 14 - offset
+      );
+      ctx.stroke();
+    }
     ctx.restore();
 
-    // Squares
-    const game = match && match.currentGame;
+    // Brass inlay border (two thin lines around the playfield)
+    ctx.strokeStyle = 'rgba(210,170,90,0.75)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(boardX - 3, boardY - 3, boardSize + 6, boardSize + 6);
+    ctx.strokeStyle = 'rgba(150,110,50,0.5)';
+    ctx.strokeRect(boardX - 1, boardY - 1, boardSize + 2, boardSize + 2);
+    ctx.restore();
+
+    // ---- Squares with wood-tone gradients ----
     for (let r = 0; r < 8; r++) {
       for (let f = 0; f < 8; f++) {
-        const square = sq(f, r);
         const displayFile = boardFlipped ? 7 - f : f;
         const displayRank = boardFlipped ? r : 7 - r;
         const x = boardX + displayFile * sqSize;
         const y = boardY + displayRank * sqSize;
         const isLight = (f + r) % 2 === 1;
-        ctx.fillStyle = isLight ? '#e8d4a8' : '#7c4a1a';
+
+        if (isLight) {
+          // Light squares: aged maple / bone
+          const gL = ctx.createLinearGradient(x, y, x, y + sqSize);
+          gL.addColorStop(0,   '#ead4a2');
+          gL.addColorStop(0.5, '#e4cd9a');
+          gL.addColorStop(1,   '#d9c085');
+          ctx.fillStyle = gL;
+        } else {
+          // Dark squares: walnut / figured brown
+          const gD = ctx.createLinearGradient(x, y, x, y + sqSize);
+          gD.addColorStop(0,   '#7a4818');
+          gD.addColorStop(0.5, '#6a3c0f');
+          gD.addColorStop(1,   '#5a3008');
+          ctx.fillStyle = gD;
+        }
         ctx.fillRect(x, y, sqSize, sqSize);
+
+        // Subtle wood grain — 1-2 faint horizontal lines per square
+        ctx.save();
+        ctx.globalAlpha = isLight ? 0.10 : 0.22;
+        ctx.strokeStyle = isLight ? '#9c7a3d' : '#2a1405';
+        ctx.lineWidth = 0.5;
+        const grainY1 = y + sqSize * 0.3;
+        const grainY2 = y + sqSize * 0.7;
+        ctx.beginPath();
+        ctx.moveTo(x + 2, grainY1 + Math.sin(f + r) * 0.8);
+        ctx.lineTo(x + sqSize - 2, grainY1 + Math.cos(f + r) * 0.8);
+        ctx.moveTo(x + 2, grainY2 + Math.cos(f + r) * 0.6);
+        ctx.lineTo(x + sqSize - 2, grainY2 + Math.sin(f + r) * 0.6);
+        ctx.stroke();
+        ctx.restore();
+
+        // Inner shadow on the top-left edge of each square (gives depth)
+        ctx.save();
+        ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x + sqSize, y);
+        ctx.moveTo(x, y);
+        ctx.lineTo(x, y + sqSize);
+        ctx.stroke();
+        ctx.restore();
       }
     }
 
@@ -1501,48 +1582,123 @@
 
   function drawPieces(layout) {
     if (!match || !match.currentGame) return;
-    const { boardX, boardY, sqSize } = layout;
+    const { sqSize } = layout;
     const pos = match.currentGame.position;
+    const fontSize = Math.floor(sqSize * 0.82);
     ctx.save();
-    ctx.font = Math.floor(sqSize * 0.8) + 'px serif';
+    ctx.font = fontSize + 'px "Times New Roman", serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     for (let i = 0; i < 64; i++) {
       const p = pos.board[i];
       if (!p) continue;
-      if (draggingPiece && draggingPiece.fromSq === i) continue;  // skip if being dragged
+      if (draggingPiece && draggingPiece.fromSq === i) continue;
       const coords = sqToScreen(i, layout);
       const cx = coords.x + sqSize / 2;
       const cy = coords.y + sqSize / 2;
-      // Shadow
-      ctx.fillStyle = 'rgba(0,0,0,0.35)';
-      ctx.fillText(PIECE_GLYPHS[p], cx + 1, cy + 2);
-      // Piece color: white pieces rendered as ivory with dark outline;
-      // black pieces rendered as deep charcoal with lighter outline
-      if (isWhite(p)) {
-        ctx.fillStyle = '#f8f1dc';
-        ctx.strokeStyle = '#1a0a03';
-      } else {
-        ctx.fillStyle = '#1a0a03';
-        ctx.strokeStyle = '#f8f1dc';
-      }
-      ctx.lineWidth = 1.2;
-      ctx.strokeText(PIECE_GLYPHS[p], cx, cy);
-      ctx.fillText(PIECE_GLYPHS[p], cx, cy);
+      drawElegantPiece(p, cx, cy, fontSize);
     }
-    // Dragging piece rendered at pointer
     if (draggingPiece) {
       const p = match.currentGame.position.board[draggingPiece.fromSq];
       if (p) {
-        ctx.fillStyle = 'rgba(0,0,0,0.4)';
-        ctx.fillText(PIECE_GLYPHS[p], draggingPiece.pointerX + 2, draggingPiece.pointerY + 3);
-        ctx.fillStyle = isWhite(p) ? '#f8f1dc' : '#1a0a03';
-        ctx.strokeStyle = isWhite(p) ? '#1a0a03' : '#f8f1dc';
-        ctx.strokeText(PIECE_GLYPHS[p], draggingPiece.pointerX, draggingPiece.pointerY);
-        ctx.fillText(PIECE_GLYPHS[p], draggingPiece.pointerX, draggingPiece.pointerY);
+        drawElegantPiece(p, draggingPiece.pointerX, draggingPiece.pointerY, fontSize, true);
       }
     }
     ctx.restore();
+  }
+
+  // Render a chess piece as if it were carved from ivory or ebony.
+  // Layers: soft ground shadow, base fill with gradient, rim line, specular highlight.
+  function drawElegantPiece(p, cx, cy, fontSize, lifted) {
+    const glyph = PIECE_GLYPHS[p];
+    const white = isWhite(p);
+
+    // Ground shadow — softer, cast below the piece
+    ctx.save();
+    if (lifted) {
+      // Dragged piece casts a longer, softer shadow
+      ctx.fillStyle = 'rgba(0,0,0,0.45)';
+      ctx.fillText(glyph, cx + 3, cy + 5);
+      ctx.fillStyle = 'rgba(0,0,0,0.22)';
+      ctx.fillText(glyph, cx + 5, cy + 8);
+    } else {
+      ctx.fillStyle = 'rgba(0,0,0,0.4)';
+      ctx.fillText(glyph, cx + 1.5, cy + 2.5);
+    }
+    ctx.restore();
+
+    if (white) {
+      // ---- IVORY piece ----
+      // Base warm cream fill
+      ctx.save();
+      ctx.fillStyle = '#f4e6c6';
+      ctx.fillText(glyph, cx, cy);
+      ctx.restore();
+
+      // Bottom shading (the piece has a darker bottom like a rounded form)
+      ctx.save();
+      ctx.globalCompositeOperation = 'multiply';
+      ctx.fillStyle = 'rgba(180,150,100,0.22)';
+      ctx.fillText(glyph, cx, cy + 1.2);
+      ctx.restore();
+
+      // Dark rim outline (so piece reads cleanly on light squares)
+      ctx.save();
+      ctx.strokeStyle = 'rgba(60,40,18,0.85)';
+      ctx.lineWidth = 1.1;
+      ctx.strokeText(glyph, cx, cy);
+      ctx.restore();
+
+      // Top highlight — specular
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.fillStyle = 'rgba(255,248,222,0.35)';
+      ctx.fillText(glyph, cx - 0.6, cy - 1);
+      ctx.restore();
+
+      // Fine aged patina — very subtle
+      ctx.save();
+      ctx.globalCompositeOperation = 'multiply';
+      ctx.fillStyle = 'rgba(220,200,160,0.08)';
+      ctx.fillText(glyph, cx, cy);
+      ctx.restore();
+
+    } else {
+      // ---- EBONY / DARK WOOD piece ----
+      // Deep espresso base (NOT pure black)
+      ctx.save();
+      ctx.fillStyle = '#1a0e06';
+      ctx.fillText(glyph, cx, cy);
+      ctx.restore();
+
+      // Warm brown undertone (makes it wood, not plastic)
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.fillStyle = 'rgba(90,50,20,0.30)';
+      ctx.fillText(glyph, cx, cy + 0.5);
+      ctx.restore();
+
+      // Light rim outline (visible on dark squares)
+      ctx.save();
+      ctx.strokeStyle = 'rgba(220,190,140,0.35)';
+      ctx.lineWidth = 0.8;
+      ctx.strokeText(glyph, cx, cy);
+      ctx.restore();
+
+      // Top specular highlight — warm, subtle
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.fillStyle = 'rgba(200,160,90,0.28)';
+      ctx.fillText(glyph, cx - 0.5, cy - 1.2);
+      ctx.restore();
+
+      // Very faint inner glow on the edges — makes the wood look polished
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.fillStyle = 'rgba(255,210,140,0.08)';
+      ctx.fillText(glyph, cx, cy);
+      ctx.restore();
+    }
   }
 
   function formatClock(ms) {
@@ -1559,7 +1715,7 @@
     const W = canvas.width;
     const H = canvas.height;
     const h = 34;
-    const y = H - 130 - h - 4;
+    const y = H - h - 20;  // clocks anchored near bottom
     const pad = 12;
     const halfW = (W - pad * 3) / 2;
 
@@ -1605,10 +1761,8 @@
   function drawDialogue() {
     if (!dialogue || dialogueTimer <= 0) return;
     const W = canvas.width;
-    const H = canvas.height;
-    const boxH = 62;
-    const y = H - 90 - boxH + 28;
-    const boxY = H - 82;
+    const boxH = 60;
+    const boxY = 80;  // below top bar (40) + indicator row (28) + gaps
     ctx.save();
     ctx.fillStyle = 'rgba(20,12,8,0.92)';
     ctx.strokeStyle = 'rgba(210,170,110,0.6)';
@@ -1629,6 +1783,88 @@
     }
     ctx.restore();
     dialogueTimer--;
+  }
+
+  function drawBrainIndicator() {
+    // Small pill in top-left showing Stockfish status + thinking state.
+    //   - Green dot = Stockfish loaded and ready (real chess)
+    //   - Amber dot = Stockfish loading
+    //   - Red dot = Stockfish not available, random moves
+    //   - Bulb pulses warm amber when Greaves is actively thinking
+    if (state !== 'game' || !match) return;
+
+    const bx = 10;
+    const by = 46;
+    const bw = 104;
+    const bh = 28;
+
+    ctx.save();
+    // Pill background
+    ctx.fillStyle = 'rgba(20,12,8,0.75)';
+    roundRect(ctx, bx, by, bw, bh, 5);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(138,107,46,0.5)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Connection status dot
+    let dotColor;
+    if (stockfishReady) dotColor = '#4ade80';     // green — ready
+    else if (stockfish) dotColor = '#f7c948';     // amber — loading
+    else dotColor = '#c0392b';                    // red — fallback/not loaded
+    ctx.fillStyle = dotColor;
+    ctx.beginPath();
+    ctx.arc(bx + 10, by + bh / 2, 4, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Brain bulb icon — pulses when thinking
+    const thinking = stockfishMoveResolver !== null;
+    const bulbX = bx + 30;
+    const bulbY = by + bh / 2;
+    const pulsePhase = thinking ? (Math.sin(performance.now() / 180) + 1) / 2 : 0;
+    const pulse = 0.4 + pulsePhase * 0.6;
+
+    // Glow halo when thinking
+    if (thinking) {
+      const glowR = 13 + pulsePhase * 4;
+      const glow = ctx.createRadialGradient(bulbX, bulbY, 2, bulbX, bulbY, glowR);
+      glow.addColorStop(0, 'rgba(247,201,72,' + (0.5 * pulse) + ')');
+      glow.addColorStop(1, 'rgba(247,201,72,0)');
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(bulbX, bulbY, glowR, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Bulb body (simple round bulb with base)
+    const bulbColor = thinking ? 'rgba(247,201,72,' + pulse + ')' : 'rgba(180,150,100,0.7)';
+    ctx.fillStyle = bulbColor;
+    ctx.beginPath();
+    ctx.arc(bulbX, bulbY - 2, 5, 0, Math.PI * 2);  // glass bulb
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(90,60,20,0.8)';
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
+    // Bulb base
+    ctx.fillStyle = 'rgba(90,60,20,0.9)';
+    ctx.fillRect(bulbX - 2.5, bulbY + 3, 5, 3);
+    // Bulb filament (small line inside)
+    if (thinking) {
+      ctx.strokeStyle = 'rgba(255,230,150,' + pulse + ')';
+      ctx.lineWidth = 0.6;
+      ctx.beginPath();
+      ctx.moveTo(bulbX - 2, bulbY - 2);
+      ctx.lineTo(bulbX + 2, bulbY - 2);
+      ctx.stroke();
+    }
+
+    // Label
+    ctx.fillStyle = thinking ? '#f7c948' : '#c9b98a';
+    ctx.font = 'bold 10px Georgia, serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(thinking ? 'THINKING' : 'GREAVES', bx + 44, by + bh / 2 + 1);
+    ctx.restore();
   }
 
   function drawTopBar() {
@@ -1717,6 +1953,7 @@
     ctx.fillRect(0, 0, W, H);
 
     drawTopBar();
+    drawBrainIndicator();
     const layout = computeBoardLayout();
     drawBoard(layout);
     drawPieces(layout);
