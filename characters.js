@@ -10,12 +10,16 @@
 
 const CHARACTERS = {
 
-  // ── CAVALIER NORTHCOTT ────────────────────────────────────
+  // ── ALISTAIR ROWE ──────────────────────────────────────────
+  // Retired detective. Baron's guest for the pre-Rite — no agenda, no Society
+  // affiliation. Pulled Callum into the Billiard Room at 7:15 and kept him
+  // there until 8:10, which is why Callum witnessed none of the murder window.
+  // Mutual alibi. Treats the evening's chaos as professional entertainment.
   "rowe": {
     display_name: "Alistair Rowe",
     room: "foyer",
     engine: "rowe",
-    intro: "He notices you before you\'ve fully crossed the threshold. Not a glance — the particular attention of a man who has been cataloguing arrivals all evening and has formed an opinion about each one.\n\nHe doesn\'t move from the wall.\n\n\"Another one.\" Not unkindly. The way someone notes a fourth guest at a table set for three.\n\n\"Alistair Rowe. Independent. I\'ve been in this foyer since six-forty, which makes me the most comprehensively informed person in the building about who came through that door and in what order and carrying what expression.\"\n\nA pause.\n\n\"Lord Ashworth is dead. The assembly discovered it at eight o\'clock. The building is currently in the process of deciding what kind of evening this is going to be — the kind where everyone cooperates, or the kind where everyone performs cooperation while doing something else entirely.\"\n\nHe looks at you with the focused attention of a man running a calculation.\n\n\"My money is on the second kind. It usually is.\"\n\nAnother pause. Shorter.\n\n\"You are?\"",
+    intro: "He is already looking at you when you enter the aftermath. Not surprised. Not concerned. The particular attention of a man who has been watching a house come apart for the last hour and has been waiting for someone competent to notice he\'s been doing so.\n\nHe doesn\'t move from the wall. There is a tumbler in one hand that has not been refilled in some time.\n\n\"Ah.\" Mild. Amused. \"The investigator.\"\n\nHe says it the way one might say 'the weather' — as a matter of note, not significance.\n\n\"Alistair Rowe. Retired. The Baron invited me for the pre-Rite because he likes to keep unusual company at these things and I am, by his assessment, unusual.\" A small pause. \"I spent thirty-one years in the Met investigating the sort of people this Society pretends don\'t exist. I walked out in \'ninety-two. I have been bored since approximately nineteen-ninety-two.\"\n\nHe looks at you with the focused attention of a man who has finally been given something to do.\n\n\"Tonight has been the best evening I\'ve had in fourteen years and I spent most of it in a billiard room with you. That should tell you something about where the entertainment has been.\"\n\nA pause.\n\n\"Lord Ashworth is dead. The assembly discovered it while you and I were arguing about cue weight. The building is now in the process of deciding whether to cooperate with whoever arrives to look into it, or to perform cooperation while doing something else entirely.\"\n\nAnother pause. He almost smiles.\n\n\"My money is on the second. Always is.\"\n\nHe looks at you properly now.\n\n\"You are?\"",
     composure: 100,
     composure_state: "normal",
     dialogue_limit: 99,
@@ -26,31 +30,31 @@ const CHARACTERS = {
       "Q1": {
         question: "Investigator. I was contacted.",
         type: "choice",
-        response: "He notes the economy of it. \"Contacted.\" He repeats the word with the care of a man who finds single-word answers either admirably precise or deliberately evasive and hasn\'t decided which yet.\" A pause. \"Half the people in this building would describe themselves as contacted tonight. Several members arrived with expressions that suggested they had been expecting something. None of them have told me what.\" He looks at you steadily. \"What kind of investigator. Specifically.\""
+        response: "\"Contacted.\" He repeats the word. Rolls it. \"One-word answer. Lovely. Thirty-one years in this job and the one-word answer is either the person who knows exactly what they\'re doing or the person who has no idea and is hoping brevity will get mistaken for it.\" A small pause. \"In my experience it\'s the second about ninety per cent of the time.\" He looks at you. \"Which one are you, specifically. Don\'t rush on my account.\""
       },
 
       "Q2": {
         question: "I\'m still working out who contacted me and why.",
         type: "choice",
-        response: "This lands differently than the others. He is quiet for a moment — the quality of a man recalibrating. \"A man who was sent somewhere without full information is either very trusted or very useful to someone.\" A pause. \"Those are not the same thing.\" He looks at you. \"Which one are you, do you think.\" He doesn\'t wait for the answer. \"Neither do I. Yet.\""
+        response: "He tilts his head slightly. Not unkindly — the way a man looks at an interesting but concerning exhibit. \"A man was sent somewhere and cannot tell me by whom.\" A pause. \"That\'s one of three things. Either you\'re trusted beyond your own need to know, which suggests you\'re more senior than you look — doubtful — or you\'re being used, which would be more interesting, or you\'re simply lost.\" He takes a small sip. \"The third is, in my professional experience, overwhelmingly the most common. Don\'t take it personally. Most people are lost. It\'s how they were designed.\""
       },
 
       "Q3": {
-        question: "You\'ve been here since six-forty. What have you found.",
+        question: "You\'ve been in this foyer a while. What have you seen.",
         type: "choice",
-        response: "Something shifts in his expression. Not much. \"First person all evening who pushed back instead of answering.\" He says it with what might be approval. \"The others either answered or deflected. You redirected.\" A pause. \"That\'s a technique. A reasonable one.\" He looks at you. \"It doesn\'t get you out of answering. What are you.\"",
+        response: "\"Finally. A question rather than a credential.\" He says it like a man pleased that his student has handed in a passable essay. \"I\'ve watched your lot assemble itself for forty-five minutes. Arrivals, greetings, mild adultery, one entirely unnecessary handshake, and approximately six people pretending they hadn\'t noticed what the other six were doing.\" A pause. \"The building has been holding something since before I got here. Whether it\'s the thing that killed Ashworth — well. That\'s what you\'re meant to establish. Isn\'t it.\" He looks at you. \"Ask me properly and I\'ll tell you what a thirty-one-year habit saw. Or don\'t. Entirely up to you.\"",
       },
 
       "Q4": {
         question: "I\'m here because Ashworth wanted me here.",
         type: "choice",
-        response: "The name stops him. Not dramatically — the specific stillness of a man who has just been handed a piece that changes the shape of the puzzle. \"Ashworth.\" He says it once. Quietly. \"Ashworth is dead.\" A pause. \"Which means a dead man arranged for you to be in this building tonight.\" Another pause, longer. \"That is either a coincidence or a design. In my experience the distinction matters enormously and is very rarely a coincidence.\" He looks at you with different attention now. \"What did he tell you.\""
+        response: "That actually lands. Not dramatically — a small recalibration, the way a man reassesses a room when a single piece of furniture turns out to be older than it looked. \"Ashworth.\" He says it once. \"Dead man wanted you here.\" A pause. \"That\'s more interesting than the rest of it, I\'ll grant you.\" Another pause. \"In my former profession we had a phrase for investigators whose arrival was arranged by the eventual victim. We called them instrumental. Not a compliment.\" He looks at you with different attention. \"What did he actually tell you, assuming he told you anything at all. And do try to make it more than one word this time.\""
       },
 
       "FUNNEL": {
         type: "funnel",
         requires_any_choice: true,
-        response: "\"I don\'t think you\'re fit for this investigation.\"\n\nHe says it plainly. No cruelty. The way a doctor reads a chart and reports what it says.\n\n\"You may prove me wrong. In fact I\'d prefer it — I\'ve been here since six-forty and the company has been limited to a man who won\'t show me his notebook.\"\n\nHe looks at you.\n\n\"Three patterns. You solve, I solve, first to finish wins. If you beat me — or come close enough that the margin is interesting — I\'ll tell you everything I\'ve found since six-forty. Which is considerable.\"\n\nA pause.\n\n\"If you don\'t — I\'ll still tell you. But you\'ll have to listen to me be smug about it.\"\n\nAnother pause. He almost smiles.\n\n\"You were going to listen anyway.\"",
+        response: "\"Right. Let\'s be practical about this.\"\n\nHe sets the tumbler down. The small precise movement of a man who has done this with a weapon, a glass, and a suspect\'s confession and knows which takes the most care.\n\n\"I don\'t think you\'re fit for this investigation. I\'ve been watching you for three exchanges and I can see the gaps from here.\"\n\nHe says it without heat. The observation of a trained man who has stopped being polite about what he sees.\n\n\"However. I was dragged from retirement to attend a pre-Rite that ended in a body, the Baron is somewhere being smug about having invited me to it, and you appear to be the only other person in this building who isn\'t either lying or panicking or both. So.\"\n\nA small gesture at the billiard table behind him.\n\n\"Three patterns. Identification drills I used to give to new constables. You solve, I solve, first to finish wins. If you beat me — or come close enough that the margin is interesting — I\'ll tell you everything I noticed in the foyer. Which is quite a lot, because I was trained to notice it.\"\n\nA pause. A properly amused one.\n\n\"If you don\'t — I\'ll still tell you. I\'m not going to let a dead man\'s investigation fail because you couldn\'t keep up with a retired Chief Inspector. But you\'ll have to listen to me be insufferable about it for the rest of the evening.\"\n\nAnother pause. He almost smiles.\n\n\"You were going to listen anyway. You have the face of a man who listens.\"",
         duel: true,
         duel_id: "rowe_iq_duel"
       },
@@ -58,36 +62,36 @@ const CHARACTERS = {
       "DUEL_WIN": {
         type: "duel_result",
         duel_outcome: "player_wins",
-        response: "\"Above standard.\" He says it plainly. No ceremony. Just the assessment. \"You beat me. At least once — possibly twice.\" A pause. \"I don\'t revise estimates often. I\'m revising yours.\" He looks toward the manor. \"Whatever Ashworth saw in you — I\'m beginning to understand what it was.\" Another pause. \"Ask me what I found. I\'ll tell you all of it.\""
+        response: "A very long pause. He looks at the patterns. Then at you. \"Well.\" One syllable, carrying most of a sentence. \"You beat me. Cleanly. Possibly twice.\" Another pause. \"I don\'t revise estimates often. I\'m revising yours.\" He picks up the tumbler. Does not drink from it. \"Thirty-one years in the Met and I learned to tell the difference between someone who happens to be right and someone who is actually good at this. You\'re the second. Which is inconvenient because I was going to enjoy being smug for the rest of the evening.\" A small concession of a smile. \"Ask me what I found in that foyer. You\'ve earned the unabridged version.\""
       },
 
       "DUEL_LOSE": {
         type: "duel_result",
         duel_outcome: "rowe_wins",
-        response: "\"I had you on speed.\" He says it without gloating. \"You were looking in the right places. The instinct was there. Speed comes.\" A pause. \"Most investigators I assess have neither the instinct nor the speed. You have one.\" He looks at you. \"That is a better result than it sounds.\" Another pause. \"I\'ll still tell you what I found. I said I would.\"",
+        response: "\"There we are.\" Perfectly cheerful. Not cruel — the particular satisfaction of a man whose assessment has been confirmed by data. \"I had you on speed. Instinct was there, don\'t mistake me — you were looking in the right places. But speed is what separates the competent investigator from the one who arrives at the right answer after the suspect has boarded a train.\" A pause. \"In thirty-one years I watched three constables with your instincts. Two of them learned the speed. One of them went into insurance.\" He looks at you with dry amusement. \"The odds are not terrible.\" Another pause. \"I\'ll still tell you what I found. I said I would, and I\'m not small about these things. But do keep up.\"",
       },
 
       "DUEL_DRAW": {
         type: "duel_result",
         duel_outcome: "draw",
-        response: "\"Even.\" Something that is not quite a smile. \"One apiece. Which means we think similarly — I find that both flattering and inconvenient.\" A pause. \"I was hoping for a clearer picture. Instead I have a mirror.\" He looks at you. \"I\'ll tell you what I found. Ask me anything.\"",
+        response: "\"Even.\" He actually laughs — a single soft exhalation. \"One apiece. Which means either we think similarly or we make the same mistakes, and in my experience those are more often the same thing than people like to admit.\" A pause. \"I was hoping for a cleaner picture. I got a mirror. Mirrors are useful but they don\'t tell you who\'s looking first.\" He looks at you. \"Ask me what I saw. I\'ll give you the detective\'s version. You can decide whether to trust it.\"",
       },
 
       "Q5": {
-        question: "What did you find.",
+        question: "What did you see in the foyer.",
         requires_duel_complete: true,
-        response: "\"Less than you will.\" He says it without hesitation. \"I\'ve been here since six-forty. I watched everyone who came through that door — who arrived early, who arrived late, who arrived with an expression they had prepared in advance and who arrived with one they hadn\'t.\" A pause. \"One man acknowledged me at six o’clock with two full seconds of eye contact. Every prior interaction: half a second. Whatever he was confirming required the full two.\" Another pause. \"That is one observation. I have fourteen. Ask me specific questions and I\'ll give you specific answers. That\'s how this works.\"",
+        response: "\"Plenty. Let\'s be selective.\" He looks toward the doorway — the foyer, where most of it happened. \"I arrived shortly before seven. The Baron met me. We had a drink. He went off to do whatever a Baron does in the fifteen minutes before a Society Rite. I stayed in the foyer because retired detectives watch foyers — it\'s a vice I can\'t seem to quit.\" A pause. \"Between seven and seven-fifteen, thirteen people crossed that threshold. Eleven of them were exactly what they appeared to be. Two weren\'t.\" Another pause. \"One of them acknowledged Northcott at his post with two full seconds of eye contact. Every other interaction all evening: half a second or less. Whatever was confirmed between the Steward and that log-keeper at seven o\'clock required the full two.\" He looks at you. \"The second one arrived through the garden, not the foyer — I only saw him by accident, passing the window at a quarter past. Plain dark coat. Medical bag. He wasn\'t meant to be seen. That is what a thirty-one-year habit tells you when it sees it. I logged the time in my head because I cannot help logging times.\" A pause. \"Seven-oh-three. Give or take a minute. I know what the Baron\'s clock looks like.\"",
       },
 
       "Q6": {
         question: "What do you make of Northcott.",
         requires_duel_complete: true,
-        response: "He considers this with what appears to be genuine respect. \"He was placed here by Lord Ashworth. Not invited — placed. There\'s a difference.\" A pause. \"Ashworth needed someone who could not be accused of involvement to watch the arrivals. Northcott thinks he got the posting because of his temperament.\" Another pause. \"He\'s right. The temperament Ashworth needed was innocence. Specific, provable, documentable innocence.\" He looks at you. \"He won\'t show me the notebook. He showed you more than he showed me. That is also a data point.\"",
+        response: "He considers this properly. Not the amused consideration — the retired detective consideration. \"He was placed there. Not invited. There is a difference between the two and people who don\'t know the difference don\'t understand how institutions like this actually work.\" A pause. \"Ashworth wanted a witness he could trust to be incapable of being accused of anything. The boy\'s six weeks old in this building. He doesn\'t know which spoons are used for which soup. That\'s exactly the point — he can\'t be part of what\'s happening because he doesn\'t yet know what\'s happening.\" He looks at you. \"And he kept the record faithfully. I watched him. I\'ve watched a thousand witnesses and about nineteen of them kept an actual record. He\'s one of the nineteen.\" Another pause, drier. \"He wouldn\'t show me the notebook. Showed you more than he showed me. That is because you asked him as an investigator and I asked him as a guest. The distinction matters to him enormously, which tells me something about him I find rather touching and possibly useful to you.\"",
       },
 
-      "SNAP1": { snap: true, response: "\"The duel happens regardless.\" He says it pleasantly. \"I\'ve been waiting since six-forty for someone worth assessing. You\'ll do.\"" },
+      "SNAP1": { snap: true, response: "\"The duel happens regardless.\" He says it pleasantly. Not threatening — delighted. \"I\'ve been waiting in a foyer for fourteen years to meet someone worth assessing. You\'re going to be assessed. You may as well enjoy it.\"" },
 
-      "FINAL": { final: true, response: "\"One more thing.\" He says it as you leave. \"The room that tells you the most — you\'ve already been to it. You just didn\'t ask it the right question yet.\" A pause. \"You\'ll know it when the question arrives.\"" },
+      "FINAL": { final: true, response: "\"One thing.\" He says it as you turn. Not urgent — the tone of a senior colleague mentioning something you\'ll be annoyed to have missed. \"The room that told you the most — you\'ve already stood in it. You just haven\'t asked it the right question yet.\" A pause. \"You\'ll know the question when it arrives. In my experience it usually arrives when you\'ve stopped looking for it.\" He raises the tumbler in something like a toast. \"I\'ll be here. Retired, as always. Do come back when you\'ve worked it out — I\'d quite like to know if you did.\"" },
     },
     deceptions: {},
   },
@@ -95,7 +99,7 @@ const CHARACTERS = {
   "northcott": {
     display_name: "Northcott",
     room: "foyer",
-    intro: "He is twenty-seven. He has been here since six o'clock. He says it before you've asked anything.\n\n\"Lord Ashworth is dead. Eight-oh-one PM. The Rite was suspended. The body is in the Ballroom. Nobody has moved anything.\" A pause. \"I've been here since six. I note arrivals. That's what I do here.\" Another pause. \"Nobody asked me to stay. I stayed.\"",
+    intro: "He is twenty-seven. He has been here since seven o'clock. He says it before you've asked anything.\n\n\"Lord Ashworth is dead. Eight-oh-one PM. The Rite was suspended. The body is in the Ballroom. Nobody has moved anything.\" A pause. \"I've been here since seven. I note arrivals. That's what I do here.\" Another pause. \"Nobody asked me to stay. I stayed.\"",
     composure: 100,
     composure_state: "normal",
     dialogue_limit: 8,
@@ -107,17 +111,17 @@ const CHARACTERS = {
       "Q2b": { question: "What did that mean for you.", type: "focused_follow_up", requires_q: "Q2", response: "\"He said it without anger. That was the part I couldn\'t stop thinking about. No anger. Just the statement and what it would mean.\" He looks at the notebook. \"My family placed me here. Everything I am in this building depends on that record remaining clean.\" A pause. \"I spent the time between that conversation and eight-oh-one deciding what I was going to do.\"" },
       "Q3": { question: "What did you decide.", type: "focused_follow_up", requires_q: "Q2", response: "\"I decided —\" He stops. \"I was going to tell her. After the Rite. I was going to tell her what Lord Ashworth had said and let her decide.\" A pause. \"That is what I had decided by seven fifty-five when I found her.\" He looks at the notebook. \"And then the Steward came past and I stopped.\" Another pause. \"I don't know why I stopped. The Steward has that effect. He arrives and sentences don't get finished.\"" },
       "Q4": { question: "You were distracted all evening.", type: "focused_follow_up", response: "\"Yes.\" He says it plainly. \"I was keeping the record and I was thinking about Lord Ashworth's conversation and I was watching for Vivienne and I was — not fully present.\" A pause. \"I notice everything when I am present. Tonight I was not fully present.\" He looks at the notebook. \"The record is still accurate. I made sure of that. But I was distracted behind it.\"" },
-      "Q5": { question: "Someone asked to see the notebook before I did.", type: "focused_follow_up", requires_q: "Q4", response: "\"Three people.\" He holds it up. \"The Steward at six forty. Pemberton-Hale at seven. The Curator at seven fifty.\" A pause. \"The Steward asked about arrivals. I told him what I had.\" He looks at the notebook. \"The Curator asked me to confirm one specific time. Seven fifty-eight. Not any arrival. Just seven fifty-eight.\" Another pause. \"None of them asked to change anything. They just wanted to know what I had.\"" },
+      "Q5": { question: "Someone asked to see the notebook before I did.", type: "focused_follow_up", requires_q: "Q4", response: "\"Three people.\" He holds it up. \"The Steward at seven-fourteen. Pemberton-Hale at seven. The Curator at seven fifty.\" A pause. \"The Steward asked about arrivals. I told him what I had.\" He looks at the notebook. \"The Curator asked me to confirm one specific time. Seven fifty-eight. Not any arrival. Just seven fifty-eight.\" Another pause. \"None of them asked to change anything. They just wanted to know what I had.\"" },
       "Q6": { question: "What happened between Lord Ashworth's conversation and eight-oh-one.", type: "focused_follow_up", requires_q: "Q2", response: "\"I kept the record.\" He says it. \"And I passed the ballroom twice on my rounds. The candelabra was intact both times. Seven-thirty and seven-forty.\" A pause. \"I noticed it because I notice things when I am trying not to think about something else.\" He looks at the notebook. \"At seven-forty the candelabra base was in its correct position. At eight-oh-two when the body was found I looked at the candelabra immediately. The base was gone.\" He looks at you. \"I do not know when it was taken. I was not looking at it at seven forty-five.\"" },
       "Q7": { question: "Did Ashworth tell you what to do if something happened.", type: "focused_follow_up", requires_q: "Q2", response: "\"He said: keep the record, and if anything unusual happens, don't let anyone tell you your record is wrong.\" A pause. \"He was specific about that. Don't let anyone tell you your record is wrong.\" Another pause. \"At the time I thought he meant administrative pressure. I'm not sure anymore.\"" },
       "Q8": { question: "What were you going to tell her.", type: "focused_follow_up", requires_q: "Q3", response: "\"That Lord Ashworth had spoken to me.\" He says it quietly. \"That the arrangement had to end.\" A pause. \"I was going to tell her it wasn't about her. That it was about what I was allowed to be here.\" He looks at the notebook. \"She deserved to know it was Lord Ashworth who made the decision, not me.\" Another pause. \"He died before I could end it the way he required. I don't know what that means for the membership.\" He looks at you. \"I don't know if it matters now.\"" },
       // ── PIVOT — pair 2: Northcott + Steward → seal-match puzzle ─
       // unsigned-letter (foyer) + burned-fragments (study)
       "PQ1": {
-        question: "The Steward nodded when you told him about the five forty-seven entry.",
+        question: "The Steward nodded when you told him about the seven-oh-three entry.",
         requires_pivot: true,
         requires_char_talked: "steward",
-        response: "\"He did.\" He says it with the precision of someone who has replayed it many times. \"Like he was acknowledging something he already knew.\" A pause. \"There is an unsigned letter on the invitation stand in the Foyer. I didn't put it there. Someone placed it before I arrived at six.\" He looks at the notebook. \"Whoever left that letter and whoever came through the garden at five forty-seven — I think that's the same person. The burned fragments in the study would tell you if I'm right.\"",
+        response: "\"He did.\" He says it with the precision of someone who has replayed it many times. \"Like he was acknowledging something he already knew.\" A pause. \"There is an unsigned letter on the invitation stand in the Foyer. I didn't put it there. Someone placed it before I arrived at seven.\" He looks at the notebook. \"Whoever left that letter and whoever came through the garden at seven-oh-three — I think that's the same person. The burned fragments in the study would tell you if I'm right.\"",
       },
       "NQ_PH": {
         question: "Did you see Pemberton-Hale near the lectern tonight.",
@@ -141,18 +145,18 @@ const CHARACTERS = {
         question: "Did you log Dr. Crane's movements tonight.",
         type: "focused_follow_up",
         timeline_critical: true,
-        response: "\"Dr. Crane arrived at five forty-three.\" He says it immediately. He holds the notebook. \"Garden entrance. Five forty-three.\" A pause. \"She arrived before the main assembly. Before most members. She was carrying her medical case.\" He opens the notebook to the entry. \"I logged her arrival. Garden entrance. Five forty-three PM."
+        response: "\"Dr. Crane arrived at seven-oh-one.\" He says it immediately. He holds the notebook. \"Garden entrance. Seven-oh-one.\" A pause. \"She arrived before the main assembly. Before most members. She was carrying her medical case.\" He opens the notebook to the entry. \"I logged her arrival. Garden entrance. Seven-oh-one PM."
       },
-      "NQ_CR1b": { question: "What about her movements after that.", type: "focused_follow_up", requires_q: "NQ_CR1", response: "\"I did not log a second upstairs visit before the assembly. My log shows her arrival at five forty-three and her position in the main assembly from approximately seven-fifty-eight.\" He looks at you. \"Whatever happened between five forty-three and seven-fifty-eight — I can only account for her arrival and her assembly position. The interval is not in the log.\"",
+      "NQ_CR1b": { question: "What about her movements after that.", type: "focused_follow_up", requires_q: "NQ_CR1", response: "\"I did not log a second upstairs visit before the assembly. My log shows her arrival at seven-oh-one and her position in the main assembly from approximately seven-fifty-eight.\" He looks at you. \"Whatever happened between seven-oh-one and seven-fifty-eight — I can only account for her arrival and her assembly position. The interval is not in the log.\"",
         grants_node: "crane_false_one_visit_only"
       },
       "NQ_BA1": {
-        question: "Did your log show any visitor to the smoking room at six thirty.",
+        question: "Did your log show any visitor to the smoking room at seven-fifteen.",
         type: "focused_follow_up",
         timeline_critical: true,
-        response: "\"Six-thirty.\" He opens the notebook. He reads the entry. \"No visitor logged to the smoking room at six-thirty.\" A pause. \"I log corridor movements when I observe them. The east corridor connects the main entrance area to the smoking room approach. I was at my post from six until six fifty-five."
+        response: "\"Seven-fifteen.\" He opens the notebook. He reads the entry. \"No visitor logged to the smoking room at seven-fifteen.\" A pause. \"I log corridor movements when I observe them. The east corridor connects the main entrance area to the smoking room approach. I was at my post from seven until seven fifty-eight."
       },
-      "NQ_BA1b": { question: "But you can't see all approaches.", type: "focused_follow_up", requires_q: "NQ_BA1", response: "\"No movement logged in the smoking room direction at six-thirty.\" Another pause. \"That does not mean no movement occurred. The south corridor also approaches the smoking room. I cannot observe both corridors from my position.\" He looks at you. \"What I logged is what I observed. The east corridor at six-thirty showed no movement toward the smoking room.\"",
+      "NQ_BA1b": { question: "But you can't see all approaches.", type: "focused_follow_up", requires_q: "NQ_BA1", response: "\"No movement logged in the smoking room direction at seven-fifteen.\" Another pause. \"That does not mean no movement occurred. The south corridor also approaches the smoking room. I cannot observe both corridors from my position.\" He looks at you. \"What I logged is what I observed. The east corridor at seven-fifteen showed no movement toward the smoking room.\"",
         grants_node: "baron_false_crane_brief"
       },
       "NQ_PH1": {
@@ -188,8 +192,8 @@ const CHARACTERS = {
       "Q1": { question: "Who has access to the cabinet?", type: "open_narrative", response: "\"All senior members, sir. The Duke keeps the combination himself.\" Prompt. Complete." },
       "Q2": { question: "When were the candles last changed?", type: "focused_follow_up", response: "\"This morning, sir. I changed them myself.\" Under two seconds." },
       "Q3": { question: "Where were you at 7:58PM?", type: "focused_follow_up", response: "A half-beat pause. \"Attending to the Gallery, sir. The candles required attention before the Rite.\" He does not look at the Baron's portrait. \"The Baron has been in the Smoking Room since seven-fifteen.\" He says it without being asked. \"His drink is untouched. I noticed when I passed.\"" },
-      "Q4": { question: "You unlocked the garden gate at 5:45PM.", type: "focused_follow_up", requires_examined: "northcott-log-obj", response: "\"The Estate has arrangements I honour, sir. I'm not in a position to discuss their specifics.\" The formality climbs." },
-      "Q5": { question: "Someone arrived at six o'clock.", type: "focused_follow_up", requires_item: "unsigned-letter", response: "\"The garden has several points of entry, sir.\" He waits. He is deciding how much you know." },
+      "Q4": { question: "You unlocked the garden gate at 7:01PM.", type: "focused_follow_up", requires_examined: "northcott-log-obj", response: "\"The Estate has arrangements I honour, sir. I'm not in a position to discuss their specifics.\" The formality climbs." },
+      "Q5": { question: "Someone arrived at seven o'clock.", type: "focused_follow_up", requires_item: "unsigned-letter", response: "\"The garden has several points of entry, sir.\" He waits. He is deciding how much you know." },
       "Q6": { question: "You have a Bond with the Compact.", type: "focused_follow_up", requires_item: "steward-bond", response: "A pause that is different from all the previous pauses. This one was prepared. \"I have arrangements.\" He looks at the portrait of the third Ashworth. Not the current one. The one before. \"They were entered into under conditions I was not in a position to refuse.\" A shorter pause. \"They predate tonight. And they are\" — the word arrives with the precision of something rehearsed many times alone — \"concluded.\" His hands move behind his back." },
       "Q7": { question: "Who gave you the corridor instruction.", type: "focused_follow_up", requires_q: "Q6", response: "\"The instruction arrived in writing, sir. Two weeks before tonight.\" A pause. \"A sealed letter. No return address. The language matched certain other correspondence I have received over eight years.\" He is very still. \"I knew what it was. I followed it.\" Another pause. \"I did not ask who sent it because I had learned not to ask.\"" },
       "Q8": { question: "Did you know what would happen at 7:58.", type: "focused_follow_up", requires_q: "Q7", response: "\"No, sir.\" The answer arrives in under two seconds. Then a pause that cost something. \"I knew the corridor would be clear. I knew that mattered to someone. I did not know why it mattered tonight rather than any other night.\" He looks at the portrait. \"That is the thing I have been sitting with since eight-oh-one. Not that I covered the corridor. That I covered it without asking why.\"" },
@@ -198,10 +202,10 @@ const CHARACTERS = {
       // ── PIVOT — pair 2: Steward + Northcott → seal-match puzzle ─
       // unsigned-letter (foyer) + burned-fragments (study)
       "PQ1": {
-        question: "Northcott told you about the five forty-seven arrival immediately.",
+        question: "Northcott told you about the seven-oh-three arrival immediately.",
         requires_pivot: true,
         requires_char_talked: "northcott",
-        response: "A pause that costs something. \"He did, sir.\" He looks at the portrait. \"There is a letter in the Foyer. On the invitation stand. Unsigned.\" Another pause. \"The seal on that letter — if you compare it against the fragments in the study fireplace — the impression will match.\" He looks at his hands. \"I noticed the letter at six-twenty. I did not report it. That is a decision I have been revisiting since eight-oh-one.\"",
+        response: "A pause that costs something. \"He did, sir.\" He looks at the portrait. \"There is a letter in the Foyer. On the invitation stand. Unsigned.\" Another pause. \"The seal on that letter — if you compare it against the fragments in the study fireplace — the impression will match.\" He looks at his hands. \"I noticed the letter at seven-twelve. I did not report it. That is a decision I have been revisiting since eight-oh-one.\"",
       },
       "SNAP1": { snap: true, response: "\"Sir.\" The pause is longer than it needs to be. \"I have given fourteen years to this house.\" He does not raise his voice. He does not need to. \"What remains is not mine to give. It never was.\" He is completely still." },
       "SNAP2": { snap: true, response: "\"If you have evidence of something, I'd ask you to bring it to the Curator. I'm not the appropriate person to be making declarations about what I did or didn't do.\" He turns back to the portraits." },
@@ -274,7 +278,7 @@ const CHARACTERS = {
       "Q5": { question: "Pemberton-Hale altered the Register entries.", type: "narrative_statement", response: "\"Three entries, yes. The alterations are visible to anyone who examines the ink timing carefully.\" He says it the way you'd describe the weather. \"I noticed at seven forty-two.\" A pause. \"Miss Voss flagged three irregularities in the past six months. I thanked her for her diligence and did not act on them.\" He does not look at you. \"She knows. She is deciding whether to tell you that I know.\"" },
       "Q6": { question: "Why didn't you stop it?", type: "focused_follow_up", response: "A longer pause than any previous question. \"The Estate sometimes requires a crisis to accept information it would otherwise refuse to receive.\" He looks at the Register. \"Lord Ashworth understood this.\"" },
       "Q7": { question: "What do you need from me?", type: "focused_follow_up", response: "\"A name. The correct name. With sufficient evidence that the Estate cannot ignore it.\" He meets your eyes. The first direct look. \"The verdict will do the rest.\"" },
-      "Q7b": { question: "Archive Case 3 — you saw who used it.", type: "focused_follow_up", requires_examined: "archive-case-3", response: "He looks at Case 3 before answering. The movement is automatic. \"I saw someone leave the study at six-fifteen. Moving toward the Ballroom entrance. Not running. Not concealing.\" A pause. \"The pace of someone who had completed something and was moving to the next position.\" Another pause. \"I looked at Case 3 thirty minutes later. The seal was broken. I drew an inference.\" He meets your eyes. \"I should have acted on it. I made a calculation that the Rite would surface the correct answer without my intervention.\" A long pause. \"The Rite did not have the information I thought it had.\"" },
+      "Q7b": { question: "Archive Case 3 — you saw who used it.", type: "focused_follow_up", requires_examined: "archive-case-3", response: "He looks at Case 3 before answering. The movement is automatic. \"I saw someone leave the study at seven-oh-five. Moving toward the Ballroom entrance. Not running. Not concealing.\" A pause. \"The pace of someone who had completed something and was moving to the next position.\" Another pause. \"I looked at Case 3 thirty minutes later. The seal was broken. I drew an inference.\" He meets your eyes. \"I should have acted on it. I made a calculation that the Rite would surface the correct answer without my intervention.\" A long pause. \"The Rite did not have the information I thought it had.\"" },
       "Q8b": { question: "What was Ashworth's plan for tonight.", type: "focused_follow_up", requires_q: "Q4", response: "\"He intended to open the Register at the appropriate moment in the Rite — as is conventional — and then read three specific entries aloud.\" He looks at the Register. \"The entries document forty years of Compact-related arrangements that were conducted under a founding agreement the Estate officially ceased to acknowledge forty-three years ago.\" A pause. \"Lord Ashworth had spent six years assembling the documentation. Tonight was the night the Register would be open, all members present, and the reading legally binding.\" Another pause. \"The Surgeon understood that.\" He does not look at Case 3. \"Whatever was placed in Archive Case 3 two months ago was placed there to prevent Lord Ashworth from reaching that moment in the Rite.\"" },
       // CROSS-CHARACTER — only fires after specific conversations elsewhere
       "Q8_CROSS": {
@@ -322,12 +326,12 @@ const CHARACTERS = {
     snap_limit: 2,
     snap_count: 0,
     dialogue: {
-      "Q1": { question: "Who has been in the archive tonight?", response: "\"I've been here all evening.\" A pause. \"And — others. Members come and go.\" She uses the word already. \"I was already here when the first ones arrived.\" She looks at Archive Case 3. \"The Steward passed through at six-fifteen. He didn't look at the archive.\" A pause. \"He always looks at the archive. He likes to know what's here.\" Another pause. \"He didn't look tonight.\"" },
+      "Q1": { question: "Who has been in the archive tonight?", response: "\"I've been here all evening.\" A pause. \"And — others. Members come and go.\" She uses the word already. \"I was already here when the first ones arrived.\" She looks at Archive Case 3. \"The Steward passed through at seven-oh-five. He didn't look at the archive.\" A pause. \"He always looks at the archive. He likes to know what's here.\" Another pause. \"He didn't look tonight.\"" },
       "Q2": { question: "Archive Case 3 was accessed tonight.", response: "\"The lock.\" She stops. Starts again. \"Yes. I noticed at approximately seven. I was going to report it.\" She does not say to whom." },
       "Q3": {
         question: "What else have you logged tonight.",
         type: "open_narrative",
-        response: "She looks at the shelf. Not at you. \"Everything that happens in this building eventually passes through this room.\" A pause. \"I have been here since five o'clock. I logged seven individual archive accesses before the Rite began.\" Another pause. \"Not Case 3. The others. Case 1. Case 7. The supplementary correspondence drawer.\" She finally looks at you. \"Six years. I know which members use which files and how often and in what order. Tonight several people used files they had not used before. Or used files they had been using very specifically for months.\" A pause. \"I can tell you what the pattern looks like. The pattern is more informative than any single entry.\""
+        response: "She looks at the shelf. Not at you. \"Everything that happens in this building eventually passes through this room.\" A pause. \"I have been here since seven o'clock. I logged seven individual archive accesses before the Rite began.\" Another pause. \"Not Case 3. The others. Case 1. Case 7. The supplementary correspondence drawer.\" She finally looks at you. \"Six years. I know which members use which files and how often and in what order. Tonight several people used files they had not used before. Or used files they had been using very specifically for months.\" A pause. \"I can tell you what the pattern looks like. The pattern is more informative than any single entry.\""
       },
       "VD_PH": {
         question: "What do you know about Pemberton-Hale and the Register.",
@@ -351,7 +355,7 @@ const CHARACTERS = {
         question: "The Steward signed something eight years ago.",
         type: "focused_follow_up",
         timeline_critical: true,
-        response: "\"I have the Bond on record.\" She says it. Not quickly — the weight of someone who has been holding this for a long time. \"Not the Estate version. The other version.\" A pause. \"Eight years ago a document passed through this archive as a witness form. Standard property arrangement. The countersigning seal was — close enough to Estate format to pass.\" Another pause. \"It was not Estate format. I noticed fourteen months later when I cross-referenced it against the authentication register.\" She looks at the archive. \"I documented the discrepancy. I filed it. The Curator thanked me for my diligence.\" A pause. \"He thanked me using the exact phrase the Steward used when he passed this archive at six-fifteen without looking. Fourteen years of looking and tonight he did not look. A man who has been given permission not to look.\"",
+        response: "\"I have the Bond on record.\" She says it. Not quickly — the weight of someone who has been holding this for a long time. \"Not the Estate version. The other version.\" A pause. \"Eight years ago a document passed through this archive as a witness form. Standard property arrangement. The countersigning seal was — close enough to Estate format to pass.\" Another pause. \"It was not Estate format. I noticed fourteen months later when I cross-referenced it against the authentication register.\" She looks at the archive. \"I documented the discrepancy. I filed it. The Curator thanked me for my diligence.\" A pause. \"He thanked me using the exact phrase the Steward used when he passed this archive at seven-oh-five without looking. Fourteen years of looking and tonight he did not look. A man who has been given permission not to look.\"",
         grants_node: "voss_steward_bond_documented"
       },
       "VD_AS": {
@@ -362,10 +366,10 @@ const CHARACTERS = {
         grants_node: "voss_ashworth_visited_archive"
       },
       "VD_NO": {
-        question: "Northcott and the five forty-seven entry.",
+        question: "Northcott and the seven-oh-three entry.",
         type: "focused_follow_up",
         timeline_critical: true,
-        response: "\"Lord Ashworth briefed me about the arrival record three weeks ago.\" She says it. The first time she has used Lord Ashworth's name without some distance around it. \"He said a specific person would arrive through the garden entrance before the assembly and that the arrival would be logged in the foyer book. He said the arrival time was the most important single fact I would observe this evening.\" A pause. \"He did not tell me who was arriving. He told me to trust whatever was in the notebook.\" Another pause. \"I was in the east corridor at five forty-six. I saw a figure enter through the garden. I noted the time. I went back to the archive.\" She looks at you. \"Lord Ashworth arranged to have an unimpeachable record of that arrival kept by a man who could not be accused of involvement.\" A pause. \"And arranged for me to be a second witness who nobody thought to ask.\""
+        response: "\"Lord Ashworth briefed me about the arrival record three weeks ago.\" She says it. The first time she has used Lord Ashworth's name without some distance around it. \"He said a specific person would arrive through the garden entrance before the assembly and that the arrival would be logged in the foyer book. He said the arrival time was the most important single fact I would observe this evening.\" A pause. \"He did not tell me who was arriving. He told me to trust whatever was in the notebook.\" Another pause. \"I was in the east corridor at seven-oh-two. I saw a figure enter through the garden. I noted the time. I went back to the archive.\" She looks at you. \"Lord Ashworth arranged to have an unimpeachable record of that arrival kept by a man who could not be accused of involvement.\" A pause. \"And arranged for me to be a second witness who nobody thought to ask.\""
       },
       // ── PIVOT — pair 3: Voss + Curator → bond-reconstruction puzzle ─
       // planning-document (Compact c9) + steward-bond (vault)
@@ -384,7 +388,7 @@ const CHARACTERS = {
       "appointment-book":       { response: "\"Dr. Crane's appointment record.\" She says it without touching it. \"Cross-reference it against the Case 7 access log. The visits align within forty-eight hours of each other. Every time.\"", is_effective: true, composure_effect: -10 },
       "smoking-letters":        { response: "\"I have the routing records for those letters.\" A pause. \"They came through an Estate channel that does not belong to the Estate. I noticed the channel's originating seal in year one — it does not correspond to any registered institution. I have been waiting for someone to bring me the letters.\"", is_effective: true, composure_effect: -12 },
       "steward-bond":           { response: "She is very still. \"Where did you find that.\"\ A pause. Not performed — the stillness of someone who has been waiting for that object to surface. \"The second seal on the margin. Match it against the bearer's seal in the delivery record from six months ago. Same operational channel.\"\ She does not say what channel.", is_effective: true, composure_effect: -20 },
-      "northcott-notebook":     { response: "\"The five forty-seven entry.\" She says it immediately. \"I was in the east corridor at five forty-six. What is in that notebook and what I observed are the same event seen from two positions.\" A pause. \"Between them they make a record that cannot be argued with.\"", is_effective: true, composure_effect: -8 },
+      "northcott-notebook":     { response: "\"The seven-oh-three entry.\" She says it immediately. \"I was in the east corridor at seven-oh-two. What is in that notebook and what I observed are the same event seen from two positions.\" A pause. \"Between them they make a record that cannot be argued with.\"", is_effective: true, composure_effect: -8 },
     },
   },
 
@@ -433,7 +437,7 @@ const CHARACTERS = {
     snap_count: 0,
     dialogue: {
       "Q1": { question: "Where were you at 8:01?", response: "\"In the Library. I've been here since seven.\" He says it the way you'd state the weather. \"I find the Rite better in retrospect.\"" },
-      "Q2": { question: "Did you know Lord Ashworth well?", response: "\"Long enough to understand his methods. Short enough to maintain perspective.\" He doesn't look up from the book he's not reading. \"The Compact's physician was in the Library at six forty-five.\" He closes the book. \"Used the private reading room. Didn't take anything out. Sat. Sixteen minutes.\" Another pause. \"I note arrivals and departures. The Steward isn't the only one.\"" },
+      "Q2": { question: "Did you know Lord Ashworth well?", response: "\"Long enough to understand his methods. Short enough to maintain perspective.\" He doesn't look up from the book he's not reading. \"The Compact's physician was in the Library at seven-twenty.\" He closes the book. \"Used the private reading room. Didn't take anything out. Sat. Sixteen minutes.\" Another pause. \"I note arrivals and departures. The Steward isn't the only one.\"" },
       "Q3": { question: "What was your debt to him?", requires_item: "debt-record", response: "A pause. \"The Estate creates obligations. I've honoured mine.\" The book closes." },
       "Q4": { question: "Were you warned the Register would be opened?", requires_q: "Q3", response: "\"The Rite always opens the Register. That's its purpose.\"" },
       "Q5": { question: "You received this specifically.", requires_item: "warning-note", response: "\"Where did you —\" A pause. \"I received a note, yes. I assumed it was routine notification.\" He assumed it was routine and kept it in his breast pocket." },
@@ -460,9 +464,9 @@ const CHARACTERS = {
     dialogue: {
       "Q1": { question: "You refused the Duke's Claim eight times.", type: "open_narrative", response: "\"Eight times publicly. I would have refused a ninth.\" No hesitation. No explanation." },
       "Q2": { question: "What leverage did you hold over him?", type: "focused_follow_up", requires_q: "Q1", response: "A long pause. \"Everyone here holds something. That's what the Estate is for.\" He looks at the untouched drink." },
-      "Q3": { question: "Did you kill him?", type: "focused_follow_up", response: "\"No.\" A pause. \"I didn't need to.\" He looks at the ashtray. \"Crane came to see me at six-thirty.\" He looks at the untouched drink. \"She didn't say what she wanted. She sat for twelve minutes and then said she needed to think about something.\" He pauses. \"I've been thinking about that twelve minutes since.\"" },
+      "Q3": { question: "Did you kill him?", type: "focused_follow_up", response: "\"No.\" A pause. \"I didn't need to.\" He looks at the ashtray. \"Crane came to see me at seven-fifteen.\" He looks at the untouched drink. \"She didn't say what she wanted. She sat for twelve minutes and then said she needed to think about something.\" He pauses. \"I've been thinking about that twelve minutes since.\"" },
       "Q4": { question: "Who did?", type: "focused_follow_up", requires_q: "Q3", response: "He picks up the drink. Puts it down. \"I don't name people.\" A pause. \"But I'll tell you this — it's not the most interesting question.\"" },
-      "Q4b": { question: "You saw someone at six-fifteen.", type: "focused_follow_up", requires_q: "Q3", response: "He looks at the ashtray. The cigarette is still unfinished. \"I was near the study window. Six-fifteen.\" A pause. \"Someone left the study walking in the direction of the east service corridor.\" He does not look at you. \"I noted it. I noted it the way you note things when you have been paying attention to the wrong things for three years.\" Another pause. \"I picked up the drink. I put it down. I decided I'd been useful enough for one evening.\"" },
+      "Q4b": { question: "You saw someone at seven-oh-five.", type: "focused_follow_up", requires_q: "Q3", response: "He looks at the ashtray. The cigarette is still unfinished. \"I was near the study window. Seven-oh-five.\" A pause. \"Someone left the study walking in the direction of the east service corridor.\" He does not look at you. \"I noted it. I noted it the way you note things when you have been paying attention to the wrong things for three years.\" Another pause. \"I picked up the drink. I put it down. I decided I'd been useful enough for one evening.\"" },
       "Q5": { question: "You were going to warn him tonight.", type: "focused_follow_up", requires_item: "ashtray", response: "A longer silence. \"I considered it.\" He looks at the ashtray. \"I decided the information I had would have required explanations I wasn't prepared to give.\"" },
       "Q6": { question: "The Compact has someone inside the Estate.", type: "narrative_statement", requires_item: "smoking-letters", response: "He picks up the drink. Puts it down. A longer pause. \"I've been useful to various arrangements over three years.\" He does not look at you. \"Financial arrangements among them. Channeled through the Compact because they could not go through the Estate without a record being made.\" A pause. \"Lord Ashworth knew about the channel. He had documentation. Tonight's Register reading would have named three specific entries.\" He looks at the ashtray. \"I have known which three for six weeks.\"" },
       "Q6b": { question: "When did you stop.", type: "focused_follow_up", requires_q: "Q6", response: "\"Three months ago.\" He picks up the drink. Sets it down without drinking from it. \"The questions changed.\" A pause. \"For three years the questions were informational. Who attended. What was discussed. Which members were present at which decisions.\" He looks at the ashtray. \"Three months ago the questions became operational. Timing. Access. Which corridors were monitored and which were not.\" Another pause. \"I stopped answering. I received no response to my silence.\" He looks at the unfinished cigarette. \"That was the thing that frightened me. No response at all. As if the answers had already been obtained another way.\"" },
@@ -503,7 +507,7 @@ const CHARACTERS = {
       "Q3": { question: "What killed him.", type: "focused_follow_up", response: "\"I examined the body at eight-oh-three. The presentation is consistent with cardiac arrest.\" She says it clinically. \"Lord Ashworth had a documented cardiac irregularity. That is in his medical history.\" A pause. \"The Estate's physician has the full file.\"" },
       "Q4": { question: "You've seen this before.", type: "focused_follow_up", requires_q: "Q3", response: "A pause. \"I have broad clinical experience.\" She looks at the bag. \"The presentation is not unusual for someone with his history.\" Another pause that costs something small. \"I said that already.\"" },
       "Q5": { question: "You knew him.", type: "focused_follow_up", response: "\"Through the Compact's medical channel. He attended a consultation through it six months ago.\" She stops. \"That is the extent of my professional involvement with Lord Ashworth.\"" },
-      "Q6": { question: "The Baron came to find you at six-thirty.", type: "focused_follow_up", response: "\"He did.\" A pause. \"We spoke briefly. He was concerned about something he wouldn't name directly.\" She looks at the window. \"I told him I wasn't in a position to discuss clinical matters at a social event.\" Another pause. \"He accepted that. He left. I found his acceptance — specific.\"" },
+      "Q6": { question: "The Baron came to find you at seven-fifteen.", type: "focused_follow_up", response: "\"He did.\" A pause. \"We spoke briefly. He was concerned about something he wouldn't name directly.\" She looks at the window. \"I told him I wasn't in a position to discuss clinical matters at a social event.\" Another pause. \"He accepted that. He left. I found his acceptance — specific.\"" },
       "Q7": { question: "What did he want to know.", type: "focused_follow_up", requires_q: "Q6", response: "\"He asked whether I believed tonight would go as planned.\" She says it carefully. \"I told him I wasn't aware of any particular plan.\" A pause. \"He looked at me for a moment. Then he said: no. Of course not.\" She looks at the bag. \"I have been thinking about that exchange since eight-oh-one.\"" },
       "Q8": { question: "You know more than you're saying.", type: "direct_confrontation", requires_q: "Q5", response: "She is still for a long time. \"I know things that are covered by professional obligations.\" A pause. \"I also know things that I am — reconsidering the scope of those obligations.\" She looks at you. \"The Curator has access to the Compact's medical channel records. I will not obstruct that access.\"" },
       "Q9": { question: "What are you reconsidering.", type: "focused_follow_up", requires_q: "Q8", response: "\"Whether a professional obligation that was used to facilitate something — whether that obligation still holds in the same form.\" She looks at the bag. \"I don't have an answer yet.\" A pause. \"I've had two hours to work on it. I don't have an answer yet.\"" },
@@ -630,17 +634,17 @@ const CHARACTERS = {
   "envoy": {
     display_name: "The Envoy",
     room: "c6-tunnel",
-    intro: "Has been inside the Estate before. Three times, under different names, in different roles. Knows which door sticks. Knows the Steward always looks at the archive when he passes. Watched the gate from six until six-fifteen and filed a report that read, in full: confirmed. Now waiting in the tunnel mouth for the investigator he confirmed to arrive. Trying to decide if that's the same thing as complicity. Deciding it probably is. Not finding that as uncomfortable as he expected.",
+    intro: "Has been inside the Estate before. Three times, under different names, in different roles. Knows which door sticks. Knows the Steward always looks at the archive when he passes. Watched the gate from seven-oh-two until seven-ten and filed a report that read, in full: confirmed. Now waiting in the tunnel mouth for the investigator he confirmed to arrive. Trying to decide if that's the same thing as complicity. Deciding it probably is. Not finding that as uncomfortable as he expected.",
     composure: 100,
     composure_state: "normal",
     is_compact: true,
     dialogue_limit: 7,
     dialogue: {
       "Q1": { question: "You were waiting for me.", response: "\"You found the tunnel. That took longer than I expected.\" A pause. \"Not much longer. But some.\"" },
-      "Q2": { question: "You were watching the gate tonight.", response: "\"I was at the gate position from six until six-fifteen.\" He says it without apology. \"Confirmation window. I reported to the Compact.\" A pause. \"Someone was already in the building when I arrived. An hour ahead of the expected window. The temperature of the room changed when I passed the study. You learn to read that.\" Another pause. \"Whoever had entered early had already solved the room before anyone else walked into it.\"" },
+      "Q2": { question: "You were watching the gate tonight.", response: "\"I was at the gate position from seven-oh-two until seven-ten.\" He says it without apology. \"Confirmation window. I reported to the Compact.\" A pause. \"Someone came through the garden a minute after I took position. Moved past me without looking. Seven-oh-three. Medical bag. The temperature of the room changed when I passed the study shortly after. You learn to read that.\" Another pause. \"Whoever had entered had already solved the room before anyone else walked into it.\"" },
       "Q3": { question: "What was in the document?", response: "\"Something that was not correspondence.\" He looks at you directly. \"It was logged as correspondence. It was filed as correspondence. It was placed in Archive Case 3 six months ago under that description.\" A pause. \"Nobody who handled it on the way in knew what it was for.\" Another pause. \"I am not certain I knew everything about what it was for.\"" },
       "Q4_SLIP": { question: "You placed this.", is_slip: true, pause_ms: 1500, response: "\"I know because I placed it there.\" He says it immediately. Then 1.5 seconds. The pause. Then: \"I should have said: I know because I know the provenance.\" He looks at you. \"You noticed.\" Another pause. \"I confirmed you as the bearer six months ago because your judgment was reliable.\" He does not look away. \"You have just demonstrated that I was correct. I find that specific combination of facts — your competence, my role in placing you here, this conversation — professionally interesting and personally something I will think about for some time.\"" },
-      "Q5": { question: "Ashworth collected the document himself.", response: "\"Yes. He retrieved it from Archive Case 3 at 6:45PM.\" A pause. \"He opened it. He understood what it was.\" Another pause. \"He kept it anyway.\"" },
+      "Q5": { question: "Ashworth collected the document himself.", response: "\"Yes. He retrieved it from Archive Case 3 at 7:20PM.\" A pause. \"He opened it. He understood what it was.\" Another pause. \"He kept it anyway.\"" },
       "Q6": { question: "Ashworth chose.", response: "\"He was dying. Eighteen months remaining. He knew.\" He looks down the tunnel. \"He convened the Rite for tonight specifically. He opened the Register. He set the audience and the conditions.\" A pause. \"He knew the operation was in motion and he did not leave the building. He made the evening public on his own terms.\" Another pause. \"His death was his final argument.\"" },
       "CORRECTION1": { correction: true, response: "\"I'm the Envoy. That is genuinely my function in the Compact.\" He meets your eyes. \"I understand you're looking for something more specific. What you're looking for is in the Correspondence Room, third shelf, behind the operational brief.\"" },
       // ── PIVOT — Compact pair 2: Envoy + Archivist → chronology ─
@@ -661,7 +665,7 @@ const CHARACTERS = {
       },
     },
     deceptions: {
-      "_any": { is_effective: true, response_prefix: "\"That document was placed in the Study at six-fifteen. I placed it.\" He says it simply." },
+      "_any": { is_effective: true, response_prefix: "\"That document was placed in the Study at seven-oh-five. I placed it.\" He says it simply." },
     },
   },
 
@@ -766,7 +770,7 @@ const CHARACTERS = {
       // This is the pressure point between surface and Branch C.
       // Does not convict. Drops composure. Makes Branch C reachable.
       "Q10": {
-        question: "The mask was on the balcony floor. The floor was clear at six-fifteen. You told me south corridor at seven forty-five.",
+        question: "The mask was on the balcony floor. The floor was clear at seven-oh-five. You told me south corridor at seven forty-five.",
         type: "evidence_reveal",
         requires_item: "surgeons-mask",
         requires_node: "craneBalconyAdmission",
@@ -777,7 +781,7 @@ const CHARACTERS = {
         question: "You were not in the south corridor at seven forty-five.",
         type: "direct_confrontation",
         requires_q: "Q10",
-        response: "The longest pause he has produced that is not Branch C. Not recalibration. Not a calculation running. Something closer to a man deciding how much of the truth is safe to leave in the room. \"You have a committed statement.\" He says it. \"You have a mask that was not present at six-fifteen and was present at eight-oh-one.\" A pause. \"You have a physician who left a balcony floor clear and found it not clear.\" He looks at you. \"What you do not have\" — he says it with the precision of a man who has audited this list since eight-oh-one — \"is a witness who places me anywhere specific during those seven minutes.\" He looks at the desk. \"That is the gap.\" A pause. \"Find me a witness.\"",
+        response: "The longest pause he has produced that is not Branch C. Not recalibration. Not a calculation running. Something closer to a man deciding how much of the truth is safe to leave in the room. \"You have a committed statement.\" He says it. \"You have a mask that was not present at seven-oh-five and was present at eight-oh-one.\" A pause. \"You have a physician who left a balcony floor clear and found it not clear.\" He looks at you. \"What you do not have\" — he says it with the precision of a man who has audited this list since eight-oh-one — \"is a witness who places me anywhere specific during those seven minutes.\" He looks at the desk. \"That is the gap.\" A pause. \"Find me a witness.\"",
         grants_node: "surgeon_gap_named_by_surgeon",
       },
       // ── PIVOT — Crane/Surgeon ───────────────────────────────────
@@ -876,7 +880,7 @@ const CHARACTERS = {
         question: "What about the Baron.",
         type: "focused_follow_up",
         requires_q: "Q4",
-        response: "\"The Baron has been watching the terrace window all evening.\" She says it with great significance. \"Very specifically the terrace. And before that he was watching the study.\" She leans closer. \"He saw someone leave the study at six-fifteen and he wrote it down and he looked — satisfied. Like a man who has confirmed a suspicion."
+        response: "\"The Baron has been watching the terrace window all evening.\" She says it with great significance. \"Very specifically the terrace. And before that he was watching the study.\" She leans closer. \"He saw someone leave the study at seven-oh-five and he wrote it down and he looked — satisfied. Like a man who has confirmed a suspicion."
       },
       "Q5b": { question: "And the candelabra.", type: "focused_follow_up", requires_q: "Q5", response: "\"He also passed through the ballroom at seven thirty-eight. He walked the full length of it and paused at the candelabra.\" She looks at you significantly. \"He did not touch it. He looked at it. And then he went back to the smoking room.\" Another pause. \"I think he is in love with someone who is also in love with someone else. But the candelabra is a separate observation.\""
       },
@@ -895,7 +899,7 @@ const CHARACTERS = {
         question: "You saw her go upstairs twice.",
         type: "focused_follow_up",
         requires_q: "Q7",
-        response: "\"First time at six-fifteen. She had her case.\" She nods. \"She came back without it. I noticed because she is always very careful with the case. Always.\" A pause. \"Then at eight-oh-one she went back up. She came back — wrong. Her face was wrong.\" She looks at you. \"And she didn't have the case still. She went up again. Came back with it.\" Another pause. \"Three trips. She never takes three trips. I have worked here four years and she has never taken three trips.\""
+        response: "\"First time at seven-oh-five. She had her case.\" She nods. \"She came back without it. I noticed because she is always very careful with the case. Always.\" A pause. \"Then at eight-oh-one she went back up. She came back — wrong. Her face was wrong.\" She looks at you. \"And she didn't have the case still. She went up again. Came back with it.\" Another pause. \"Three trips. She never takes three trips. I have worked here four years and she has never taken three trips.\""
       },
       "Q9": {
         question: "What do you know about the Viscount.",
@@ -913,19 +917,19 @@ const CHARACTERS = {
         question: "Distracted how.",
         type: "focused_follow_up",
         requires_q: "Q10",
-        response: "\"He keeps looking for me.\" She says it without vanity. As pure observation. \"All evening. Every time I passed the foyer he looked up.\" A pause. \"He found me at seven fifty-five. After the body was found. He was — unsettled. He said he needed to tell me something.\" She looks at you. \"He said: I saw someone in the east corridor. Six-ten. He said it quickly, like something that had been waiting.\" Another pause. \"Then the Steward came past and Northcott stopped.\""
+        response: "\"He keeps looking for me.\" She says it without vanity. As pure observation. \"All evening. Every time I passed the foyer he looked up.\" A pause. \"He found me at seven fifty-five. After the body was found. He was — unsettled. He said he needed to tell me something.\" She looks at you. \"He said: I saw someone in the east corridor. Seven-oh-eight. He said it quickly, like something that had been waiting.\" Another pause. \"Then the Steward came past and Northcott stopped.\""
       },
       "Q12": {
         question: "What did he see in the east corridor.",
         type: "focused_follow_up",
         requires_q: "Q11",
-        response: "\"He didn't say.\" She looks at you. \"But I know what was in the east corridor at six-ten.\" A pause. \"I was there.\""
+        response: "\"He didn't say.\" She looks at you. \"But I know what was in the east corridor at seven-oh-eight.\" A pause. \"I was there.\""
       },
       "Q13": {
         question: "What did you see.",
         type: "focused_follow_up",
         requires_q: "Q12",
-        response: "\"A figure in the east corridor at six-ten coming from the direction of the study.\" She says it with great conviction. \"Moving with purpose. And the mask —\" she stops. \"The mask was wrong. Too plain. Nothing on it. Not the usual masks I see at the Rites.\" A pause. \"I noticed because of the Baron's shoulders and then I noticed the mask and then the Baron went past and I forgot about the mask until now.\" She looks at you. \"I am telling you now.\" Another pause. \"I could not tell you who was behind that mask. At that distance, with that mask, I could not tell you.\""
+        response: "\"A figure in the east corridor at seven-oh-eight coming from the direction of the study.\" She says it with great conviction. \"Moving with purpose. And the mask —\" she stops. \"The mask was wrong. Too plain. Nothing on it. Not the usual masks I see at the Rites.\" A pause. \"I noticed because of the Baron's shoulders and then I noticed the mask and then the Baron went past and I forgot about the mask until now.\" She looks at you. \"I am telling you now.\" Another pause. \"I could not tell you who was behind that mask. At that distance, with that mask, I could not tell you.\""
       },
       "Q14": {
         question: "The Baron's shoulders.",
@@ -936,6 +940,7 @@ const CHARACTERS = {
       "Q15": {
         question: "Tell me about the Steward.",
         type: "focused_follow_up",
+        grants_node: "steward_east_gate_744",
         response: "\"The Steward unlocked the east service gate at seven forty-four.\" She says it precisely. \"I know because I was coming from the linen cupboard. He had a key that is not his usual key and he opened the gate and stood there for approximately thirty seconds and then walked away.\" A pause. \"Before that — at seven-forty — he was in the ballroom. Near the candelabra. He looked at it the way you look at something you have been told to notice.\" She smooths her apron. \"I thought he was checking the candles. But the candles were fine. I had just done them."
       },
       "Q15b": { question: "Thomas saw it too.", type: "focused_follow_up", requires_q: "Q15", response: "\"Thomas saw the gate too. From the garden. Thomas noted it because the east service gate has been locked every evening for thirty years except twice. Tonight was the third time.\" She is quiet for a moment. A different kind of quiet from her usual pauses. \"There is something Thomas carries about the Steward.\" She says it carefully. \"He has never said it directly. But in four years I have learned to read what Thomas does not say.\" She smooths her apron. \"Whatever it is — it is fourteen years old. And tonight the Steward did something Thomas understood immediately.\""
@@ -1019,10 +1024,10 @@ const CHARACTERS = {
         response: "She stops before she starts. A very specific kind of pause. \"Northcott left the foyer at seven forty-three.\" She says it carefully. \"He came back at seven fifty-two.\" A pause. \"Nine minutes. I noticed because I passed the foyer at seven forty-three and he was not there.\" She smooths her apron. \"He was always there. Every time I passed. Except those nine minutes.\" Another pause. \"Seven forty-three to seven fifty-two.\""
       },
       "VT6": {
-        question: "Where was Dr. Crane between six and eight.",
+        question: "Where was Dr. Crane between seven and eight.",
         type: "focused_follow_up",
         timeline_critical: true,
-        response: "\"Dr. Crane was upstairs twice.\" She says it with great significance. \"First at six-fifteen. She came back without her case.\" A pause. \"Then at eight-oh-one she went back up. She came back with her case and a face like someone who has understood something they cannot ununderstand.\" She smooths her apron. \"Two trips upstairs on the night Lord Ashworth died. Both before and after the time he died.\" Another pause. \"I have been thinking about those two trips since eight-oh-one.\""
+        response: "\"Dr. Crane was upstairs twice.\" She says it with great significance. \"First at seven-oh-five. She came back without her case.\" A pause. \"Then at eight-oh-one she went back up. She came back with her case and a face like someone who has understood something they cannot ununderstand.\" She smooths her apron. \"Two trips upstairs on the night Lord Ashworth died. Both before and after the time he died.\" Another pause. \"I have been thinking about those two trips since eight-oh-one.\""
       },
       "VT8": {
         question: "Did Dr. Crane go back upstairs after the body was found.",
@@ -1060,8 +1065,8 @@ const CHARACTERS = {
         question: "Did you see Dr. Crane go upstairs before the Rite.",
         type: "focused_follow_up",
         timeline_critical: true,
-        response: "\"I was in the east corridor from five-thirty until seven.\" She says it. Not with the usual performance — quietly. \"The east corridor is the main route from the entrance to the ballroom approach. If you go upstairs to the balcony level from the east wing, you pass through it.\" She looks at the wall. \"Dr. Crane arrived. She spoke to people. She moved between the gallery and the ballroom approach.\" A pause. \"I did not see her pass through the east corridor going upstairs. Not once before the assembly.\" She smooths her apron. \"I am not saying she did not go upstairs. I am saying I did not see it. And I was there.\" Another pause. \"The south corridor is a different matter. I cannot see the south corridor from where I was.\" She says this last sentence in a very specific way. Like she is being fair. Like being fair costs her something.",
-        grants_node: "crane_false_no_615"
+        response: "\"I was in the east corridor from seven until seven-thirty.\" She says it. Not with the usual performance — quietly. \"The east corridor is the main route from the entrance to the ballroom approach. If you go upstairs to the balcony level from the east wing, you pass through it.\" She looks at the wall. \"Dr. Crane arrived. She spoke to people. She moved between the gallery and the ballroom approach.\" A pause. \"I did not see her pass through the east corridor going upstairs. Not once before the assembly.\" She smooths her apron. \"I am not saying she did not go upstairs. I am saying I did not see it. And I was there.\" Another pause. \"The south corridor is a different matter. I cannot see the south corridor from where I was.\" She says this last sentence in a very specific way. Like she is being fair. Like being fair costs her something.",
+        grants_node: "crane_false_no_705"
       },
       "VT_CR2": {
         question: "Was Dr. Crane s diagnosis at eight o clock surprising to you.",
@@ -1099,17 +1104,17 @@ const CHARACTERS = {
         grants_node: "steward_false_bond_protocol"
       },
       "VT_BA1": {
-        question: "Was the Baron in the smoking room when you brought the tray at six fifteen.",
+        question: "Was the Baron in the smoking room when you brought the tray at seven-oh-five.",
         type: "focused_follow_up",
         timeline_critical: true,
-        response: "\"He was in his chair.\" She says it. \"I brought the tray at six-fifteen. Same drink I had brought at five-fifty-five.\" A pause. \"He had not touched it.\" She smooths her apron. \"I noticed because I notice untouched drinks. An untouched drink means the person is thinking rather than sitting. The Baron was sitting but he was thinking.\" She looks at the wall. \"He was looking at the window. Not at the garden outside — at the angle. At the specific angle of the window relative to the terrace.\" A pause. \"Like a man calculating what someone could see through that window from outside.\" She smooths her apron again. \"Or what he could see. I could not determine which direction he was calculating.\"",
-        grants_node: "baron_false_no_615_sighting"
+        response: "\"He was in his chair.\" She says it. \"I brought the tray at seven-oh-five. Same drink I had brought at seven-oh-one.\" A pause. \"He had not touched it.\" She smooths her apron. \"I noticed because I notice untouched drinks. An untouched drink means the person is thinking rather than sitting. The Baron was sitting but he was thinking.\" She looks at the wall. \"He was looking at the window. Not at the garden outside — at the angle. At the specific angle of the window relative to the terrace.\" A pause. \"Like a man calculating what someone could see through that window from outside.\" She smooths her apron again. \"Or what he could see. I could not determine which direction he was calculating.\"",
+        grants_node: "baron_false_no_705_sighting"
       },
       "VT_BA2": {
-        question: "Did anyone enter the smoking room at six thirty.",
+        question: "Did anyone enter the smoking room at seven-fifteen.",
         type: "focused_follow_up",
         timeline_critical: true,
-        response: "She hesitates. A real hesitation — not performed. \"I was in the corridor outside the smoking room from six-twenty to six-forty.\" She says it carefully. \"The linen alcove directly across from the door. I was reorganising the shelves.\" A pause. \"The door did not open. I was there. The door did not open between six-twenty and six-forty.\" She smooths her apron. \"If someone visited the Baron at six-thirty, they did not enter through the corridor door.\" Another pause. \"There is a service passage that connects to the smoking room from the south end. I cannot see that entrance from the alcove.\" She says this the same way she says her careful statements — like being fair is a discipline she has practised. \"I am telling you what I know. I am also telling you what I cannot see from where I was.\"",
+        response: "She hesitates. A real hesitation — not performed. \"I was in the corridor outside the smoking room from seven-twelve to seven-fourteen.\" She says it carefully. \"The linen alcove directly across from the door. I was reorganising the shelves.\" A pause. \"The door did not open. I was there. The door did not open between seven-twelve and seven-fourteen.\" She smooths her apron. \"If someone visited the Baron at seven-fifteen, they did not enter through the corridor door.\" Another pause. \"There is a service passage that connects to the smoking room from the south end. I cannot see that entrance from the alcove.\" She says this the same way she says her careful statements — like being fair is a discipline she has practised. \"I am telling you what I know. I am also telling you what I cannot see from where I was.\"",
         grants_node: "baron_false_crane_no_visit"
       },
       "VT_BA3": {
@@ -1123,7 +1128,7 @@ const CHARACTERS = {
         question: "Would Lady Ashworth have seen Dr. Crane go upstairs from the study.",
         type: "focused_follow_up",
         timeline_critical: true,
-        response: "\"Lady Ashworth was in the study from six until seven.\" She says it. \"I brought tea at six-thirty. She was at the desk. The door was closed when I arrived. I knocked.\" A pause. \"The study window faces the garden. The corridor that leads to the balcony stairs faces east.\" She smooths her apron. \"From the study, with the door closed, you cannot see the east corridor or the staircase approach. Lady Ashworth would not have observed anyone going upstairs.\" A pause. \"Not from where she was sitting.\" She says it plainly. Not as an exoneration — as a fact. \"I brought the tea. She thanked me. She was reading something on the desk. She did not go to the window while I was there.\" She smooths her apron. \"I was there four minutes. She did not move from the desk.\"",
+        response: "\"Lady Ashworth was in the study from seven until eight.\" She says it. \"I brought tea at seven-fifteen. She was at the desk. The door was closed when I arrived. I knocked.\" A pause. \"The study window faces the garden. The corridor that leads to the balcony stairs faces east.\" She smooths her apron. \"From the study, with the door closed, you cannot see the east corridor or the staircase approach. Lady Ashworth would not have observed anyone going upstairs.\" A pause. \"Not from where she was sitting.\" She says it plainly. Not as an exoneration — as a fact. \"I brought the tea. She thanked me. She was reading something on the desk. She did not go to the window while I was there.\" She smooths her apron. \"I was there four minutes. She did not move from the desk.\"",
         grants_node: "ashworth_false_crane_not_upstairs"
       },
       "VT_AS2": {
@@ -1137,7 +1142,7 @@ const CHARACTERS = {
         question: "Was Northcott at his post throughout the evening.",
         type: "focused_follow_up",
         timeline_critical: true,
-        response: "\"I passed the foyer four times before the assembly.\" She says it. \"Five-forty-five. Six-fifteen. Six-forty. Seven-ten.\" A pause. \"Northcott was at his post at five-forty-five and at seven-ten.\" She smooths her apron. \"He was not at his post at six-fifteen or six-forty.\" A pause. \"I noticed because Northcott is always at his post. In four years I have passed the foyer perhaps two hundred times during Rite preparations. He has been absent three times including tonight.\" She looks at you. \"I do not know where he was at six-fifteen or six-forty. I know where he was not.\" Another pause. \"His absence at those times may have an entirely reasonable explanation.\" She says this the way she says all her careful statements. Like being fair is a discipline she has practised. \"I am telling you the times. The times are accurate.\"",
+        response: "\"I passed the foyer four times before the assembly.\" She says it. \"Seven-oh-one. Seven-oh-five. Seven-fourteen. Seven-ten.\" A pause. \"Northcott was at his post at seven-oh-one and at seven-ten.\" She smooths her apron. \"He was not at his post at seven-oh-five or seven-fourteen.\" A pause. \"I noticed because Northcott is always at his post. In four years I have passed the foyer perhaps two hundred times during Rite preparations. He has been absent three times including tonight.\" She looks at you. \"I do not know where he was at seven-oh-five or seven-fourteen. I know where he was not.\" Another pause. \"His absence at those times may have an entirely reasonable explanation.\" She says this the way she says all her careful statements. Like being fair is a discipline she has practised. \"I am telling you the times. The times are accurate.\"",
         grants_node: "northcott_false_routine_post"
       },
       "VT_NO2": {
@@ -1161,7 +1166,7 @@ const CHARACTERS = {
     },
     deceptions: {
       "surgeons-mask": { response: "\"That is the physician's mask. His personal one.\" She says it immediately. \"I know because I've seen it. He has a very specific mask. Silver backing, red border at the crown. That is not it.\" A pause. \"That one has nothing on it. Plain. He brought that one separately.\"", is_effective: true, composure_effect: 0 },
-      "candle-iron": { response: "\"Oh that is from the ballroom.\" She nods. \"The candelabra near the lectern. The iron base.\" A pause. \"Someone moved it. It was not there when I set up the candles at six o'clock. It was there at eight-oh-one.\" She looks at it. \"Someone moved it between six and eight.\"", is_effective: true, composure_effect: 0 },
+      "candle-iron": { response: "\"Oh that is from the ballroom.\" She nods. \"The candelabra near the lectern. The iron base.\" A pause. \"Someone moved it. It was not there when I set up the candles at seven o'clock. It was there at eight-oh-one.\" She looks at it. \"Someone moved it between seven and eight.\"", is_effective: true, composure_effect: 0 },
     },
   },
 

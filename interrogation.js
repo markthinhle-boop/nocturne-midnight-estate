@@ -831,7 +831,7 @@ const INTERROGATION_DATA = {
     fracture_threshold: null,
 
     baseline: {
-      text:         'He noticed Callum before Callum finished entering the room. He has been in this foyer since six-forty. He has a notebook. The note he made when Callum walked in has not been explained. He is the most observant person in the building and he chose the smallest room.',
+      text:         'He noticed Callum before Callum finished entering the room. He has been in this foyer since seven-fourteen. He has a notebook. The note he made when Callum walked in has not been explained. He is the most observant person in the building and he chose the smallest room.',
       sentence_avg: 'medium',
       formality:    'medium',
       tell:         'He finishes sentences — not rudely, accurately. The tell is when he finishes one wrong. It means the topic is outside his model. His model does not often have gaps.',
@@ -900,22 +900,22 @@ const INTERROGATION_DATA = {
         snapback:   '"I have stayed at my post, sir. As instructed."',
       },
       'Q4': {
-        composed:   '"I\'ve been here since six. Most members arrived after seven-thirty." A pause. "There was one arrival earlier. Through the garden. I didn\'t see the face."',
-        controlled: '"Most members after seven-thirty. One earlier. Garden entrance." A pause. "Five forty-seven."',
-        strained:   '"Five forty-seven." He says it like he\'s been holding it. "Garden entrance. I circled it."',
-        fractured:  '"Five forty-seven." A pause. "I circled it twice. I told the Steward. He nodded and didn\'t ask who it was." Another pause. "He knew."',
-        snapback:   '"The notebook entry is accurate. Five forty-seven. Garden. I wrote what I observed."',
+        composed:   '"I\'ve been here since seven. Most members arrived in the fifteen minutes after that." A pause. "There was one arrival later than expected. Through the garden. I didn\'t see the face."',
+        controlled: '"Most members after seven-thirty. One earlier. Garden entrance." A pause. "Seven-oh-three."',
+        strained:   '"Seven-oh-three." He says it like he\'s been holding it. "Garden entrance. I circled it."',
+        fractured:  '"Seven-oh-three." A pause. "I circled it twice. I told the Steward. He nodded and didn\'t ask who it was." Another pause. "He knew."',
+        snapback:   '"The notebook entry is accurate. Seven-oh-three. Garden. I wrote what I observed."',
       },
       'Q5': {
         // "You circled that entry in the notebook."
-        composed:   '"I circled it because the arrival time and entrance were unusual." A pause. "I noted it and I reported it. I told the Steward at six-fifty that there had been an unidentified arrival at five forty-seven through the garden entrance." He holds the notebook precisely. "He acknowledged that. He asked no follow-up questions. I concluded he was already aware of it." Another pause. "In retrospect, his lack of follow-up questions is the most informative thing about that exchange."',
+        composed:   '"I circled it because the arrival time and entrance were unusual." A pause. "I noted it and I reported it. I told the Steward at seven-twenty-five that there had been an unidentified arrival at seven-oh-three through the garden entrance." He holds the notebook precisely. "He acknowledged that. He asked no follow-up questions. I concluded he was already aware of it." Another pause. "In retrospect, his lack of follow-up questions is the most informative thing about that exchange."',
         controlled: '"I told the Steward. That same hour." A pause. "He nodded. He didn\'t ask for a description." He looks at the notebook. "I\'ve been thinking about that nod since eight-oh-one."',
         strained:   '"Told the Steward." A pause. "He knew already. He had to have known." Another pause. "He nodded the way you nod when someone tells you something you\'ve been waiting to hear."',
         fractured:  '"The Steward knew." A beat. "He nodded. Didn\'t ask anything." A beat. "I should have asked him why."',
         snapback:   '"The notebook entry is what I observed. I reported it at the time."',
       },
       'Q6': {
-        // "Describe the five forty-seven arrival."
+        // "Describe the seven-oh-three arrival."
         composed:   '"Medium height. Carrying a case or bag, not large. Moving deliberately — not hurrying, but with clear directional intent.\" He looks at his notebook. "The entrance they used — the garden gate — is not the primary entrance for members. It\'s used for service access and private arrivals. Someone who uses it on a formal Rite evening understands exactly why they\'re using it."',
         controlled: '"Medium height. A bag or case. Moving deliberately." A pause. "They knew which entrance to use." He looks at the notebook. "That is the most important detail. Not the height. The choice."',
         strained:   '"Medium height. Something in their hands." A pause. "The pace." He says it like the pace is still in front of him. "Not running. Not casual. The pace of someone on a schedule."',
@@ -924,7 +924,7 @@ const INTERROGATION_DATA = {
       },
       'Q7': {
         // "Did Ashworth tell you what to do if something happened."
-        composed:   '"He said: keep the record, and if anything unusual happens, don\'t let anyone tell you your record is wrong." A pause. "He said it with a specific kind of emphasis. The kind that means: this will be tested. He was telling me in advance that the record would be challenged." He looks at the notebook. "When the Steward acknowledged my five forty-seven report without asking a single follow-up question, I understood that Lord Ashworth had anticipated exactly that kind of response."',
+        composed:   '"He said: keep the record, and if anything unusual happens, don\'t let anyone tell you your record is wrong." A pause. "He said it with a specific kind of emphasis. The kind that means: this will be tested. He was telling me in advance that the record would be challenged." He looks at the notebook. "When the Steward acknowledged my seven-oh-three report without asking a single follow-up question, I understood that Lord Ashworth had anticipated exactly that kind of response."',
         controlled: '"He said don\'t let anyone tell you your record is wrong." A pause. "He said it like it was going to happen." Another pause. "He was right. Three people asked to see the notebook tonight."',
         strained:   '"Don\'t let anyone tell you your record is wrong." He says it exactly. "That\'s what he said. Six weeks ago." A pause. "He knew someone would try."',
         fractured:  '"He knew." A beat. "He knew someone would challenge it." Another beat. "He told me specifically so someone couldn\'t."',
@@ -932,20 +932,20 @@ const INTERROGATION_DATA = {
       },
       'Q8': {
         // "Has anyone tried to change your record tonight."
-        composed:   '"Three people asked to see the notebook before you did. The Steward at six forty. Pemberton-Hale at approximately seven. The Curator at seven fifty." He holds the notebook. "None of them asked to change anything. They asked to see specific entries." A pause. "The Steward asked about the garden entrance. Pemberton-Hale asked about arrivals generally. The Curator asked me to confirm the seven fifty-eight time specifically." Another pause. "None of them asked about five forty-seven."',
-        controlled: '"Three people." A pause. "The Steward. Pemberton-Hale. The Curator." He holds the notebook steadily. "None asked to change anything. They wanted to know what I had." Another pause. "The Curator asked only about seven fifty-eight. Not five forty-seven. I found the specificity interesting."',
-        strained:   '"Three of them." He looks at the notebook. "None asked to change it. They just wanted to know what I\'d seen." A pause. "I kept showing them seven fifty-eight. Nobody asked about five forty-seven."',
-        fractured:  '"Three people." A beat. "Nobody asked about five forty-seven." Another beat. "That\'s the entry they should have asked about."',
+        composed:   '"Three people asked to see the notebook before you did. The Steward at seven-fourteen. Pemberton-Hale at approximately seven. The Curator at seven fifty." He holds the notebook. "None of them asked to change anything. They asked to see specific entries." A pause. "The Steward asked about the garden entrance. Pemberton-Hale asked about arrivals generally. The Curator asked me to confirm the seven fifty-eight time specifically." Another pause. "None of them asked about seven-oh-three."',
+        controlled: '"Three people." A pause. "The Steward. Pemberton-Hale. The Curator." He holds the notebook steadily. "None asked to change anything. They wanted to know what I had." Another pause. "The Curator asked only about seven fifty-eight. Not seven-oh-three. I found the specificity interesting."',
+        strained:   '"Three of them." He looks at the notebook. "None asked to change it. They just wanted to know what I\'d seen." A pause. "I kept showing them seven fifty-eight. Nobody asked about seven-oh-three."',
+        fractured:  '"Three people." A beat. "Nobody asked about seven-oh-three." Another beat. "That\'s the entry they should have asked about."',
         snapback:   '"I showed the notebook to anyone who asked. The record is unchanged."',
       },
       'Q9': {
-        // Redirect: Steward acknowledgement at 6:00 — not routine
+        // Redirect: Steward acknowledgement at 7:00 — not routine
         requires_composure: 55,
-        composed:   '"Yes." He says it immediately. He holds the notebook. "At six o\'clock. When I arrived and took my position." A pause. "He crossed the foyer from the direction of the south corridor. He looked at me directly. He nodded." He opens the notebook. "I have noted arrivals and acknowledgements in this house for eleven years. The Steward acknowledges the log in the same manner every Rite evening. A brief nod. Economical." He does not look up. "Tonight\'s acknowledgement was different." A pause. "It was longer. More deliberate. He held the look for approximately two seconds rather than the standard half-second." He looks at you. "Two seconds is not a long time. I have learned that the Steward produces exactly as much acknowledgement as the moment requires. Not more." Another pause. "Two seconds required two seconds. Whatever he was acknowledging at six o\'clock required two seconds of confirmation." He closes the notebook. "I did not know what that meant at six o\'clock. I have a clearer picture now."',
+        composed:   '"Yes." He says it immediately. He holds the notebook. "At seven o\'clock. When I arrived and took my position." A pause. "He crossed the foyer from the direction of the south corridor. He looked at me directly. He nodded." He opens the notebook. "I have noted arrivals and acknowledgements in this house for eleven years. The Steward acknowledges the log in the same manner every Rite evening. A brief nod. Economical." He does not look up. "Tonight\'s acknowledgement was different." A pause. "It was longer. More deliberate. He held the look for approximately two seconds rather than the standard half-second." He looks at you. "Two seconds is not a long time. I have learned that the Steward produces exactly as much acknowledgement as the moment requires. Not more." Another pause. "Two seconds required two seconds. Whatever he was acknowledging at seven o\'clock required two seconds of confirmation." He closes the notebook. "I did not know what that meant at seven o\'clock. I have a clearer picture now."',
         controlled: '"Six o\'clock." He holds the notebook. "The Steward. He acknowledged me." A pause. "Two seconds. Not the standard half-second." He looks at you. "The Steward produces exactly as much acknowledgement as the moment requires. Tonight\'s moment required two seconds." Another pause. "I have been thinking about what that means since eight-oh-one."',
         strained:   '"Six o\'clock." A pause. "The Steward." He looks at the notebook. "Two seconds. Not normal." Another pause. "He was confirming something. I did not know what."',
         fractured:  '"Six o\'clock." A beat. "The Steward." Another beat. "Two seconds." He holds the notebook. "That is not how he does it." A pause. "He was confirming something."',
-        snapback:   '"The Steward\'s acknowledgement at six o\'clock is recorded. That is what I observed."',
+        snapback:   '"The Steward\'s acknowledgement at seven o\'clock is recorded. That is what I observed."',
         grants_node: 'northcott_redirect_steward',
       },
     },
@@ -954,7 +954,7 @@ const INTERROGATION_DATA = {
         // "You left your post twice tonight."
         timeline_critical: true,
         return_echo: 'He is at the foyer door. The notebook is in both hands. "Twice." He says it as you enter. A pause. "I left twice." He does not look at the corridor.',
-            composed:   '"I left my post at seven-fifteen and again at seven fifty-five." He says it before you ask. "The first time — I walked to the Ballroom. Seven-fifteen." A pause. "I wanted to check the candelabra position. The south candelabra. Vivienne had mentioned it at six-thirty when she came through." He looks at the notebook. "Seven-fifteen. Four minutes. I have it in the margin." A pause. "The second time was at seven fifty-five. I went to find Vivienne." || He left his post twice tonight — once because of what Vivienne said, once to find Vivienne. A man who abandons his assigned position for the same woman twice in the same evening is either conducting an investigation or conducting something else entirely. The notebook has the times. The notebook does not have the reason.',
+            composed:   '"I left my post at seven-fifteen and again at seven fifty-five." He says it before you ask. "The first time — I walked to the Ballroom. Seven-fifteen." A pause. "I wanted to check the candelabra position. The south candelabra. Vivienne had mentioned it at seven-fifteen when she came through." He looks at the notebook. "Seven-fifteen. Four minutes. I have it in the margin." A pause. "The second time was at seven fifty-five. I went to find Vivienne." || He left his post twice tonight — once because of what Vivienne said, once to find Vivienne. A man who abandons his assigned position for the same woman twice in the same evening is either conducting an investigation or conducting something else entirely. The notebook has the times. The notebook does not have the reason.',
         controlled: '"Twice." A pause. "Seven-fifteen and seven fifty-five." He looks at the notebook. "First time — the Ballroom. The candelabra position." Another pause. "Vivienne had told me it was wrong. I went to look." He checks the corridor. "The second time I went to find Vivienne."',
         strained:   '"Twice." He looks at the corridor. "Seven-fifteen. The Ballroom. The candelabra." A pause. "And seven fifty-five. I went to find her." He doesn\'t say what for.',
         fractured:  '"Twice." A beat. "Seven-fifteen." Another beat. "Seven fifty-five." He holds the notebook. He does not elaborate.',
@@ -962,10 +962,10 @@ const INTERROGATION_DATA = {
       },
       'Q11': {
         // "The candelabra — you knew its exact position."
-        composed:   '"The south candelabra is positioned six feet from the lectern during normal Rite assembly." He says it precisely. "That evening it had been moved to four feet. Vivienne noticed at six-thirty when she was cleaning the south section. She came through the foyer and told me because she knew I was logging the room state." A pause. "I went to confirm it at seven-fifteen because the candelabra position affects the sightline from the south entrance to the lectern. A member entering from the south at the wrong moment would be partially occluded." He holds the notebook. "That is specific knowledge. I know it because I keep the record. I know the position of every fixed object in the Ballroom." He looks at you. "I am aware of what it looks like that I knew exactly where that candelabra was positioned at seven-fifteen."',
-        controlled: '"Vivienne told me at six-thirty." A pause. "I went to confirm at seven-fifteen. The south candelabra had been moved from six feet to four feet from the lectern." He holds the notebook. "I know the position because I keep the record." Another pause. "I know what that sounds like now."',
+        composed:   '"The south candelabra is positioned six feet from the lectern during normal Rite assembly." He says it precisely. "That evening it had been moved to four feet. Vivienne noticed at seven-fifteen when she was cleaning the south section. She came through the foyer and told me because she knew I was logging the room state." A pause. "I went to confirm it at seven-fifteen because the candelabra position affects the sightline from the south entrance to the lectern. A member entering from the south at the wrong moment would be partially occluded." He holds the notebook. "That is specific knowledge. I know it because I keep the record. I know the position of every fixed object in the Ballroom." He looks at you. "I am aware of what it looks like that I knew exactly where that candelabra was positioned at seven-fifteen."',
+        controlled: '"Vivienne told me at seven-fifteen." A pause. "I went to confirm at seven-fifteen. The south candelabra had been moved from six feet to four feet from the lectern." He holds the notebook. "I know the position because I keep the record." Another pause. "I know what that sounds like now."',
         strained:   '"Vivienne told me." A pause. "I went to check. Seven-fifteen." He looks at the notebook. "Four feet from the lectern. Not six." Another pause. "I know the positions of all the fixed objects. I keep the record." He does not say what the record means now.',
-        fractured:  '"Vivienne." A beat. "She told me at six-thirty." Another beat. "I went to check." He holds the notebook. "Four feet from the lectern." A pause. "I know what that means now."',
+        fractured:  '"Vivienne." A beat. "She told me at seven-fifteen." Another beat. "I went to check." He holds the notebook. "Four feet from the lectern." A pause. "I know what that means now."',
         grants_node: 'northcott_candelabra_knowledge',
       },
       'Q12': {
@@ -980,17 +980,17 @@ const INTERROGATION_DATA = {
         cross_links: [{ char: 'vivienne', branch: 'A' }],
       },
 
-    silence_fill: 'He straightens. Adjusts his position. Then: "I\'ve been here since six. I note what I observe. That\'s what I do here." He says it to the room.',
+    silence_fill: 'He straightens. Adjusts his position. Then: "I\'ve been here since seven. I note what I observe. That\'s what I do here." He says it to the room.',
     silence_tell: 'A long pause. "Lord Ashworth told me specifically where to stand. Which door to watch. Which times to record." He looks at you. "I think he expected something to happen tonight. I think he wanted someone to know he\'d prepared for it."',
 
     scharff_corrections: {
-      'surgeon_arrived_645':   '"That\'s not accurate. The earlier arrival was at five forty-seven. Garden entrance. Not six forty-five."',
-      'northcott_arrived_seven': '"I arrived at six. Not seven. I have the log."',
+      'surgeon_arrived_720':   '"That\'s not accurate. The earlier arrival was at seven-oh-three. Garden entrance. Not seven-twenty."',
+      'northcott_arrived_later': '"I arrived at seven. Not later. I have the log."',
     },
 
     word_tell: null,  // Northcott is cooperative — no concealment
 
-    approach_response: 'He looks at you steadily. "I know what the notebook says. You\'re about to ask me about the five forty-seven entry." A pause. "Nobody has asked me about it yet. I\'ve been waiting."',
+    approach_response: 'He looks at you steadily. "I know what the notebook says. You\'re about to ask me about the seven-oh-three entry." A pause. "Nobody has asked me about it yet. I\'ve been waiting."',
 
     backstory_chain: {
       'A': {
@@ -1046,7 +1046,7 @@ const INTERROGATION_DATA = {
             text:     '"Do you know what you were being positioned for tonight."',
             type:     'focused_follow_up',
             cost:     15,
-            response_composed:   'No. A pause. He looks at the notebook. Then at Callum. "I\'m twenty-seven. I\'ve been here six weeks. I was told arrivals would matter and to keep the record carefully. I kept it." Another pause. "I can\'t be accused of involvement. I didn\'t know anyone here before the invitation. I have no history with the Estate, no history with Ashworth, no reason to alter anything I wrote down." He is very still. "He needed a witness who couldn\'t be accused of involvement. He placed me here six weeks ago so that person would exist tonight." A long pause. "I didn\'t know that until just now." He looks at the notebook in his hand. "I\'ve been useful. I just didn\'t know that was the word for it." Another pause. "The five forty-seven entry. I\'ve been thinking about it since eight-oh-one. Whoever came through that gate an hour before the Rite — they had already done something. They came through the garden because they didn\'t want to be noted at the gate. They were noted anyway." He holds up the notebook. "That entry exists because Lord Ashworth told me which door to watch."',
+            response_composed:   'No. A pause. He looks at the notebook. Then at Callum. "I\'m twenty-seven. I\'ve been here six weeks. I was told arrivals would matter and to keep the record carefully. I kept it." Another pause. "I can\'t be accused of involvement. I didn\'t know anyone here before the invitation. I have no history with the Estate, no history with Ashworth, no reason to alter anything I wrote down." He is very still. "He needed a witness who couldn\'t be accused of involvement. He placed me here six weeks ago so that person would exist tonight." A long pause. "I didn\'t know that until just now." He looks at the notebook in his hand. "I\'ve been useful. I just didn\'t know that was the word for it." Another pause. "The seven-oh-three entry. I\'ve been thinking about it since eight-oh-one. Whoever came through that gate an hour before the Rite — they had already done something. They came through the garden because they didn\'t want to be noted at the gate. They were noted anyway." He holds up the notebook. "That entry exists because Lord Ashworth told me which door to watch."',
             grants_node: 'northcott_ashworth_instrument',
           },
         },
@@ -1087,12 +1087,12 @@ const INTERROGATION_DATA = {
             text:     '"Whose position."',
             type:     'direct_confrontation',
             cost:     12,
-            response_composed:   '"The Compact\'s attending physician arrived through the garden entrance at five forty-seven." He says it simply. "I logged the arrival. Medium height. Carrying a case. That arrival did not sign the guest book — the guest book entry for that arrival is missing. The page is torn." A pause. "At seven fifty-two a member entered the Ballroom through the south entrance wearing a plain mask in the position consistent with the Compact\'s physician\'s assigned seating." He holds the notebook. "I have those two entries. The gap between five forty-seven and seven fifty-two is not in my record." Another pause. "It should be. I am still thinking about why it isn\'t."',
-            response_controlled: '"The Compact physician\'s position." A pause. "Five forty-seven arrival. Seven fifty-two ballroom entry." He looks at the notebook. "The mask between those two timestamps is the question." Another pause. "He arrived with one. He entered the Ballroom with another."',
-            response_strained:   '"The physician\'s position." A pause. He looks at the notebook. "Five forty-seven to seven fifty-two." Another pause. "He arrived with his mask. He entered with a different one." He looks at you. "I wrote both times down. I didn\'t write the reason."',
-            response_fractured:  '"The physician." A beat. "Five forty-seven. Seven fifty-two." A pause. "Different mask." He looks at you. "I have both times. You have to fill in what happened between them."',
+            response_composed:   '"The Compact\'s attending physician arrived through the garden entrance at seven-oh-three." He says it simply. "I logged the arrival. Medium height. Carrying a case. That arrival did not sign the guest book — the guest book entry for that arrival is missing. The page is torn." A pause. "At seven fifty-two a member entered the Ballroom through the south entrance wearing a plain mask in the position consistent with the Compact\'s physician\'s assigned seating." He holds the notebook. "I have those two entries. The gap between seven-oh-three and seven fifty-two is not in my record." Another pause. "It should be. I am still thinking about why it isn\'t."',
+            response_controlled: '"The Compact physician\'s position." A pause. "Seven-oh-three arrival. Seven fifty-two ballroom entry." He looks at the notebook. "The mask between those two timestamps is the question." Another pause. "He arrived with one. He entered the Ballroom with another."',
+            response_strained:   '"The physician\'s position." A pause. He looks at the notebook. "Seven-oh-three to seven fifty-two." Another pause. "He arrived with his mask. He entered with a different one." He looks at you. "I wrote both times down. I didn\'t write the reason."',
+            response_fractured:  '"The physician." A beat. "Seven-oh-three. Seven fifty-two." A pause. "Different mask." He looks at you. "I have both times. You have to fill in what happened between them."',
             timeline_critical: true,
-            return_echo: 'He is holding the notebook open to the margin entry. "Five forty-seven." He says it as you enter. "Seven fifty-two." A pause. "Two entries. One gap." He does not say what the gap contains.',
+            return_echo: 'He is holding the notebook open to the margin entry. "Seven-oh-three." He says it as you enter. "Seven fifty-two." A pause. "Two entries. One gap." He does not say what the gap contains.',
             grants_node: 'northcott_physician_wrong_mask_confirmed',
             cross_links: [{ char: 'ashworth', branch: 'mask' }],
           },
@@ -1103,11 +1103,11 @@ const INTERROGATION_DATA = {
     contamination: {
       'steward': 'He glances toward the Gallery. "The Steward was very thorough with me earlier." A pause. "He asked what I\'d told you. I told him what I told you. He nodded." Another pause. "He nods a great deal tonight. I\'ve started finding that more interesting than I expected."',
       'curator': 'He glances at the notebook. "The Curator came to me at seven forty-two." A pause. "He didn\'t ask about it." He leaves that where it is.',
-      'surgeon': 'He looks at the notebook. "Dr. Voss." He says the name carefully. "I heard it said tonight." A pause. "I didn\'t write it down when I heard it. I wrote down what I saw. Five forty-seven. Garden entrance. No face." He is very still. "Those are two separate records. I\'m not in a position to connect them. You are."',
+      'surgeon': 'He looks at the notebook. "Dr. Voss." He says the name carefully. "I heard it said tonight." A pause. "I didn\'t write it down when I heard it. I wrote down what I saw. Seven-oh-three. Garden entrance. No face." He is very still. "Those are two separate records. I\'m not in a position to connect them. You are."',
       'vivienne': 'He is quiet for a moment. Not the notebook quiet — a different kind. "Vivienne told me things." He says it carefully. "About the candelabra position. About who was where. Before I checked myself." A pause. "I acted on what she told me." He looks at the notebook. "That is in here. I didn\'t hide it." Another pause. "I don\'t know if she knew what she was giving me."',
     },
 
-    cognitive_load_response: '"Five forty-seven. Garden.\" He repeats it while watching your hands. Then catches himself. \"He was carrying something. I didn\'t — I didn\'t write that down. I should have written that down."',
+    cognitive_load_response: '"Seven-oh-three. Garden.\" He repeats it while watching your hands. Then catches himself. \"He was carrying something. I didn\'t — I didn\'t write that down. I should have written that down."',
 
   },
 
@@ -1136,10 +1136,10 @@ const INTERROGATION_DATA = {
       },
       'Q2': {
         // "When were the candles last changed?"
-        composed:   '"The Ballroom candelabras were changed at six-thirty, sir, per pre-Rite schedule. A second change was made at seven-fifteen at Lady Ashworth\'s request — she found the scent of the first set unsuitable. I noted both changes in the maintenance record. Standard practice to log any deviation from the scheduled service."',
-        controlled: '"Six-thirty on schedule, sir. Seven-fifteen at Lady Ashworth\'s request." A pause. "Both are in the maintenance record. I log deviations. I always log deviations."',
-        strained:   '"Twice. Six-thirty, scheduled. Seven-fifteen, Lady Ashworth asked." A pause. "I noted it. I note everything. Fourteen years." Another pause. "Both times are written down."',
-        fractured:  '"Twice." A beat. "Six-thirty. Seven-fifteen." A beat. "It\'s in the record."',
+        composed:   '"The Ballroom candelabras were changed at seven-fifteen, sir, per pre-Rite schedule. A second change was made at seven-fifteen at Lady Ashworth\'s request — she found the scent of the first set unsuitable. I noted both changes in the maintenance record. Standard practice to log any deviation from the scheduled service."',
+        controlled: '"Seven-fifteen on schedule, sir. Seven-fifteen at Lady Ashworth\'s request." A pause. "Both are in the maintenance record. I log deviations. I always log deviations."',
+        strained:   '"Twice. Seven-fifteen, scheduled. Seven-fifteen, Lady Ashworth asked." A pause. "I noted it. I note everything. Fourteen years." Another pause. "Both times are written down."',
+        fractured:  '"Twice." A beat. "Seven-fifteen. Seven-fifteen." A beat. "It\'s in the record."',
         snapback:   '"Both changes are in the maintenance record, sir."',
       },
       'Q3': {
@@ -1159,11 +1159,11 @@ const INTERROGATION_DATA = {
         snapback:   '"I\'ve said what I can say. If you have further questions the Curator can arrange a proper time." The formality is back. It is completely deliberate.',
       },
       'Q4': {
-        // "Garden gate at five forty-five — someone came through."
+        // "Garden gate at seven-oh-one — someone came through."
         // requires_item: 'northcott-log-obj'
-        composed:   '"The garden gate access at five forty-five would fall outside my direct coverage during that period, sir. I was conducting East wing inventory. If the arrival log shows an access event at that time, it predates my coverage of the main entrance. I did not authorise any gate access at that hour. The arrival record would be the appropriate reference."',
-        controlled: '"Five forty-five — I was in the East wing, sir. Not near the garden." A pause. "If something came through the garden gate at that hour I wasn\'t told about it. That access point isn\'t on my schedule then."',
-        strained:   '"I wasn\'t there, sir. East wing." A pause. "Five forty-five I can\'t account for the garden gate. I wasn\'t near it." Another pause. "If someone came through at that time they came through without my knowledge."',
+        composed:   '"The garden gate access at seven-oh-one would fall outside my direct coverage during that period, sir. I was conducting East wing inventory. If the arrival log shows an access event at that time, it predates my coverage of the main entrance. I did not authorise any gate access at that hour. The arrival record would be the appropriate reference."',
+        controlled: '"Seven-oh-one — I was in the East wing, sir. Not near the garden." A pause. "If something came through the garden gate at that hour I wasn\'t told about it. That access point isn\'t on my schedule then."',
+        strained:   '"I wasn\'t there, sir. East wing." A pause. "Seven-oh-one I can\'t account for the garden gate. I wasn\'t near it." Another pause. "If someone came through at that time they came through without my knowledge."',
         fractured:  '"I wasn\'t there." A beat. "East wing." A beat. "I didn\'t know."',
         snapback:   '"The arrival record is the appropriate authority for gate access, sir."',
       },
@@ -1225,12 +1225,12 @@ const INTERROGATION_DATA = {
       },
     },
 
-    silence_fill: 'He adjusts something that doesn\'t need adjusting. "The candles were changed at six-fifteen. Both sets. Lady Ashworth asked for both." A pause. "That is not something I would usually note."',
+    silence_fill: 'He adjusts something that doesn\'t need adjusting. "The candles were changed at seven-oh-five. Both sets. Lady Ashworth asked for both." A pause. "That is not something I would usually note."',
     silence_tell: 'A very long silence. Then: "I have been in this house for fourteen years." He looks at the portrait. "I know which decisions I made tonight." A pause. "I know which of them I cannot undo." He does not say what the decisions were. He does not look away from the portrait.',
 
     scharff_corrections: {
-      'steward_arrived_seven':  '"I arrived at five-thirty, sir. As I do every evening the Estate convenes. I have not arrived at seven in fourteen years."',
-      'candles_changed_morning': '"The candles were changed at six-fifteen as well, sir. Not only this morning. Both sets. Lady Ashworth requested it."',
+      'steward_arrived_seven':  '"I arrived at seven-oh-one, sir. As I do every evening the Estate convenes. I have not arrived at seven in fourteen years."',
+      'candles_changed_morning': '"The candles were changed at seven-oh-five as well, sir. Not only this morning. Both sets. Lady Ashworth requested it."',
     },
 
     word_tell: null,
@@ -1762,7 +1762,7 @@ const INTERROGATION_DATA = {
         grants_node: 'surgeon_confronted_with_three_items',
       },
       'Q11': {
-        composed:   'The longest pause he has produced that is not Branch C. Not recalibration. Not a calculation running. Something closer to a man deciding how much of the truth is safe to leave in the room. "You have a committed statement." He says it. "You have a mask that was not present at six-fifteen and was present at eight-oh-one." A pause. "You have a physician who left a balcony floor clear and found it not clear." He looks at you. "What you do not have" — he says it with the precision of a man who has audited this list since eight-oh-one — "is a witness who places me anywhere specific during those seven minutes." He looks at the desk. "That is the gap." A pause. "Find me a witness."',
+        composed:   'The longest pause he has produced that is not Branch C. Not recalibration. Not a calculation running. Something closer to a man deciding how much of the truth is safe to leave in the room. "You have a committed statement." He says it. "You have a mask that was not present at seven-oh-five and was present at eight-oh-one." A pause. "You have a physician who left a balcony floor clear and found it not clear." He looks at you. "What you do not have" — he says it with the precision of a man who has audited this list since eight-oh-one — "is a witness who places me anywhere specific during those seven minutes." He looks at the desk. "That is the gap." A pause. "Find me a witness."',
         controlled: '"You have the committed statement. The mask. The physician\'s two visits." A pause. "What you do not have is a witness for those seven minutes." He looks at the desk. "That is the gap." Another pause. "Find me a witness."',
         strained:   '"The gap." He says it. A pause. "Seven minutes. No witness." He looks at the desk. "Find me a witness."',
         snapback:   '"The evidentiary gap is clear. A witness would close it."',
@@ -1989,14 +1989,14 @@ const INTERROGATION_DATA = {
       },
       'Q4': {
         composed:   '"I shouldn\'t say this but tonight was very dramatic even before the death." She leans forward. "The Viscount was near the lectern at seven-forty adjusting something when he thought no one was watching." She nods. "And the Baron —" She stops. "Well the Baron is always a separate conversation."',
-        wait:       '"Tonight." She begins immediately. "Started wrong at five-thirty when the Steward carried a sealed letter from the gallery to his breast pocket with the expression of a man accepting a sentence." A pause. "The whole building was holding something before six o\'clock. Arrivals that were not supposed to be arrivals yet. People in corridors they had no reason to be in." She smooths her apron. "That was already two wrong things before six."',
+        wait:       '"Tonight." She begins immediately. "Started wrong at seven-oh-one when the Steward carried a sealed letter from the gallery to his breast pocket with the expression of a man accepting a sentence." A pause. "The whole building was holding something before the mingle had really begun. Arrivals that were not supposed to be arrivals yet. People in corridors they had no reason to be in." She smooths her apron. "That was already two wrong things before seven-ten."',
         approach:   '"You already know tonight was wrong before eight-oh-one." She says it with approval. "That is the correct starting observation." She leans forward. "The building was holding something all evening. The Steward knew. The Baron suspected. Dr. Crane knew." A pause. "Everyone in this building had a different piece of it and no one had the whole thing." She smooths her apron. "Except possibly Thomas."',
         record:     '"Whatever that document says —" She waves at it lightly, "— it is less interesting than what I saw at seven-forty." She refocuses. "The Viscount. At the lectern. Very specific movements. Not reading. Not placing. Removing and replacing something in a different position." A pause. "He came back to the lectern at seven-forty to finish something he started earlier."',
-        pressure:   '"Tonight." She says it calmly under the pressure. "Was wrong from five-thirty. If you pressure me you will get the Baron\'s shoulders. If you ask me in order you will get everything from five-thirty to eight-fifteen." She smooths her apron. "I am very good at order when someone lets me use it."',
+        pressure:   '"Tonight." She says it calmly under the pressure. "Was wrong from seven-oh-one. If you pressure me you will get the Baron\'s shoulders. If you ask me in order you will get everything from seven-oh-one to eight-fifteen." She smooths her apron. "I am very good at order when someone lets me use it."',
       },
       'Q5': {
-        composed:   '"I shouldn\'t say this but the Baron has been watching the terrace window all evening." She says it with great significance. "And before that he was watching the study." She leans closer. "He saw someone leave the study at six-fifteen and he looked satisfied. Like a man who has confirmed a suspicion." A pause. "I think he is in love with someone who is also in love with someone else."',
-        wait:       '"The Baron." She fills it. "He was at his window at six-fifteen watching the study door. He wrote something down. He picked up his cigarette and forgot to smoke it." A pause. "Then at seven thirty-eight he walked through the ballroom and stopped at the candelabra and looked at it very specifically without touching it." She looks at you. "A man who stops at a candelabra without touching it is either admiring it or reconsidering something."',
+        composed:   '"I shouldn\'t say this but the Baron has been watching the terrace window all evening." She says it with great significance. "And before that he was watching the study." She leans closer. "He saw someone leave the study at seven-oh-five and he looked satisfied. Like a man who has confirmed a suspicion." A pause. "I think he is in love with someone who is also in love with someone else."',
+        wait:       '"The Baron." She fills it. "He was at his window at seven-oh-five watching the study door. He wrote something down. He picked up his cigarette and forgot to smoke it." A pause. "Then at seven thirty-eight he walked through the ballroom and stopped at the candelabra and looked at it very specifically without touching it." She looks at you. "A man who stops at a candelabra without touching it is either admiring it or reconsidering something."',
         approach:   '"You want to know if the Baron did it." She says it with interest rather than alarm. "He is the obvious choice, isn\'t he. Very guilty expression. The window. The cigarette he forgot to smoke." She smooths her apron. "He is also the choice that someone who had done something else would want you to land on." A pause. "I notice when obvious things are too obvious."',
         record:     '"The Baron." She glances at the document. "Whatever that says about him — the Baron at seven forty-four was at the window watching the terrace. His cigarette went out untouched at seven forty-six. He was still at seven forty-nine." She looks at you. "That is three and a half minutes watching the terrace without moving. That is a man watching for an outcome."',
         pressure:   '"The Baron." She says it. Then she looks at you steadily. "He was at the window. He was watching. His cigarette went out." A pause. "But the Baron at the window is not the same as the Baron on the balcony. The window is watching. The balcony is doing." She smooths her apron. "Those are two different things and pressure will not make them the same thing."',
@@ -2004,23 +2004,23 @@ const INTERROGATION_DATA = {
       'Q6': {
         composed:   '"Not everything." She considers this seriously. "The Steward is not romantic. The Steward is institutional. He covered the south corridor at seven fifty-eight under specific instructions with the face of a man following an arrangement he doesn\'t fully understand." A pause. "That is not romantic." She smooths her apron. "The Baron, however, is absolutely romantic. He has very good shoulders."',
         wait:       '"Not everything." She fills the silence. "The Steward is never romantic. The Viscount is ambitious, not romantic — there is a difference in the shoulders." She smooths her apron thoughtfully. "Dr. Crane is not romantic. Dr. Crane is precise. Everything she does is precise. Even tonight. Even when she came back downstairs at eight-oh-three." A pause. "Precision under pressure. That is not romance. That is a plan."',
-        approach:   '"You are telling me I romanticise." She says it with good humour. "That is correct. I do. But I also notice things that are not romantic and tonight there were several." She leans forward. "The Steward at seven fifty-eight. A figure in the east corridor at six-ten. Those are not romantic. Those are operational. I know the difference now even if I didn\'t at seven forty-five."',
-        record:     '"The document." She looks at it. "A document is not romantic or unromantic. It is a record." She smooths her apron. "What I saw tonight had both romantic and non-romantic elements. The Baron is romantic. The Steward is not. The figure at six-ten with the wrong mask is absolutely not." A pause. "The wrong mask is the non-romantic detail that changes all the romantic details."',
+        approach:   '"You are telling me I romanticise." She says it with good humour. "That is correct. I do. But I also notice things that are not romantic and tonight there were several." She leans forward. "The Steward at seven fifty-eight. A figure in the east corridor at seven-oh-eight. Those are not romantic. Those are operational. I know the difference now even if I didn\'t at seven forty-five."',
+        record:     '"The document." She looks at it. "A document is not romantic or unromantic. It is a record." She smooths her apron. "What I saw tonight had both romantic and non-romantic elements. The Baron is romantic. The Steward is not. The figure at seven-oh-eight with the wrong mask is absolutely not." A pause. "The wrong mask is the non-romantic detail that changes all the romantic details."',
         pressure:   '"Some things have romantic explanations." She says it calmly under pressure. "Some things don\'t." A pause. "What I saw at seven forty-nine does not have a romantic explanation." She looks at you directly. "I have been trying to give it one since it happened. It doesn\'t fit."',
       },
       'Q7': {
         composed:   '"I shouldn\'t say this but Dr. Crane went upstairs twice tonight." She says it with complete authority. "The first time before the Rite. The second time after eight-oh-one." Another pause. "The second time she came back with a face like someone who has seen something they cannot unsee." Another pause. "She is always very careful with her case. Always. Tonight her hands were not careful with it."',
-        wait:       '"Dr. Crane." She fills it. "She arrived with her case fully packed." A pause. "I know because I saw the case in her room at five-fifteen when I delivered the linens. Already packed. Before the call." She smooths her apron. "A physician who packs before being called knows she is going to be called."',
-        approach:   '"You want to know what I think about Dr. Crane." She says it. "I think she knew more about tonight than she admitted. I think she packed her case before she was called. I think she went upstairs at six-fifteen for a reason that was not her case." A pause. "I also think there are parts of her evening she has decided not to explain, and that is making it difficult for me to be fully objective about her." She smooths her apron. "I am telling you that so you can account for it."',
-        record:     '"Dr. Crane." She looks at the document. "Whatever that says — what I know about Dr. Crane is that she has been in this building before tonight. Not as a physician. As someone who knows the building." A pause. "She moved through the east corridor at six-fifteen without looking at doors or turning at junctions. She knew exactly where she was going." She smooths her apron. "Four years I have watched people learn this building. Dr. Crane already knew it."',
+        wait:       '"Dr. Crane." She fills it. "She arrived with her case fully packed." A pause. "I know because I saw the case in her room just before seven when I delivered the linens. Already packed. Before the call." She smooths her apron. "A physician who packs before being called knows she is going to be called."',
+        approach:   '"You want to know what I think about Dr. Crane." She says it. "I think she knew more about tonight than she admitted. I think she packed her case before she was called. I think she went upstairs at seven-oh-five for a reason that was not her case." A pause. "I also think there are parts of her evening she has decided not to explain, and that is making it difficult for me to be fully objective about her." She smooths her apron. "I am telling you that so you can account for it."',
+        record:     '"Dr. Crane." She looks at the document. "Whatever that says — what I know about Dr. Crane is that she has been in this building before tonight. Not as a physician. As someone who knows the building." A pause. "She moved through the east corridor at seven-oh-five without looking at doors or turning at junctions. She knew exactly where she was going." She smooths her apron. "Four years I have watched people learn this building. Dr. Crane already knew it."',
         pressure:   '"Dr. Crane." She says it steadily under pressure. "She is involved. That is not a romantic interpretation — that is an observation." A pause. "She packed before being called. She went upstairs twice. She came back with a face that was wrong." She looks at you. "Three observations. Pressure doesn\'t change observations."',
       },
       'Q8': {
-        composed:   '"First time at six-fifteen. She had her case." She nods. "She came back without it. I noticed because she is always very careful with the case." A pause. "Then at eight-oh-one she went back up. She came back — wrong. Her face was wrong." She looks at you. "And she didn\'t have the case. She went up again. Came back with it." Another pause. "Three trips. In four years she has never taken three trips."',
-        wait:       '"Three trips." She fills it. "Six-fifteen with the case. Eight-oh-one without the case. Eight-oh-three with the case." She counts on her fingers. "Between the second and third trip she was upstairs for two minutes. Two minutes is long enough to find something." A pause. "Or leave something." She smooths her apron. "Or take something that was not hers to take."',
-        approach:   '"You want to know if the three trips were significant." She says it. "Yes. The first trip is medical. The second trip is the one that changed her face. The third trip is the one where she came back with the case." A pause. "The case was upstairs the whole time. Between six-fifteen and eight-oh-three. On the balcony." She looks at you. "That is a long time to leave a medical case unattended."',
-        record:     '"The case." She looks at whatever you are holding. "She carries it everywhere she goes in this building." A pause. "She left it upstairs at six-fifteen. She left it there for two hours." She smooths her apron. "A physician who leaves her case for two hours has stopped thinking of herself as a physician for those two hours." She says it as observation, not judgment.',
-        pressure:   '"Three trips." She says it steadily. "Six-fifteen. Eight-oh-one. Eight-oh-three." A pause. "I counted them because I count things. I count candleholders. I count linens. I count trips." She looks at you. "Three trips is not normal. Pressure does not change the number of trips."',
+        composed:   '"First time at seven-oh-five. She had her case." She nods. "She came back without it. I noticed because she is always very careful with the case." A pause. "Then at eight-oh-one she went back up. She came back — wrong. Her face was wrong." She looks at you. "And she didn\'t have the case. She went up again. Came back with it." Another pause. "Three trips. In four years she has never taken three trips."',
+        wait:       '"Three trips." She fills it. "Seven-oh-five with the case. Eight-oh-one without the case. Eight-oh-three with the case." She counts on her fingers. "Between the second and third trip she was upstairs for two minutes. Two minutes is long enough to find something." A pause. "Or leave something." She smooths her apron. "Or take something that was not hers to take."',
+        approach:   '"You want to know if the three trips were significant." She says it. "Yes. The first trip is medical. The second trip is the one that changed her face. The third trip is the one where she came back with the case." A pause. "The case was upstairs the whole time. Between seven-oh-five and eight-oh-three. On the balcony." She looks at you. "That is a long time to leave a medical case unattended."',
+        record:     '"The case." She looks at whatever you are holding. "She carries it everywhere she goes in this building." A pause. "She left it upstairs at seven-oh-five. She left it there for two hours." She smooths her apron. "A physician who leaves her case for two hours has stopped thinking of herself as a physician for those two hours." She says it as observation, not judgment.',
+        pressure:   '"Three trips." She says it steadily. "Seven-oh-five. Eight-oh-one. Eight-oh-three." A pause. "I counted them because I count things. I count candleholders. I count linens. I count trips." She looks at you. "Three trips is not normal. Pressure does not change the number of trips."',
       },
       'Q9': {
         composed:   '"I shouldn\'t say this but Viscount Pemberton-Hale has been altering the Register for eight years." She says it as established fact. "He was at the lectern at seven-forty touching things he should not have been touching." She leans in. "And his gloves. He kept them on when he touched the candelabra base. You do not do that. You remove gloves to handle metalwork." A pause. "A man who keeps his gloves on when he touches something heavy and iron does not want to leave a mark on it."',
@@ -2030,44 +2030,44 @@ const INTERROGATION_DATA = {
         pressure:   '"The Viscount." She says it calmly. "Eight years of alterations. Very careful ones. Individually defensible." A pause. "Tonight at seven-forty he was at the Register with his gloves off. Then at seven forty-two he was at the Curator with the expression of a man who has just confirmed something." She looks at you. "A man who keeps his gloves on to handle something heavy and iron has finished something that required no prints." She smooths her apron. "That is the observation. Ask the Curator what was confirmed."',
       },
       'Q10': {
-        composed:   '"I shouldn\'t say this —" She stops. A different pause. Shorter. "Cavalier Northcott is very sweet." She says sweet carefully. "He was lost his first week and I showed him where he needed to be." She smooths her apron. "He was distracted tonight. He keeps a very careful record but tonight he was distracted." She looks at you. "The five forty-seven entry is probably accurate. He was distracted after that."',
-        wait:       '"Northcott." She fills it. "He found me at seven fifty-five. He had something he needed to say." A pause. "He said: I saw someone. Six-ten. East corridor." She looks at you. "He said it like a confession. Like something that had been sitting in him since six-ten and had become too heavy to carry." Another pause. "Then the Steward came past and Northcott stopped saying it." She smooths her apron. "The Steward has that effect."',
-        approach:   '"You want to know about Northcott and me." She says it without embarrassment. "Yes. Three weeks. He is twenty-seven and very earnest and very grateful." A pause. "He told me about the six-ten sighting because he trusts me. He found me at seven fifty-five because I was the person he wanted to tell." She smooths her apron. "And then the Steward arrived and he stopped." She looks at you. "The important question is what he saw at six-ten."',
-        record:     '"Northcott keeps the most accurate record in this building." She says it. "Every arrival, every departure, every time stamp." A pause. "He was distracted from approximately six-fifteen onwards. Whatever Lord Ashworth said to him — Northcott was not fully present in his record after that conversation." She smooths her apron. "The five forty-seven entry was before the conversation. That one is accurate."',
-        pressure:   '"Northcott." She says it clearly under pressure. "He saw someone in the east corridor at six-ten. He told me at seven fifty-five. He stopped when the Steward arrived." A pause. "What he saw was a figure with the wrong mask coming from the direction of the study." She looks at you. "I know because I was also in the east corridor at six-ten. I saw it too." She smooths her apron. "Pressure brought that out faster than order would have. You\'re welcome."',
+        composed:   '"I shouldn\'t say this —" She stops. A different pause. Shorter. "Cavalier Northcott is very sweet." She says sweet carefully. "He was lost his first week and I showed him where he needed to be." She smooths her apron. "He was distracted tonight. He keeps a very careful record but tonight he was distracted." She looks at you. "The seven-oh-three entry is probably accurate. He was distracted after that."',
+        wait:       '"Northcott." She fills it. "He found me at seven fifty-five. He had something he needed to say." A pause. "He said: I saw someone. Seven-oh-eight. East corridor." She looks at you. "He said it like a confession. Like something that had been sitting in him since seven-oh-eight and had become too heavy to carry." Another pause. "Then the Steward came past and Northcott stopped saying it." She smooths her apron. "The Steward has that effect."',
+        approach:   '"You want to know about Northcott and me." She says it without embarrassment. "Yes. Three weeks. He is twenty-seven and very earnest and very grateful." A pause. "He told me about the seven-oh-eight sighting because he trusts me. He found me at seven fifty-five because I was the person he wanted to tell." She smooths her apron. "And then the Steward arrived and he stopped." She looks at you. "The important question is what he saw at seven-oh-eight."',
+        record:     '"Northcott keeps the most accurate record in this building." She says it. "Every arrival, every departure, every time stamp." A pause. "He was distracted from approximately seven-oh-five onwards. Whatever Lord Ashworth said to him — Northcott was not fully present in his record after that conversation." She smooths her apron. "The seven-oh-three entry was before the conversation. That one is accurate."',
+        pressure:   '"Northcott." She says it clearly under pressure. "He saw someone in the east corridor at seven-oh-eight. He told me at seven fifty-five. He stopped when the Steward arrived." A pause. "What he saw was a figure with the wrong mask coming from the direction of the study." She looks at you. "I know because I was also in the east corridor at seven-oh-eight. I saw it too." She smooths her apron. "Pressure brought that out faster than order would have. You\'re welcome."',
       },
       'Q11': {
-        composed:   '"He keeps looking for me." She says it without vanity. Pure observation. "All evening. Every time I passed the foyer he looked up." A pause. "He found me at seven fifty-five. He said: I saw someone. Six-ten. East corridor. He said it quickly, like something that had been waiting." Another pause. "Then the Steward came past and Northcott stopped."',
+        composed:   '"He keeps looking for me." She says it without vanity. Pure observation. "All evening. Every time I passed the foyer he looked up." A pause. "He found me at seven fifty-five. He said: I saw someone. Seven-oh-eight. East corridor. He said it quickly, like something that had been waiting." Another pause. "Then the Steward came past and Northcott stopped."',
         wait:       '"He was looking for me all evening." She fills it. "At seven-ten, at seven twenty-five, at seven forty. Each time I passed the foyer he looked up with that expression." A pause. "Not watching for me. Needing to tell something to someone he trusts." She smooths her apron. "Seven fifty-five he found the moment. Then the Steward took the moment away."',
-        approach:   '"He was distracted." She says it. "You can see it in how he held the notebook at seven-forty — slightly wrong. The notebook grip was slightly wrong." A pause. "He found me at seven fifty-five. He said six-ten east corridor. He was beginning to tell me what he saw." She looks at you. "The Steward arrived before he finished. But I know what he was going to say." She smooths her apron. "I was there."',
-        record:     '"Six-ten." She says it. "He said it to me at seven fifty-five with the urgency of a man who has been holding a time stamp for two hours." A pause. "Six-ten. East corridor. Someone." She looks at whatever you are holding. "Whatever that shows you — Northcott saw something at six-ten in the east corridor that he spent the next two hours deciding what to do with." She smooths her apron. "He decided to tell me. The Steward decided that conversation should end."',
-        pressure:   '"He told me at seven fifty-five." She says it clearly. "Six-ten. East corridor. Someone coming from the direction of the study with the wrong mask." She looks at you. "I know what he saw because I saw it too. A figure. Plain mask. Wrong one." A pause. "Northcott saw the face. I saw the mask." She smooths her apron. "Between us we have both."',
+        approach:   '"He was distracted." She says it. "You can see it in how he held the notebook at seven-forty — slightly wrong. The notebook grip was slightly wrong." A pause. "He found me at seven fifty-five. He said seven-oh-eight east corridor. He was beginning to tell me what he saw." She looks at you. "The Steward arrived before he finished. But I know what he was going to say." She smooths her apron. "I was there."',
+        record:     '"Seven-oh-eight." She says it. "He said it to me at seven fifty-five with the urgency of a man who has been holding a time stamp for two hours." A pause. "Seven-oh-eight. East corridor. Someone." She looks at whatever you are holding. "Whatever that shows you — Northcott saw something at seven-oh-eight in the east corridor that he spent the next two hours deciding what to do with." She smooths her apron. "He decided to tell me. The Steward decided that conversation should end."',
+        pressure:   '"He told me at seven fifty-five." She says it clearly. "Seven-oh-eight. East corridor. Someone coming from the direction of the study with the wrong mask." She looks at you. "I know what he saw because I saw it too. A figure. Plain mask. Wrong one." A pause. "Northcott saw the face. I saw the mask." She smooths her apron. "Between us we have both."',
       },
       'Q12': {
-        composed:   '"He didn\'t say." She looks at you. "But I know what was in the east corridor at six-ten." A pause. "I was there."',
-        wait:       '"He didn\'t finish saying it." She fills the beat. "The Steward arrived and Northcott stopped mid-sentence." A pause. "The sentence was: I saw someone. Six-ten. East corridor. Coming from —" She looks at you. "Coming from. That is where he stopped." She smooths her apron. "I know what the rest of that sentence is. I was there."',
-        approach:   '"You already know what was in the east corridor." She says it with interest. "Then you know why I\'ve been waiting for someone to ask me about six-ten since eight-oh-one." She leans forward very slightly. "I was there. I saw it. And then the Baron\'s shoulders went past and I got distracted." A pause. "I have not forgiven myself for that sequence of events."',
-        record:     '"Whatever that document says about six-ten —" She glances at it. "I was in the east corridor at six-ten." She says it plainly. "I saw what was there. And what was there had the wrong mask and was coming from the direction of the study moving with the speed of someone who had finished something." She smooths her apron. "I can describe it precisely."',
-        pressure:   '"I was there." She says it directly under pressure. "Six-ten. East corridor. A figure with the plain mask. Coming from the direction of the study." A pause. "Moving fast. Thomas described it later when I told him. Thomas said: a man who has just done the final piece of something." She smooths her apron. "Thomas is usually right."',
+        composed:   '"He didn\'t say." She looks at you. "But I know what was in the east corridor at seven-oh-eight." A pause. "I was there."',
+        wait:       '"He didn\'t finish saying it." She fills the beat. "The Steward arrived and Northcott stopped mid-sentence." A pause. "The sentence was: I saw someone. Seven-oh-eight. East corridor. Coming from —" She looks at you. "Coming from. That is where he stopped." She smooths her apron. "I know what the rest of that sentence is. I was there."',
+        approach:   '"You already know what was in the east corridor." She says it with interest. "Then you know why I\'ve been waiting for someone to ask me about seven-oh-eight since eight-oh-one." She leans forward very slightly. "I was there. I saw it. And then the Baron\'s shoulders went past and I got distracted." A pause. "I have not forgiven myself for that sequence of events."',
+        record:     '"Whatever that document says about seven-oh-eight —" She glances at it. "I was in the east corridor at seven-oh-eight." She says it plainly. "I saw what was there. And what was there had the wrong mask and was coming from the direction of the study moving with the speed of someone who had finished something." She smooths her apron. "I can describe it precisely."',
+        pressure:   '"I was there." She says it directly under pressure. "Seven-oh-eight. East corridor. A figure with the plain mask. Coming from the direction of the study." A pause. "Moving fast. Thomas described it later when I told him. Thomas said: a man who has just done the final piece of something." She smooths her apron. "Thomas is usually right."',
       },
       'Q13': {
-        composed:   '"I shouldn\'t say this but there was a figure in the east corridor at six-ten coming from the direction of the study." She says it with conviction. "Moving with purpose. And the mask —" she stops. "The mask was wrong. Too plain. Nothing on it. Not the usual masks I see at the Rites." A pause. "I noticed because of the Baron\'s shoulders and then I noticed the mask and then the Baron went past and I forgot." She looks at you. "I am telling you now." Another pause. "I could not tell you who was behind that mask. At that distance, with that mask, I could not tell you."',
+        composed:   '"I shouldn\'t say this but there was a figure in the east corridor at seven-oh-eight coming from the direction of the study." She says it with conviction. "Moving with purpose. And the mask —" she stops. "The mask was wrong. Too plain. Nothing on it. Not the usual masks I see at the Rites." A pause. "I noticed because of the Baron\'s shoulders and then I noticed the mask and then the Baron went past and I forgot." She looks at you. "I am telling you now." Another pause. "I could not tell you who was behind that mask. At that distance, with that mask, I could not tell you."',
         grants_node: 'vivienne_plain_mask_sighting',
-        wait:       'She fills the beat with immediate precision. "A figure. Six-ten. East corridor. Coming from the study direction." She says it all in one breath. "Plain mask. No commission mark. Not anything I had seen at previous Rites." A pause. "Walking fast but not running. The walk of someone who has decided something and is now executing it." She smooths her apron. "And then the Baron went past and I lost the thread and did not recover it until now."',
-        approach:   '"The figure." She says it. "With the wrong mask at six-ten. That is what you want." She nods. "The formal Estate masks are distinctive — silver backings, commission marks at the crown. I know them from previous Rites." A pause. "What I saw at six-ten was plain. Nothing on it." She looks at you. "You bring me the mask you found and I will tell you if it is the same plain mask I saw at six-ten."',
-        record:     '"The mask." She looks at whatever you are holding. A different quality enters her expression. "Plain. No commission mark." She looks up. "That is the mask I saw at six-ten in the east corridor." A pause. "The figure was wearing that mask at six-ten coming from the study direction." She smooths her apron. "It was not the mask they had worn on arrival. Whoever they were, they changed it somewhere between arrival and six-ten."',
-        pressure:   '"A figure. Six-ten. East corridor. Wrong mask. Coming from the study." She says it in a flat sequence under pressure. "Those are the facts. Pressure doesn\'t change facts." A pause. "What pressure changes is the order I give them to you in." She looks at you. "You have now received them in the wrong order. The right order starts at five forty-seven and ends at seven forty-six." She smooths her apron. "Let me start at five forty-seven."',
+        wait:       'She fills the beat with immediate precision. "A figure. Seven-oh-eight. East corridor. Coming from the study direction." She says it all in one breath. "Plain mask. No commission mark. Not anything I had seen at previous Rites." A pause. "Walking fast but not running. The walk of someone who has decided something and is now executing it." She smooths her apron. "And then the Baron went past and I lost the thread and did not recover it until now."',
+        approach:   '"The figure." She says it. "With the wrong mask at seven-oh-eight. That is what you want." She nods. "The formal Estate masks are distinctive — silver backings, commission marks at the crown. I know them from previous Rites." A pause. "What I saw at seven-oh-eight was plain. Nothing on it." She looks at you. "You bring me the mask you found and I will tell you if it is the same plain mask I saw at seven-oh-eight."',
+        record:     '"The mask." She looks at whatever you are holding. A different quality enters her expression. "Plain. No commission mark." She looks up. "That is the mask I saw at seven-oh-eight in the east corridor." A pause. "The figure was wearing that mask at seven-oh-eight coming from the study direction." She smooths her apron. "It was not the mask they had worn on arrival. Whoever they were, they changed it somewhere between arrival and seven-oh-eight."',
+        pressure:   '"A figure. Seven-oh-eight. East corridor. Wrong mask. Coming from the study." She says it in a flat sequence under pressure. "Those are the facts. Pressure doesn\'t change facts." A pause. "What pressure changes is the order I give them to you in." She looks at you. "You have now received them in the wrong order. The right order starts at seven-oh-three and ends at seven forty-six." She smooths her apron. "Let me start at seven-oh-three."',
       },
       'Q14': {
         composed:   '"The Baron was coming the other way down the corridor." She says it with the patience of someone explaining something obvious. "He has very good posture. I noticed him and then I noticed the figure behind him and that is when I saw the plain mask." A pause. "The Baron did not see the figure. Or if he did he didn\'t show it. He was looking at the study door quite specifically. Like someone checking that a door is closed that they want to be closed."',
-        wait:       '"The Baron." She fills it. "He came from the ballroom direction at six-nine. Moving toward the study. I noticed him first because of the posture." A pause. "Then I saw the figure coming the other way and that is when I saw the mask. Plain. Wrong." She smooths her apron. "The Baron and the figure passed each other in the east corridor at six-ten and neither of them showed they had seen the other." She looks at you. "Two people who pass each other without showing recognition in a narrow corridor either do not know each other or know each other too well."',
+        wait:       '"The Baron." She fills it. "He came from the ballroom direction at seven-oh-seven. Moving toward the study. I noticed him first because of the posture." A pause. "Then I saw the figure coming the other way and that is when I saw the mask. Plain. Wrong." She smooths her apron. "The Baron and the figure passed each other in the east corridor at seven-oh-eight and neither of them showed they had seen the other." She looks at you. "Two people who pass each other without showing recognition in a narrow corridor either do not know each other or know each other too well."',
         approach:   '"You want to know if the Baron saw the figure." She says it. "I don\'t know. He may have. He did not show it." A pause. "What I know is the Baron was looking at the study door when he passed. Not at the figure." She looks at you. "A man who looks at a door instead of the person walking toward him in a corridor has made a decision about where to look." She smooths her apron. "That is a deliberate choice."',
-        record:     '"The Baron." She glances at whatever you are holding. "He was in the east corridor at six-ten. Going toward the study from the ballroom direction." A pause. "The figure was coming from the study direction at the same time. They passed each other. The Baron looked at the study door. The figure looked straight ahead." She smooths her apron. "Two people moving through the same corridor at the same time in opposite directions and neither of them looked at the other. That is a rehearsed non-encounter."',
-        pressure:   '"The Baron." She says it steadily. "He was there. Six-ten. Going toward the study." A pause. "The figure was coming the other way. They did not look at each other." She looks at you directly. "A rehearsed non-encounter in the east corridor at six-ten means they knew they would be in the same corridor at the same time." She smooths her apron. "That is planning."',
+        record:     '"The Baron." She glances at whatever you are holding. "He was in the east corridor at seven-oh-eight. Going toward the study from the ballroom direction." A pause. "The figure was coming from the study direction at the same time. They passed each other. The Baron looked at the study door. The figure looked straight ahead." She smooths her apron. "Two people moving through the same corridor at the same time in opposite directions and neither of them looked at the other. That is a rehearsed non-encounter."',
+        pressure:   '"The Baron." She says it steadily. "He was there. Seven-oh-eight. Going toward the study." A pause. "The figure was coming the other way. They did not look at each other." She looks at you directly. "A rehearsed non-encounter in the east corridor at seven-oh-eight means they knew they would be in the same corridor at the same time." She smooths her apron. "That is planning."',
       },
       'Q15': {
         composed:   '"I shouldn\'t say this but the Steward unlocked the east service gate at seven forty-four." She says it precisely. "I know because I was coming from the linen cupboard. He had a key that is not his usual key and he opened the gate and stood there for approximately thirty seconds and then walked away." A pause. "Thomas saw this too. From the garden. Thomas noted it because the east service gate has been locked every evening for thirty years except twice. Tonight was the third time."',
-        wait:       '"The Steward." She fills it immediately. "He unlocked the east service gate at seven forty-four with a key that was not his usual key." A pause. "Before that — at seven-forty — he was in the ballroom looking at the candelabra with the expression of someone who has been told to notice a specific object." She smooths her apron. "And before that at six-thirty I saw him read a letter in the gallery and put it in his breast pocket with the expression of a man accepting something irreversible." She looks at you. "Three observations of the Steward before seven forty-four. Each one worse than the last."',
+        wait:       '"The Steward." She fills it immediately. "He unlocked the east service gate at seven forty-four with a key that was not his usual key." A pause. "Before that — at seven-forty — he was in the ballroom looking at the candelabra with the expression of someone who has been told to notice a specific object." She smooths her apron. "And before that at seven-fifteen I saw him read a letter in the gallery and put it in his breast pocket with the expression of a man accepting something irreversible." She looks at you. "Three observations of the Steward before seven forty-four. Each one worse than the last."',
         approach:   '"You want to know about the gate." She says it. "Seven forty-four. East service gate. Key that was not his key. Thirty seconds standing in it." A pause. "Thomas was in the garden. He saw the gate open from outside. He noted the time because in thirty years that gate has been opened three times including tonight." She looks at you. "Whatever the first two times were — tonight was the third time and it was not routine."',
         record:     '"The gate." She looks at whatever you have. "The Steward used a key that was not his usual key at seven forty-four to open the east service gate." A pause. "That key came from somewhere. He did not have it before tonight." She smooths her apron. "A key that is not your usual key means someone gave you a key for a specific purpose at a specific time." She looks at you. "Who gave the Steward a key tonight."',
         pressure:   '"The Steward at seven forty-four." She says it under pressure. "East service gate. Wrong key. Thirty seconds standing in it." A pause. "That gate connects to the south ballroom entry through a service corridor that bypasses every main position in this wing." She looks at you directly. "A person who knew this building could reach the ballroom unseen through it. I have been in this building four years. I know what that means."',
@@ -2171,7 +2171,7 @@ const INTERROGATION_DATA = {
       ],
       wait: [
         '"I shouldn\'t say this but Dr. Crane has been —" She stops. Reconsiders the word she was going to use. "In an arrangement with this building. For two years, I think. Possibly longer." She says arrangement the same way Crane says arrangement — precisely, doing a great deal of work. "She knew tonight was going to matter. She packed the bag before she was called because she knew." A pause. "That is not a professional physician preparing for an event. That is a woman who had decided in advance she needed to be in this building."',
-        '"I shouldn\'t say this but the Steward has been covering corridors under instruction all evening." She begins. "Not his own instruction — someone else\'s. You can tell the difference. His own instruction has a different posture. Tonight he was following something written down." A pause. "Someone sent the Steward a letter. He followed it. I saw him read it at six-thirty in the gallery and put it in his breast pocket." She nods. "I notice letters. Letters are important in this house."',
+        '"I shouldn\'t say this but the Steward has been covering corridors under instruction all evening." She begins. "Not his own instruction — someone else\'s. You can tell the difference. His own instruction has a different posture. Tonight he was following something written down." A pause. "Someone sent the Steward a letter. He followed it. I saw him read it at seven-fifteen in the gallery and put it in his breast pocket." She nods. "I notice letters. Letters are important in this house."',
       ],
       record: [
         '"I shouldn\'t say this but whatever that document says it is less interesting than what I saw at seven-forty." She waves at the document. "The Viscount. At the lectern. Very specific movements." She puts her hands together and demonstrates. "Not reading. Not placing. Removing and then replacing something in a different position. Like someone who has come back to a thing they started earlier and is now finishing it." A pause. "He came back to the lectern at seven-forty to finish something he started before the assembly."',
@@ -2216,7 +2216,7 @@ const INTERROGATION_DATA = {
             text:     '"He told you about the east corridor sighting because of the arrangement."',
             type:     'focused_follow_up',
             cost:     8,
-            response_composed:   '"He told me because he trusts me." She says it plainly. "He found me at seven fifty-five because he needed to tell someone and I was the someone he trusts." A pause. "He said: I saw someone. Six-ten. East corridor. He said it like a confession." She looks at you. "And then the Steward came and he stopped." Another pause. "The Steward has that effect on people. He arrives and sentences don\'t get finished."',
+            response_composed:   '"He told me because he trusts me." She says it plainly. "He found me at seven fifty-five because he needed to tell someone and I was the someone he trusts." A pause. "He said: I saw someone. Seven-oh-eight. East corridor. He said it like a confession." She looks at you. "And then the Steward came and he stopped." Another pause. "The Steward has that effect on people. He arrives and sentences don\'t get finished."',
             grants_node: 'vivienne_northcott_told_her',
           },
         },
@@ -2269,7 +2269,7 @@ const INTERROGATION_DATA = {
     contamination: {
     'northcott': '"Northcott." She says the name differently from all the other names she has said this evening. A pause. "He left his post twice." She says it the way she says things when she is deciding how much to give. "Once at seven-fifteen. Once at seven fifty-five." She smooths her apron. "The second time he came to find me specifically." Another pause. "He said he needed to tell someone what he had seen. He chose me." She does not say whether that was coordination or trust. "I am the person he tells things to."',
       'hatch':     '"Thomas knows things he won\'t say." She says it without frustration. "He has been here thirty years and he keeps everything in his head and he releases it very slowly." A pause. "He was very still after I spoke to him tonight. That means he understood something." Another pause. "When Thomas understands something he needs time before he can say it. Go back to him."',
-      'surgeon':   'She is quiet for a moment. "You have been in the physicians room." She says it carefully. A pause. "I noticed something about the figure in the east corridor at six-ten. Even moving fast with the wrong mask there was a warm quality in the posture." She smooths her apron. "I find that quality suspicious in a person. Real warmth doesn\'t travel that quickly."',
+      'surgeon':   'She is quiet for a moment. "You have been in the physicians room." She says it carefully. A pause. "I noticed something about the figure in the east corridor at seven-oh-eight. Even moving fast with the wrong mask there was a warm quality in the posture." She smooths her apron. "I find that quality suspicious in a person. Real warmth doesn\'t travel that quickly."',
       'crane':     '"She went upstairs three times." She says it immediately. "I\'ve been counting. Three times. And each time she came back different." A pause. "The third time she came back with her case and a face like a decision." She smooths her apron. "Whatever she decided — it cost her something."',
     },
 
@@ -2435,12 +2435,12 @@ const INTERROGATION_DATA = {
         snapback:   '"The bag contents are consistent with standard medical availability practice."',
       },
       'Q3': {
-        composed:   '"I went upstairs at approximately six-fifteen." A pause. "A brief visit before the Rite. He was well. I came back downstairs." She touches the bag. "I left my case up there. My mind was elsewhere."',
+        composed:   '"I went upstairs at approximately seven-oh-five." A pause. "A brief visit before the Rite. He was well. I came back downstairs." She touches the bag. "I left my case up there. My mind was elsewhere."',
         controlled: '"I checked on him before the Rite. Yes." She looks at her hands. "He was well. I came back downstairs. I left my case."',
-        strained:   '"I went upstairs at six-fifteen." A pause. "Medical check. He was well." She touches the bag. "I left my case on the balcony." Another pause. "My mind was elsewhere."',
+        strained:   '"I went upstairs at seven-oh-five." A pause. "Medical check. He was well." She touches the bag. "I left my case on the balcony." Another pause. "My mind was elsewhere."',
         snapback:   '"The pre-Rite visit was a standard medical check. Lord Ashworth was well at that time."',
         timeline_critical: true,
-        return_echo: 'She is looking at the bag. "Six-fifteen." She says it as you enter. A pause. "He was well at six-fifteen." She touches the bag without looking at it.',
+        return_echo: 'She is looking at the bag. "Seven-oh-five." She says it as you enter. A pause. "He was well at seven-oh-five." She touches the bag without looking at it.',
         grants_node: 'crane_first_visit_ashworth_alive',
       },
       'Q4': {
@@ -2455,14 +2455,14 @@ const INTERROGATION_DATA = {
       'Q5': {
         composed:   '"I found my medical case where I had left it." A pause. "I collected it and came back downstairs." She touches the bag. "That is what I found."',
         controlled: '"My case." A pause. "Where I left it." She touches the bag. "I collected it." Another pause. "I came back downstairs."',
-        strained:   '"My case." A pause. "And something else." She touches the bag. "Something that was not there at six-fifteen." Another pause. "I know because I would have seen it at six-fifteen. The floor was clear."',
+        strained:   '"My case." A pause. "And something else." She touches the bag. "Something that was not there at seven-oh-five." Another pause. "I know because I would have seen it at seven-oh-five. The floor was clear."',
         snapback:   '"I found my medical case. That is the documented item retrieved."',
         grants_node: 'crane_found_mask_negative_observation',
       },
       'Q6': {
         composed:   '"I spoke with several members during the evening." She touches the bag briefly. "The Baron is a member I have spoken with at previous Estate events. The conversation was brief." A pause. "He asked about irreversibility. I did not answer."',
         controlled: '"I spoke with him briefly." A pause. "He asked something he did not finish asking." She looks at her hands. "I did not answer. I left."',
-        strained:   '"The Baron." A pause. "Six-thirty. He asked about irreversibility." Another pause. "I did not answer. I left." She touches the bag. "I should have asked him why."',
+        strained:   '"The Baron." A pause. "Seven-fifteen. He asked about irreversibility." Another pause. "I did not answer. I left." She touches the bag. "I should have asked him why."',
         snapback:   '"The conversation with the Baron was brief and unremarkable."',
       },
       'Q7': {
@@ -2530,19 +2530,19 @@ const INTERROGATION_DATA = {
         unlock_condition: { composure_lte: 70 },
         questions: {
           'CA1': {
-            text:     '"The floor was clear at six-fifteen."',
+            text:     '"The floor was clear at seven-oh-five."',
             type:     'narrative_statement',
             cost:     8,
-            response_composed:   '"Yes." She says it immediately. "The floor was clear at six-fifteen." A pause. "I notice things on floors. Clinical habit." She touches the bag. "There was nothing on the balcony floor when I conducted the pre-Rite check." Another pause. "That is accurate."',
-            response_strained:   '"Yes." A pause. She touches the bag. "Clear at six-fifteen." Another pause. "I noticed." She looks at her hands. "I always notice."',
+            response_composed:   '"Yes." She says it immediately. "The floor was clear at seven-oh-five." A pause. "I notice things on floors. Clinical habit." She touches the bag. "There was nothing on the balcony floor when I conducted the pre-Rite check." Another pause. "That is accurate."',
+            response_strained:   '"Yes." A pause. She touches the bag. "Clear at seven-oh-five." Another pause. "I noticed." She looks at her hands. "I always notice."',
             unlocks: 'CA2',
-            grants_node: 'crane_floor_clear_615',
+            grants_node: 'crane_floor_clear_705',
           },
           'CA2': {
             text:     '"Not clear at eight-oh-one."',
             type:     'focused_follow_up',
             cost:     12,
-            response_composed:   'A pause of a different quality. "No." She says it. The composure holds. "Not clear at eight-oh-one." She looks at you. "I know what that means. I knew in ten seconds." She touches the bag. "The interval between six-fifteen and eight-oh-one is the investigation."',
+            response_composed:   'A pause of a different quality. "No." She says it. The composure holds. "Not clear at eight-oh-one." She looks at you. "I know what that means. I knew in ten seconds." She touches the bag. "The interval between seven-oh-five and eight-oh-one is the investigation."',
             response_strained:   '"No." A pause. She touches the bag. "Not clear at eight-oh-one." She looks at her hands. "I knew in ten seconds." Another pause. "I understand what ten seconds means."',
             unlocks: 'CA3',
             timeline_critical: true,
@@ -2604,12 +2604,12 @@ const INTERROGATION_DATA = {
     },
 
     contamination: {
-      'baron': '"The Baron has been very careful tonight." She says it before you mention him. A pause. "He saw me leave the Smoking Room at six-thirty. He knows I came back downstairs without my case." Another pause. "He is deciding whether to tell you that."',
+      'baron': '"The Baron has been very careful tonight." She says it before you mention him. A pause. "He saw me leave the Smoking Room at seven-fifteen. He knows I came back downstairs without my case." Another pause. "He is deciding whether to tell you that."',
       'surgeon': 'She is very still. A pause that is not clinical. Not managed. "He came to me." She says it quietly. She touches the bag. The look lasts too long to be about the bag.',
       'vivienne': '"She was on the terrace." She says it immediately. A pause. "Seven forty-three to seven fifty." She touches the bag. "She saw more than she has said to most people." Another pause. "Find her. Ask her in order."',
     },
 
-    cognitive_load_response: '"Six-fifteen." While watching your hands. "The floor was clear at six-fifteen." A pause she did not plan. She touches the bag. "At eight-oh-one it was not clear." She stops. She has just given you the timeline bracket without being asked. She touches the bag again. She knows what she has done.',
+    cognitive_load_response: '"Seven-oh-five." While watching your hands. "The floor was clear at seven-oh-five." A pause she did not plan. She touches the bag. "At eight-oh-one it was not clear." She stops. She has just given you the timeline bracket without being asked. She touches the bag again. She knows what she has done.',
 
   },
   // ── THE BARON ──────────────────────────────────────────────
@@ -2647,8 +2647,8 @@ const INTERROGATION_DATA = {
         snapback:   '"My arrangement with any third party is not a matter for this investigation. I have said what I am able to say."',
       },
       'Q3': {
-        grants_node: 'baron_crane_visit_630',
-        composed:   '"No." A pause. "I didn\'t need to." He looks at the ashtray. "Crane came to see me at six-thirty. She didn\'t say what she wanted. Sat for twelve minutes. Said she needed to think about something." He pauses. "I\'ve been thinking about that twelve minutes since."',
+        grants_node: 'baron_crane_visit_715',
+        composed:   '"No." A pause. "I didn\'t need to." He looks at the ashtray. "Crane came to see me at seven-fifteen. She didn\'t say what she wanted. Sat for twelve minutes. Said she needed to think about something." He pauses. "I\'ve been thinking about that twelve minutes since."',
         controlled: '"No." A pause. "I didn\'t need to." He leaves it there. Doesn\'t explain the distinction.',
         strained:   '"No." He picks up the drink. Puts it down. "I had a method. I decided it wasn\'t necessary." A pause. "I decided to wait and see whether tonight resolved itself."',
         fractured:  '"No." A pause. "I had a method available. I chose not to use it." He picks up the drink. This time he takes it. "That is what I have been sitting with."',
@@ -2658,18 +2658,18 @@ const INTERROGATION_DATA = {
         composed:   'He picks up the drink. Puts it down. "I don\'t name people." A pause. "But I\'ll tell you this — it\'s not the most interesting question."',
         controlled: '"The most interesting question is why tonight." He says it before you ask what he means.',
         strained:   '"The answer is in the building." He says it to the ashtray. "I have been in this room since eight-oh-one because I knew that going anywhere else would force me to say what I know." A pause. "I am not ready to say it yet."',
-        fractured:  'He picks up the drink. Takes it. Sets it down empty. "I\'ve been sitting here for three hours deciding whether to say what I know." A pause. "I decided." He stands. "Find the man who left the study at six-fifteen looking satisfied. Ask him what he was satisfied about." He does not say the name. He has said enough.',
+        fractured:  'He picks up the drink. Takes it. Sets it down empty. "I\'ve been sitting here for three hours deciding whether to say what I know." A pause. "I decided." He stands. "Find the man who left the study at seven-oh-five looking satisfied. Ask him what he was satisfied about." He does not say the name. He has said enough.',
         snapback:   '"I\'ve said what I know. The rest is for you to establish." He picks up the book. Returns to the window.',
       },
       'Q4b': {
         // "You saw someone at the base of the balcony stairs."
         timeline_critical: true,
-        return_echo: 'He is at the window. "Six-fifteen." He says it as you enter. A pause. "East service corridor." He picks up the drink. Puts it down.',
+        return_echo: 'He is at the window. "Seven-oh-five." He says it as you enter. A pause. "East service corridor." He picks up the drink. Puts it down.',
         composed:   'He picks up the drink. Puts it down. "The study window looks onto the east service corridor." He says it as a fact about architecture. "What specifically are you asking about?"',
-        controlled: '"Six-fifteen." A pause. He looks at the ashtray. "There was movement near the study." He picks up the drink. Puts it down. "I noted it."',
-        strained:   '"Six-fifteen." He says it to the ashtray. "Someone left the study." A pause. "East service corridor. Moving toward the balcony stairs. He looked satisfied — the particular satisfaction of a man who has completed something." He picks up the drink. Puts it down. "I noted it. I didn\'t do anything with it."',
-        fractured:  '"Six-fifteen." A beat. "The study." Another beat. "Satisfied." He picks up the drink. Takes it. "I should have said something."',
-        grants_node: 'baron_615_observation',
+        controlled: '"Seven-oh-five." A pause. He looks at the ashtray. "There was movement near the study." He picks up the drink. Puts it down. "I noted it."',
+        strained:   '"Seven-oh-five." He says it to the ashtray. "Someone left the study." A pause. "East service corridor. Moving toward the balcony stairs. He looked satisfied — the particular satisfaction of a man who has completed something." He picks up the drink. Puts it down. "I noted it. I didn\'t do anything with it."',
+        fractured:  '"Seven-oh-five." A beat. "The study." Another beat. "Satisfied." He picks up the drink. Takes it. "I should have said something."',
+        grants_node: 'baron_710_observation',
         snapback:   '"What I observed is what I observed. I have noted it accurately."',
       },
       'Q5': {
@@ -2755,7 +2755,7 @@ const INTERROGATION_DATA = {
             text:     '"She came to you for a reason."',
             type:     'partial_claim',
             cost:     6,
-            response_composed:   '"She came to the Smoking Room at six-thirty. Sat. Left without explaining." He looks at the ashtray.',
+            response_composed:   '"She came to the Smoking Room at seven-fifteen. Sat. Left without explaining." He looks at the ashtray.',
             response_strained:   '"She needed to tell someone something. She decided I wasn\'t safe enough to tell." A pause. "She was probably right about that."',
             response_fractured:  '"She was flustered. Harriet Crane doesn\'t get flustered." He picks up the drink. Puts it down. "Whatever she\'d done, she hadn\'t decided whether to tell anyone yet. She came here to decide." A pause. "She left without deciding." He says it like he wishes she\'d stayed.',
             grants_node: 'crane_baron_relationship',
@@ -2772,7 +2772,7 @@ const INTERROGATION_DATA = {
             text:     '"What do you think the twelve minutes were."',
             type:     'focused_follow_up',
             cost:     10,
-            response_composed:   'He has been thinking about that since six-thirty. "She was deciding whether to tell me something." A pause. "She decided not to." He picks up the ashtray. Sets it down. "Whatever she was deciding about — the Steward\'s route tells me it involved the Physicians room. And the Physicians room is where she keeps her bag when she attends Estate functions." He is quiet for a moment. "She didn\'t come back. But she made her decision during those twelve minutes." Another pause. "I think she decided to proceed with whatever she had come to tell me she had already decided to proceed with."',
+            response_composed:   'He has been thinking about that since seven-fifteen. "She was deciding whether to tell me something." A pause. "She decided not to." He picks up the ashtray. Sets it down. "Whatever she was deciding about — the Steward\'s route tells me it involved the Physicians room. And the Physicians room is where she keeps her bag when she attends Estate functions." He is quiet for a moment. "She didn\'t come back. But she made her decision during those twelve minutes." Another pause. "I think she decided to proceed with whatever she had come to tell me she had already decided to proceed with."',
             grants_node: 'crane_decided_to_proceed_physicians_room',
           },
         },
@@ -2848,7 +2848,7 @@ const INTERROGATION_DATA = {
 
       'smoking-letters-context': '"Three entries." He says it before you mention them. "I know which three." He picks up the drink. "I have known for six weeks which entries Ashworth was going to read aloud tonight." A pause. "I am aware of what it means that they were not read." He does not look at you. "I have been sitting with that since seven forty-nine."',
     },
-    cognitive_load_response: '"Six-fifteen." While watching your pen. "Someone left the study at six-fifteen." A pause he didn\'t plan. "He had been in there since five-forty-seven." He stops. "I didn\'t write that down. I\'m telling you now."',
+    cognitive_load_response: '"Seven-oh-five." While watching your pen. "Someone left the study at seven-oh-five." A pause he didn\'t plan. "He had been in there since seven-oh-three." He stops. "I didn\'t write that down. I\'m telling you now."',
 
   },
 
@@ -2903,17 +2903,17 @@ const INTERROGATION_DATA = {
       },
       'Q7b': {
         // "Archive Case 3 — you saw who used it."
-        composed:   'He looks at Archive Case 3 before answering. The movement is not dramatic — it is the reflex of twenty-three years. "I saw someone leave the study at six-fifteen. Moving toward the Ballroom entrance. Not concealing. Not rushing." A pause. "The pace of someone who had completed something and was orienting to the next position." He looks at the case. "I looked at Archive Case 3 thirty minutes later. The seal was broken. I drew an inference." Another pause. "The Surgeon understood that Ashworth would use the Rite. He had been in this building from five forty-seven. He had walked the balcony level. He knew the ritual. He acted before the Rite could begin." He is very still. "I made a calculation that the Rite would surface the correct answer. It was wrong in this instance. That is a distinction I will carry."',
-        controlled: '"I saw someone leave the study at six-fifteen." A pause. "I looked at Case 3 thirty minutes later. Broken seal." He looks at the archive. "I drew the inference. I decided the Rite would surface it." Another pause. "The Rite did not surface it in time. The calculation was wrong."',
-        strained:   '"Six-fifteen. Someone left the study." A pause. "I looked at Case 3. Broken." Another pause. "I thought the Rite would surface it. I was wrong about which crisis was running."',
-        fractured:  '"Six-fifteen." A beat. "Case 3 broken." Another beat. "I thought the Rite would find it." A beat. "It didn\'t find it in time."',
+        composed:   'He looks at Archive Case 3 before answering. The movement is not dramatic — it is the reflex of twenty-three years. "I saw someone leave the study at seven-oh-five. Moving toward the Ballroom entrance. Not concealing. Not rushing." A pause. "The pace of someone who had completed something and was orienting to the next position." He looks at the case. "I looked at Archive Case 3 thirty minutes later. The seal was broken. I drew an inference." Another pause. "The Surgeon understood that Ashworth would use the Rite. He had been in this building from seven-oh-three. He had walked the balcony level. He knew the ritual. He acted before the Rite could begin." He is very still. "I made a calculation that the Rite would surface the correct answer. It was wrong in this instance. That is a distinction I will carry."',
+        controlled: '"I saw someone leave the study at seven-oh-five." A pause. "I looked at Case 3 thirty minutes later. Broken seal." He looks at the archive. "I drew the inference. I decided the Rite would surface it." Another pause. "The Rite did not surface it in time. The calculation was wrong."',
+        strained:   '"Seven-oh-five. Someone left the study." A pause. "I looked at Case 3. Broken." Another pause. "I thought the Rite would surface it. I was wrong about which crisis was running."',
+        fractured:  '"Seven-oh-five." A beat. "Case 3 broken." Another beat. "I thought the Rite would find it." A beat. "It didn\'t find it in time."',
         snapback:   '"I made the assessment available to the Rite. The Rite was the appropriate mechanism."',
       },
       'Q8b': {
         // "What was Ashworth's plan for tonight."
-        composed:   '"He intended to open the Register at the appropriate moment in the Rite and read three specific entries aloud. The entries document forty years of Compact-related arrangements conducted under a founding agreement the Estate officially ceased to acknowledge in 1983." He looks at the Register. "Lord Ashworth had assembled six years of documentation. Tonight was the moment when the Register would be open, all members present, and any reading formally binding." A pause. "Someone understood what that reading would produce. He had been in this building since five forty-seven. He had solved the room before anyone arrived." He looks at Archive Case 3. "Whatever was placed in Case 3 two months ago was placed to prevent Lord Ashworth from reaching that moment." Another pause. "He reached it anyway. He used the three minutes he had."',
+        composed:   '"He intended to open the Register at the appropriate moment in the Rite and read three specific entries aloud. The entries document forty years of Compact-related arrangements conducted under a founding agreement the Estate officially ceased to acknowledge in 1983." He looks at the Register. "Lord Ashworth had assembled six years of documentation. Tonight was the moment when the Register would be open, all members present, and any reading formally binding." A pause. "Someone understood what that reading would produce. He had been in this building since seven-oh-three. He had solved the room before anyone arrived." He looks at Archive Case 3. "Whatever was placed in Case 3 two months ago was placed to prevent Lord Ashworth from reaching that moment." Another pause. "He reached it anyway. He used the three minutes he had."',
         controlled: '"He was going to read three entries aloud at the Register opening." A pause. "Six years of documentation. Binding in front of all members." He looks at Case 3. "Someone understood what the reading would produce and acted before the Rite reached that moment." Another pause. "Lord Ashworth used the time he had."',
-        strained:   '"Three entries. He was going to read them aloud." A pause. "Six years of preparation. All members present. Binding." He looks at Case 3. "Someone understood what that reading would produce. He had been in this building since five forty-seven. He had solved the room before anyone arrived." Another pause. "Lord Ashworth used what he had left."',
+        strained:   '"Three entries. He was going to read them aloud." A pause. "Six years of preparation. All members present. Binding." He looks at Case 3. "Someone understood what that reading would produce. He had been in this building since seven-oh-three. He had solved the room before anyone arrived." Another pause. "Lord Ashworth used what he had left."',
         fractured:  '"Three entries." A beat. "Read aloud. Binding." Another beat. "Someone acted to stop it." A beat. "Lord Ashworth used what he had."',
         snapback:   '"Lord Ashworth\'s intentions are a matter for the Rite record."',
       },
@@ -3164,7 +3164,7 @@ const INTERROGATION_DATA = {
 
     contamination: {},
 
-    cognitive_load_response: '"Five forty-seven." While watching your hands. "Someone arrived at five forty-seven." A pause. "I was watching the garden at five forty-seven." He stops. Looks at you. He has just told you something he didn\'t intend to tell you.',
+    cognitive_load_response: '"Seven-oh-three." While watching your hands. "Someone arrived at seven-oh-three." A pause. "I was watching the garden at seven-oh-three." He stops. Looks at you. He has just told you something he didn\'t intend to tell you.',
   },
 
   // ── GREAVES ────────────────────────────────────────────────
@@ -3201,10 +3201,10 @@ const INTERROGATION_DATA = {
       'Q3': {
         // "What did you see from the Library window?"
         // Fractured: the hedge path. He noted it. He said nothing. No longer certain that was right.
-        composed:   '"The Library window faces the east garden. It has a view along the hedge path toward the service entrance. At six-thirty, while I was settling in before locking the door, I observed a figure moving along the hedge path in the direction of the east gate. The movement was purposeful. The figure carried something." A pause. "The note told me not to involve myself in what happened outside. I did not involve myself."',
-        controlled: '"Six-thirty. A figure on the hedge path." A pause. "Moving toward the gate. I noted it and I did nothing. The note said not to involve myself. It was clear about that." A pause. "I have been deciding since eight-oh-one whether the instruction applied here."',
-        strained:   '"I saw someone. Six-thirty." A pause. "Hedge path, moving east, toward the gap in the hedge. There\'s a gap — at the far end. I didn\'t know what it led to." Another pause. "I wrote the time in the margin of the chess notation. Six-thirty. Figure through the gap. I didn\'t report it."',
-        fractured:  '"Six-thirty." A beat. "The gap in the hedge." Another beat. "They went through it. I said nothing." A beat. "I should have said something at six-thirty."',
+        composed:   '"The Library window faces the east garden. It has a view along the hedge path toward the service entrance. At seven-fifteen, while I was settling in before locking the door, I observed a figure moving along the hedge path in the direction of the east gate. The movement was purposeful. The figure carried something." A pause. "The note told me not to involve myself in what happened outside. I did not involve myself."',
+        controlled: '"Seven-fifteen. A figure on the hedge path." A pause. "Moving toward the gate. I noted it and I did nothing. The note said not to involve myself. It was clear about that." A pause. "I have been deciding since eight-oh-one whether the instruction applied here."',
+        strained:   '"I saw someone. Seven-fifteen." A pause. "Hedge path, moving east, toward the gap in the hedge. There\'s a gap — at the far end. I didn\'t know what it led to." Another pause. "I wrote the time in the margin of the chess notation. Seven-fifteen. Figure through the gap. I didn\'t report it."',
+        fractured:  '"Seven-fifteen." A beat. "The gap in the hedge." Another beat. "They went through it. I said nothing." A beat. "I should have said something at seven-fifteen."',
         snapback:   '"I have told you what I observed. The time and location are accurate."',
       },
       'Q4': {
@@ -3212,12 +3212,12 @@ const INTERROGATION_DATA = {
         composed:   '"From seven until the Gavel. My key. I engaged the interior lock at three minutes past seven — I checked my watch. The door did not open until I opened it after the Gavel. No one entered. No one exited." A pause. "I made notes on a correspondence chess game during the interval. The margins have timestamps. White to move. I hadn\'t moved. I was attending to the window."',
         controlled: '"Locked from seven. No one in or out." A pause. "The chess notation has times in the margin. A habit. If you need a minute-by-minute account of my position, the notation gives it."',
         strained:   '"I was in there alone from seven." A pause. "I know what I saw from the window and I know I was in the Library for everything that followed." Another pause. "Those two things are all I have."',
-        fractured:  '"Locked." A beat. "From seven." Another beat. "What I saw at six-thirty is what matters. I know that now."',
+        fractured:  '"Locked." A beat. "From seven." Another beat. "What I saw at seven-fifteen is what matters. I know that now."',
         snapback:   '"The Library was locked from the inside from seven until the Gavel. That is the accurate and complete account of my position."',
       },
     },
 
-    silence_fill: 'He describes the chess position without being asked. White queen to E4. He was considering the knight counter. He has not moved since six forty-five. He has been looking at the board and at the window alternately.',
+    silence_fill: 'He describes the chess position without being asked. White queen to E4. He was considering the knight counter. He has not moved since seven-twenty. He has been looking at the board and at the window alternately.',
     silence_tell: '"I recognised the handwriting on the note." A pause. "I did not say that earlier because I was not certain what it would mean. I am certain now. It was the Curator\'s hand. He placed me there. Lord Ashworth suggested it." Another pause. "I worked that out at seven-fifteen. I did not know what it meant then. I think I know now."',
 
     backstory_chain: {
@@ -3242,10 +3242,10 @@ const INTERROGATION_DATA = {
             grants_node: 'greaves_library_locked',
           },
           'GA1': {
-            text:     '"The figure on the hedge path at six-thirty. What were they carrying."',
+            text:     '"The figure on the hedge path at seven-fifteen. What were they carrying."',
             type:     'focused_follow_up',
             cost:     8,
-            response_composed:   '"A case. Medical-sized — the proportions of a physician\'s bag, but longer. Flatter." A pause. "Moving quickly. Not running. The deliberate pace of someone who knows the route and is not uncertain about being seen because they have already decided the risk is acceptable." He is looking at the chess table. "Six-thirty. Still light. I had a clear line from the window. I noted the time at six-thirty-two."',
+            response_composed:   '"A case. Medical-sized — the proportions of a physician\'s bag, but longer. Flatter." A pause. "Moving quickly. Not running. The deliberate pace of someone who knows the route and is not uncertain about being seen because they have already decided the risk is acceptable." He is looking at the chess table. "Seven-fifteen. Still light. I had a clear line from the window. I noted the time at seven-fifteen-two."',
             unlocks: 'GA2',
             grants_node: 'greaves_saw_medical_case_hedge_path',
             cross_links: [{ char: 'crane', branch: 'hedge_arrival' }],
@@ -3262,7 +3262,7 @@ const INTERROGATION_DATA = {
             text:     '"Do you know who the figure was."',
             type:     'focused_follow_up',
             cost:     12,
-            response_composed:   '"Medium height. Precise movement — the particular economy of someone who has decided in advance exactly how far to walk and at what angle." A pause. "The case had markings I recognised as medical equipment labels. Not baggage. Medical supply labelling." A pause. "I wrote a description in the chess notation margin at six-thirty-two. I had the habit from the note — record, don\'t act." He looks at the margin. Then at the door. "I didn\'t know what I was watching at six-thirty." Another pause. "I know now. And I wrote it down." He is quiet for a moment. "That is the most useful thing I have done this evening."',
+            response_composed:   '"Medium height. Precise movement — the particular economy of someone who has decided in advance exactly how far to walk and at what angle." A pause. "The case had markings I recognised as medical equipment labels. Not baggage. Medical supply labelling." A pause. "I wrote a description in the chess notation margin at seven-fifteen-two. I had the habit from the note — record, don\'t act." He looks at the margin. Then at the door. "I didn\'t know what I was watching at seven-fifteen." Another pause. "I know now. And I wrote it down." He is quiet for a moment. "That is the most useful thing I have done this evening."',
             grants_node: 'greaves_written_description_exists',
             cross_links: [{ char: 'surgeon', branch: 'q4_timeline_inconsistency' }],
           },
@@ -3327,7 +3327,7 @@ const INTERROGATION_DATA = {
       'curator': 'He closes the chess notation. "The note was his hand." A pause. "I recognised it when I arrived. I have had notes from him before." He opens the notation again. "He placed me here for a reason he didn\'t explain." Another pause. "I stopped needing the explanation at about seven-fifteen."',
     },
 
-    cognitive_load_response: '"At six-thirty." While watching your pen. "The figure in the garden was moving from the building." A pause. "They were moving away from the garden entrance. Toward the hedge gap." He stops. "There is a gap in the hedge. I noted it. I didn\'t include it in my observation because I wasn\'t asked about the hedge."',
+    cognitive_load_response: '"At seven-fifteen." While watching your pen. "The figure in the garden was moving from the building." A pause. "They were moving away from the garden entrance. Toward the hedge gap." He stops. "There is a gap in the hedge. I noted it. I didn\'t include it in my observation because I wasn\'t asked about the hedge."',
 
   },
 
@@ -3358,7 +3358,7 @@ const INTERROGATION_DATA = {
       'Q2': {
         // "Archive Case 3 — the broken seal."
         composed:   '"The seal on Case 3 was broken at approximately seven this evening. I noticed at five past seven. I did not report it immediately — I decided to observe whether anyone returned. Nobody came back in the thirty-five minutes I watched." A pause. "The case number and timing of the break are already in my notes."',
-        controlled: '"Seven o\'clock. I marked the time." A pause. "The seal was already broken when I noticed — I cannot say precisely when it was done. Someone broke it between six-thirty and seven. After seven, nobody touched it." A pause. "Whatever they needed, they already had it."',
+        controlled: '"Seven o\'clock. I marked the time." A pause. "The seal was already broken when I noticed — I cannot say precisely when it was done. Someone broke it between seven-fifteen and seven. After seven, nobody touched it." A pause. "Whatever they needed, they already had it."',
         strained:   '"Seven. I made a note." A pause. "Nobody came back. The document that was placed in it six months ago may still be inside." A pause. "I have the delivery log. The name on the log is the question you need to ask next."',
         fractured:  '"Seven o\'clock." A beat. "Nobody came back." Another beat. "The log has a name on it."',
         snapback:   '"The log is documented. I will give you what you need in the correct order."',
@@ -3428,11 +3428,11 @@ const INTERROGATION_DATA = {
       },
 
       'VD_NO': {
-        composed:   '"Lord Ashworth briefed me three weeks ago." She says it. The first time she has named him directly. "He said a specific person would arrive through the garden entrance before the assembly. He said the arrival time was the most important single fact I would observe this evening." A pause. "He did not tell me who was arriving. He told me to trust whatever was in the notebook." Another pause. "I was in the east corridor at five forty-six. I saw a figure enter through the garden. I noted the time." She looks at you. "Lord Ashworth arranged for an unimpeachable record of that arrival. And arranged for me to be a second witness nobody thought to ask."',
-        controlled: '"Lord Ashworth told me to watch the garden entrance." A pause. "Three weeks ago. Specifically." Another pause. "I was in the east corridor at five forty-six." She looks at you. "I noted what I saw."',
-        strained:   '"He briefed me." A pause. "Three weeks ago. Garden entrance. The time matters." Another pause. "I saw the figure. I noted the time." She looks at you. "Five forty-six."',
-        fractured:  '"Three weeks ago." A beat. "Ashworth told me to watch the gate." Another beat. "Five forty-six. I noted it." A pause. "He arranged for two witnesses. Nobody thought to ask me.',
-        fractured:  '"Three weeks ago." A beat. "Ashworth told me to watch the gate." Another beat. "Five forty-six. I noted it." A pause. "He arranged for two witnesses. Nobody thought to ask me.',
+        composed:   '"Lord Ashworth briefed me three weeks ago." She says it. The first time she has named him directly. "He said a specific person would arrive through the garden entrance before the assembly. He said the arrival time was the most important single fact I would observe this evening." A pause. "He did not tell me who was arriving. He told me to trust whatever was in the notebook." Another pause. "I was in the east corridor at seven-oh-two. I saw a figure enter through the garden. I noted the time." She looks at you. "Lord Ashworth arranged for an unimpeachable record of that arrival. And arranged for me to be a second witness nobody thought to ask."',
+        controlled: '"Lord Ashworth told me to watch the garden entrance." A pause. "Three weeks ago. Specifically." Another pause. "I was in the east corridor at seven-oh-two." She looks at you. "I noted what I saw."',
+        strained:   '"He briefed me." A pause. "Three weeks ago. Garden entrance. The time matters." Another pause. "I saw the figure. I noted the time." She looks at you. "Seven-oh-two."',
+        fractured:  '"Three weeks ago." A beat. "Ashworth told me to watch the gate." Another beat. "Seven-oh-two. I noted it." A pause. "He arranged for two witnesses. Nobody thought to ask me.',
+        fractured:  '"Three weeks ago." A beat. "Ashworth told me to watch the gate." Another beat. "Seven-oh-two. I noted it." A pause. "He arranged for two witnesses. Nobody thought to ask me.',
         grants_node: 'voss_northcott_second_witness',
       },
 
@@ -3472,7 +3472,7 @@ const INTERROGATION_DATA = {
     contamination: {
       'curator':  'She is quiet for a moment before answering. "He looked at Case 3 before he answered one of your questions." A pause. "I was watching from the filing shelf. He didn\'t know that." She does not say what the look meant.',
       'steward':  '\"You spoke to the Steward.\" She says it immediately. Not a question. \"He covered the south corridor at seven fifty-eight. I know because I was at the archive entrance at seven fifty-seven and he passed me without looking.\" A pause. \"In fourteen years he has never passed this door without looking. Tonight he passed it twice.\"',
-      'northcott': '\"The foyer record.\" She says it as you enter. \"Northcott\'s notebook and my east corridor observation are the same event from two positions.\" A pause. \"If you have read the five forty-seven entry and you have spoken to me — you already have what Lord Ashworth wanted you to have.\"',
+      'northcott': '\"The foyer record.\" She says it as you enter. \"Northcott\'s notebook and my east corridor observation are the same event from two positions.\" A pause. \"If you have read the seven-oh-three entry and you have spoken to me — you already have what Lord Ashworth wanted you to have.\"',
           },
 
     cognitive_load_response: '"The document." While watching your hands. "Case 3. The seal was broken at seven.\" A pause she didn\'t intend. \"Someone came tonight before the Rite to confirm it was still in place.\" She stops. \"They confirmed it and left.\" She looks at Case 3. \"Whatever was placed here six months ago — it was placed here to be found through the Estate\'s own process. Not handed over. Found inside.\" A pause she didn\'t plan. \"The process was interrupted. The document is still in place. It should be you who opens it."',
@@ -3499,10 +3499,10 @@ const INTERROGATION_DATA = {
         grants_node: 'ph_false_timeline_ballroom',
         timeline_critical: true,
         // Composed: entirely rehearsed. Performance visible at Observant difficulty.
-        composed:   '"I arrived at six forty-five — I have a longstanding preference for early arrival at formal Estate events, it allows one to compose oneself before proceedings begin. I spent the hour before the Rite in the Ballroom. I spoke to the Curator at approximately seven forty-two, briefly, regarding a procedural matter. I was in the Ballroom when Lord Ashworth collapsed. I remained at the scene until the investigation was under way. I am entirely at your disposal."',
-        controlled: '"Six forty-five arrival. Ballroom from seven. I spoke to the Curator at seven forty-two — a procedural matter, brief." A pause. "In the Ballroom at eight-oh-one. I\'ve been here since. I don\'t think I can add more detail."',
-        strained:   '"Six forty-five. Ballroom. The Curator at seven forty-two — it was seven forty-two, I\'m certain of that." A pause. "Back to the Ballroom by seven-fifty. In the Ballroom at eight-oh-one." Another pause. "I haven\'t moved."',
-        fractured:  '"Six forty-five. Ballroom. Curator at seven forty-two. Ballroom. Eight-oh-one." A beat. "That\'s the sequence."',
+        composed:   '"I arrived at seven-twenty — I have a longstanding preference for early arrival at formal Estate events, it allows one to compose oneself before proceedings begin. I spent the hour before the Rite in the Ballroom. I spoke to the Curator at approximately seven forty-two, briefly, regarding a procedural matter. I was in the Ballroom when Lord Ashworth collapsed. I remained at the scene until the investigation was under way. I am entirely at your disposal."',
+        controlled: '"Seven-twenty arrival. Ballroom from seven. I spoke to the Curator at seven forty-two — a procedural matter, brief." A pause. "In the Ballroom at eight-oh-one. I\'ve been here since. I don\'t think I can add more detail."',
+        strained:   '"Seven-twenty. Ballroom. The Curator at seven forty-two — it was seven forty-two, I\'m certain of that." A pause. "Back to the Ballroom by seven-fifty. In the Ballroom at eight-oh-one." Another pause. "I haven\'t moved."',
+        fractured:  '"Seven-twenty. Ballroom. Curator at seven forty-two. Ballroom. Eight-oh-one." A beat. "That\'s the sequence."',
         snapback:   '"That is the complete and accurate account. I am happy to be thorough."',
       },
       'Q2': {

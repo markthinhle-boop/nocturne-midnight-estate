@@ -22,10 +22,10 @@ const NIR_KEY     = 'nocturne_nir';
 const INFORMATION_NODES = {
 
   // ── PEOPLE (16) -- who was with whom, who coordinated ─────
-  'surgeon_arrived_early':            { category: 'people',    weight: 1.3, event: 'northcott_q4_answered',             display: 'Surgeon arrived at 5:47PM -- one hour before claimed',        accusation_target: 'surgeon'  },
+  'surgeon_arrived_early':            { category: 'people',    weight: 1.3, event: 'northcott_q4_answered',             display: 'Surgeon arrived at 7:03PM -- seventeen minutes before claimed',        accusation_target: 'surgeon'  },
   'uninvited_coordination_surgeon':   { category: 'people',    weight: 1.3, event: 'uninvited_winecell_visit',          display: 'The Uninvited coordinated with the Surgeon',                  accusation_target: 'surgeon'  },
   'uninvited_coordination_ph':        { category: 'people',    weight: 1.3, event: 'uninvited_library_visit',           display: 'The Uninvited steered investigation toward PH',               accusation_target: null       },
-  'crane_baron_relationship':         { category: 'people',    weight: 1.3, event: 'baron_q3_answered',                 display: 'Crane visited Baron at 6:30PM -- twelve minutes, no reason',  accusation_target: 'crane'    },
+  'crane_baron_relationship':         { category: 'people',    weight: 1.3, event: 'baron_q3_answered',                 display: 'Crane visited Baron at 7:15PM -- twelve minutes, no reason',  accusation_target: 'crane'    },
   'steward_lady_ashworth_bond':       { category: 'people',    weight: 1.0, event: 'steward_q5_answered',               display: 'Steward Bond connected to Lady Ashworth',                     accusation_target: 'steward'  },
   'ashworth_sovereign_correspond':    { category: 'people',    weight: 1.3, event: 'compact_c5_visited',                display: 'Ashworth and Sovereign corresponded secretly for years',      accusation_target: null       },
   'ph_steward_corridor':              { category: 'people',    weight: 1.0, event: 'steward_q3_answered',               display: 'PH and Steward coordinated corridor coverage',                accusation_target: 'pemberton-hale' },
@@ -37,14 +37,15 @@ const INFORMATION_NODES = {
   'greaves_note_sender':              { category: 'people',    weight: 1.0, event: 'greaves_q3_answered',               display: 'Greaves received note -- placed in Library deliberately',      accusation_target: null       },
   'surgeon_compact_sovereign':        { category: 'people',    weight: 1.3, event: 'compact_c7_visited',                display: 'Surgeon embedded in Compact -- Sovereign did not authorise',  accusation_target: 'surgeon'  },
   'crane_claims_801_called':           { category: 'people',    weight: 0.8, event: 'crane_q1_answered',                 display: 'Crane claims she arrived at 8:01PM -- after being called',    accusation_target: null       },
-  'crane_arrived_before_called':      { category: 'people',    weight: 1.0, event: 'crane_q3_answered',                 display: 'Crane arrived at 6:30PM -- before she was summoned',          accusation_target: 'crane'    },
-  'greaves_maskless_witness':         { category: 'people',    weight: 1.5, event: 'greaves_branch_b_gb3_answered',     display: 'Greaves saw unmasked figure on balcony stairs -- 7:49PM',     accusation_target: 'surgeon'  },
+  'crane_arrived_before_called':      { category: 'people',    weight: 1.0, event: 'crane_q3_answered',                 display: 'Crane arrived at 7:00PM -- before she was summoned',          accusation_target: 'crane'    },
+  'greaves_maskless_witness':         { category: 'people',    weight: 1.5, event: 'greaves_branch_b_gb3_answered',     display: 'Greaves saw unmasked figure on balcony stairs -- 7:48PM',     accusation_target: 'surgeon'  },
 
   // ── LOCATIONS (14) -- who was where at what time ───────────
   'surgeon_on_balcony_745':           { category: 'locations', weight: 1.5, event: 'surgeon_branch_c_sc1_answered',     display: 'Surgeon on balcony level before assembly -- 7:45PM window',  accusation_target: 'surgeon'  },
   'steward_corridor_758':             { category: 'locations', weight: 1.0, event: 'steward_q3_answered',               display: 'Steward covered south corridor at 7:58PM',                    accusation_target: 'steward'  },
+  'steward_east_gate_744':            { category: 'locations', weight: 1.2, event: 'vivienne_q15_answered',            display: 'Steward unlocked east service gate at 7:44PM -- wrong key, 30 seconds', accusation_target: 'steward'  },
   'crane_physicians_room':            { category: 'locations', weight: 1.0, event: 'crane_room_visited',                display: 'Crane in Physicians Room -- present before and after',        accusation_target: 'crane'    },
-  'baron_smoking_room':               { category: 'locations', weight: 1.0, event: 'baron_room_visited',                display: 'Baron in Smoking Room -- noted figure at 6:15PM',             accusation_target: 'baron'    },
+  'baron_smoking_room':               { category: 'locations', weight: 1.0, event: 'baron_room_visited',                display: 'Baron in Smoking Room -- noted figure at 7:10PM',             accusation_target: 'baron'    },
   'greaves_library_locked':           { category: 'locations', weight: 1.0, event: 'greaves_q1_answered',               display: 'Greaves locked in Library from 7:00PM -- unimpeachable alibi',accusation_target: null       },
   'ph_antechamber_mirror':            { category: 'locations', weight: 1.0, event: 'antechamber_visited',               display: 'PH in Antechamber with writing case and gloves',             accusation_target: 'pemberton-hale' },
   'uninvited_ballroom_position':      { category: 'locations', weight: 1.0, event: 'uninvited_ballroom_visit',          display: 'Uninvited positioned in Ballroom managing the scene',        accusation_target: null       },
@@ -53,8 +54,8 @@ const INFORMATION_NODES = {
   'ashworth_lectern_position':        { category: 'locations', weight: 1.0, event: 'ballroom_visited',                  display: 'Ashworth found at lectern -- hand pointing at Register',      accusation_target: null       },
   'railing_disturbed':                { category: 'locations', weight: 1.3, event: 'balconyExamined',                   display: 'Balcony railing disturbed -- grip mark wrong side for balance',accusation_target: 'surgeon'  },
   'crane_left_case_first_visit':      { category: 'locations', weight: 1.0, event: 'crane_branch_a_ca1_answered',       display: 'Crane left medical case on balcony during first visit',      accusation_target: 'crane'    },
-  'balcony_floor_clear_615':          { category: 'locations', weight: 1.5, event: 'crane_branch_a_ca2_answered',       display: 'Balcony floor clear at 6:15PM -- mask fell between 6:15–8:01',accusation_target: 'surgeon'  },
-  'surgeon_study_615_observed':       { category: 'locations', weight: 1.3, event: 'baron_q4b_answered',                display: 'Surgeon seen leaving study at 6:15PM -- east service corridor',accusation_target: 'surgeon'  },
+  'balcony_floor_clear_705':          { category: 'locations', weight: 1.5, event: 'crane_branch_a_ca2_answered',       display: 'Balcony floor clear at 7:05PM -- mask fell between 7:05–8:01',accusation_target: 'surgeon'  },
+  'surgeon_study_708_observed':       { category: 'locations', weight: 1.3, event: 'baron_q4b_answered',                display: 'Surgeon seen leaving study at 7:08PM -- east service corridor',accusation_target: 'surgeon'  },
 
   // ── ACTIONS (18) -- what happened, what each person did ────
   'body_moved_to_lectern':            { category: 'actions',   weight: 1.5, event: 'lecternExamined',                   display: 'Body moved from below balcony to lectern -- drag marks',      accusation_target: 'surgeon'  },
@@ -77,11 +78,11 @@ const INFORMATION_NODES = {
   'seal_engineered_betrayal':         { category: 'actions',   weight: 1.0, event: 'compact_c9_visited',                display: 'Seal engineered the 43-year manufactured betrayal',          accusation_target: null       },
 
   // ── TIMES (14) -- specific timestamps. Weight 1.5× ─────────
-  'surgeon_arrived_547':              { category: 'times',     weight: 1.5, event: 'northcott_q4_answered',             display: '5:47PM -- Surgeon entered via garden, one hour early',        accusation_target: 'surgeon'  },
-  'surgeon_study_615':                { category: 'times',     weight: 1.5, event: 'baron_q4b_answered',                display: '6:15PM -- Surgeon seen leaving study, toward stairs',         accusation_target: 'surgeon'  },
-  'crane_first_visit_615':            { category: 'times',     weight: 1.5, event: 'crane_q3_answered',                 display: '6:15PM -- Crane visited Ashworth, floor clear, no mask',      accusation_target: 'crane'    },
-  'crane_arrived_630':                { category: 'times',     weight: 1.5, event: 'crane_q1_answered',                 display: '6:30PM -- Crane arrived before summoned',                     accusation_target: 'crane'    },
-  'baron_crane_visit_630':            { category: 'times',     weight: 1.5, event: 'baron_q3_answered',                 display: '6:30PM -- Crane visited Baron, twelve minutes',               accusation_target: 'baron'    },
+  'surgeon_arrived_703':              { category: 'times',     weight: 1.5, event: 'northcott_q4_answered',             display: '7:03PM -- Surgeon entered via garden, seventeen minutes before claimed',        accusation_target: 'surgeon'  },
+  'surgeon_study_708':                { category: 'times',     weight: 1.5, event: 'baron_q4b_answered',                display: '7:08PM -- Surgeon seen leaving study, toward stairs',         accusation_target: 'surgeon'  },
+  'crane_first_visit_705':            { category: 'times',     weight: 1.5, event: 'crane_q3_answered',                 display: '7:05PM -- Crane visited Ashworth, floor clear, no mask',      accusation_target: 'crane'    },
+  'crane_arrived_715':                { category: 'times',     weight: 1.5, event: 'crane_q1_answered',                 display: '7:00PM -- Crane arrived before summoned',                     accusation_target: 'crane'    },
+  'baron_crane_visit_715':            { category: 'times',     weight: 1.5, event: 'baron_q3_answered',                 display: '7:15PM -- Crane visited Baron, twelve minutes',               accusation_target: 'baron'    },
   'greaves_upper_corridor_749':       { category: 'times',     weight: 1.5, event: 'greaves_branch_b_gb1_answered',     display: '7:49PM -- Greaves in upper corridor before Library lock',     accusation_target: null       },
   'greaves_saw_maskless_749':         { category: 'times',     weight: 1.5, event: 'greaves_branch_b_gb3_answered',     display: '7:49PM -- Unmasked figure descending balcony stairs rapidly', accusation_target: 'surgeon'  },
   'wrong_mask_entered_752':           { category: 'times',     weight: 1.5, event: 'northcott_branch_b_nb3_answered',   display: '7:52PM -- Plain mask entered Ballroom -- not Estate issued',   accusation_target: 'surgeon'  },
@@ -96,7 +97,7 @@ const INFORMATION_NODES = {
   'surgeon_claims_745_assembly':      { category: 'times',     weight: 0.8, event: 'surgeon_q9_answered',                display: 'Surgeon claims 7:45PM -- entered Ballroom with assembly',     accusation_target: null       },
   'crane_claims_801_arrival':         { category: 'times',     weight: 0.8, event: 'crane_q1_answered',                  display: 'Crane claims 8:01PM -- called after body found',             accusation_target: null       },
   'steward_claims_gallery_758':       { category: 'times',     weight: 0.8, event: 'steward_q3_answered',                display: 'Steward claims Gallery at 7:58PM -- not south corridor',     accusation_target: null       },
-  'ph_claims_ballroom_evening':       { category: 'times',     weight: 0.8, event: 'ph_q1_answered',                     display: 'PH claims Ballroom all evening -- 6:45PM arrival',           accusation_target: null       },
+  'ph_claims_ballroom_evening':       { category: 'times',     weight: 0.8, event: 'ph_q1_answered',                     display: 'PH claims Ballroom all evening -- 7:20PM arrival',           accusation_target: null       },
 
   // ── CROSS-CONTAMINATION CHAPTER NODES ──────────────────────────────────────
   // Fired when player combines scene evidence that tells a wrong story convincingly.
@@ -111,7 +112,7 @@ const INFORMATION_NODES = {
 
   // ── WRONG-PATH BRANCH NODES ────────────────────────────────────────────────
   // Fired by interrogation.js grants_node -- require branch work, not spine clicks
-  'baron_615_observation':            { category: 'times',     weight: 1.5, event: 'baron_branch_a_bar_a1_answered',     display: '6:15PM -- Baron saw figure leave study, satisfied, toward stairs', accusation_target: 'baron'    },
+  'baron_710_observation':            { category: 'times',     weight: 1.5, event: 'baron_branch_a_bar_a1_answered',     display: '7:10PM -- Baron saw figure leave study, satisfied, toward stairs', accusation_target: 'baron'    },
   'northcott_ashworth_instrument':    { category: 'people',    weight: 1.3, event: 'northcott_branch_a_ba3_answered',    display: 'Northcott understands he was positioned as a clean witness',      accusation_target: 'northcott'},
   'northcott_wrong_mask_752':         { category: 'times',     weight: 1.5, event: 'northcott_branch_b_nb1_answered',    display: '7:52PM -- Northcott logged plain mask entry -- no signature mark', accusation_target: 'northcott'},
 
@@ -565,7 +566,7 @@ function _bindEvents() {
   NocturneEngine.on('craneBalconyAdmission', () => {
     _markNode('crane_found_mask_801');
     _markNode('crane_left_everything');
-    _markNode('balcony_floor_clear_615');
+    _markNode('balcony_floor_clear_705');
     _flush();
     // Auto-summary to notepad
     _autoNotepadSummary('crane', '8:01PM -- Found his mask. Left everything. Came back downstairs.');
