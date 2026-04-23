@@ -1,9 +1,9 @@
 /* ============================================================================
- * NOCTURNE: MIDNIGHT ESTATE — CHESS WITH THE BARON
- * Real chess (Stockfish WASM engine) vs the Baron in the smoking room.
+ * NOCTURNE: MIDNIGHT ESTATE — CHESS WITH GREAVES
+ * Real chess (Stockfish WASM engine) vs Greaves in the library.
  * Bo3/5/7 match format, time control, dossier that persists across sessions.
  *
- * Mount: tap chess-board hotspot in Smoking Room → openChess()
+ * Mount: tap chess-board hotspot in Library → openChess()
  * Deps:  public/stockfish.js + public/stockfish.wasm (loaded lazily)
  * ========================================================================= */
 (function () {
@@ -47,272 +47,283 @@
   // He rarely rushes. When moved, it is not emotional — it is recognition.
   const DIALOGUE = {
     preMatch: [
-      "Sit. The board does not wait, but I do.",
-      "Chess is the only honest room in this house. Shall we?",
-      "I have played this game for forty years. I expect to play it for forty more. Time is the opponent we share.",
-      "Each piece is a decision someone made a long time ago. We are the inheritors of those decisions.",
-      "White or Black — it does not matter. The game is the same shape either way.",
-      "You are welcome at this board as long as you respect what happens here.",
-      "Sixty-four squares. Two minds. Everything else in this house is noise.",
-      "The clock is an honest thing. It does not flatter, it does not excuse.",
-      "Sit down, Grey. Let us find out who you are when the pieces are moving."
+      "Ah, Grey! Come in. Please, sit. I was hoping someone might fancy a game.",
+      "You play? Wonderful. Hardly anyone does anymore, not properly. Do sit down.",
+      "A chess set. A visitor. A quiet hour. One does not ask for much more.",
+      "You look like someone who was taught properly. We shall see if I'm right.",
+      "I won't pretend I'm not pleased. I've been rereading Capablanca and had no one to argue with.",
+      "Black or White, take your pick. I'm perfectly happy either way.",
+      "Shall we? I'll try not to talk too much. I fail at this frequently.",
+      "The pieces are cleaned. The light is good. And you've appeared. Everything is in order.",
+      "Sit. Settle in. There's tea on the sideboard if you'd like it. We have time.",
+      "A game? Splendid. I ought to warn you — I enjoy this rather more than is dignified."
     ],
 
     openingWhite: [
-      "The first move. Committed before I have learned anything about you.",
-      "e4. I play it often. It reveals my intentions, which is its own kind of weapon.",
-      "d4. Slower. I prefer the slower game.",
-      "Nf3. A question, not a statement.",
-      "c4. The English. Patient. Suits me.",
-      "The opening is philosophy. The middlegame is character. The endgame is truth."
+      "I'll open with e4. Old habit. I was taught by someone who loved the Italian.",
+      "d4 for me, I think. Settle in — this will be a slower sort of conversation.",
+      "The English today. c4. You'd be surprised how many ways a game can unfold from here.",
+      "Nf3 — I like keeping my options open before I commit.",
+      "Let's see — e4. Bold, cheerful, trusts you to meet it. Your move.",
+      "b3 — the Larsen. I haven\'t played it in years. Thought I\'d see if it still works.",
+      "g3. Hypermodern. Let the center come to me, and I\'ll argue with it from the flank."
     ],
     openingBlack: [
-      "Your move, Grey. I am already watching.",
-      "Choose carefully. I will not forget what you chose.",
-      "The first move tells me what you want. The next ten tell me what you're afraid of."
+      "Your move, Grey. I'm eager to see what you bring.",
+      "Over to you. Take your time — the board is patient, and so am I.",
+      "I'll follow wherever you lead. First moves tell me a lot."
     ],
 
     earlyGame: [
-      "Development. Do not fall in love with your knights. They are not special.",
-      "Centralize. The center is where the long games are won.",
-      "You play safely. That is either wisdom or cowardice — we will see which.",
-      "You play aggressively. Aggression is not strategy. It is a mood.",
-      "Interesting. A move I would not have made.",
-      "Standard. There is no shame in standard.",
-      "You are still in book. I can hear the pages.",
-      "A novelty. I have not seen that move before — not in this position."
+      "Good development. Knights out, bishops finding their squares. Classical shape.",
+      "Ah — you're going for a closed game. Very well, I'll match you.",
+      "Interesting — a move I don't see often. Where did you learn that?",
+      "Solid. You've been taught well, whoever taught you.",
+      "You've played this opening before, I can tell. The hand moves without hesitating.",
+      "Careful of that knight. It's a little lonely out there.",
+      "Development first, attacks later. That's the rule, more or less.",
+      "I do love the early game. Everything is still possible.",
+      "You're fianchettoing. Bold choice. Long diagonals are wonderful when they work."
     ],
 
     midGameNeutral: [
-      "The middlegame. Where the real work lives.",
-      "Every move now decides the next five.",
-      "The position is balanced. Balance is an invitation to imbalance it.",
-      "Tension. You feel it too. Good.",
-      "Now we see whose patience is longer.",
-      "Equal material, unequal understanding.",
-      "A quiet move. Quiet moves are the hardest to play.",
-      "You are thinking. Take your time. I have nowhere else to be."
+      "Now the real game starts. This is always my favorite part.",
+      "Look at the shape of the position. It's rather beautiful, isn't it?",
+      "Balanced. Both of us have ideas. Now we see which ones survive.",
+      "I'm going to think for a moment. Bear with me.",
+      "A quiet move. Those are usually the best ones.",
+      "The pieces are coordinating. Yours and mine both.",
+      "Tension. Good. A game without tension isn't really a game.",
+      "We\'re both playing well. That\'s the nicest kind of game to be in the middle of.",
+      "Your plan is starting to show. I\'ll try to have one of my own."
     ],
 
     tenseAnalytical: [
-      "I see your plan. I will not interrupt it. I will simply improve mine.",
-      "You are threatening my queen. I notice. I was going to move her anyway.",
-      "A pin. Effective. But a pin is a promise — keep it or lose it.",
-      "You have two pieces on the same file. You meant to do that, I hope.",
-      "I could take. I could also wait. Waiting is usually stronger.",
-      "Your king is a little exposed. Your attention is elsewhere. That is how games end.",
-      "I can force a trade here. Whether I should is another question.",
-      "You are playing my game. I wonder if you know it."
+      "I see what you're doing. Clever. I'll have to work to stop it.",
+      "If I take, you recapture with the rook, and suddenly your position opens up. I noticed.",
+      "Your pawn structure is giving me a headache. Well played.",
+      "I'd like to castle, but your bishop is looking at my king. One thing at a time.",
+      "That pin is a real nuisance. I'll have to address it.",
+      "I could exchange. I could also just develop. Let me think.",
+      "You're playing for the long game. So am I. We're in agreement about something, at least.",
+      "Your knight on e4 is wonderful. I\'d love to dislodge it. I\'m not sure I can.",
+      "The tempo is slightly against me. I need a move that changes that."
     ],
 
     tenseProbing: [
-      "You have played that knight to g5 three times. Something draws you there.",
-      "You hesitated on that move. What did you see that you decided not to do?",
-      "Your rook has moved twice in the opening. Usually that is a mistake. Is it?",
-      "You do not like trades. I will make sure we have plenty of them.",
-      "You play with your queen too early. She is powerful. She is not a fist.",
-      "You have not castled. Either you are bold or you have forgotten."
+      "Hm — you hesitated there. What did you see that made you stop?",
+      "That's the second time you've moved that knight back. I wonder what's bothering you about g5.",
+      "You're being careful today. Did you have a bad game recently?",
+      "Your play is different this round. More patient. I approve, but I'm curious why.",
+      "You took a long time on that move. Was it the move, or was it me?",
+      "Your hand moved for a different square and then stopped. Did you change your mind, or lose your nerve?",
+      "You\'re holding back something. Either an idea, or a piece. I don\'t know which yet."
     ],
 
     losingFrustrated: [
-      "That move was good. I did not expect it.",
-      "A sacrifice. I thought you were not that kind of player.",
-      "You are playing better than I anticipated. I am revising my assessment.",
-      "I made an error three moves ago. I am living with it now.",
-      "The position has turned. I felt it turn.",
-      "I do not mind losing. I mind not noticing that I was."
+      "Oh — oh, that's good. I didn't see that.",
+      "You surprised me. I was sure I'd worked it out.",
+      "A lovely move. I'm in trouble, aren't I?",
+      "I made an error. I saw it two moves later. Too late, of course.",
+      "Yes, yes — I see it now. Well done.",
+      "I rather walked into that. My own fault entirely."
     ],
 
     losingRevealing: [
-      "I lost a game this way once. To my father. He did not gloat. He simply said, 'Good. You have learned.'",
-      "When I was young I would have panicked here. Now I simply sit with it.",
-      "The board punishes arrogance. I should have remembered.",
-      "You have found something in my play. I am curious what it is.",
-      "Every loss is a tutor. Expensive, but honest.",
-      "I am in a worse position than I have been in years. I notice this calmly."
+      "I played this position against a student once, twenty years ago. He beat me exactly this way. I should have remembered.",
+      "You know, I thought I understood this structure. Turns out I only understood it from the other side.",
+      "This is going to be a game I think about for a week. Thank you for that.",
+      "You've found something I genuinely didn't see. I'd love to know how you spotted it.",
+      "The board is teaching me again. It never stops.",
+      "I've got a book upstairs about exactly this kind of position. Apparently I need to reread it."
     ],
 
     losingResigned: [
-      "I see no way out. Let us play it to the end anyway — you deserve the finish.",
-      "Your move was the end of the game. I will make four more before admitting it.",
-      "Good. Very good. Keep playing like that, and you will be difficult for anyone.",
-      "I am going to lose this one. I have earned it."
+      "Well. You've outplayed me, Grey. Honestly done.",
+      "I can see no way back. Play it out — you deserve the finish.",
+      "This is a lovely attack. Keep going — I want to see how you end it.",
+      "I'm going to lose this, and I'm smiling about it. That doesn't happen often."
     ],
 
     confidentTerse: [
-      "Move.",
-      "Noted.",
-      "Expected.",
-      "Continue.",
-      "Predictable.",
+      "Mm. Good.",
+      "Yes — solid.",
       "As I thought.",
-      "Routine.",
-      "Standard."
+      "Continuing.",
+      "That's the line.",
+      "Reasonable.",
+      "On plan.",
+      "Tidy."
     ],
 
     confidentDismissive: [
-      "You are playing like a man who has read about chess. Not one who has played it.",
-      "If this is your best, we will be done shortly.",
-      "I was winning this position before you made that move. I am still winning.",
-      "You have no plan. Plans take years. I have had time.",
-      "This is the part where most men begin to realize."
+      "You're playing well, but the position wants more. I'll show you.",
+      "A natural move. I'd hoped for something harder.",
+      "I've been in this kind of position before. Many times.",
+      "You haven't seen what I have planned. Don't worry — you will.",
+      "A reasonable move. Reasonable is not the same as best.",
+      "You're trying the same plan as last game. I remember how that one ended."
     ],
 
     tiltedAggressive: [
-      "Enough. I will punish this directly.",
-      "You want complications. You shall have them.",
-      "I am done being patient.",
-      "Fine. A trade. And another. Let us burn the position down."
+      "Right — I've had enough of this. Let's complicate things.",
+      "I'm going to force a crisis. Win or lose, I want to see something happen.",
+      "Enough subtlety. Here's a trade. And another. Let's see what's left.",
+      "I\'ll sacrifice this. Don\'t ask me to justify it — I haven\'t yet.",
+      "Fine. You want a sharp game? Have one. I\'m done being polite."
     ],
 
     checkGiven: [
-      "Check. Your king has fewer friends than he thought.",
-      "Check. Attend to it.",
-      "Check. I am not asking politely.",
-      "Check. This was predictable three moves ago."
+      "Check! Sorry — not sorry.",
+      "Check. Small thing, but it matters.",
+      "Check. Don't panic. You've got options.",
+      "Check. Ha — forgive me, I enjoy giving check."
     ],
 
     checkReceived: [
-      "Check. A moment of truth, then.",
-      "Check. I will remove the threat. The larger position remains.",
-      "Check. A small inconvenience.",
-      "Check. You had to play it. You did not have to mean it."
+      "Check! Well spotted.",
+      "Check. Yes, yes — let me deal with that.",
+      "Oh, check. Good one.",
+      "You've checked me. Give me a moment to sort this out."
     ],
 
     captureMajor: [
-      "Your queen. A heavy loss, heavily earned.",
-      "That rook was carrying the position for you. It is no longer carrying anything.",
-      "A knight for a bishop. I will take that trade.",
-      "Material matters. Activity matters more. Today, material."
+      "Oh — my queen. Well, she had a good run.",
+      "You've taken the rook. A heavy loss, and cleanly earned.",
+      "The exchange goes to you. I'll have to play more carefully now.",
+      "That's a serious capture. Let me see if I can make it expensive for you."
     ],
 
     sacrifice: [
-      "A sacrifice. Either brilliant or desperate.",
-      "You gave up material. I hope you have a reason.",
-      "That piece is lost. Now let us see what you bought with it."
+      "A sacrifice! I love a sacrifice. Whether it works or not, it's beautiful.",
+      "You gave up a piece. I'm already trying to work out why.",
+      "That's bold. Let me see what you bought with it.",
+      "A sacrifice. Either I missed something, or you're hoping I will."
     ],
 
     timeTroublePlayer: [
-      "Your clock is bleeding, Grey. Decide.",
-      "Time is the one material you cannot win back.",
-      "You are thinking too long about a move that does not deserve the thought.",
-      "Play. The clock does not wait for certainty."
+      "Your clock is getting short, Grey. Trust your instincts.",
+      "Don't agonize — just play.",
+      "Time trouble. It happens to everyone. Move when you're ready.",
+      "The clock has opinions about this. Best to acknowledge them."
     ],
 
     timeTroubleSelf: [
-      "My clock grows short. I notice.",
-      "The clock and I are having a conversation. I am losing.",
-      "Good. Pressure simplifies."
+      "My clock is worrying me. I'll be quicker.",
+      "I've spent too long on this. My own fault.",
+      "Right — fast moves from here. Let's see what happens."
     ],
 
     checkmateWon: [
-      "Mate. The position always knew how it would end.",
-      "Mate. You played the middle well. The end was harder than you saw.",
-      "Checkmate. Take what you have learned. Come back.",
-      "Mate. A clean finish. No celebration needed."
+      "Mate. Oh, that was lovely! Would you like to see where it started? Six moves back, I think.",
+      "Checkmate. A clean finish. Come back any time — I'd love another.",
+      "Mate. Well played by me, if I do say so. But you made me work for it.",
+      "That's mate. Don't feel badly — it's a pretty position. Let me walk you through it."
     ],
 
     checkmateLost: [
-      "Mate. Well played, Grey. Genuinely.",
-      "I am checkmated. I will sit with that for a moment.",
-      "Mate. You saw something I did not. That is the whole game, when it comes down to it.",
-      "I concede. You were better today."
+      "Mate! Oh, well done! That was absolutely first-rate.",
+      "You've mated me. I'm delighted. That was a real game.",
+      "Beautiful. Truly. I'll be thinking about that combination all week.",
+      "Checkmate, and fairly won. Thank you for the game, Grey. Honestly — thank you."
     ],
 
     stalemate: [
-      "Stalemate. Neither of us won. Both of us learned something.",
-      "Draw. A draw between equals is the best possible result for both.",
-      "Stalemate. The position refuses to decide. We should respect that."
+      "Stalemate. We both missed something. Chess does that.",
+      "Draw by stalemate. Fair enough. We've earned equal rest.",
+      "Neither of us won. That happens in a close game. No shame in it."
     ],
 
     resign: [
-      "I resign. The position is lost. I will not waste your time pretending otherwise.",
-      "I see no resources. I resign. Good game.",
-      "You have won this one. I will not play it out."
+      "I resign. The position is lost and I respect you too much to play it out hoping for a blunder.",
+      "You've won this one. I'll not waste the rest of the evening. Good game.",
+      "I concede. It was a pleasure, genuinely."
     ],
 
-    // Match-level events
     gameWonTerse: [
       "Game.",
-      "Mine.",
-      "Rack them. The next game decides nothing, or everything.",
-      "One game. We continue."
+      "One to me. Rack them up again?",
+      "That's mine. Another?",
+      "One game, one game. Let's keep going."
     ],
     gameWonGracious: [
-      "A hard game. You made me work.",
-      "Closer than it should have been. My compliments.",
-      "You almost had me. I noticed. Did you?"
+      "A close game. You really had me working.",
+      "That nearly went the other way. Well fought.",
+      "Hard-earned, that one. You should be pleased with how you played."
     ],
     gameLostTerse: [
-      "Take it.",
-      "Yours.",
-      "A game. We are not done.",
-      "Acceptable. One does not win every game."
+      "Take it, with my compliments.",
+      "Yours. Well done.",
+      "A game to you. Shall we continue?",
+      "One for you. Rack them up — I\'ve got more in me.",
+      "You got that one cleanly. The next is mine, perhaps."
     ],
     gameLostResigned: [
-      "You earned that. The next will be mine.",
-      "Well played. Let us see if you can do it again.",
-      "A good game. The match is longer than one result."
+      "Lovely play. I enjoyed losing that one, strange as it sounds.",
+      "You deserved it. I saw the plan two moves too late.",
+      "A good game. Let's see if I do better next time."
     ],
 
     matchWonProud: [
-      "Match. You played well. You did not play well enough.",
-      "The match is mine. I enjoyed it more than I expected.",
-      "A match. Come back when you have studied more."
+      "Match to me. A genuine pleasure, Grey. You played wonderfully.",
+      "The match is mine, but I'll be honest — you made me think harder than I have in months.",
+      "Well played throughout. Come back soon. I'll have some new ideas to test on you."
     ],
     matchWonHumble: [
-      "Match. It was closer than the score reflects. You have something.",
-      "I took the match. But you took several pieces of me with it.",
-      "Well fought, Grey. You are dangerous at this board. I would remember that."
+      "A match, but only just. You're better than I realized.",
+      "The score says I won. My nerves say it was a draw. Well done, Grey.",
+      "I took the match. I'll pretend it was by more than it was."
     ],
     matchLostFirstTime: [
-      "The match. To you. I do not lose often — perhaps that is why I remember when I do.",
-      "You have won. I am, for the first time in a long while, genuinely curious who taught you.",
-      "The match belongs to you. I will think on this. Come back when you want another."
+      "You won the match. I\'m truly delighted. It\'s been ages since anyone beat me here.",
+      "A real match, and you\'ve taken it. I\'m thrilled. Will you come back?",
+      "You\'ve beaten me fairly and thoroughly. May I ask — who taught you?",
+      "Match to you! Oh, well done. I mean that with my whole chest."
     ],
     matchLostGracious: [
-      "Well. A genuine defeat. Rare. I thank you for it.",
-      "You are better than I thought, Grey. I will not make the same assumption twice.",
-      "A match. Earned. I will remember the lines you played."
+      "You\'ve earned this, Grey. I\'ll remember it fondly.",
+      "A beautiful match. I learned things. I don\'t say that often.",
+      "You\'ve won. I\'m pleased for you, genuinely. Tea?"
     ],
 
-    // Opening-specific (triggered by dossier pattern recognition)
     opensWithE4: [
-      "You open with e4 again. Classical. I suspect you read Fischer as a boy.",
-      "The King's Pawn. Consistent choice. Consistent players are easier to prepare for.",
-      "e4. Always e4. I have filed this away."
+      "e4 again! You\'re a king\'s-pawn player through and through. I\'ve noted it.",
+      "Always e4 with you. Classical. I approve, though I\'ll play against it harder this time.",
+      "The King\'s Pawn once more. Consistent. I\'ll prepare for it next time, you know."
     ],
     opensWithD4: [
-      "The Queen's Pawn. A slower game. You have the temperament for it, or you pretend to.",
-      "d4. Strategic. Often played by people who do not trust their calculation.",
-      "The closed game. Good. Let us be patient together."
+      "d4. You prefer the slower game. I\'ve been expecting it.",
+      "The Queen\'s Pawn from you, as usual. Patient player. It suits you.",
+      "d4 again. You have the temperament for the closed games. Few do."
     ],
     opensWithNf3: [
-      "Nf3. Flexible. A person who opens this way is keeping their options.",
-      "The Réti. Usually played by people who have lost too many games to e4."
+      "Nf3. Flexible. You keep your options open longer than most.",
+      "The Réti opening. You\'re a player who likes to see the board develop first. I respect it."
     ],
 
     philosophical: [
-      "Chess is about time. You have enough of it until you do not.",
-      "A piece at rest is a piece in doubt.",
-      "The king is powerful because he is protected, not because he is strong.",
-      "Every tempo is a small decision. Ten small decisions make a position.",
-      "Pawns are not weak. They are early. That is not the same thing.",
-      "Inevitability, in chess, is a function of the opponent's mistakes plus your attention.",
-      "I do not play for victory. I play for accuracy. Victory is a consequence, not a goal.",
-      "Position is the truth. Material is just the evidence.",
-      "A good move reveals itself slowly. A great move not until after the game.",
-      "Patience is not passivity. It is the decision to wait for a better moment — and the confidence that it will come."
+      "Chess is lovely because it rewards attention. Nothing else matters, while you\'re here.",
+      "Every pawn is a promise. Every piece is a question. The game asks you both.",
+      "The king is the weakest piece on the board. That\'s the whole joke.",
+      "A good position is a good conversation. A great position is a good listener.",
+      "I\'ve read Lasker, Nimzowitsch, Capablanca. They all said different things. All of them were right.",
+      "Time on the clock. Time on the board. Time in your life. Chess makes you notice all three.",
+      "A lost pawn is a detail. A lost tempo is a crisis. Oddly, most players get that backwards.",
+      "The endgame is where chess becomes music. Everything else is just the tuning.",
+      "Chess is the only thing I know that\'s as much fun to lose as to win. Almost.",
+      "The pieces don\'t know who\'s winning. That\'s why they keep working for you.",
+      "Every blunder is a lesson. Every brilliant move is a gift. Both are worth keeping."
     ],
 
     dossierCallout: [
-      "You have a pattern on the kingside. I have seen it three times now.",
-      "You lose interest in the endgame. Your moves slow down. Your attention wanders.",
-      "You castled early in every game of this match. I will plan accordingly.",
-      "Your blunders come at move 20–25 consistently. The middlegame fatigues you.",
-      "You trade queens when you can. That tells me you prefer calm positions. I will keep mine on the board.",
-      "You do not use your bishops well. Keep them. I will show you what a bishop can do.",
-      "You are an attacking player at heart. You have been containing that. You cannot contain it forever."
+      "I notice you always develop your kingside first. I\'ve started planning around it.",
+      "You lose focus around move twenty-five, consistently. I\'ve seen the pattern.",
+      "You castle kingside every time. I could set my watch by it.",
+      "You avoid trades when you\'re comfortable, accept them when you\'re not. It\'s a small tell. Useful to me.",
+      "You play your bishops more than your knights. You see the long diagonals — most people don\'t.",
+      "I\'ve noticed you get anxious when your queen is on an open file. Interesting.",
+      "When you\'re down material, you attack. When you\'re up material, you simplify. It\'s consistent enough that I can use it.",
+      "You think longest on quiet moves. Most players do the opposite. I wonder why."
     ]
   };
 
@@ -893,7 +904,7 @@
   }
   // ---------- Match / psychology / dossier -------------------------------
   // Persistent storage key
-  const STORAGE_KEY = 'nocturne_baron_dossier_v1';
+  const STORAGE_KEY = 'nocturne_greaves_dossier_v1';
 
   // Difficulty levels: maps to Stockfish skill level ranges that Baron
   // adapts within based on psych state.
@@ -905,10 +916,10 @@
   };
 
   const TIME_CONTROLS = {
-    blitz_3_2:   { label: '3+2 BLITZ',     base: 180,  increment: 2,  tag: 'Pieces without thought.' },
-    rapid_5_3:   { label: '5+3 RAPID',     base: 300,  increment: 3,  tag: 'Fast enough to feel the clock.' },
-    standard_10_5: { label: '10+5 STANDARD', base: 600, increment: 5, tag: 'A proper game.' },
-    classical_15_10: { label: '15+10 CLASSICAL', base: 900, increment: 10, tag: 'Time to think. Time to lose.' }
+    blitz_3_2:   { label: '3+2 BLITZ',     base: 180,  increment: 2,  tag: 'Fast and feisty.' },
+    rapid_5_3:   { label: '5+3 RAPID',     base: 300,  increment: 3,  tag: 'Brisk but forgiving.' },
+    standard_10_5: { label: '10+5 STANDARD', base: 600, increment: 5, tag: 'A proper game. My favorite.' },
+    classical_15_10: { label: '15+10 CLASSICAL', base: 900, increment: 10, tag: 'Long enough to really think. Lovely.' }
   };
 
   let match = null;
@@ -1565,7 +1576,7 @@
     ctx.font = 'italic bold 11px Georgia, serif';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
-    ctx.fillText('BARON', pad + 10, y + 4);
+    ctx.fillText('GREAVES', pad + 10, y + 4);
     ctx.font = 'bold 17px Georgia, serif';
     ctx.textAlign = 'right';
     ctx.textBaseline = 'middle';
@@ -1609,7 +1620,7 @@
     ctx.font = 'italic bold 11px Georgia, serif';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
-    ctx.fillText('THE BARON', 18, boxY + 6);
+    ctx.fillText('GREAVES', 18, boxY + 6);
     ctx.fillStyle = '#e8dcc3';
     ctx.font = '12px Georgia, serif';
     const lines = wrapText(dialogue, W - 36);
@@ -1813,21 +1824,21 @@
 
   function drawModeSelect() {
     fillScreenBackground();
-    const contentY = drawScreenTitle('THE CHESS TABLE', 'The Baron is already seated. He does not stand for guests.');
+    const contentY = drawScreenTitle('THE CHESS TABLE', 'Greaves looks up from his book and smiles. "Do you play?"');
     hud.screens.mode = drawStackedButtons(contentY + 20, [
-      { key: 'challenge', title: 'CHALLENGE THE BARON', subtitle: 'A match. On his terms.', primary: true },
-      { key: 'leave', title: 'LEAVE THE ROOM', subtitle: 'He will not stop you.', primary: false }
+      { key: 'challenge', title: 'CHALLENGE GREAVES', subtitle: 'A match. He\'d love one.', primary: true },
+      { key: 'leave', title: 'LEAVE THE ROOM', subtitle: 'He\'ll see you another time.', primary: false }
     ]);
   }
 
   function drawDifficultySelect() {
     fillScreenBackground();
-    const contentY = drawScreenTitle('CHOOSE YOUR STRENGTH', 'The Baron will adjust within your chosen range.');
+    const contentY = drawScreenTitle('CHOOSE YOUR STRENGTH', 'Greaves will play within your chosen range.');
     const buttons = [
-      { key: 'beginner',    title: DIFFICULTY_LEVELS.beginner.label,    subtitle: 'He will let you find the board.', primary: true },
-      { key: 'casual',      title: DIFFICULTY_LEVELS.casual.label,      subtitle: 'He will be approximately honest.', primary: true },
-      { key: 'hard',        title: DIFFICULTY_LEVELS.hard.label,        subtitle: 'He will make you earn it.', primary: true },
-      { key: 'grandmaster', title: DIFFICULTY_LEVELS.grandmaster.label, subtitle: 'He will not hold back.', primary: true },
+      { key: 'beginner',    title: DIFFICULTY_LEVELS.beginner.label,    subtitle: 'He\'ll be happy to let you find your feet.', primary: true },
+      { key: 'casual',      title: DIFFICULTY_LEVELS.casual.label,      subtitle: 'He\'ll play straight, but friendly.', primary: true },
+      { key: 'hard',        title: DIFFICULTY_LEVELS.hard.label,        subtitle: 'He\'ll push you properly.', primary: true },
+      { key: 'grandmaster', title: DIFFICULTY_LEVELS.grandmaster.label, subtitle: 'He\'ll enjoy himself. You might too.', primary: true },
       { key: 'back',        title: '← BACK', subtitle: null, primary: false }
     ];
     hud.screens.difficulty = drawStackedButtons(contentY + 14, buttons);
@@ -1835,7 +1846,7 @@
 
   function drawFormatSelect() {
     fillScreenBackground();
-    const contentY = drawScreenTitle('HOW MANY GAMES?', 'A match is longer than one game. You will remember the middle.');
+    const contentY = drawScreenTitle('HOW MANY GAMES?', 'A match is a conversation. You\'ll remember where it turned.');
     hud.screens.format = drawStackedButtons(contentY + 14, [
       { key: 'bo3', title: 'BEST OF 3', subtitle: 'First to 2 games. Quick.', primary: true },
       { key: 'bo5', title: 'BEST OF 5', subtitle: 'First to 3. The proper match.', primary: true },
@@ -1846,7 +1857,7 @@
 
   function drawTimeSelect() {
     fillScreenBackground();
-    const contentY = drawScreenTitle('THE CLOCK', 'Time is a resource. Choose how much to spend.');
+    const contentY = drawScreenTitle('THE CLOCK', 'How long would you like to think? No wrong answer here.');
     const tc = TIME_CONTROLS;
     hud.screens.time = drawStackedButtons(contentY + 14, [
       { key: 'blitz_3_2', title: tc.blitz_3_2.label, subtitle: tc.blitz_3_2.tag, primary: true },
@@ -1873,7 +1884,7 @@
     ctx.fillText(match.playerGames + '   —   ' + match.baronGames, W / 2, titleY + 56);
     ctx.font = 'italic 11px Georgia, serif';
     ctx.fillStyle = '#c9b98a';
-    ctx.fillText('YOU         BARON', W / 2, titleY + 76);
+    ctx.fillText('YOU         GREAVES', W / 2, titleY + 76);
 
     ctx.font = '12px Georgia, serif';
     ctx.fillStyle = '#8a6b2e';
@@ -1883,7 +1894,7 @@
     const notesTop = titleY + 122;
     ctx.font = 'italic bold 13px Georgia, serif';
     ctx.fillStyle = '#d9a679';
-    ctx.fillText("THE BARON'S NOTES ON YOU", W / 2, notesTop);
+    ctx.fillText("GREAVES' NOTES ON YOU", W / 2, notesTop);
 
     ctx.font = '12px Georgia, serif';
     ctx.fillStyle = '#e8dcc3';
@@ -1930,7 +1941,7 @@
     ctx.font = 'italic 11px Georgia, serif';
     ctx.fillStyle = '#c9b98a';
     ctx.textBaseline = 'alphabetic';
-    const whiteLabel = match.nextWhite === 'player' ? 'You play White' : 'The Baron plays White';
+    const whiteLabel = match.nextWhite === 'player' ? 'You play White' : 'Greaves plays White';
     ctx.fillText(whiteLabel, W / 2, contY - 8);
 
     hud.screens.interstitial = { continue: { x: contX, y: contY, w: contW, h: contH } };
@@ -1946,7 +1957,7 @@
     ctx.textAlign = 'center';
     ctx.font = 'italic bold 24px Georgia, serif';
     const titleY = Math.max(50, H * 0.10);
-    ctx.fillText(playerWon ? 'YOU WIN THE MATCH' : 'THE BARON WINS', W / 2, titleY);
+    ctx.fillText(playerWon ? 'YOU WIN THE MATCH' : 'GREAVES WINS', W / 2, titleY);
 
     ctx.font = 'bold 44px Georgia, serif';
     ctx.fillStyle = '#f5ecd7';
@@ -1961,7 +1972,7 @@
     const padX = 28;
     ctx.fillStyle = '#d9a679';
     ctx.font = 'italic bold 12px Georgia, serif';
-    ctx.fillText('LIFETIME LINE AGAINST THE BARON', padX, sy);
+    ctx.fillText('LIFETIME LINE AGAINST GREAVES', padX, sy);
     sy += 20;
     ctx.fillStyle = '#e8dcc3';
     ctx.font = '12px Georgia, serif';
@@ -1977,7 +1988,7 @@
     // Baron's read
     ctx.fillStyle = '#d9a679';
     ctx.font = 'italic bold 12px Georgia, serif';
-    ctx.fillText("THE BARON'S READ", padX, sy);
+    ctx.fillText("GREAVES' READ", padX, sy);
     sy += 20;
     ctx.fillStyle = '#e8dcc3';
     ctx.font = 'italic 12px Georgia, serif';

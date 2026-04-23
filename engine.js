@@ -1374,10 +1374,10 @@ const ROOM_OBJECTS = {
     hotspot: { left: 18, top: 33, width: 42, height: 32 },
   },
 
-  // ── SMOKING ROOM ───────────────────────────────────────────
+  // ── LIBRARY ────────────────────────────────────────────────
   "chess-board-obj": {
-    room: "smoking",
-    tap_1: "A chess board mid-game. The Baron is waiting.",
+    room: "library",
+    tap_1: "A chess board mid-game. Greaves has been working through a position.",
     item_id: null, item_at_depth: null, is_essential: false, is_deception_item: false,
     slow_drag: false, max_depth: 1,
     hotspot: { left: 32, top: 55, width: 32, height: 30 },
@@ -1996,7 +1996,7 @@ function tapObject(objectId, tapX, tapY) {
     return;
   }
 
-  // chess-board-obj — launches standalone chess game vs Baron
+  // chess-board-obj — launches standalone chess game vs Greaves
   if (objectId === 'chess-board-obj') {
     if (typeof window.openChess === 'function') {
       window.openChess();
