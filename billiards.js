@@ -1512,8 +1512,16 @@
 
   // Table-space (tx, ty) — game coordinates where tx∈[0,TABLE_W], ty∈[0,TABLE_H]
   // — mapped to world (wx, 0, wz).
+  // Portrait mode: rotate 90° so table length runs vertically on screen.
   function tableToWorld(tx, ty) {
-    // Table center is at world origin.
+    if (cam.portrait) {
+      // 90° rotation: world x <- (ty - TABLE_H/2)    (vertical on screen from ty)
+      //               world z <- (tx - TABLE_W/2) * -1  (but negated so higher tx = further away... actually we want HIGHER tx to be FARTHER, which is MORE +z)
+      // Let's define: when portrait, world_x spans the SHORTER (horizontal screen) axis, world_z the LONGER (vertical).
+      // Table's short axis (ty ∈ [0, TABLE_H=400]) → world x ∈ [-200, 200] (horizontal, narrow)
+      // Table's long axis (tx ∈ [0, TABLE_W=800]) → world z ∈ [-400, 400] (vertical, far → near)
+      return { x: ty - TABLE_H / 2, y: 0, z: -(tx - TABLE_W / 2) };
+    }
     return { x: tx - TABLE_W / 2, y: 0, z: ty - TABLE_H / 2 };
   }
 
@@ -1561,43 +1569,47 @@
     const worldZ = -yt * s + zt * c;
     // Now worldX = xt (rotation around X doesn't change X), worldZ as above
     const worldX = xt;
-    // Convert back to table coords
-    const tx = worldX + TABLE_W / 2;
-    const ty = worldZ + TABLE_H / 2;
+    // Convert back to table coords (with portrait reverse rotation)
+    let tx, ty;
+    if (cam.portrait) {
+      // Inverse: world x = ty - TABLE_H/2   → ty = world x + TABLE_H/2
+      //          world z = -(tx - TABLE_W/2) → tx = TABLE_W/2 - world z
+      ty = worldX + TABLE_H / 2;
+      tx = TABLE_W / 2 - worldZ;
+    } else {
+      tx = worldX + TABLE_W / 2;
+      ty = worldZ + TABLE_H / 2;
+    }
     return { x: tx, y: ty };
   }
 
   function computeLayout3D() {
     const W = canvas.width;
     const H = canvas.height;
-    // Reserve: top 80 for dialogue/score, bottom 120 for controls, small side padding.
-    const topReserve = 80;
-    const bottomReserve = 120;
+    const topReserve = 80;    // dialogue + score bar
+    const bottomReserve = 120; // controls + shoot button
     const availW = W - 24;
     const availH = H - topReserve - bottomReserve;
 
-    // Pick a tilt and distance that make the table fill the available area.
-    // Tilt angle (stronger on portrait, lighter on landscape so you don't see too much rail).
-    const portrait = H > W;
-    cam.tiltRad = portrait ? (28 * Math.PI / 180) : (22 * Math.PI / 180);
+    // Portrait if taller than wide — table long axis runs vertically.
+    cam.portrait = H > W;
+    cam.tiltRad = cam.portrait ? (24 * Math.PI / 180) : (20 * Math.PI / 180);
 
-    // Camera looks at the center of the table. Place camera so the projected
-    // table roughly fits availW × availH.
-    // Simple approach: pick a "scale" such that TABLE_W fits in availW at the far edge.
-    // Perspective makes far edge slightly narrower; we want near edge ≤ availW.
-    // Use a heuristic: baseScale = availW / TABLE_W * 0.95
-    const baseScale = Math.min(availW / TABLE_W, availH / (TABLE_H * Math.cos(cam.tiltRad)));
-    // Focal length controls perspective strength. Higher focal = less exaggerated.
+    // World-space dimensions after portrait rotation:
+    //   portrait:   worldWidth  = TABLE_H (short axis), worldLength = TABLE_W (long axis, maps to z)
+    //   landscape:  worldWidth  = TABLE_W, worldLength = TABLE_H
+    const worldWidth  = cam.portrait ? TABLE_H : TABLE_W;
+    const worldLength = cam.portrait ? TABLE_W : TABLE_H;
+
+    // Scale to fit: width fills availW, length fills availH (foreshortened by cos(tilt))
+    const scaleW = availW / worldWidth * 0.9;
+    const scaleH = availH / (worldLength * Math.cos(cam.tiltRad)) * 0.9;
+    const baseScale = Math.min(scaleW, scaleH);
+
     cam.focal = 900;
-    // Distance: derived from focal so that a 1-unit-wide object at table center
-    // projects at baseScale pixels wide.
-    //   screen_width_at_z = focal / z; want this to equal baseScale
-    //   z = focal / baseScale  (this is the Z of the table center in camera frame)
     cam.distance = cam.focal / baseScale;
-    // Eye height: raise camera so tilt shows the top rail. Rough rule: h = tan(tilt) * distance * 0.25
-    cam.eyeHeight = cam.distance * Math.tan(cam.tiltRad) * 0.25;
+    cam.eyeHeight = cam.distance * Math.tan(cam.tiltRad) * 0.22;
 
-    // Screen center — biased slightly downward because we reserve top space for UI
     cam.screenCx = W / 2;
     cam.screenCy = topReserve + availH / 2;
     cam.scale = baseScale;
@@ -1635,22 +1647,32 @@
 
   // Table rendering: a tilted trapezoid in 3D, plus raised rails as thin 3D blocks.
   function drawTable3D() {
-    // Compute the 4 corners of the playfield in world space (at y=0)
+    // Table corners via tableToWorld (handles portrait rotation)
+    const tl = tableToWorld(0, 0);
+    const tr = tableToWorld(TABLE_W, 0);
+    const br = tableToWorld(TABLE_W, TABLE_H);
+    const bl = tableToWorld(0, TABLE_H);
+    // Sort by world z (depth) and x so we always render far-to-near correctly.
+    // But here we just need the 4 projected corners in screen order: NW, NE, SE, SW.
+    // Find which 2 are at min z (far) and which at max z (near).
+    const all4 = [tl, tr, br, bl];
+    const byZ = all4.slice().sort((a, b) => a.z - b.z);
+    const far2 = byZ.slice(0, 2).sort((a, b) => a.x - b.x);  // [farLeft, farRight]
+    const near2 = byZ.slice(2, 4).sort((a, b) => a.x - b.x); // [nearLeft, nearRight]
+
     const corners = [
-      projectWorld(-TABLE_W/2, 0, -TABLE_H/2),   // far-left  (upper-left on screen)
-      projectWorld( TABLE_W/2, 0, -TABLE_H/2),   // far-right (upper-right)
-      projectWorld( TABLE_W/2, 0,  TABLE_H/2),   // near-right (lower-right)
-      projectWorld(-TABLE_W/2, 0,  TABLE_H/2)    // near-left (lower-left)
+      projectWorld(far2[0].x, 0, far2[0].z),    // far-left (upper-left on screen)
+      projectWorld(far2[1].x, 0, far2[1].z),    // far-right
+      projectWorld(near2[1].x, 0, near2[1].z),  // near-right (lower-right)
+      projectWorld(near2[0].x, 0, near2[0].z)   // near-left
     ];
 
-    // Table body (rails extending down) — draw the side walls for depth.
-    // For simplicity: draw an extruded box beneath the table top.
     const railHeight = 22;
     const bottomCorners = [
-      projectWorld(-TABLE_W/2, -railHeight, -TABLE_H/2),
-      projectWorld( TABLE_W/2, -railHeight, -TABLE_H/2),
-      projectWorld( TABLE_W/2, -railHeight,  TABLE_H/2),
-      projectWorld(-TABLE_W/2, -railHeight,  TABLE_H/2)
+      projectWorld(far2[0].x, -railHeight, far2[0].z),
+      projectWorld(far2[1].x, -railHeight, far2[1].z),
+      projectWorld(near2[1].x, -railHeight, near2[1].z),
+      projectWorld(near2[0].x, -railHeight, near2[0].z)
     ];
 
     // Shadow on the ground beneath the table
@@ -1695,13 +1717,13 @@
     ctx.fill();
     ctx.restore();
 
-    // Draw the rail surface (top of the walnut frame, around the playfield)
-    const railInset = 30;  // table internal units — rail thickness in world
+    // Play area corners — shrink from outer corners by rail inset (in world units)
+    const railInset = 22;
     const playCorners = [
-      projectWorld(-TABLE_W/2 + railInset, 0, -TABLE_H/2 + railInset),
-      projectWorld( TABLE_W/2 - railInset, 0, -TABLE_H/2 + railInset),
-      projectWorld( TABLE_W/2 - railInset, 0,  TABLE_H/2 - railInset),
-      projectWorld(-TABLE_W/2 + railInset, 0,  TABLE_H/2 - railInset)
+      projectWorld(far2[0].x + railInset, 0, far2[0].z + railInset),
+      projectWorld(far2[1].x - railInset, 0, far2[1].z + railInset),
+      projectWorld(near2[1].x - railInset, 0, near2[1].z - railInset),
+      projectWorld(near2[0].x + railInset, 0, near2[0].z - railInset)
     ];
 
     // Fill the rail ring (outer trapezoid minus inner trapezoid)
