@@ -1972,7 +1972,7 @@ function dropItem(itemId) {
 function getObjectMaxDepth(obj) {
   // max_depth is now a flat number — difficulty removed
   if (typeof obj.max_depth === 'number') return obj.max_depth;
-  // Legacy object with difficulty object — use observant path as default
+  // Legacy object shape — return scalar default
   if (obj.max_depth && typeof obj.max_depth === 'object') return obj.max_depth.observant || 1;
   return 1;
 }
@@ -2232,7 +2232,7 @@ NocturneEngine.on('roomEntered', ({ roomId }) => {
     gameState._cellarMomentFired = true;
     NocturneEngine.emit('momentReveal', {
       type: 'wine-cellar',
-      text: "Stone stairs descend into cold air. The panel has moved exactly far enough. Not an accident. This was built to move.\n\nOn the rack beside the entrance — a folded slip of paper. Not placed accidentally. Placed deliberately, at the height where an investigator would see it while deciding whether to proceed.\n\nOne line. No signature.\n\n'The investigator will find the tunnel before he finds the cellar door. He usually does.'\n\nPresent tense. Written before tonight. Already true.\n\nYou have been in this building for two hours. You have been managed for longer than that. The tunnel was not discovered. It was left open. The investigation you have been conducting was anticipated before it began.\n\nThe stairs descend. The cold air comes up. Whatever is down there was prepared for you specifically.\n\nYou can go back.\n\nYou won't.",
+      text: "Stone stairs descend into cold air. The panel has moved exactly far enough. Not an accident. This was built to move.\n\nOn the rack beside the entrance — a folded slip of paper. Not placed accidentally. Placed deliberately, at the height where an investigator would see it while deciding whether to proceed.\n\nOne line. No signature.\n\n'The investigator will find the tunnel before he finds the cellar door. He usually does.'\n\nPresent tense. Written before tonight. Already true.\n\nYou have been in this building for over an hour. You have been managed for longer than that. The tunnel was not discovered. It was left open. The investigation you have been conducting was anticipated before it began.\n\nThe stairs descend. The cold air comes up. Whatever is down there was prepared for you specifically.\n\nYou can go back.\n\nYou won't.",
       haptic: [10, 10, 10, 10, 30],
       screenDim: true,
     });
@@ -2387,7 +2387,7 @@ function openItemExaminePanel(itemId) {
 function getItemExamineMaxDepth(item, itemId) {
   let d = 0;
   while (item[`examine_${d + 1}`]) d++;
-  // Token depth 4 only on Ruthless
+  // Token depth 4 only when enabled
   if (false) { // ashworth-seal depth gate removed — difficulty removed
     d = Math.min(d, 3);
   }
@@ -2517,7 +2517,7 @@ function puzzleSolved(puzzleId, resultItem) {
 // When Vivienne Branch C fires and vivienne_push_witnessed is granted,
 // produce witness-testimony-vivienne into inventory.
 // This is the only moment evidence for the Surgeon conviction.
-// ── CRANE-PLANNING-LETTER PUZZLE THRESHOLD ────────────────────
+// ── SURGEON-CRANE CONSPIRACY LETTER PUZZLE THRESHOLD ──────────
 // Fires when player has answered all 5 Surgeon + 4 Crane
 // timeline_critical questions (9 unique grants_node values).
 // Both arcs at maximum depth. The plan and the execution.

@@ -39,23 +39,42 @@ const CHAR_POSITIONS = {
 // ── TIMELINE FROM NOTEPAD ──────────────────────────────────
 // Parse saved notes for time references — only what player recorded
 
-// Numeric: 5:47 PM, 8:01PM, 7:42 pm
+// Numeric: 7:03 PM, 8:01PM, 7:42 pm
 const TIME_PATTERN_NUM = /\b([5-9]|1[0-2]):[0-5][0-9]\s*(?:PM|AM|pm|am)\b/g;
 
-// Word-based times — "seven o'clock", "eight-oh-one", "half past six" etc
+// Word-based times — "seven o'clock", "seven-oh-five", "eight-oh-one" etc
 const WORD_TIME_MAP = {
-  'five forty-seven':   '5:47 PM',
-  'five-forty-seven':   '5:47 PM',
-  'six o\'clock':       '6:00 PM',
-  'six-fifteen':        '6:15 PM',
-  'six fifteen':        '6:15 PM',
-  'six-thirty':         '6:30 PM',
-  'six thirty':         '6:30 PM',
-  'six forty-five':     '6:45 PM',
-  'six-forty-five':     '6:45 PM',
+  // Compressed window — NPCs may name any minute between 7:00 and 8:10
   'seven o\'clock':     '7:00 PM',
+  'seven-oh-one':       '7:01 PM',
+  'seven oh one':       '7:01 PM',
   'seven-oh-two':       '7:02 PM',
   'seven oh two':       '7:02 PM',
+  'seven-oh-three':     '7:03 PM',
+  'seven oh three':     '7:03 PM',
+  'seven-oh-five':      '7:05 PM',
+  'seven oh five':      '7:05 PM',
+  'seven-oh-seven':     '7:07 PM',
+  'seven-oh-eight':     '7:08 PM',
+  'seven oh eight':     '7:08 PM',
+  'seven-ten':          '7:10 PM',
+  'seven ten':          '7:10 PM',
+  'seven-twelve':       '7:12 PM',
+  'seven twelve':       '7:12 PM',
+  'seven-fourteen':     '7:14 PM',
+  'seven-fifteen':      '7:15 PM',
+  'seven fifteen':      '7:15 PM',
+  'seven-twenty':       '7:20 PM',
+  'seven twenty':       '7:20 PM',
+  'seven twenty-five':  '7:25 PM',
+  'seven-twenty-five':  '7:25 PM',
+  'seven-thirty':       '7:30 PM',
+  'seven thirty':       '7:30 PM',
+  'seven thirty-two':   '7:32 PM',
+  'seven thirty-five':  '7:35 PM',
+  'seven-forty':        '7:40 PM',
+  'seven forty':        '7:40 PM',
+  'seven forty-one':    '7:41 PM',
   'seven forty-two':    '7:42 PM',
   'seven-forty-two':    '7:42 PM',
   'seven forty-three':  '7:43 PM',
@@ -78,15 +97,21 @@ const WORD_TIME_MAP = {
   'seven-fifty-two':    '7:52 PM',
   'seven fifty-three':  '7:53 PM',
   'seven-fifty-three':  '7:53 PM',
+  'seven fifty-five':   '7:55 PM',
+  'seven-fifty-five':   '7:55 PM',
   'seven fifty-eight':  '7:58 PM',
   'seven-fifty-eight':  '7:58 PM',
   'eight o\'clock':     '8:00 PM',
   'eight-oh-one':       '8:01 PM',
   'eight oh one':       '8:01 PM',
+  'eight-oh-two':       '8:02 PM',
+  'eight-oh-three':     '8:03 PM',
   'eight-oh-four':      '8:04 PM',
   'eight oh four':      '8:04 PM',
-  'half past six':      '6:30 PM',
-  'half past seven':    '7:30 PM',
+  'eight-oh-five':      '8:05 PM',
+  'eight-oh-eight':     '8:08 PM',
+  'eight-ten':          '8:10 PM',
+  'eight ten':          '8:10 PM',
   'quarter past seven': '7:15 PM',
   'three minutes past': '8:04 PM',
   'the gavel':          '8:01 PM',
@@ -191,9 +216,9 @@ const CHAR_CONNECTIONS = [
   // Handled by timeline panel, not a string
 
   // ── CRANE connections ───────────────────────────────────────
-  // Crane → Baron — Crane admits she knows the Baron's visit at 6:30
+  // Crane → Baron — Crane admits she knows the Baron's visit at 7:15
   { from: 'crane', to: 'baron',
-    color: '#8a6a3a', label: '6:30',
+    color: '#8a6a3a', label: '7:15',
     node: 'crane_baron_relationship' },
 
   // ── PEMBERTON-HALE connections ──────────────────────────────
@@ -219,20 +244,20 @@ const CHAR_CONNECTIONS = [
     node: 'steward_lady_ashworth_bond' },
 
   // ── BARON connections ───────────────────────────────────────
-  // Baron → Crane — Baron names Crane's 6:30 visit to Ashworth
+  // Baron → Crane — Baron names Crane's 7:15 visit to Ashworth
   { from: 'baron', to: 'crane',
-    color: '#8a6a3a', label: '6:30',
-    node: 'baron_crane_visit_630' },
+    color: '#8a6a3a', label: '7:15',
+    node: 'baron_crane_visit_715' },
 
   // Baron → Sovereign — Baron admits the Compact arrangement
   { from: 'baron', to: 'sovereign',
     color: '#6a8fa8', label: 'inside contact',
     node: 'baron_compact_arrangement' },
 
-  // Baron → Surgeon (balcony observation at 6:15)
+  // Baron → Surgeon (study observation at 7:05)
   { from: 'baron', to: 'surgeon',
-    color: '#8a6a3a', label: '6:15',
-    node: 'baron_615_observation' },
+    color: '#8a6a3a', label: '7:05',
+    node: 'baron_705_observation' },
 
   // ── LADY ASHWORTH connections ───────────────────────────────
   // Lady Ashworth → PH — Ashworth redirects to PH (Register)
@@ -246,9 +271,9 @@ const CHAR_CONNECTIONS = [
     node: 'ashworth_planned_revelation' },
 
   // ── NORTHCOTT connections ───────────────────────────────────
-  // Northcott → Steward — Northcott names the 6:00 corridor
+  // Northcott → Steward — Northcott names the 7:00 acknowledgment
   { from: 'northcott', to: 'steward',
-    color: '#8a6a3a', label: '6:00',
+    color: '#8a6a3a', label: '7:00',
     node: 'northcott_redirect_steward' },
 
   // Northcott → PH — Northcott names the circled entry pointing at PH
@@ -306,7 +331,7 @@ const SUSPECT_PATHS = {
     slots: [
       { label: 'BALCONY LEVEL — BEFORE THE RITE',
         true_node: 'surgeon_admits_balcony_level',
-        false_nodes: [] },
+        false_nodes: ['surgeon_committed_745_south_corridor', 'surgeon_false_corridor_745'] },
       { label: 'THE WITNESS — 7:45',
         true_node: 'vivienne_push_witnessed',
         false_nodes: ['surgeon_committed_745_south_corridor', 'surgeon_false_corridor_745', 'vivienne_false_romantic_reading'] },
@@ -317,12 +342,12 @@ const SUSPECT_PATHS = {
   },
   'crane': {
     slots: [
-      { label: 'THE FIRST VISIT — 6:15',
+      { label: 'THE FIRST VISIT — 7:05',
         true_node: 'crane_first_visit_ashworth_alive',
-        false_nodes: ['crane_false_one_visit_only', 'crane_false_no_615'] },
-      { label: 'FLOOR CLEAR — 6:15',
-        true_node: 'crane_floor_clear_615',
-        false_nodes: ['crane_false_no_615', 'crane_false_one_visit_only'] },
+        false_nodes: ['crane_false_one_visit_only', 'crane_false_no_705'] },
+      { label: 'FLOOR CLEAR — 7:05',
+        true_node: 'crane_floor_clear_705',
+        false_nodes: ['crane_false_no_705', 'crane_false_one_visit_only'] },
       { label: 'WHAT SHE FOUND',
         true_node: 'crane_said_nothing_after_discovery',
         false_nodes: ['crane_redirect_ph'] },
@@ -354,7 +379,7 @@ const SUSPECT_PATHS = {
         false_nodes: ['steward_personal_record'] },
       { label: 'THE ROUTE — 7:55',
         true_node: 'steward_route_past_physicians_room',
-        false_nodes: [] },
+        false_nodes: ['steward_false_gallery_vivienne', 'steward_false_bond_protocol'] },
       { label: 'THE CORRIDOR — 7:58',
         true_node: 'steward_corridor_758',
         false_nodes: ['steward_false_timeline_gallery', 'steward_false_gallery_vivienne'] },
@@ -362,11 +387,11 @@ const SUSPECT_PATHS = {
   },
   'baron': {
     slots: [
-      { label: 'THE SIGHTING — 6:15',
-        true_node: 'baron_615_observation',
-        false_nodes: ['baron_false_timeline_smoking_room', 'baron_false_no_615_sighting'] },
-      { label: "CRANE'S VISIT — 6:30",
-        true_node: 'baron_crane_visit_630',
+      { label: 'THE SIGHTING — 7:05',
+        true_node: 'baron_705_observation',
+        false_nodes: ['baron_false_timeline_smoking_room', 'baron_false_no_705_sighting'] },
+      { label: "CRANE'S VISIT — 7:15",
+        true_node: 'baron_crane_visit_715',
         false_nodes: ['baron_false_crane_no_visit', 'baron_false_crane_brief'] },
       { label: 'THE ARRANGEMENT',
         true_node: 'baron_compact_arrangement',
@@ -378,7 +403,7 @@ const SUSPECT_PATHS = {
   },
   'ashworth': {
     slots: [
-      { label: 'THE PHYSICIAN — 6:15',
+      { label: 'THE PHYSICIAN — 7:05',
         true_node: 'crane_first_visit_ashworth_alive',
         false_nodes: ['ashworth_false_crane_not_upstairs'] },
       { label: 'SHE KNEW THE PLAN',
@@ -405,7 +430,7 @@ const SUSPECT_PATHS = {
         false_nodes: ['northcott_false_all_masked_749'] },
       { label: 'CONTACT REFUSED',
         true_node: 'surgeon_contact_refused',
-        false_nodes: ['northcott_false_surgeon_open', 'northcott_false_no_contact'] },
+        false_nodes: ['northcott_false_no_contact'] },
     ],
   },
 };
@@ -877,7 +902,7 @@ const NODE_INFO = {
   'surgeon_committed_745_south_corridor':    { label: 'Claims south corridor at 7:45. Not the balcony.',                 source: 'Surgeon — Physicians Room' },
   'surgeon_admits_balcony_level':            { label: '"The balcony level, yes. The sightlines." Places himself there before the Rite.',  source: 'Surgeon — Physicians Room' },
   'vivienne_push_witnessed':                 { label: '"One man pushed another man off that balcony."',                  source: "Vivienne — Maid's Quarters" },
-  'crane_first_visit_ashworth_alive':        { label: 'Went upstairs at 6:15. Lord Ashworth was well. Left her case.',  source: 'Crane — Physicians Room' },
+  'crane_first_visit_ashworth_alive':        { label: 'Went upstairs at 7:05. Lord Ashworth was well. Left her case.',  source: 'Crane — Physicians Room' },
   'crane_said_nothing_after_discovery':      { label: 'Found the mask at 8:01. Said nothing. Came back downstairs.',    source: 'Crane — Physicians Room' },
   'crane_two_reasons':                       { label: 'Protecting him. The candle iron story protecting her.',           source: 'Crane — Physicians Room' },
   'ph_altered_register_for_clause_not_self': { label: 'Added immunity clause for another member. Fear, not murder.',    source: 'Pemberton-Hale — Antechamber' },
@@ -888,9 +913,9 @@ const NODE_INFO = {
   'steward_false_timeline_gallery':          { label: 'Claims Gallery at 7:58.',                                        source: 'Steward — Gallery' },
   'bond_coerced_signed':                     { label: 'Signed believing it was a property form. Eight years.',          source: 'Steward — Gallery' },
   'steward_route_past_physicians_room':      { label: 'Baron saw him pass the physicians room at 7:58.',                source: 'Baron — Smoking Room' },
-  'baron_615_observation':                   { label: 'Saw someone leave the study at 6:15. Satisfied.',                source: 'Baron — Smoking Room' },
+  'baron_705_observation':                   { label: 'Saw someone leave the study at 7:05. Satisfied.',                source: 'Baron — Smoking Room' },
   'baron_false_timeline_smoking_room':       { label: 'Claims Smoking Room all evening.',                               source: 'Baron — Smoking Room' },
-  'baron_crane_visit_630':                   { label: 'Crane came at 6:30. Twelve minutes. Needed to think.',           source: 'Baron — Smoking Room' },
+  'baron_crane_visit_715':                   { label: 'Crane came at 7:15. Twelve minutes. Needed to think.',           source: 'Baron — Smoking Room' },
   'baron_compact_arrangement':               { label: 'Three entries in the Register. Debts through Compact channel.',  source: 'Baron — Smoking Room' },
   'ashworth_planned_revelation':             { label: 'She knew. Came to hear it named aloud in a full room.',          source: 'Lady Ashworth — Study' },
   'ashworth_false_timeline_arrived_seven':   { label: 'Claims arrived at seven. Garden at 7:40.',                       source: 'Lady Ashworth — Study' },
@@ -903,9 +928,9 @@ const NODE_INFO = {
   'surgeon_false_no_gap':                    { label: 'Continuously in the ballroom from 7:55 until 8:01.',              source: "Vivienne — Maid's Quarters" },
   'surgeon_redirect_baron_745':              { label: 'Baron was at the terrace window at 7:45. Has not mentioned it.',  source: 'Surgeon — Physicians Room' },
   // Crane false
-  'crane_false_no_615':                      { label: 'No upstairs visit logged at 6:15. Stayed on ground floor.',       source: 'Northcott — Foyer' },
+  'crane_false_no_705':                      { label: 'No upstairs visit logged at 7:05. Stayed on ground floor.',       source: 'Northcott — Foyer' },
   'crane_false_one_reason':                  { label: 'One reason given: her medical case. Professional duty only.',     source: "Vivienne — Maid's Quarters" },
-  'crane_false_one_visit_only':              { label: 'Only one upstairs visit logged — arrival at 5:43.',               source: 'Northcott — Foyer' },
+  'crane_false_one_visit_only':              { label: 'Only one upstairs visit logged — arrival at 7:01.',               source: 'Northcott — Foyer' },
   'crane_redirect_ph':                       { label: 'The Register alterations are the story. Eight years of amendments.', source: 'Crane — Physicians Room' },
   // PH false
   'ph_false_standard_amendments':            { label: 'Told the Curator: standard procedural entries. Nothing requiring review.', source: "Vivienne — Maid's Quarters" },
@@ -916,9 +941,9 @@ const NODE_INFO = {
   'steward_false_bond_protocol':             { label: 'Told her: I was in the gallery at the time. If anyone asks.',     source: "Vivienne — Maid's Quarters" },
   'steward_redirect_ashworth':              { label: 'Lady Ashworth in garden at 7:40. Beneath the balcony. Two minutes.', source: 'Steward — Gallery' },
   // Baron false
-  'baron_false_no_615_sighting':             { label: 'In his chair in the smoking room at 6:15. Untouched drink.',      source: "Vivienne — Maid's Quarters" },
-  'baron_false_crane_no_visit':              { label: 'No movement toward smoking room logged at 6:30. Door stayed closed.', source: 'Northcott — Foyer' },
-  'baron_false_crane_brief':                 { label: 'No visitor entry for Crane at 6:30 in the arrival log.',          source: 'Northcott — Foyer' },
+  'baron_false_no_705_sighting':             { label: 'In his chair in the smoking room at 7:05. Untouched drink.',      source: "Vivienne — Maid's Quarters" },
+  'baron_false_crane_no_visit':              { label: 'No movement toward smoking room logged at 7:15. Door stayed closed.', source: 'Northcott — Foyer' },
+  'baron_false_crane_brief':                 { label: 'No visitor entry for Crane at 7:15 in the arrival log.',          source: 'Northcott — Foyer' },
   'baron_false_personal_debts':              { label: 'Told the Archivist: three entries are personal. Nothing institutional.', source: "Vivienne — Maid's Quarters" },
   'baron_redirect_steward':                  { label: 'Steward opened east service gate at 7:44. Stood in it 30 seconds.', source: 'Baron — Smoking Room' },
   // Ashworth false
@@ -929,10 +954,10 @@ const NODE_INFO = {
   'northcott_false_routine_post':            { label: 'Northcott at his station. Passed him twice during the evening.',  source: "Vivienne — Maid's Quarters" },
   'northcott_false_all_masked_749':          { label: 'Saw a figure on balcony stairs at 7:49 — they were masked.',     source: "Vivienne — Maid's Quarters" },
   'northcott_false_no_contact':              { label: 'Did not see physician and Crane speak or acknowledge each other.', source: "Vivienne — Maid's Quarters" },
-  'northcott_redirect_steward':              { label: 'Steward acknowledged him at 6:00 — two seconds, not routine.',   source: 'Northcott — Foyer' },
+  'northcott_redirect_steward':              { label: 'Steward acknowledged him at 7:00 — two seconds, not routine.',   source: 'Northcott — Foyer' },
   'northcott_false_surgeon_open':            { label: 'Compact physician answered every question. Cooperative all evening.', source: 'Northcott — Foyer' },
   // True nodes added
-  'crane_floor_clear_615':                   { label: 'Balcony floor was clear at 6:15. No mask present when she left.',  source: 'Crane — Physicians Room' },
+  'crane_floor_clear_705':                   { label: 'Balcony floor was clear at 7:05. No mask present when she left.',  source: 'Crane — Physicians Room' },
   'steward_granddaughter_record':            { label: 'Clara. Nine years old. He knows exactly why he covered that corridor.',  source: 'Steward — Gallery' },
   'baron_candle_iron_knowledge':             { label: 'Baron knew the iron was missing before anyone named it.',          source: 'Baron — Smoking Room' },
   'ashworth_told_her_about_arrangement':     { label: 'He told her about the arrangement. She asked him not to proceed.', source: 'Lady Ashworth — Study' },
@@ -1427,7 +1452,7 @@ function _extractNodeKeywords(label, source) {
   const keywords = [];
 
   // Times — any time reference
-  const times = label.match(/\d+:\d+|six-fifteen|seven forty|eight o'clock|6:15|7:45|7:48|8:01/gi);
+  const times = label.match(/\d+:\d+|seven forty|seven-oh-five|seven-fifteen|eight o'clock|7:05|7:15|7:45|7:48|7:52|7:58|8:01/gi);
   if (times) times.forEach(t => keywords.push(t.toLowerCase()));
 
   // Character names
@@ -1723,7 +1748,8 @@ const TIMELINE_MAP_ROOMS = {
 };
 
 // Node → { suspect, room, timeMin (minutes from 6:00PM), verified }
-// timeMin: 6:00=0, 6:15=15, 6:30=30, 7:00=60, 7:45=105, 7:48=108, 7:52=112, 7:54=114, 7:58=118, 8:00=120, 8:01=121
+// timeMin: 7:00=60, 7:05=65, 7:15=75, 7:20=80, 7:30=90, 7:40=100, 7:45=105, 7:48=108, 7:52=112, 7:55=115, 7:58=118, 8:00=120, 8:01=121, 8:10=130
+// Window: nothing meaningful before 7:00PM (minute 60). Body discovered at 8:01 (121).
 // verified: true = confirmed position, false = claimed/lie
 const TIMELINE_PLACEMENTS = [
   // SURGEON
@@ -1733,14 +1759,14 @@ const TIMELINE_PLACEMENTS = [
   { node: 'surgeon_contact_refused',               suspect: 'surgeon',        room: 'physicians', timeMin: 121, verified: true  },
 
   // CRANE
-  { node: 'crane_first_visit_ashworth_alive',      suspect: 'crane',          room: 'study',      timeMin: 15,  verified: true  },
-  { node: 'crane_floor_clear_615',                 suspect: 'crane',          room: 'physicians', timeMin: 15,  verified: true  },
+  { node: 'crane_first_visit_ashworth_alive',      suspect: 'crane',          room: 'study',      timeMin: 65,  verified: true  },
+  { node: 'crane_floor_clear_705',                 suspect: 'crane',          room: 'balcony',    timeMin: 65,  verified: true  },
   { node: 'crane_said_nothing_after_discovery',    suspect: 'crane',          room: 'balcony',    timeMin: 121, verified: true  },
   { node: 'crane_two_reasons',                     suspect: 'crane',          room: 'physicians', timeMin: 125, verified: true  },
 
   // PEMBERTON-HALE
   { node: 'ph_false_timeline_ballroom',            suspect: 'pemberton-hale', room: 'ballroom',   timeMin: 60,  verified: false },
-  { node: 'ph_altered_register_for_clause_not_self', suspect: 'pemberton-hale', room: 'antechamber', timeMin: 90, verified: true },
+  { node: 'ph_altered_register_for_clause_not_self', suspect: 'pemberton-hale', room: 'ballroom', timeMin: 100, verified: true },
   { node: 'ph_steward_corridor',                   suspect: 'pemberton-hale', room: 'antechamber', timeMin: 118, verified: true },
 
   // STEWARD
@@ -1750,8 +1776,8 @@ const TIMELINE_PLACEMENTS = [
 
   // BARON
   { node: 'baron_false_timeline_smoking_room',     suspect: 'baron',          room: 'smoking',    timeMin: 105, verified: false },
-  { node: 'baron_615_observation',                 suspect: 'baron',          room: 'study',      timeMin: 15,  verified: true  },
-  { node: 'baron_crane_visit_630',                 suspect: 'baron',          room: 'smoking',    timeMin: 30,  verified: true  },
+  { node: 'baron_705_observation',                 suspect: 'baron',          room: 'study',      timeMin: 65,  verified: true  },
+  { node: 'baron_crane_visit_715',                 suspect: 'baron',          room: 'smoking',    timeMin: 75,  verified: true  },
   { node: 'baron_compact_arrangement',             suspect: 'baron',          room: 'smoking',    timeMin: 60,  verified: true  },
 
   // LADY ASHWORTH
@@ -1762,7 +1788,7 @@ const TIMELINE_PLACEMENTS = [
 
   // NORTHCOTT
   { node: 'northcott_false_timeline_foyer',        suspect: 'northcott',      room: 'foyer',      timeMin: 105, verified: false },
-  { node: 'northcott_placed_by_ashworth',          suspect: 'northcott',      room: 'foyer',      timeMin: 0,   verified: true  },
+  { node: 'northcott_placed_by_ashworth',          suspect: 'northcott',      room: 'foyer',      timeMin: 60,  verified: true  },
   { node: 'northcott_two_absences',                suspect: 'northcott',      room: 'ballroom',   timeMin: 75,  verified: true  },
   { node: 'northcott_wrong_mask_752',              suspect: 'northcott',       room: 'ballroom',  timeMin: 112, verified: true  },
 
