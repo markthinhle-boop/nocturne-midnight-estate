@@ -903,7 +903,7 @@ const NODE_INFO = {
   'surgeon_admits_balcony_level':            { label: '"The balcony level, yes. The sightlines." Places himself there before the Rite.',  source: 'Surgeon — Physicians Room' },
   'vivienne_push_witnessed':                 { label: '"One man pushed another man off that balcony."',                  source: "Vivienne — Maid's Quarters" },
   'crane_first_visit_ashworth_alive':        { label: 'Went upstairs at 7:05. Lord Ashworth was well. Left her case.',  source: 'Crane — Physicians Room' },
-  'crane_said_nothing_after_discovery':      { label: 'Found the mask at 8:01. Said nothing. Came back downstairs.',    source: 'Crane — Physicians Room' },
+  'crane_said_nothing_after_discovery':      { label: 'Examined body at 8:03. Offered clinical observation only. Did not name cause of death.', source: 'Crane — Physicians Room' },
   'crane_two_reasons':                       { label: 'Protecting him. The candle iron story protecting her.',           source: 'Crane — Physicians Room' },
   'ph_altered_register_for_clause_not_self': { label: 'Added immunity clause for another member. Fear, not murder.',    source: 'Pemberton-Hale — Antechamber' },
   'ph_false_timeline_ballroom':              { label: 'Claims Ballroom from 7:00. Watching the Register.',              source: 'Pemberton-Hale — Antechamber' },
@@ -1761,8 +1761,8 @@ const TIMELINE_PLACEMENTS = [
   // CRANE
   { node: 'crane_first_visit_ashworth_alive',      suspect: 'crane',          room: 'study',      timeMin: 65,  verified: true  },
   { node: 'crane_floor_clear_705',                 suspect: 'crane',          room: 'balcony',    timeMin: 65,  verified: true  },
-  { node: 'crane_said_nothing_after_discovery',    suspect: 'crane',          room: 'balcony',    timeMin: 121, verified: true  },
-  { node: 'crane_two_reasons',                     suspect: 'crane',          room: 'physicians', timeMin: 125, verified: true  },
+  { node: 'crane_said_nothing_after_discovery',    suspect: 'crane',          room: 'ballroom',   timeMin: 123, verified: true  },
+  { node: 'crane_two_reasons',                     suspect: 'crane',          room: 'balcony',    timeMin: 125, verified: true  },
 
   // PEMBERTON-HALE
   { node: 'ph_false_timeline_ballroom',            suspect: 'pemberton-hale', room: 'ballroom',   timeMin: 60,  verified: false },
