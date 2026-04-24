@@ -1785,88 +1785,6 @@
     dialogueTimer--;
   }
 
-  function drawBrainIndicator() {
-    // Small pill in top-left showing Stockfish status + thinking state.
-    //   - Green dot = Stockfish loaded and ready (real chess)
-    //   - Amber dot = Stockfish loading
-    //   - Red dot = Stockfish not available, random moves
-    //   - Bulb pulses warm amber when Greaves is actively thinking
-    if (state !== 'game' || !match) return;
-
-    const bx = 10;
-    const by = 46;
-    const bw = 104;
-    const bh = 28;
-
-    ctx.save();
-    // Pill background
-    ctx.fillStyle = 'rgba(20,12,8,0.75)';
-    roundRect(ctx, bx, by, bw, bh, 5);
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(138,107,46,0.5)';
-    ctx.lineWidth = 1;
-    ctx.stroke();
-
-    // Connection status dot
-    let dotColor;
-    if (stockfishReady) dotColor = '#4ade80';     // green — ready
-    else if (stockfish) dotColor = '#f7c948';     // amber — loading
-    else dotColor = '#c0392b';                    // red — fallback/not loaded
-    ctx.fillStyle = dotColor;
-    ctx.beginPath();
-    ctx.arc(bx + 10, by + bh / 2, 4, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Brain bulb icon — pulses when thinking
-    const thinking = stockfishMoveResolver !== null;
-    const bulbX = bx + 30;
-    const bulbY = by + bh / 2;
-    const pulsePhase = thinking ? (Math.sin(performance.now() / 180) + 1) / 2 : 0;
-    const pulse = 0.4 + pulsePhase * 0.6;
-
-    // Glow halo when thinking
-    if (thinking) {
-      const glowR = 13 + pulsePhase * 4;
-      const glow = ctx.createRadialGradient(bulbX, bulbY, 2, bulbX, bulbY, glowR);
-      glow.addColorStop(0, 'rgba(247,201,72,' + (0.5 * pulse) + ')');
-      glow.addColorStop(1, 'rgba(247,201,72,0)');
-      ctx.fillStyle = glow;
-      ctx.beginPath();
-      ctx.arc(bulbX, bulbY, glowR, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    // Bulb body (simple round bulb with base)
-    const bulbColor = thinking ? 'rgba(247,201,72,' + pulse + ')' : 'rgba(180,150,100,0.7)';
-    ctx.fillStyle = bulbColor;
-    ctx.beginPath();
-    ctx.arc(bulbX, bulbY - 2, 5, 0, Math.PI * 2);  // glass bulb
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(90,60,20,0.8)';
-    ctx.lineWidth = 0.8;
-    ctx.stroke();
-    // Bulb base
-    ctx.fillStyle = 'rgba(90,60,20,0.9)';
-    ctx.fillRect(bulbX - 2.5, bulbY + 3, 5, 3);
-    // Bulb filament (small line inside)
-    if (thinking) {
-      ctx.strokeStyle = 'rgba(255,230,150,' + pulse + ')';
-      ctx.lineWidth = 0.6;
-      ctx.beginPath();
-      ctx.moveTo(bulbX - 2, bulbY - 2);
-      ctx.lineTo(bulbX + 2, bulbY - 2);
-      ctx.stroke();
-    }
-
-    // Label
-    ctx.fillStyle = thinking ? '#f7c948' : '#c9b98a';
-    ctx.font = 'bold 10px Georgia, serif';
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(stockfishReady ? 'YES' : 'NO', bx + 44, by + bh / 2 + 1);
-    ctx.restore();
-  }
-
   function drawTopBar() {
     const W = canvas.width;
     ctx.save();
@@ -1953,7 +1871,6 @@
     ctx.fillRect(0, 0, W, H);
 
     drawTopBar();
-    drawBrainIndicator();
     const layout = computeBoardLayout();
     drawBoard(layout);
     drawPieces(layout);
