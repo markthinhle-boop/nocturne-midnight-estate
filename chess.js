@@ -1863,7 +1863,7 @@
     ctx.font = 'bold 10px Georgia, serif';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
-    ctx.fillText(stockfishReady ? '1' : '0', bx + 44, by + bh / 2 + 1);
+    ctx.fillText(stockfishReady ? 'YES' : 'NO', bx + 44, by + bh / 2 + 1);
     ctx.restore();
   }
 
