@@ -2427,6 +2427,7 @@ const INTERROGATION_DATA = {
         strained:   '"I was called at eight-oh-one." A pause. "I came immediately." She touches the bag. "I had my bag. I am always prepared." Another pause. "That is the arrangement."',
         snapback:   '"My arrival is documented. I came when I was called."',
         grants_node: 'crane_arrived_at_call',
+        grants_node_secondary: 'crane_false_arrived_only_at_call',
       },
       'Q2': {
         composed:   '"Standard medical availability kit. Diagnostic instruments. Surgical materials. Documentation." She touches the bag. "Nothing unusual for an engagement of this kind."',
@@ -2473,10 +2474,11 @@ const INTERROGATION_DATA = {
         grants_node: 'crane_said_nothing_after_discovery',
       },
       'Q8': {
-        composed:   '"I was present in the building before the Rite began." She says it before you ask. A pause. "That is not unusual for my engagement with Compact events of this formality." She touches the bag. "My presence before eight-oh-one is accounted for."',
-        controlled: '"I was in the building." A pause. "Yes." She looks at her hands. "That is not unusual for my engagement here." Another pause. "My arrival time is documented."',
-        strained:   '"I was here before eight-oh-one." A pause. She touches the bag. "That is accurate." Another pause. "My presence before the Rite is accounted for."',
-        snapback:   '"My pre-Rite presence in the building is consistent with my arrangement with the Compact."',
+        composed:   '"I was present in the building before the Rite began." She says it before you ask. A pause. "That is not unusual for my engagement with Compact events of this formality." She touches the bag. "My presence before eight-oh-one is accounted for. I was in the Ballroom from approximately seven-thirty until I was called."',
+        controlled: '"I was in the building." A pause. "Yes." She looks at her hands. "That is not unusual for my engagement here." Another pause. "Ballroom from seven-thirty. My arrival time is documented."',
+        strained:   '"I was here before eight-oh-one." A pause. She touches the bag. "That is accurate." Another pause. "Ballroom. From seven-thirty. My presence before the Rite is accounted for."',
+        snapback:   '"My pre-Rite presence in the Ballroom is consistent with my arrangement with the Compact."',
+        grants_node: 'crane_in_ballroom_730',
       },
       'Q9': {
         composed:   '"I have known him through professional engagement for two years." She says it precisely. "The nature of that engagement is covered by professional obligations I am reconsidering the scope of." She touches the bag. A pause. "I will say this: I knew what kind of man he was before tonight. Not every detail. Not the part that is relevant to your investigation. But the outline."',

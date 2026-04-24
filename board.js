@@ -348,6 +348,9 @@ const SUSPECT_PATHS = {
       { label: 'FLOOR CLEAR — 7:05',
         true_node: 'crane_floor_clear_705',
         false_nodes: ['crane_false_no_705', 'crane_false_one_visit_only'] },
+      { label: 'PRESENCE BEFORE 8:01',
+        true_node: 'crane_in_ballroom_730',
+        false_nodes: ['crane_false_arrived_only_at_call'] },
       { label: 'WHAT SHE FOUND',
         true_node: 'crane_said_nothing_after_discovery',
         false_nodes: ['crane_redirect_ph'] },
@@ -903,6 +906,8 @@ const NODE_INFO = {
   'surgeon_admits_balcony_level':            { label: '"The balcony level, yes. The sightlines." Places himself there before the Rite.',  source: 'Surgeon — Physicians Room' },
   'vivienne_push_witnessed':                 { label: '"One man pushed another man off that balcony."',                  source: "Vivienne — Maid's Quarters" },
   'crane_first_visit_ashworth_alive':        { label: 'Went upstairs at 7:05. Lord Ashworth was well. Left her case.',  source: 'Crane — Physicians Room' },
+  'crane_in_ballroom_730':                   { label: 'In the Ballroom from 7:30 until called at 8:01. Pre-Rite presence in the building.', source: 'Crane — Physicians Room' },
+  'crane_false_arrived_only_at_call':        { label: 'CLAIMED: arrived from external Physicians Room at 8:01 only. Contradicts her own Q8 admission.', source: 'Crane — Physicians Room' },
   'crane_said_nothing_after_discovery':      { label: 'Examined body at 8:03. Offered clinical observation only. Did not name cause of death.', source: 'Crane — Physicians Room' },
   'crane_two_reasons':                       { label: 'Protecting him. The candle iron story protecting her.',           source: 'Crane — Physicians Room' },
   'ph_altered_register_for_clause_not_self': { label: 'Added immunity clause for another member. Fear, not murder.',    source: 'Pemberton-Hale — Antechamber' },
@@ -1761,6 +1766,8 @@ const TIMELINE_PLACEMENTS = [
   // CRANE
   { node: 'crane_first_visit_ashworth_alive',      suspect: 'crane',          room: 'study',      timeMin: 65,  verified: true  },
   { node: 'crane_floor_clear_705',                 suspect: 'crane',          room: 'balcony',    timeMin: 65,  verified: true  },
+  { node: 'crane_in_ballroom_730',                  suspect: 'crane',          room: 'ballroom',   timeMin: 90,  verified: true  },
+  { node: 'crane_false_arrived_only_at_call',      suspect: 'crane',          room: 'physicians', timeMin: 121, verified: false },
   { node: 'crane_said_nothing_after_discovery',    suspect: 'crane',          room: 'ballroom',   timeMin: 123, verified: true  },
   { node: 'crane_two_reasons',                     suspect: 'crane',          room: 'balcony',    timeMin: 125, verified: true  },
 
