@@ -587,7 +587,7 @@ const ITEMS = {
     accusation_target: "crane",
     examine_1: "A medical bag on the balcony floor. Dr. Crane's initials on the clasp.",
     examine_2: "The case was left here. Not placed — left. There is a difference. Someone left in a hurry and did not come back for it.",
-    examine_3: "The case was on this floor at seven-oh-five. Two hours before Lord Ashworth reached the railing. A physician does not leave her case on a balcony floor by accident. She left it here because she knew she would need to come back to this room, and she did not want to be seen arriving with it.",
+    examine_3: "The case was on this floor at seven-oh-five. Forty minutes before Lord Ashworth reached the railing. A physician does not leave her case on a balcony floor by accident. She left it here because she knew she would need to come back to this room, and she did not want to be seen arriving with it.",
   },
   "surgeons-licensing-record": {
     name: "Licensing Review Record",
