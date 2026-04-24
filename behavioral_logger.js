@@ -125,7 +125,7 @@ const INFORMATION_NODES = {
 
   // ── WRONG-PATH BRANCH NODES ────────────────────────────────────────────────
   // Fired by interrogation.js grants_node -- require branch work, not spine clicks
-  'baron_710_observation':            { category: 'times',     weight: 1.5, event: 'baron_branch_a_bar_a1_answered',     display: '7:10PM -- Baron saw figure leave study, satisfied, toward stairs', accusation_target: 'baron'    },
+  'baron_705_observation':            { category: 'times',     weight: 1.5, event: 'baron_branch_a_bar_a1_answered',     display: '7:05PM -- Baron saw figure leave study, satisfied, toward stairs', accusation_target: 'baron'    },
   'northcott_ashworth_instrument':    { category: 'people',    weight: 1.3, event: 'northcott_branch_a_ba3_answered',    display: 'Northcott understands he was positioned as a clean witness',      accusation_target: 'northcott'},
   'northcott_wrong_mask_752':         { category: 'times',     weight: 1.5, event: 'northcott_branch_b_nb1_answered',    display: '7:52PM -- Northcott logged plain mask entry -- no signature mark', accusation_target: 'northcott'},
 
