@@ -555,7 +555,11 @@ function _onHotspotTap(objectId, tapX, tapY) {
 function _buildCharDots() {
   // Build per-room character zones — one zone per room, inside the room div
   // Mirrors train portrait zone: centred, full-width, portrait cards with active state
-  Object.entries(CHARACTER_POSITIONS).forEach(([roomId, chars]) => {
+  // PROLOGUE: while gameState.prologueActive, use PROLOGUE_NPC_POSITIONS instead.
+  const POSITIONS_SOURCE = (gameState.prologueActive && window.PROLOGUE_NPC_POSITIONS)
+    ? window.PROLOGUE_NPC_POSITIONS
+    : CHARACTER_POSITIONS;
+  Object.entries(POSITIONS_SOURCE).forEach(([roomId, chars]) => {
     if (roomId.startsWith('train-')) return; // train handles its own
     const roomEl = document.getElementById(`room-${roomId}`);
     if (!roomEl) return;
@@ -713,6 +717,10 @@ function _buildCharDots() {
       _uninvitedClickListener = null;
     }
 
+    // PROLOGUE — Uninvited never arms during prologue. He arrives with the body post-cinematic,
+    // and only after Hale + paywall when his ballroom rooms become reachable.
+    if (gameState.prologueActive) return;
+
     if (!ALL_UNINVITED_ROOMS.includes(roomId)) return;
     if (!_isUninvitedGateOpen(roomId)) return;
     if (!_uninvitedHasUndelivered(roomId)) return;
@@ -752,6 +760,21 @@ function _syncCharZones(roomId) {
 
 
 function _onCharTap(charId, roomId) {
+  // PROLOGUE — route non-Rowe NPCs to the shallow Tier 1 dialogue.
+  // Rowe falls through to his existing duel engine (intro→FUNNEL→duel).
+  // Uninvited cannot fire during prologue at all (he arrives with the murder).
+  if (gameState.prologueActive) {
+    if (charId === 'uninvited') {
+      showToast('No one else is here right now.');
+      return;
+    }
+    if (charId !== 'rowe' && typeof window.openPrologueDialogue === 'function') {
+      window.openPrologueDialogue(charId);
+      return;
+    }
+    // Rowe falls through to existing handler below
+  }
+
   if (charId === 'uninvited') {
     if (roomId === 'ballroom') { _uninvitedEncounter(roomId); return; }
     if (roomId === 'library')  { _uninvitedEncounter(roomId); return; }
@@ -790,6 +813,8 @@ function _closeUninvitedEncounter(roomId) {
 }
 
 function _uninvitedEncounter(roomId) {
+  // PROLOGUE — Uninvited does not appear pre-murder. He arrives with the body.
+  if (gameState.prologueActive) return;
   const data = window.INTERROGATION_DATA && window.INTERROGATION_DATA['uninvited'];
   if (!data) return;
   const appearances = data.composure_variants && data.composure_variants._appearances;
@@ -937,7 +962,10 @@ function _uninvitedEncounter(roomId) {
 
 function updateCharacterDots(roomId) {
   const hw = getHourWindow();
-  (CHARACTER_POSITIONS[roomId] || []).forEach(charId => {
+  const POSITIONS_SOURCE = (gameState.prologueActive && window.PROLOGUE_NPC_POSITIONS)
+    ? window.PROLOGUE_NPC_POSITIONS
+    : CHARACTER_POSITIONS;
+  (POSITIONS_SOURCE[roomId] || []).forEach(charId => {
     const dot = document.getElementById(`char-${charId}`);
     if (!dot) return;
     dot.classList.toggle('clock-gated', !(CHARACTER_AVAILABILITY[charId] || []).includes(hw));
@@ -963,9 +991,7 @@ function handleMapRoomTap(roomId) {
     || gameState.rooms[gameState.currentRoom]?.completed;
   if (!canLeave) return; // silent — nav tabs will show "Examine the room"
 
-  const paid = ["library","physicians","smoking","archive-path","vault","wine-cellar"];
-  if (paid.includes(roomId) && !gameState.paidTierUnlocked) { openPaywall(); closeMap(); return; }
-
+  // Old paid-spine paywall gate removed. New gate (prologue, post-Hale) lives in navigateTo.
   closeMap();
   if (roomId === 'stage') { openStage(); return; }
   navigateTo(roomId);

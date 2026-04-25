@@ -604,7 +604,14 @@ function _endTrainSequence() {
   gameState.verdictTracker.session_start = Date.now();
   gameState.verdictTracker.session_number = (gameState.verdictTracker.session_number || 0) + 1;
 
-  navigateTo('foyer');
+  // PROLOGUE — fresh arrival at the Estate. Mingle phase begins at foyer.
+  // If player has already paid (paidTierUnlocked persisted), skip prologue and go straight to foyer.
+  if (!gameState.paidTierUnlocked && typeof window.startPrologue === 'function') {
+    window.startPrologue();
+  } else {
+    gameState.prologueActive = false;
+    navigateTo('foyer');
+  }
   if (typeof renderCurrentRoom    === 'function') renderCurrentRoom();
   if (typeof renderRoomNav        === 'function') renderRoomNav();
   if (typeof updateInventoryCounter === 'function') updateInventoryCounter();

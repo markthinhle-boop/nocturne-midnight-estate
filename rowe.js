@@ -1159,6 +1159,12 @@ function launchDuel(onComplete) {
     ROWE_STATE.duel_score_rowe=overallRs;
     ROWE_STATE.iq_score=overallPs;
 
+    // PROLOGUE — emit so prologue can arm the cinematic on next room transition.
+    // Prologue handler is guarded by phase, so replays of the duel are no-ops after first emit.
+    if(window.NocturneEngine && typeof window.NocturneEngine.emit==='function'){
+      window.NocturneEngine.emit('roweDuelComplete',{outcome:outcome});
+    }
+
     if(document.getElementById('rd-replay-btn')) document.getElementById('rd-replay-btn').remove();
     const replayBtn=document.createElement('button');
     replayBtn.id='rd-replay-btn';

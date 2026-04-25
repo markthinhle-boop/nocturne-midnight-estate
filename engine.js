@@ -69,6 +69,7 @@ const gameState = {
   selectedItem: null,
   currentRoom: "foyer",
   paidTierUnlocked: false,
+  prologueActive: false,    // PROLOGUE — true from train end until post-Hale paywall clears
   tunnelFound: false,
   tunnelEntranceUsed: null, // "hedge" | "cellar" | "both"
   compactAccessible: false,
@@ -2136,10 +2137,13 @@ function clearEssentialGlow(objectId) {
 
 // ── ROOM NAVIGATION ────────────────────────────────────────
 function navigateTo(roomId) {
-  const PAID_ROOMS = ['library','physicians','smoking','archive-path','vault','wine-cellar'];
-  if (PAID_ROOMS.includes(roomId) && !gameState.paidTierUnlocked) {
-    if (typeof openPaywall === 'function') openPaywall();
-    return;
+  // PROLOGUE GATE — replaces old PAID_ROOMS check.
+  // Old paid-spine paywall is gone; new gate is post-Hale only.
+  if (gameState.prologueActive && typeof isPrologueRoomAccessible === 'function') {
+    if (!isPrologueRoomAccessible(roomId)) {
+      if (typeof showToast === 'function') showToast('That room is not accessible.');
+      return;
+    }
   }
   const hour = getHourWindow();
   const prevRoom = gameState.currentRoom;
@@ -3281,6 +3285,8 @@ function newGame() {
     node_inventory: {},
     _stageGateAttempts: {},
     discredited_times: [],
+    paidTierUnlocked: false,
+    prologueActive: true,   // PROLOGUE — fresh game starts in pre-murder mingle
   });
   // Fully reset verdictTracker — every field
   gameState.verdictTracker = {
