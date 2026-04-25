@@ -227,54 +227,64 @@ window.openPrologueDialogue = function(charId) {
   if (charId === 'rowe') return;
 
   const data = PROLOGUE_DIALOGUE[charId];
-  if (!data) return;
+  if (!data) {
+    console.warn('[prologue] No dialogue data for charId:', charId);
+    return;
+  }
 
-  // Build a minimal panel — uses the same conversation-panel element as the
-  // post-paywall interrogation system, but with our own renderer.
-  const panel = document.getElementById('conversation-panel');
-  if (!panel) return;
+  // Self-contained overlay. Does NOT hijack the post-paywall conversation-panel,
+  // because that panel's CSS layout depends on its native children.
+  let overlay = document.getElementById('prologue-dialogue-overlay');
+  if (overlay) overlay.remove();
+
+  overlay = document.createElement('div');
+  overlay.id = 'prologue-dialogue-overlay';
+  overlay.style.cssText = [
+    'position:fixed', 'top:0', 'left:0', 'right:0', 'bottom:0',
+    'background:rgba(8,6,3,0.92)', 'z-index:9000',
+    'display:flex', 'align-items:center', 'justify-content:center',
+    'padding:20px', 'font-family:Georgia,serif',
+  ].join(';');
+
+  const box = document.createElement('div');
+  box.style.cssText = [
+    'background:#0a0804', 'border:1px solid rgba(184,150,12,0.25)',
+    'width:min(96vw,520px)', 'max-height:88vh', 'overflow-y:auto',
+    'padding:24px', 'color:#d4c49a', 'box-shadow:0 8px 40px rgba(0,0,0,0.6)',
+  ].join(';');
+  overlay.appendChild(box);
 
   const answered = PROLOGUE_STATE.npc_dialogue_complete[charId] || {};
 
-  // Ensure container exists
-  let container = panel.querySelector('.prologue-dialogue-container');
-  if (!container) {
-    panel.innerHTML = '';
-    container = document.createElement('div');
-    container.className = 'prologue-dialogue-container';
-    container.style.cssText = 'padding:20px;color:var(--cream);max-height:80vh;overflow-y:auto;';
-    panel.appendChild(container);
-  }
-
   function render() {
-    container.innerHTML = '';
+    box.innerHTML = '';
 
-    // Header
+    // Header — character name
     const header = document.createElement('div');
-    header.style.cssText = 'font-size:13px;color:var(--gold);letter-spacing:0.15em;text-transform:uppercase;margin-bottom:8px;';
+    header.style.cssText = 'font-size:11px;color:#b8960c;letter-spacing:0.3em;text-transform:uppercase;margin-bottom:14px;text-align:center;padding-bottom:12px;border-bottom:1px solid rgba(184,150,12,0.15);';
     header.textContent = data.name;
-    container.appendChild(header);
+    box.appendChild(header);
 
     // Intro
     const intro = document.createElement('div');
-    intro.style.cssText = 'font-size:14px;color:var(--cream);line-height:1.6;margin-bottom:16px;font-style:italic;';
+    intro.style.cssText = 'font-size:14px;color:#c0b090;line-height:1.7;margin-bottom:18px;font-style:italic;';
     intro.textContent = data.intro;
-    container.appendChild(intro);
+    box.appendChild(intro);
 
     // Question/answer log (already-answered)
     Object.keys(data.questions).forEach(qKey => {
       if (answered[qKey]) {
         const qaBlock = document.createElement('div');
-        qaBlock.style.cssText = 'margin-bottom:14px;border-left:2px solid var(--gold-dim);padding-left:12px;';
+        qaBlock.style.cssText = 'margin-bottom:16px;border-left:2px solid rgba(184,150,12,0.3);padding-left:14px;';
         const qLine = document.createElement('div');
-        qLine.style.cssText = 'font-size:12px;color:var(--cream-dim);margin-bottom:4px;';
+        qLine.style.cssText = 'font-size:12px;color:#8a7a5c;margin-bottom:6px;letter-spacing:0.05em;';
         qLine.textContent = '— ' + data.questions[qKey].q;
         qaBlock.appendChild(qLine);
         const aLine = document.createElement('div');
-        aLine.style.cssText = 'font-size:13px;color:var(--cream);line-height:1.5;';
+        aLine.style.cssText = 'font-size:14px;color:#d4c49a;line-height:1.65;';
         aLine.textContent = data.questions[qKey].a;
         qaBlock.appendChild(aLine);
-        container.appendChild(qaBlock);
+        box.appendChild(qaBlock);
       }
     });
 
@@ -282,11 +292,13 @@ window.openPrologueDialogue = function(charId) {
     const remaining = Object.keys(data.questions).filter(qKey => !answered[qKey]);
     if (remaining.length > 0) {
       const qList = document.createElement('div');
-      qList.style.cssText = 'margin-top:12px;display:flex;flex-direction:column;gap:8px;';
+      qList.style.cssText = 'margin-top:14px;display:flex;flex-direction:column;gap:8px;';
       remaining.forEach(qKey => {
         const btn = document.createElement('button');
-        btn.style.cssText = 'background:transparent;border:1px solid var(--gold-dim);color:var(--cream);padding:10px 14px;text-align:left;font-size:13px;cursor:pointer;font-family:inherit;';
+        btn.style.cssText = 'background:transparent;border:1px solid rgba(184,150,12,0.4);color:#d4c49a;padding:11px 14px;text-align:left;font-size:13px;cursor:pointer;font-family:inherit;line-height:1.4;';
         btn.textContent = data.questions[qKey].q;
+        btn.onmouseenter = function() { this.style.background = 'rgba(184,150,12,0.08)'; this.style.borderColor = 'rgba(184,150,12,0.7)'; };
+        btn.onmouseleave = function() { this.style.background = 'transparent'; this.style.borderColor = 'rgba(184,150,12,0.4)'; };
         btn.onclick = function() {
           answered[qKey] = true;
           PROLOGUE_STATE.npc_dialogue_complete[charId] = answered;
@@ -294,18 +306,17 @@ window.openPrologueDialogue = function(charId) {
         };
         qList.appendChild(btn);
       });
-      container.appendChild(qList);
+      box.appendChild(qList);
     }
 
-    // Close button
+    // Close button — always visible
     const closeRow = document.createElement('div');
-    closeRow.style.cssText = 'margin-top:20px;text-align:center;';
+    closeRow.style.cssText = 'margin-top:24px;text-align:center;padding-top:16px;border-top:1px solid rgba(184,150,12,0.15);';
     const closeBtn = document.createElement('button');
-    closeBtn.style.cssText = 'background:transparent;border:1px solid var(--gold);color:var(--gold);padding:8px 24px;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;cursor:pointer;font-family:inherit;';
-    closeBtn.textContent = 'Step away';
+    closeBtn.style.cssText = 'background:transparent;border:1px solid #b8960c;color:#b8960c;padding:8px 28px;font-size:11px;letter-spacing:0.25em;text-transform:uppercase;cursor:pointer;font-family:inherit;';
+    closeBtn.textContent = remaining.length === 0 ? 'Step away' : 'Step away';
     closeBtn.onclick = function() {
-      panel.classList.remove('open');
-      panel.innerHTML = '';
+      overlay.remove();
       // If this was Hale (pemberton-hale) AND we are post-murder, fire paywall
       if (charId === 'pemberton-hale'
           && (PROLOGUE_STATE.phase === 'post_murder' || PROLOGUE_STATE.phase === 'awaiting_paywall')
@@ -316,7 +327,7 @@ window.openPrologueDialogue = function(charId) {
       }
     };
     closeRow.appendChild(closeBtn);
-    container.appendChild(closeRow);
+    box.appendChild(closeRow);
   }
 
   // Mark Hale as having been opened in post-murder phase
@@ -325,7 +336,7 @@ window.openPrologueDialogue = function(charId) {
     PROLOGUE_STATE.hale_dialogue_opened = true;
   }
 
-  panel.classList.add('open');
+  document.body.appendChild(overlay);
   render();
 };
 
