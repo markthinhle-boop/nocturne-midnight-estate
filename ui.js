@@ -1710,6 +1710,14 @@ function _openConversationDirect(charId) {
   const charData = window.CHARACTERS && window.CHARACTERS[charId];
   if (!charData) return;
 
+  // ROWE DUEL — hide Close button during intro/duel (one-way street)
+  const dismissBtn = document.getElementById('btn-dismiss-conv');
+  if (charId === 'rowe' && dismissBtn) {
+    dismissBtn.style.display = 'none';
+  } else if (dismissBtn) {
+    dismissBtn.style.display = '';
+  }
+
   // Clear inline display:none set by train sequence
   panel.style.display = '';
   document.getElementById('conv-portrait-zone').style.display = '';
@@ -2069,6 +2077,16 @@ function renderQuestions(charId) {
   list.innerHTML = '';
   if (!window.computeAvailableQuestions) return;
   const available = computeAvailableQuestions(charId);
+  
+  // ROWE — restore Close button after duel completes
+  if (charId === 'rowe') {
+    const dismissBtn = document.getElementById('btn-dismiss-conv');
+    const roweState = typeof window.getRoweDialogueState === 'function' ? window.getRoweDialogueState() : null;
+    if (dismissBtn && roweState && roweState.duel_complete) {
+      dismissBtn.style.display = '';
+    }
+  }
+  
   available.forEach(qId => {
     const charData = window.CHARACTERS && window.CHARACTERS[charId];
     if (!charData) return;
@@ -2378,13 +2396,6 @@ function openPaywall() {
 
 function closePaywall() {
   document.getElementById('paywall-screen').classList.remove('active');
-  // PROLOGUE — declined paywall during prologue means bounce to train (infinite loop until paid).
-  // handlePurchase sets paidTierUnlocked=true before calling closePaywall, so the bounce only
-  // fires on a true decline ("Not yet, the body will keep").
-  if (gameState.prologueActive && !gameState.paidTierUnlocked
-      && typeof window.onProloguePaywallDecline === 'function') {
-    window.onProloguePaywallDecline();
-  }
 }
 
 function handlePurchase() {
@@ -2393,12 +2404,7 @@ function handlePurchase() {
   gameState.paidTierUnlocked = true;
   closePaywall();
   if (typeof initPaidTier === 'function') initPaidTier();
-  // PROLOGUE — paid: drop into foyer, post-paywall engine takes over
-  if (gameState.prologueActive && typeof window.onProloguePaywallSuccess === 'function') {
-    window.onProloguePaywallSuccess();
-  } else {
-    navigateTo('ballroom');
-  }
+  navigateTo('ballroom');
   saveGame();
 }
 
@@ -2691,10 +2697,6 @@ function renderRoomNav() {
   const visible = adjacent.filter(id => {
     if (id === 'vault' && !gameState.vaultDoorOpen) return false;
     if (id === 'wine-cellar' && !gameState.vaultDoorOpen) return false;
-    // PROLOGUE — hide rooms that are not accessible during current phase.
-    if (gameState.prologueActive && typeof window.isPrologueRoomAccessible === 'function') {
-      if (!window.isPrologueRoomAccessible(id)) return false;
-    }
     const r = gameState.rooms[id];
     return r && r.state !== 'undiscovered';
   });
@@ -2752,8 +2754,7 @@ function renderRoomNav() {
 
       if (roomState !== 'visited' && roomState !== 'completed') return;
 
-      // Old paid-spine lock display removed. Prologue gate filters at `visible` computation above.
-      const isPaid = false;
+      const isPaid = PAID_ROOMS.includes(roomId) && !gameState.paidTierUnlocked;
       const btn = document.createElement('button');
       btn.className = 'room-nav-btn' + (isPaid ? ' locked' : '');
       btn.textContent = (ROOM_NAMES[roomId] || roomId) + (isPaid ? ' ·' : '');
