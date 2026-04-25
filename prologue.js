@@ -67,9 +67,9 @@ const PROLOGUE_PATCHES = {
     intro: 'The grandfather clock by the staircase has just declared seven, and is taking its time about being believed. The Foyer is otherwise still — the kind of stillness a room produces only when someone has been standing in it long enough to teach the room how.\n\nHe is, of course, unmasked. He inclines his head a fraction as you cross the threshold — the fraction owed to a guest of the house.\n\n"Mr. Grey. Welcome to the Estate. The Rite begins at eight."',
     dialogue: {
       'Q1': { question: 'You were expecting me.',          type: 'choice', response: '"The Estate generally is. It is one of the few institutions in the country that has not had to revise the assumption." A small gesture at the room. "Lord Ashworth thought it appropriate that a first-time visitor be received by someone whose duties this evening are largely ceremonial. I am the ceremonial part. The Rite is the rest."' },
-      'Q2': { question: 'What is the Rite, exactly?',      type: 'choice', response: '"A ceremony. That is not a useful answer; let me try again." A breath. "At eight, Lord Ashworth will open the Black Register before the assembled membership. The Register has not been opened in public in living memory. Most of the people in this house tonight have been preparing for that fact in one form or another. A few of them have been preparing in ways the Register itself will eventually describe."' },
-      'Q3': { question: 'What kind of man is Lord Ashworth?', type: 'choice', response: '"Meticulous." The word lands the way a bricklayer sets a brick. "He has run this Estate for forty years. He has, in that time, declined to misplace a record, a name, a debt, or a man who deserved better." A pause. "He has been preparing for tonight for six years. When a man spends six years preparing to say a thing in public, what he intends to say is generally either very true or very dangerous. With Ashworth it tends to be both. That is the work of the evening."' },
-      'Q4': { question: 'Why am I the only one without a mask?', type: 'choice', response: '"Because you are not yet a member. The mask is a courtesy the Estate extends to those it has reason to conceal. Tonight the Estate has reason to conceal nearly everyone." A measured nod. "You may take some comfort in being the exception. Most people, in my experience, do not. Most people would rather be hidden than seen, and tonight is the kind of evening that proves them right."' },
+      'Q2': { question: 'What is the Rite, exactly?',      type: 'choice', response: '"A ceremony. That is not a useful answer; let me try again." A breath. "At eight, Lord Ashworth will open the Black Register before the assembled membership. The Register has not been opened in public in living memory. Most of the people in this house tonight have been preparing for that fact in one form or another. The Register, when it opens, will have things to say about a great many of them."' },
+      'Q3': { question: 'What kind of man is Lord Ashworth?', type: 'choice', response: '"Meticulous." The word lands the way a bricklayer sets a brick. "He has run this Estate for forty years. He has, in that time, declined to misplace a record, a name, or a debt." A pause. "He has been preparing for tonight for six years. When a man spends six years preparing to say a thing in public, what he intends to say is generally either very true or very dangerous. With Ashworth it tends to be both. That is the work of the evening."' },
+      'Q4': { question: 'Why am I the only one without a mask?', type: 'choice', response: '"Because you are not yet a member. The mask is a courtesy the Estate extends to its members on formal evenings. The Estate has always preferred its formal evenings discreet. Tonight is no exception." A measured nod. "You may take some comfort in being the exception. Most people, in my experience, do not. Most people would rather be hidden than seen. The Society has been good business for the maskmakers of this country for two centuries."' },
       'Q5': { question: 'Where should I go until eight?',  type: 'choice', response: '"Anywhere that is not the Ballroom. The grounds are open. The guests are masked, and they will not introduce themselves. Try not to read this as rudeness. Read it as architecture."' },
     },
   },
@@ -80,9 +80,9 @@ const PROLOGUE_PATCHES = {
     room: 'weapons-room',
     intro: 'A small sherry rests on the side-table among the mounted sabres. It has been there for some time. It has not been drunk, or refilled, or moved by even the smallest inadvertent inch. The young masked figure beside it is putting genuine effort into not touching it.\n\nA leather-bound notebook is tucked under his arm. He looks up sharply when you enter, caught between a polite nod and an outright salute, and committing fully to neither.',
     dialogue: {
-      'Q1': { question: 'Admiring the swords?',           type: 'choice', response: '"They are decorative. None of them have an edge. I checked." A pause. He looks faintly betrayed by his own sentence. "Not because I expected them to. I am told it is appropriate to know the building one is asked to be in. I have also looked behind the curtains. Nothing was behind the curtains. I am writing it down."' },
+      'Q1': { question: 'Admiring the swords?',           type: 'choice', response: '"They are decorative. None of them have an edge." A pause. He looks faintly betrayed by his own observation. "Not that one would want them otherwise. The Estate prefers its weapons in the other sense — historical, well-mounted, and absolutely none of one\'s business."' },
       'Q2': { question: 'You don\'t look like you\'re enjoying yourself.', type: 'choice', response: '"I am." Said immediately, which is the wrong way to answer the question. He hears himself. "That is — I am attempting to. The sherry is excellent. The rooms are warm. The masks —" he glances at the door, "the masks have a remarkable capacity to look at you for longer than you have planned to be looked at."' },
-      'Q3': { question: 'What\'s the notebook for?',       type: 'choice', response: 'He straightens. The next sentence comes out at half its previous warmth: "Times of arrival, exact to the minute. Cross-reference against the seating manifest. Anomalies flagged in pencil so the entry can be revised without crossing-out." He hears himself. The shoulders climb a fraction. "That is what I have been told to do."' },
+      'Q3': { question: 'What\'s the notebook for?',       type: 'choice', response: 'He straightens. The next sentence comes out at half its previous warmth: "It\'s a — house book. The Estate keeps one. Notes on the evening. Who arrived, who I spoke to, what the candles did." He glances at it as if he is not entirely sure he wants to be holding it. "The Estate is fond of paper. So is, I gather, my career."' },
       'Q4': { question: 'Who told you you had the right temperament?', type: 'choice', response: '"Lord Ashworth." With the small helpless pride of a man not certain whether he was praised or recruited. "He did not specify which temperament. He is not, by reputation, the sort of man one asks twice. I have been examining various of mine since, looking for the responsible one. So far, no luck."' },
       'Q5': { question: 'My mother said it would be like a wedding.', type: 'choice', response: 'A small, surprised laugh — genuine, the only one this evening will produce from him. "Mine said the same. Both of them were wrong about the music, and one of them was wrong about the masks. I will not say which. She will read this notebook one day."' },
     },
@@ -92,13 +92,13 @@ const PROLOGUE_PATCHES = {
   // FORM-BREAK: not at candelabra. At head of table. Looking at one place card.
   'steward': {
     room: 'dining-room',
-    intro: 'The dining room has been set for sixty. Glassware, place cards, the slight catastrophe of perfectly arranged flowers. The candles are not yet lit; that comes at quarter to.\n\nThe masked figure is at the head of the table. Not at the candelabra, where one would expect him. At the head, where one would not. His hands are clasped behind his back, precisely. He is looking down at a single place card. He has been standing exactly so for some time.\n\nHe is aware of you. He is choosing not to be.',
+    intro: 'The dining room has been set for sixty. Glassware, place cards, the slight catastrophe of perfectly arranged flowers. The candles are not yet lit; that comes at quarter to.\n\nThe masked figure is at the head of the table. Not at the candelabra, where one would expect him. At the head, where one would not. His hands are clasped behind his back, precisely. He is reviewing the seating, on what appears to be the third or fourth occasion of the evening. He has been doing it for some time.\n\nHe is aware of you. He is choosing not to be.',
     dialogue: {
-      'Q1': { question: 'Good evening.',                   type: 'choice', response: 'Only then does he turn, and only by degrees. "Good evening." The hands stay behind the back. The place card is not commented on. "The candles will be lit at quarter to. Until then the room is — resting. I find rooms appreciate the courtesy."' },
-      'Q2': { question: 'You weren\'t at the candelabra.', type: 'choice', response: '"No. I was attending to the seating. The placements were finalised three weeks ago, but one — confirms." His eyes do not return to the card. They have been instructed not to. "It is the kind of work one does when one has done it a great many years. The work has stopped requiring the head and continued requiring the hands."' },
-      'Q3': { question: 'You\'ve been here a long time.',  type: 'choice', response: '"Long enough. The house has not required me to count." A pause — and then, the small permission of an evening before any harm has been done: "I have outlasted three sovereigns of the Society and four chefs. The chefs were the harder loss."' },
-      'Q4': { question: 'What are you watching for?',      type: 'choice', response: 'The hands stay behind the back, precisely. "The candles. They burn unevenly in this room because of a draught from the south window which has been there since 1881 and which the Estate has, in three separate budgets, declined to address." A second pause, shorter. "It is the thing one watches for. Among others."' },
-      'Q5': { question: 'See you at the Rite.',            type: 'choice', response: '"At the Rite. Good evening." He does not return to the place card. He waits. The waiting will continue, in some form, until eight.' },
+      'Q1': { question: 'Good evening.',                   type: 'choice', response: 'Only then does he turn, and only by degrees. "Good evening." The hands stay behind the back. The seating is not commented on. "The candles will be lit at quarter to. Until then the room is — resting. I find rooms appreciate the courtesy."' },
+      'Q2': { question: 'You weren\'t at the candelabra.', type: 'choice', response: '"No. I was attending to the seating. The placements were finalised three weeks ago, but one — confirms." His eyes do not return to the table. They have been instructed not to. "It is the kind of work one does when one has done it a great many years. The work has stopped requiring the head and continued requiring the hands."' },
+      'Q3': { question: 'You\'ve been here a long time.',  type: 'choice', response: '"Long enough. The house has not required me to count." A pause — and then, the small permission of an evening before any harm has been done: "I have outlasted three presidents of the Society and four chefs. The chefs were the harder loss."' },
+      'Q4': { question: 'What are you watching for?',      type: 'choice', response: 'The hands stay behind the back, precisely. "The candles. They burn unevenly in this room because of a draught from the south window which has been there since 1881 and which the Estate has, in three separate budgets, declined to address." A second pause, shorter. "It is the thing one watches for."' },
+      'Q5': { question: 'See you at the Rite.',            type: 'choice', response: '"At the Rite. Good evening." He returns his attention to the table. The candles will be lit at quarter to. Until then, the room will continue to rest.' },
     },
   },
 
@@ -123,7 +123,7 @@ const PROLOGUE_PATCHES = {
     dialogue: {
       'Q1': { question: 'Good evening.',                   type: 'choice', response: '"Good evening, Mr. Grey." The letter folds once, neatly. "You are very brave to have entered the conservatory. Most of the gentlemen are too frightened of the orchids. They have been told the orchids are aware." A small smile in the voice. "They are. But not of them."' },
       'Q2': { question: 'Are you waiting for someone?',    type: 'choice', response: '"For my husband. For the Rite. For eight o\'clock." A fractional tilt of the head. "Eight o\'clock has been very stubborn about arriving. I have spoken to it three times this evening and it has been entirely unmoved." A pause. "My husband can be similar. It is one of the things we have in common."' },
-      'Q3': { question: 'You don\'t seem nervous about tonight.', type: 'choice', response: '"Should I be?" The slightly amused curiosity of a woman asked a thing she has not, herself, thought to ask. "My husband has prepared for tonight for six years. He has learned the names of every member, the press of every house seal, the precise weight of three centuries of Society silver. Tonight will go exactly as he has arranged." The amusement slips, briefly, before she catches it. "It would not occur to me to be nervous about a thing my husband has prepared. I would be nervous about other things. Not that."' },
+      'Q3': { question: 'You don\'t seem nervous about tonight.', type: 'choice', response: '"Should I be?" The slightly amused curiosity of a woman asked a thing she has not, herself, thought to ask. "My husband has prepared for tonight for six years. He has learned the names of every member, the press of every house seal, the precise weight of three centuries of Society silver. Tonight will go exactly as he has arranged." The amusement slips, briefly, before she catches it. "It would not occur to me to be nervous about a thing my husband has prepared. He has not arranged my nervousness for tonight. He has arranged everything else."' },
       'Q4': { question: 'I\'ll let you wait.',             type: 'choice', response: '"Thank you." The letter is unfolded and refolded along the same crease. "You have been a kindness. The orchids have run out of new things to say, and I had been preparing to invent some on their behalf. You have spared us all a difficult half-hour."' },
     },
   },
@@ -138,7 +138,7 @@ const PROLOGUE_PATCHES = {
       'Q2': { question: 'You attend these often?',         type: 'choice', response: '"More than I would choose. Less than I am asked." A small dry pause. "Lord Ashworth runs a tight Society and a generous bar, in that order, and one tolerates the first for the second. Most evenings here pass off with no greater incident than someone\'s opinions about Wagner." A sip, considered. "Tonight is meant to be more interesting. I have been instructed to expect interest. I am doing my best."' },
       'Q3': { question: 'Why are you in here, not in the drawing room?', type: 'choice', response: '"Because the drawing room contains the Hon. Charles Allerton, who has, twice this evening, attempted to explain the law of contract to me — and the orangery contains his wife, who in fairness has been doing the more difficult job for thirty-one years." Another sip. "The Gallery contains an admiral and you. By some distance, the best company in the building."' },
       'Q4': { question: 'You don\'t look like a woman doing her best.', type: 'choice', response: 'The wit does not arrive. She looks at the glass. "No." Quietly. "I am better at it on other evenings." A small shake of the head. The professional composure rolls back in. "The sherry is excellent. The admiral is dead. I have what I need."' },
-      'Q5': { question: 'See you at the Rite.',            type: 'choice', response: '"Eight o\'clock. The Ballroom. Third row from the front, on the left, in the chair I have selected for its proximity to the only door I trust." The glass rises, not quite to you. "The portraits will still be here afterward. So will the admiral. I take some comfort in that and you should too."' },
+      'Q5': { question: 'See you at the Rite.',            type: 'choice', response: '"Eight o\'clock. The Ballroom. Third row from the front, on the left, in the chair I have selected for its proximity to the door, the bar, and the door again." The glass rises, not quite to you. "The portraits will still be here afterward. So will the admiral. I take some comfort in that and you should too."' },
     },
   },
 
@@ -150,9 +150,9 @@ const PROLOGUE_PATCHES = {
     dialogue: {
       'Q1': { question: 'Good evening.',                   type: 'choice', response: '"Bonsoir." She looks at you slightly longer than the greeting requires. "You are the one without a mask. I had heard." A small pause. "I had not been told you would arrive on the terrace at —" she glances briefly at the windows, "seven minutes past." The smile is in the voice. "I had been told you would arrive in the Foyer, which is where serious men go. The terrace is for the other kind. I am pleased to have been wrong about you, Mr. Grey."' },
       'Q2': { question: 'You\'ve been watching me.',       type: 'choice', response: '"I have been watching the room. You crossed the room." A pause, unhurried. "There is a difference. The first is curiosity. The second is — recreation. Tonight has not given me much in the way of recreation. I take what the evening provides."' },
-      'Q3': { question: 'You know the Estate well?',       type: 'choice', response: 'For a moment the warmth is set down somewhere out of sight, like a glass on a railing. The look that replaces it is calm, and patient, and very thorough. "I know what the Estate tells me. The Estate is generous, if one is patient." Then the warmth is picked back up, lightly. "Houses are not unlike men in this regard. The ones worth knowing reveal themselves slowly, and never to anyone in a hurry."' },
+      'Q3': { question: 'You know the Estate well?',       type: 'choice', response: 'For a moment the warmth is set down somewhere out of sight, like a glass on a railing. The look that replaces it is calm and considering. "I know what the Estate tells me. The Estate is generous, if one is patient." Then the warmth is picked back up, lightly. "Houses are not unlike men in this regard. The ones worth knowing reveal themselves slowly, and never to anyone in a hurry."' },
       'Q4': { question: 'Why are you out here alone?',     type: 'choice', response: '"I am not alone. You are here." A fact, observed. "Before that — the Foyer was full of men explaining the Rite to each other in voices designed to be overheard. The drawing room was full of women pretending not to listen." A pause. "The terrace was empty. I have a rule about empty terraces on warm evenings. I keep them company. They are grateful."' },
-      'Q5': { question: 'What do you do here?',            type: 'choice', response: 'A pause longer than the question expects. "I am asked, and I answer. I am told, and I remember." Her eyes do not move from yours. "I am not — at present — being asked, or told. So I am doing the thing one does in the spaces between. I am paying attention." A smaller pause. "Tonight that is a more interesting occupation than usual."' },
+      'Q5': { question: 'What do you do here?',            type: 'choice', response: 'A pause longer than the question expects. "Tonight? I am decorating a terrace. The terrace was previously undecorated. I am told it is an improvement." Her eyes do not move from yours. "On other evenings I do other things. The Estate is good at finding occupations for those who are willing to be — useful. I have, on the whole, been willing."' },
       'Q6': { question: 'I should let you enjoy the evening.', type: 'choice', response: '"Should you." Not quite a question. The gardens go unattended. "Eight o\'clock — the Rite. After eight o\'clock — well." A breath. "Houses tell more after eight o\'clock. So do their guests. So, occasionally, do I." Her head inclines, the smallest fraction. "Bonne soirée, Mr. Grey. The terrace is here when you find your way back to it. I generally am too."' },
     },
   },
@@ -166,8 +166,8 @@ const PROLOGUE_PATCHES = {
       'Q1': { question: 'Good evening.',                   type: 'choice', response: '"Mr. Grey." A nod. "Lord Ashworth said a man named Grey would arrive on the seven o\'clock train. He did not say much else. He never does. He saves his words for rooms with chairs." A slow smile in the voice. "This is not one."' },
       'Q2': { question: 'You\'re not at the assembly?',    type: 'choice', response: '"Not tonight. The grounds want attending to. The grounds always want attending to, and tonight they are kind enough to want it loudly." A nod toward the dark gardens. "There are rooms in this house I am not required to be in. After thirty years one learns to take the Estate up on its kindnesses."' },
       'Q3': { question: 'What\'s the ale like?',           type: 'choice', response: 'He looks at the mug. Considers it. The next sentence comes out the way an architect describes a load-bearing wall: "Fermented short, hopped against the season, and bottled by a brewer who has confused thrift with excellence in the precise way a man does in his last decade of trade." The mug is set down. The voice goes back to where it lives. "It is not what it was."' },
-      'Q4': { question: 'Anything been odd tonight?',      type: 'choice', response: 'A long unhurried look at the gardens, then at you. "The lamps on the south path were lit at six. Three of them were already out by half past. That is not weather. Weather does its work to all the lamps at once." A pause. "I relit them. I will check them again at eight."' },
-      'Q5': { question: 'See you later.',                  type: 'choice', response: '"Likely. I will be on the terrace. I will be in the gardens. I will be near the gate at eight, in case any guests have come without their masks and require — redirection. Mostly I will be here." The mug rises a half-inch. "Old habit. Quiet evenings deserve company."' },
+      'Q4': { question: 'Anything been odd tonight?',      type: 'choice', response: 'A long unhurried look at the gardens, then at you. "Quieter than usual. The deer have been confused by the lamps and have stayed up by the rose-walk longer than they should. Tonight they have not committed to the lower lawn at all." A small dry note. "I would be a poor groundsman if I did not at least notice."' },
+      'Q5': { question: 'See you later.',                  type: 'choice', response: '"Likely. I will be on the terrace. I will be in the gardens. The grounds want a hand on them after dark — they always have." The mug rises a half-inch. "Old habit. Quiet evenings deserve company."' },
     },
   },
 
@@ -175,12 +175,12 @@ const PROLOGUE_PATCHES = {
   // Warmth intro: the room, then him, then the warmth. Whole scene IS the misdirect.
   'surgeon': {
     room: 'map-room',
-    intro: 'The map-room is warm. The lamps are turned up higher than the rooms before it, and the maps on the long table catch the light the way old paper does, which is to say expensively.\n\nThe masked figure leans over the table, one gloved finger resting lightly on a coastline that has been redrawn at least twice in the last century. He looks up the moment you enter — not startled, not summoned, simply available, as if he had been mildly looking forward to the interruption and you have been kind enough to provide it.\n\nThe warmth is the first thing one notices about him. It is the only thing one will, on a careful evening, find unforgivable.',
+    intro: 'The map-room is warm. The lamps are turned up higher than the rooms before it, and the maps on the long table catch the light the way old paper does, which is to say expensively.\n\nThe masked figure leans over the table, one gloved finger resting lightly on a coastline that has been redrawn at least twice in the last century. He looks up the moment you enter — not startled, not summoned, simply available, as if he had been mildly looking forward to the interruption and you have been kind enough to provide it.\n\nThe warmth is the first thing one notices about him.',
     dialogue: {
       'Q1': { question: 'Planning a journey?',             type: 'choice', response: '"Studying an old one." The smile in the voice is gentle, professional. "These maps predate the modern borders by some distance. Whole countries have been politely renamed since the cartographer set down his pen. I find the changes instructive. People are very confident about borders, in my experience, until one shows them an older map. Then they become quieter. It is one of the more useful things a map can do."' },
       'Q2': { question: 'You collect maps?',               type: 'choice', response: '"I read them. Collecting implies one keeps them, and I do not, generally, keep things." The magnifier sets down with the small care of a man who has handled more delicate instruments than this. "I have an interest in the spaces I am asked to be in. Lord Ashworth maintains a remarkable collection. One does not encounter this room twice in a lifetime."' },
-      'Q3': { question: 'Have you been here before?',      type: 'choice', response: '"Tonight is my first formal evening at the Estate." A pause that does not feel like hesitation. "I walked the building when I arrived. I like to understand a house before I am asked to spend an evening in it. Old habit. The hands like to know where the doors are." He smiles, warmly, the way he says everything. "Have I answered your question, Mr. Grey? Or were you asking something else?"' },
-      'Q4': { question: 'You walked the whole building?',  type: 'choice', response: '"The principal rooms. The corridors that connect them. The two staircases — the formal one and the other one. The balcony level above the Ballroom, which has a view I gather is famous." A small, warm pause. "It is famous for a reason. I would recommend it. Before the assembly, ideally. The room is finer when there is no one in it."' },
+      'Q3': { question: 'Have you been here before?',      type: 'choice', response: '"Tonight is my first formal evening at the Estate." A pause that does not feel like hesitation. "Lord Ashworth has the reputation of a man who curates his guests. I would not insult the curation by arriving without curiosity." He smiles, warmly, the way he says everything. "Have I answered your question, Mr. Grey? Or were you asking something else?"' },
+      'Q4': { question: 'You walked the whole building?',  type: 'choice', response: '"Something I have been turning over." A small, warm pause. "Lord Ashworth opens the Register tonight. I have been wondering what kind of man, after forty years of caretaking, decides this is the evening on which to be public about it. There are few good answers to that question. I am paying close attention to which one it turns out to be."' },
       'Q5': { question: 'Looking forward to the Rite?',    type: 'choice', response: '"With what I would call professional interest." Another small smile. "Lord Ashworth has prepared something significant. I have been told it will be memorable. I prefer to arrive at memorable evenings already paying attention — it saves a great deal of effort later on. And I do find I am paying rather close attention this evening. Thank you for asking."' },
     },
   },
@@ -194,7 +194,7 @@ const PROLOGUE_PATCHES = {
       'Q1': { question: 'A good likeness.',                type: 'choice', response: '"It was, fifteen years ago. The painter was competent — competent in the particular old-fashioned sense, which is to say willing to render his subject as he found him rather than as the subject had hoped to be found. The result is honest. Honesty is not, as you may have noticed, the prevailing aesthetic of contemporary portraiture. It survives in attics and Society galleries, and very few other places."' },
       'Q2': { question: 'You know him well?',              type: 'choice', response: '"Long enough to recognise the work, sufficient to attend the Rite, insufficient to be surprised by anything that happens in it." A small observational pause. "Six years preparing. I have learned, in the course of an unremarkable life, to take six-year preparations seriously. Three years one might dismiss as stubbornness. Four is excessive. Six is a position." The faintest amusement. "And Ashworth has never, in my acquaintance, taken a position he did not intend to defend."' },
       'Q3': { question: 'You don\'t sound entertained.',   type: 'choice', response: '"On the contrary. You are early. I have been here some time and you are the first person to address me in any of it." A small unguarded note — gone before you can decide it was there. "Either I am better-disguised than I had hoped, or the company is worse. I will not press for which."' },
-      'Q4': { question: 'See you at eight.',               type: 'choice', response: '"The Ballroom. Eight o\'clock. I shall be there in the capacity of an attentive observer — the only capacity I have ever been any good at, and the one I have made, over the course of a quiet career, into something approaching a profession." A small real nod. "Find me afterward, Mr. Grey. The interesting conversations begin once the formal one is over. They always have."' },
+      'Q4': { question: 'See you at eight.',               type: 'choice', response: '"The Ballroom. Eight o\'clock. I shall sit somewhere to the rear and let the senior members do the senior work. It is a division of labour the Society has been operating for a very long time, and I see no reason to spoil it." A small real nod. "Until then, the portrait."' },
     },
   },
 
@@ -239,6 +239,12 @@ function _applyPatches() {
       composure:        c.composure,
       composure_state:  c.composure_state,
       deceptions:       c.deceptions,
+      // Stash the full INTERROGATION_DATA entry so post-paywall lines
+      // (composure_variants, backstory_chain, snapbacks, consequence_echoes)
+      // CANNOT fire during prologue. Pre-murder gating safety net.
+      interrogation_data: window.INTERROGATION_DATA && window.INTERROGATION_DATA[charId]
+                          ? window.INTERROGATION_DATA[charId]
+                          : undefined,
     };
     c.dialogue         = patch.dialogue;
     c.intro            = patch.intro;
@@ -252,6 +258,27 @@ function _applyPatches() {
     c.composure        = 100;
     c.composure_state  = 'normal';
     c.deceptions       = undefined;
+    // Replace INTERROGATION_DATA[charId] with a neutered entry. Any code path
+    // that consults composure_variants, backstory_chain, snapbacks, or echoes
+    // during prologue will find empty objects and exit safely.
+    if (window.INTERROGATION_DATA && window.INTERROGATION_DATA[charId]) {
+      window.INTERROGATION_DATA[charId] = {
+        counter_strategy:    'cooperate',
+        optimal_technique:   'account',
+        composure_floor:     100,
+        fracture_threshold:  0,
+        baseline:            { text: '', sentence_avg: 'medium', formality: 'medium', tell: '' },
+        composure_variants:  {},
+        backstory_chain:     {},
+        backstory_chain_addendum: {},
+        scharff_corrections: {},
+        consequence_echoes:  {},
+        word_tell:           null,
+        approach_response:   '',
+        silence_fill:        '',
+        silence_tell:        '',
+      };
+    }
     if (gameState.char_dialogue_complete) {
       gameState.char_dialogue_complete[charId] = {};
     }
@@ -276,6 +303,10 @@ function _restorePatches() {
     c.composure        = orig.composure;
     c.composure_state  = orig.composure_state;
     c.deceptions       = orig.deceptions;
+    // Restore the original INTERROGATION_DATA entry.
+    if (window.INTERROGATION_DATA && orig.interrogation_data !== undefined) {
+      window.INTERROGATION_DATA[charId] = orig.interrogation_data;
+    }
     if (gameState.char_dialogue_complete) {
       gameState.char_dialogue_complete[charId] = {};
     }
