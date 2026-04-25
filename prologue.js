@@ -10,6 +10,8 @@
 
 'use strict';
 
+console.log('[prologue.js] loaded');
+
 // ── STATE ──────────────────────────────────────────────────
 window.PROLOGUE_STATE = {
   active:                false, // true once startPrologue fires

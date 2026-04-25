@@ -570,6 +570,9 @@ function _buildCharDots() {
       zone = document.createElement('div');
       zone.id = `char-zone-${roomId}`;
       zone.className = 'estate-portrait-zone';
+      // PROLOGUE — ensure card sits above hotspot layer so clicks register
+      zone.style.position = zone.style.position || 'relative';
+      zone.style.zIndex = '50';
       roomEl.appendChild(zone);
     }
 
@@ -611,6 +614,7 @@ function _buildCharDots() {
       }
 
       card.addEventListener('click', e => {
+        console.log('[card-click] card clicked for', charId, 'in', roomId);
         e.stopPropagation();
         // Multi-char room: set active/inactive
         if (chars.length > 1) {
