@@ -60,117 +60,150 @@ window.PROLOGUE_NPC_POSITIONS = {
 // Rowe is NOT patched — his existing engine (intro→FUNNEL→duel) handles him.
 const PROLOGUE_PATCHES = {
 
+  // ── THE CURATOR ─────────────────────────────────────────────────
+  // Unmasked. Ceremonial. Dry. Carries the lore weight.
   'curator': {
     room: 'foyer',
-    intro: 'He is in the Foyer when you enter, unmasked, hands clasped behind his back. He inclines his head a fraction — the precise fraction owed to a guest of the house. He has been waiting for you.',
+    intro: 'He stands in the Foyer, unmasked, hands folded behind his back. The Estate has had a Curator for longer than most of its members have been alive, and he has the bearing of a man who is on familiar terms with that fact. He inclines his head a precise, ceremonial fraction as you cross the threshold.\n\n"Mr. Grey." He says it the way one notes a delivery has arrived on schedule. "The Estate was expecting you. Come in. You are six minutes early, which speaks rather well of you."',
     dialogue: {
-      'Q1': { question: 'You were expecting me.',          type: 'choice', response: '"The Estate was. I am one of the Estate\'s instruments tonight. Lord Ashworth thought it appropriate that you be received by someone whose role this evening is largely ceremonial. The ceremony precedes the Rite. The Rite begins at eight."' },
-      'Q2': { question: 'What should I do until then?',     type: 'choice', response: '"Anything that is not the Ballroom. The Ballroom is closed until the assembly convenes. The grounds are open. The guests are masked. You are not. That is intentional. It is the only courtesy the Estate offers a first-time visitor before the Rite."' },
-      'Q3': { question: 'What kind of man is Lord Ashworth?', type: 'choice', response: '"Lord Ashworth has run this Estate for forty years. He keeps records that most institutions would prefer did not exist. Tonight he will open the Black Register during the Rite. The Register has not been opened in public in living memory. That should tell you what kind of evening this is."' },
-      'Q4': { question: 'Anything else I should know?',     type: 'choice', response: '"The Rite at eight. The Ballroom at eight. Until then — the manor is yours, within the limits I have already described. Welcome to the Estate, Mr. Grey."' },
+      'Q1': { question: 'You were expecting me.',          type: 'choice', response: '"The Estate was. The Estate is generally expecting someone. Tonight it happens to be you." A small, dry pause. "Lord Ashworth thought it appropriate that a first-time visitor be received by someone whose duties this evening are largely ceremonial. I am the ceremonial part. The Rite is the rest. The Rite begins at eight. Until then I am, broadly speaking, decorative."' },
+      'Q2': { question: 'What is the Rite, exactly?',      type: 'choice', response: '"A ceremony. Tonight, a particular ceremony." He pauses, choosing words. "Lord Ashworth will open the Black Register before the assembled membership. The Register has not been opened in public in living memory. Most of the people in this building tonight have been preparing for that fact for some time. A few of them have been preparing in ways the Register itself will eventually describe."' },
+      'Q3': { question: 'What kind of man is Lord Ashworth?', type: 'choice', response: '"Meticulous. He has run this Estate for forty years and has, in that time, declined to misplace anything — a record, a name, a debt." Another pause. "He has been preparing for tonight for six years. When a man spends six years preparing to say a thing in public, what he intends to say is usually either very true or very dangerous. In Lord Ashworth\'s case it tends to be both. That is the work of the evening."' },
+      'Q4': { question: 'Why am I not wearing a mask?',    type: 'choice', response: '"Because you are not yet a member. The mask is a courtesy the Estate extends to those it has reason to conceal. Tonight, the Estate has reason to conceal nearly everyone. You may take some comfort in being the exception, or you may not. Most people, in my experience, do not."' },
+      'Q5': { question: 'Where should I go until eight?',  type: 'choice', response: '"Anywhere that is not the Ballroom. The Ballroom is closed until the assembly convenes. The grounds are open. The guests are masked, and they will not, as a rule, introduce themselves. Try not to read this as rudeness. Read it as architecture." A measured nod. "Welcome to the Estate, Mr. Grey."' },
     },
   },
 
+  // ── NORTHCOTT (masked) ──────────────────────────────────────────
+  // Earnest, precise, six weeks in. Notebook present, no role/title revealed.
   'northcott': {
     room: 'weapons-room',
-    intro: 'A young man in the armory, in front of the mounted sabres, hands behind his back. He is not masked — he is staff-rank tonight, or close enough to it. A leather-bound notebook is tucked under his arm.',
+    intro: 'A young masked figure stands before the mounted sabres with the upright posture of a man who has been told to be somewhere and has decided to be there exactly. A leather-bound notebook is tucked under one arm. He looks up sharply when you enter — caught between a polite nod and an outright salute, and committing fully to neither.',
     dialogue: {
-      'Q1': { question: 'Admiring the swords?',           type: 'choice', response: '"I am being told something by them. I have not yet decided what. Lord Ashworth asked me to be on the grounds tonight and to keep a notebook. He did not say I had to be in any particular room. I find the room that has decorative weapons usefully clarifies what one is doing here."' },
-      'Q2': { question: 'What\'s the notebook for?',       type: 'choice', response: '"Arrivals. Lord Ashworth gave it to me six weeks ago. He said: write everyone down, write the time exact, circle anything that seems wrong. I have been wondering what wrong looks like ever since. I will be in the Foyer once the assembly draws closer. Until then I am here."' },
-      'Q3': { question: 'What\'s Lord Ashworth like?',     type: 'choice', response: '"Precise. He speaks the way people write contracts. Every word means what it means and not more. Six weeks ago he told me to keep the notebook. He did not tell me why. I have learned that when Ashworth does not tell you something, it is because you will understand it when the time comes."' },
+      'Q1': { question: 'Admiring the swords?',           type: 'choice', response: '"They are decorative. None of them have an edge. I have checked." A small pause, as if catching himself. "Not for any reason. I am told it is appropriate to know the building one is asked to be in. I am — being thorough about it."' },
+      'Q2': { question: 'What\'s the notebook for?',       type: 'choice', response: '"Notes." He says it, then appears to find this insufficient. "I have been asked to keep a record this evening. Times, mostly. I am to record anything that strikes me as wrong. I have spent the last six weeks attempting to determine what wrong looks like in advance and have made very little progress."' },
+      'Q3': { question: 'You don\'t sound certain you should be here.', type: 'choice', response: '"I have been told I have the right temperament." He glances at the notebook. "I am still attempting to identify which temperament that was. The man who told me did not specify, and he is not the sort one asks twice."' },
+      'Q4': { question: 'See you at the Rite.',            type: 'choice', response: '"Eight o\'clock. The Ballroom. I will be in the Foyer by then — that is part of the arrangement." A short, careful pause. "Please excuse the notebook. I am told it is conspicuous. I am told a great many things."' },
     },
   },
 
+  // ── THE STEWARD (masked) ────────────────────────────────────────
+  // Fourteen years. Sir. Hands behind back. The candelabra fraction.
   'steward': {
     room: 'dining-room',
-    intro: 'A man in the Dining Room, masked, adjusting a candle that does not need adjusting. He turns when you enter — slowly, as a man who has been listening to the floorboards.',
+    intro: 'A masked figure stands by the long table, adjusting a candelabra by a fraction so small it cannot be necessary. He turns when you enter — slowly, in the manner of a man who has heard you approach and has chosen the pace of his turn carefully.',
     dialogue: {
-      'Q1': { question: 'Quiet evening so far.',           type: 'choice', response: '"It will not stay quiet. The Rite is at eight. They are all here already, most of them. They are waiting to be looked at. They have been waiting six weeks."' },
-      'Q2': { question: 'You know the Estate well?',       type: 'choice', response: '"Long enough. I have been here a number of years. I do not count them."' },
-      'Q3': { question: 'What kind of man is Lord Ashworth?', type: 'choice', response: '"Lord Ashworth runs the Estate the way estates are run. He keeps records. He makes decisions. Tonight he will open the Black Register at the Rite. I am told it will be memorable. I do not ask what that means."' },
-      'Q4': { question: 'Have a good evening.',            type: 'choice', response: '"I will have the evening I am given. Good evening."' },
+      'Q1': { question: 'Quiet so far.',                   type: 'choice', response: '"It will not remain so, sir. The assembly has nearly arrived. Most of them are already in the building. The remainder will be along shortly." He inclines his head a fraction. "After eight, the evening will arrange itself."' },
+      'Q2': { question: 'You\'ve been here a long time.',  type: 'choice', response: '"Long enough, sir. The house has not required me to count." A pause that does not require him to elaborate. He does not elaborate.' },
+      'Q3': { question: 'What\'s the Rite like?',          type: 'choice', response: '"A formal occasion, sir. Lord Ashworth will open the Black Register. It is the centerpiece of the evening." A measured pause. "I am told tonight\'s reading will be memorable. I am not in a position to know what is meant by that, and I have learned not to inquire."' },
+      'Q4': { question: 'Have a good evening.',            type: 'choice', response: '"I will have the evening I am given, sir. Good evening." He returns to the candelabra. The fraction it required is still being attended to.' },
     },
   },
 
+  // ── THE BARON (masked) ──────────────────────────────────────────
+  // Bored. Cigar. Never first to speak. Knives Out wit.
   'baron': {
     room: 'study',
-    intro: 'A man in the Study, his back to the door, smoking. The mask is a heavy carnival piece — feathered, expensive, of a kind that draws attention by trying not to.',
+    intro: 'A masked figure stands by the fireplace with his back half-turned to the door. Cigar smoke trails in a thin blue line toward the ceiling, where it seems to be in no particular hurry. The mask is heavy — feathered, expensive, the kind that announces itself by trying not to. He does not turn when you enter.',
     dialogue: {
-      'Q1': { question: 'Good evening.',                   type: 'choice', response: '"Is it." Not a question. He does not turn. "It is an evening. I will reserve judgment until I have seen more of it."' },
-      'Q2': { question: 'You don\'t enjoy these things.',  type: 'choice', response: '"I enjoy things that do not require me to wear a face I did not select." A short exhale. "The Rite is at eight. Until then I am declining to participate in the smaller rite of pretending to enjoy the larger one."' },
-      'Q3': { question: 'What should I know about Lord Ashworth?', type: 'choice', response: '"Ashworth is meticulous. He has been preparing for tonight\'s Rite for six years. When a man spends six years preparing to say something in public, it is usually because what he intends to say is either very true or very dangerous." A pause. "In Ashworth\'s case it is both."' },
+      'Q1': { question: 'Good evening.',                   type: 'choice', response: '"Is it." Not a question. A small exhale of smoke. "I am withholding judgment until the evening produces evidence one way or the other. So far it has produced cigars and small talk, which is not, by my count, sufficient."' },
+      'Q2': { question: 'Not enjoying yourself?',          type: 'choice', response: '"I have a personal objection to wearing a face I did not choose, in a room arranged by men I did not invite, on the schedule of a clock I do not own." A pause, dry. "Apart from that, the evening is going beautifully."' },
+      'Q3': { question: 'What should I know about Lord Ashworth?', type: 'choice', response: '"Ashworth is meticulous. He has been preparing for tonight for six years. When a man spends six years preparing to say a thing in public, what he means to say is generally either very true or very dangerous." Another exhale. "Ashworth tends to manage both. It is one of his less endearing qualities."' },
+      'Q4': { question: 'Looking forward to the Rite?',    type: 'choice', response: '"I am looking forward to its conclusion. The Rite begins at eight. Anything worth attending happens after the formal part is over and the Estate stops pretending it is doing anything other than precisely what it is doing." He does not turn. "Until then, I am here. Approximately."' },
     },
   },
 
+  // ── LADY ASHWORTH (masked) ──────────────────────────────────────
+  // Letter in hand. Past tense. Tired.
   'ashworth': {
     room: 'conservatory',
-    intro: 'A woman in the conservatory, masked. She is holding a letter. She does not appear to be reading it. She does not put it down.',
+    intro: 'A masked woman stands among the glass and the trailing greenery, a folded letter held between gloved fingers. She is not reading it. She does not appear to have been reading it for some time. The conservatory lamps catch the edge of the paper without seeming to interest her.',
     dialogue: {
-      'Q1': { question: 'Good evening.',                   type: 'choice', response: '"Good evening." She folds the letter once. "The assembly is gathering. The Rite begins at eight."' },
-      'Q2': { question: 'Are you waiting for someone?',    type: 'choice', response: '"I am waiting for the Rite." A pause. "I have been waiting for some time."' },
-      'Q3': { question: 'Enjoying the party?',             type: 'choice', response: 'A small pause. "I do not attend these things for enjoyment." She looks at the glass panels. "I attend them because they are meant to be attended."' },
+      'Q1': { question: 'Good evening.',                   type: 'choice', response: '"Good evening." She folds the letter once, neatly, along a crease that has been folded a great many times before. "The assembly is gathering. I gather one is meant to gather with it."' },
+      'Q2': { question: 'Are you waiting for someone?',    type: 'choice', response: '"I am waiting for eight o\'clock." A pause. "I have been waiting for some time. Eight o\'clock has been very stubborn about arriving."' },
+      'Q3': { question: 'The Rite must be important to you.', type: 'choice', response: '"It is a Rite. They are all important. Tonight\'s is — particular." She looks toward the glass panels. "Some men prepare a speech. Others prepare a building, an audience, an evening. I am told there is a difference. I am still waiting to be persuaded by it."' },
+      'Q4': { question: 'I\'ll leave you to it.',          type: 'choice', response: '"Thank you." She does not look up. "Eight o\'clock will be along. It always is, eventually."' },
     },
   },
 
+  // ── CRANE (masked) ──────────────────────────────────────────────
+  // Examining a portrait closely. Clinical curiosity. Sharp.
   'crane': {
     room: 'gallery',
-    intro: 'A woman in the Gallery, masked, examining one of the portraits with focused attention.',
+    intro: 'A masked woman stands close to one of the portraits — closer than the gallery convention suggests, near enough that the lamp picks up a glint at her cuff. She is examining the brushwork with the focused, slightly impatient attention of a person accustomed to looking at things that cannot look back.',
     dialogue: {
-      'Q1': { question: 'A friend of yours?',              type: 'choice', response: '"None of these are. I am examining the brushwork. The painters of two centuries ago worked with unusual precision."' },
-      'Q2': { question: 'You attend the Rite often?',      type: 'choice', response: '"I attend in a professional capacity. Lord Ashworth is meticulous. The Society is generally well-managed."' },
-      'Q3': { question: 'See you at the Rite.',            type: 'choice', response: 'A small nod. "Eight o\'clock. The portraits will still be here afterward."' },
+      'Q1': { question: 'A friend of yours?',              type: 'choice', response: '"None of them are. I am examining the technique. The painters of two centuries ago worked with a precision that has since gone out of fashion, along with a great deal of other useful behaviour."' },
+      'Q2': { question: 'You attend these often?',         type: 'choice', response: '"When my attendance serves a purpose. The Estate is generally well-managed. Lord Ashworth is meticulous. I find that comforting in the same way one finds a sharpened instrument comforting — the comfort comes from the precision, not from the instrument itself."' },
+      'Q3': { question: 'What do you make of tonight?',    type: 'choice', response: '"I make very little of it yet. The Rite begins at eight. Until then I am examining a portrait. The portrait, fortunately, has no opinions about the evening. Several of the people behind me cannot say the same."' },
+      'Q4': { question: 'See you at the Rite.',            type: 'choice', response: '"Eight o\'clock. The portraits will still be here afterward, which is more than can reliably be said for some of the company."' },
     },
   },
 
+  // ── VIVIENNE (masked) ───────────────────────────────────────────
+  // French. Sees everything. Plays at the moment.
   'vivienne': {
     room: 'terrace',
-    intro: 'A woman on the terrace, smoothing her apron. She does not stop when you enter. She does not bow.',
+    intro: 'A masked woman stands at the terrace balustrade, half-turned away from the lamps, watching the dark of the gardens with an attention that does not match the casual angle of her shoulders. She does not turn when you arrive. She has heard you. She is choosing the moment.',
     dialogue: {
-      'Q1': { question: 'Good evening.',                   type: 'choice', response: '"Bonsoir." A glance, then back to the apron. "You are the one Lord Ashworth has been waiting for."' },
-      'Q2': { question: 'He told you about me?',           type: 'choice', response: '"He told no one. The house tells. I have been here some years. The house is generous with what it tells me. Other houses are not so generous. I prefer this one."' },
-      'Q3': { question: 'I\'ll let you work.',              type: 'choice', response: '"Merci. Eight o\'clock the Rite. After eight o\'clock — the house will tell more. It always does."' },
+      'Q1': { question: 'Good evening.',                   type: 'choice', response: '"Bonsoir." A small smile, audible if not visible behind the mask. "You are the one without a mask. That is interesting. The Estate is doing it on purpose. The Estate does most things on purpose, in my experience."' },
+      'Q2': { question: 'You know the Estate well?',       type: 'choice', response: '"I know what the Estate tells me. The Estate is generous with what it tells, if one is patient and asks the right rooms. I have found this house to be a great deal more talkative than its owner."' },
+      'Q3': { question: 'Why are you on the terrace?',     type: 'choice', response: '"The Foyer is full of men explaining the Rite to one another. The Drawing Room is full of women pretending not to listen. The terrace is full of nothing, which I prefer." A pause. "Also it is cooler. The masks are warm. No one mentions this. Everyone is too dignified."' },
+      'Q4': { question: 'I\'ll let you enjoy it.',         type: 'choice', response: '"Merci. Eight o\'clock the Rite. After eight o\'clock — well. Houses tell more after eight o\'clock. They cannot help themselves."' },
     },
   },
 
+  // ── HATCH (masked) ──────────────────────────────────────────────
+  // Thirty years on the grounds. Notes the time. Old habit.
   'hatch': {
     room: 'terrace',
-    intro: 'A man on the terrace. Tools visible nearby. He was expecting someone — possibly not you, but someone.',
+    intro: 'A masked man stands at the far end of the terrace, near the low wall that drops to the gardens. He is unhurried. He is not waiting for anyone in particular, but if someone were going to come along, this is the angle he would have chosen for it. A small set of tools rests on the stone beside him.',
     dialogue: {
-      'Q1': { question: 'Good evening.',                   type: 'choice', response: 'He nods. "Mr. Grey. Lord Ashworth said a man named Grey would arrive on the train tonight. He did not say much else. He is sparing with what he says."' },
-      'Q2': { question: 'Have you seen anything unusual?', type: 'choice', response: '"Not yet. I am keeping watch. Lord Ashworth asked me to. He did not say what for. He said I would know it when I saw it. I have not yet seen it."' },
-      'Q3': { question: 'I\'ll come back if I need anything.', type: 'choice', response: '"You will know where to find me. The cottage is open tonight. It is open most nights, but tonight it is open with intention."' },
+      'Q1': { question: 'Good evening.',                   type: 'choice', response: '"Mr. Grey." A small nod. "Lord Ashworth said a man named Grey would arrive on the seven o\'clock train. He did not say much else. He is sparing with what he says, particularly when he has spent six weeks deciding to say it."' },
+      'Q2': { question: 'You\'re not in the assembly.',    type: 'choice', response: '"Not tonight. The grounds want attending to. The grounds always want attending to." A pause. "There are rooms in this house I am not required to be in. I tend to use that as guidance."' },
+      'Q3': { question: 'What time is the Rite?',          type: 'choice', response: '"Eight o\'clock. Lord Ashworth will open the Black Register." Another small nod. "After that, the evening will go where the evening goes. I will be on the terrace. I will note the time of things. Old habit."' },
+      'Q4': { question: 'Quiet evening so far.',           type: 'choice', response: '"It is. The quiet ones are the ones I remember most clearly afterward." He does not elaborate. He returns his attention to the gardens, where there is, at present, nothing in particular to attend to.' },
     },
   },
 
+  // ── THE SURGEON (masked) ────────────────────────────────────────
+  // Warm. Helpful. Too helpful. Already noticing the rooms.
   'surgeon': {
     room: 'map-room',
-    intro: 'A man in the Map Room, masked, examining a chart pinned open on the desk. He looks up at the right moment — the precise moment — when you enter.',
+    intro: 'A masked figure leans over the map-room table, gloved fingers tracing a coastline that has been redrawn at least twice in the last century. He looks up the moment you enter, as if he has been mildly looking forward to the interruption. His attention is warm. That is the first thing one notices about him.',
     dialogue: {
-      'Q1': { question: 'Studying maps?',                  type: 'choice', response: '"A habit. I find geography clarifies certain questions. Forgive the abstraction."' },
-      'Q2': { question: 'You\'re a member?',               type: 'choice', response: '"Affiliated. I attend out of courtesy and the chance to see colleagues I do not see often."' },
-      'Q3': { question: 'Until eight, then.',              type: 'choice', response: '"Until eight. Enjoy the evening. The maps will be here when you return — should you return."' },
+      'Q1': { question: 'Planning a journey?',             type: 'choice', response: '"Studying an old one. These maps predate the modern borders by some distance. Whole countries have been politely renamed since this one was drafted." A small, precise smile, audible in the voice. "I find the changes instructive. People are very confident about borders until one shows them an older map."' },
+      'Q2': { question: 'You collect maps?',               type: 'choice', response: '"I read them. Collecting implies one keeps them, and I do not, generally, keep things." He sets the magnifier down with the small care of someone who has handled more delicate instruments than this. "I have an interest in the spaces I am asked to be in. Lord Ashworth maintains a remarkable collection. One does not encounter this room twice in a lifetime."' },
+      'Q3': { question: 'Have you been here before?',      type: 'choice', response: '"Tonight is my first formal evening at the Estate." A pause that does not feel like hesitation. "I walked the building when I arrived. I like to understand a house before I am asked to spend an evening in it. Old habit. The hands like to know where the doors are." He says it warmly. He says everything warmly.' },
+      'Q4': { question: 'Looking forward to the Rite?',    type: 'choice', response: '"I am looking forward to it with what I would call professional interest." Another small smile. "Lord Ashworth has prepared something significant. I have been told it will be memorable. I prefer to arrive at memorable evenings already paying attention. It saves a great deal of effort later on."' },
     },
   },
 
+  // ── GREAVES (masked) ────────────────────────────────────────────
+  // Detached. Treats the evening as observed phenomenon. Dry.
   'greaves': {
     room: 'gallery',
-    intro: 'A man in the Portrait Gallery, alone, masked. A drink, a book, and a chair pulled out as though he has been considering whether to sit at it for some time.',
+    intro: 'A masked figure stands before a portrait of Lord Ashworth, head tilted at the small judicial angle of a man comparing the painted version against the original. He does not turn at your approach. He has, however, registered it — the line of his shoulders adjusts a fraction without acknowledgement.',
     dialogue: {
-      'Q1': { question: 'Good evening.',                   type: 'choice', response: '"Mr. Grey. The Estate said you would arrive tonight. I am pleased the train was on time. Trains in this part of the country are not reliably so."' },
-      'Q2': { question: 'You\'re not at the Rite yet?',    type: 'choice', response: '"I do not gather before the gathering. I find pre-Rite mingling unproductive. I will be elsewhere until the assembly is called. The Estate knows where to find me."' },
-      'Q3': { question: 'See you at eight.',               type: 'choice', response: '"Eight o\'clock. Good evening."' },
+      'Q1': { question: 'A good likeness.',                type: 'choice', response: '"It was, fifteen years ago. The painter was competent. The subject has aged in the meantime, as subjects tend to. The painting has not, which gives it a small but persistent advantage in any direct comparison."' },
+      'Q2': { question: 'You know him well?',              type: 'choice', response: '"Long enough to recognise the work, sufficient to attend the Rite, insufficient to be surprised by anything that happens in it." A small, observational pause. "Lord Ashworth has been preparing for tonight for six years. I have learned, in the course of an unremarkable life, to take six-year preparations seriously. Three years one might dismiss. Four is excessive. Six is a position."' },
+      'Q3': { question: 'You don\'t sound entertained.',   type: 'choice', response: '"I am being entertained at precisely the level the evening is currently providing, which is to say, modestly. The Rite is at eight. Most of the interesting behaviour in this building waits until then to identify itself. Until it does, I am admiring a portrait. The portrait, mercifully, makes no demands."' },
+      'Q4': { question: 'See you at eight.',               type: 'choice', response: '"The Ballroom. Eight o\'clock. I shall be there in the capacity of an attentive observer. It is the capacity I am best suited to. I have never been quite suited to anything else."' },
     },
   },
 
+  // ── PEMBERTON-HALE (masked) ─────────────────────────────────────
+  // Composed. Formal. Volunteers Routine without being asked.
   'pemberton-hale': {
     room: 'trophy-room',
-    intro: 'A masked man in the Trophy Room, examining a glass case with his back to the door. He turns slowly, in the manner of someone who heard you coming long before you arrived.',
+    intro: 'A tall masked figure stands among the cases and mounted heads with the faintly bored attention of a man inventorying a room he already knows the contents of. His gloved hands are clasped behind his back. He turns at your approach with the smooth rotation of a man who has practised turning at approaches.',
     dialogue: {
-      'Q1': { question: 'Quiet in here.',                  type: 'choice', response: '"It is. The Trophy Room is quiet because the trophies are the most honest people in the Estate. They were what they were and are no longer pretending to be otherwise."' },
-      'Q2': { question: 'You\'re a member of the Society?', type: 'choice', response: '"I am. There are ranks within the Society. The Society notices the differences. I have noticed that the Society notices."' },
-      'Q3': { question: 'Until the Rite.',                 type: 'choice', response: '"Until the Rite. Eight o\'clock. I will be nearby from quarter to. I have my reasons. They are my own."' },
+      'Q1': { question: 'Quite a collection.',             type: 'choice', response: '"It is. None of it earned, of course. Lord Ashworth does not hunt. The pieces were acquired — most through estate sales, a few through the Society itself. They are decorative. The Estate is fond of decoration that communicates something." A precise pause. "Routine, by the standards of houses of this kind."' },
+      'Q2': { question: 'What do they communicate?',       type: 'choice', response: '"Continuity. Means. The particular confidence of an institution that expects to outlast its current occupants by a margin." A small, formal half-smile, audible in the voice. "The Estate has been making this kind of statement for two centuries. It tends to make it well."' },
+      'Q3': { question: 'You\'re here for the Rite, then.', type: 'choice', response: '"Everyone here is here for the Rite. Lord Ashworth will open the Black Register at eight o\'clock. The Register is the Estate\'s permanent record. Whatever is read into it tonight becomes — formally — part of the Estate." He chooses the formality of the phrase carefully. "It is, by the standards of the Society, a significant evening."' },
+      'Q4': { question: 'You sound prepared.',             type: 'choice', response: '"I prefer to be prepared. The unprepared find these evenings rather longer than the prepared do. It is one of the small mercies of attending to one\'s affairs in advance."' },
     },
   },
+
 };
 
 // ── PATCH APPLICATION ──────────────────────────────────────
