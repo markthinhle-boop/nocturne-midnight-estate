@@ -41,7 +41,7 @@ const PROLOGUE_FREE_ROOMS = [
 window.PROLOGUE_NPC_POSITIONS = {
   'foyer':                  ['curator'],
   'gallery':                ['steward','crane'],
-  'study':                  ['ashworth'],
+  'study':                  [],
   'terrace':                ['baron'],
   'maids-quarters':         ['vivienne'],
   'groundskeeper-cottage':  ['hatch'],
@@ -50,7 +50,7 @@ window.PROLOGUE_NPC_POSITIONS = {
   'trophy-room':            ['pemberton-hale'],
   'billiard-room':          ['rowe'],
   'weapons-room':           ['northcott'],
-  'conservatory':           [],
+  'conservatory':           ['ashworth'],
 };
 
 // ── TIER 1 DIALOGUE PATCHES ─────────────────────────────────
@@ -66,7 +66,7 @@ const PROLOGUE_PATCHES = {
     dialogue: {
       'Q1': { question: 'You were expecting me.',          type: 'choice', response: '"The Estate was. I am one of the Estate\'s instruments tonight. Lord Ashworth thought it appropriate that you be received by someone whose role this evening is largely ceremonial. The ceremony precedes the Rite. The Rite begins at eight."' },
       'Q2': { question: 'What should I do until then?',     type: 'choice', response: '"Anything that is not the Ballroom. The Ballroom is closed until the assembly convenes. The grounds are open. The guests are masked. You are not. That is intentional. It is the only courtesy the Estate offers a first-time visitor before the Rite."' },
-      'Q3': { question: 'Who am I looking for, exactly?',   type: 'choice', response: '"You are looking for nothing. You are being looked at by everyone. Mr. Rowe is in the Billiard Room. Of the guests tonight he is the only one who is not masked. The Estate makes one such exception per Rite. Lord Ashworth thought you should know that the exception, this evening, is Mr. Rowe."' },
+      'Q3': { question: 'What kind of man is Lord Ashworth?', type: 'choice', response: '"Lord Ashworth has run this Estate for forty years. He keeps records that most institutions would prefer did not exist. Tonight he will open the Black Register during the Rite. The Register has not been opened in public in living memory. That should tell you what kind of evening this is."' },
       'Q4': { question: 'Anything else I should know?',     type: 'choice', response: '"The Rite at eight. The Ballroom at eight. Until then — the manor is yours, within the limits I have already described. Welcome to the Estate, Mr. Grey."' },
     },
   },
@@ -77,7 +77,7 @@ const PROLOGUE_PATCHES = {
     dialogue: {
       'Q1': { question: 'Admiring the swords?',           type: 'choice', response: '"I am being told something by them. I have not yet decided what. Lord Ashworth asked me to be on the grounds tonight and to keep a notebook. He did not say I had to be in any particular room. I find the room that has decorative weapons usefully clarifies what one is doing here."' },
       'Q2': { question: 'What\'s the notebook for?',       type: 'choice', response: '"Arrivals. Lord Ashworth gave it to me six weeks ago. He said: write everyone down, write the time exact, circle anything that seems wrong. I have been wondering what wrong looks like ever since. I will be in the Foyer once the assembly draws closer. Until then I am here."' },
-      'Q3': { question: 'You\'re not a member?',          type: 'choice', response: '"Not before tonight. Tonight I am being inducted in some fashion that has not been fully explained to me. I find this is consistent with most of my dealings with this Estate."' },
+      'Q3': { question: 'What\'s Lord Ashworth like?',     type: 'choice', response: '"Precise. He speaks the way people write contracts. Every word means what it means and not more. Six weeks ago he told me to keep the notebook. He did not tell me why. I have learned that when Ashworth does not tell you something, it is because you will understand it when the time comes."' },
     },
   },
 
@@ -87,18 +87,8 @@ const PROLOGUE_PATCHES = {
     dialogue: {
       'Q1': { question: 'Quiet evening so far.',           type: 'choice', response: '"It will not stay quiet. The Rite is at eight. They are all here already, most of them. They are waiting to be looked at. They have been waiting six weeks."' },
       'Q2': { question: 'How long have you served here?',  type: 'choice', response: '"Long enough. Fourteen years. I do not count past that. There is no reason to."' },
-      'Q3': { question: 'You\'re polishing candles.',       type: 'choice', response: 'A small smile that does not reach the mask. "I do not polish candles. I check that they will burn evenly. The Estate notices small failures more readily than large ones. I have learned to be where the small failures begin."' },
+      'Q3': { question: 'What kind of man is Lord Ashworth?', type: 'choice', response: '"Lord Ashworth runs the Estate the way estates are run. He keeps records. He makes decisions. Tonight he will open the Black Register at the Rite. I am told it will be memorable. I do not ask what that means."' },
       'Q4': { question: 'Have a good evening.',            type: 'choice', response: '"I will have the evening I am given. Good evening, Mr. Grey."' },
-    },
-  },
-
-  'ashworth': {
-    room: 'study',
-    intro: 'Lord Ashworth in his study. Alive. Masked — a heavy carved mask, formal, the Lord of the Rite. He turns the mask toward you and lifts it for a moment so you see him fully, then lowers it back into place.',
-    dialogue: {
-      'Q1': { question: 'Lord Ashworth.',                  type: 'choice', response: 'He nods through the mask. "Mr. Grey. Welcome. I will not detain you. I have one or two arrangements still to make before the Rite. We will speak properly afterward — I have set aside time for it."' },
-      'Q2': { question: 'Why am I here?',                  type: 'choice', response: 'He pauses with the mask half-lifted. Then settles it again. "We will speak afterward. That is my preference and my answer. The Rite first."' },
-      'Q3': { question: 'You seem distracted.',            type: 'choice', response: 'A long look through the mask. "I am where I expected to be. That is not the same thing as being unworried. Forgive me — the night requires attention I cannot give to conversation. Eight o\'clock, Mr. Grey."' },
     },
   },
 
@@ -108,7 +98,17 @@ const PROLOGUE_PATCHES = {
     dialogue: {
       'Q1': { question: 'Good evening.',                   type: 'choice', response: '"Is it." Not a question. He does not turn. "It is an evening. I will reserve judgment until I have seen more of it."' },
       'Q2': { question: 'You don\'t enjoy these things.',  type: 'choice', response: '"I enjoy things that do not require me to wear a face I did not select." A short exhale. "The Rite is at eight. Until then I am declining to participate in the smaller rite of pretending to enjoy the larger one."' },
-      'Q3': { question: 'Fair enough.',                    type: 'choice', response: 'He raises the cigarette in a small salute without turning. "Fair enough. Good evening, Mr. Grey."' },
+      'Q3': { question: 'What should I know about Lord Ashworth?', type: 'choice', response: '"Ashworth is meticulous. He has been preparing for tonight\'s Rite for six years. When a man spends six years preparing to say something in public, it is usually because what he intends to say is either very true or very dangerous." A pause. "In Ashworth\'s case it is both."' },
+    },
+  },
+
+  'ashworth': {
+    room: 'conservatory',
+    intro: 'A woman in the conservatory, masked. She is holding a letter. She does not appear to be reading it. She does not put it down.',
+    dialogue: {
+      'Q1': { question: 'Good evening.',                   type: 'choice', response: '"Good evening." She folds the letter once. "The assembly is gathering. The Rite begins at eight."' },
+      'Q2': { question: 'Are you waiting for someone?',    type: 'choice', response: '"I am waiting for the Rite." A pause. "I have been waiting for some time."' },
+      'Q3': { question: 'Enjoying the party?',             type: 'choice', response: 'A small pause. "I do not attend these things for enjoyment." She looks at the glass panels. "I attend them because they are meant to be attended."' },
     },
   },
 
