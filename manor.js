@@ -570,8 +570,8 @@ function _buildCharDots() {
       zone = document.createElement('div');
       zone.id = `char-zone-${roomId}`;
       zone.className = 'estate-portrait-zone';
-      // PROLOGUE — ensure card sits above hotspot layer so clicks register
-      zone.style.position = zone.style.position || 'relative';
+      // PROLOGUE — z-index lift so card sits above hotspot layer (clicks register).
+      // Do NOT touch position — stylesheet anchors zone bottom-center via absolute positioning.
       zone.style.zIndex = '50';
       roomEl.appendChild(zone);
     }
@@ -614,7 +614,6 @@ function _buildCharDots() {
       }
 
       card.addEventListener('click', e => {
-        console.log('[card-click] card clicked for', charId, 'in', roomId);
         e.stopPropagation();
         // Multi-char room: set active/inactive
         if (chars.length > 1) {
@@ -764,7 +763,6 @@ function _syncCharZones(roomId) {
 
 
 function _onCharTap(charId, roomId) {
-  console.log('[char-tap]', charId, 'in', roomId, '| prologueActive:', !!gameState.prologueActive, '| openPrologueDialogue:', typeof window.openPrologueDialogue);
   // PROLOGUE — route non-Rowe NPCs to the shallow Tier 1 dialogue.
   // Rowe falls through to his existing duel engine (intro→FUNNEL→duel).
   // Uninvited cannot fire during prologue at all (he arrives with the murder).
