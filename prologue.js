@@ -84,7 +84,6 @@ const PROLOGUE_PATCHES = {
       'Q2': { question: 'You don\'t look like you\'re enjoying yourself.', type: 'choice', response: '"I am." Said immediately, which is the wrong way to answer the question. He hears himself. "That is — I am attempting to. The sherry is excellent. The rooms are warm. The masks —" he glances at the door, "the masks have a remarkable capacity to look at you for longer than you have planned to be looked at."' },
       'Q3': { question: 'What\'s the notebook for?',       type: 'choice', response: 'He straightens. The next sentence comes out at half its previous warmth: "It\'s a — house book. The Estate keeps one. Notes on the evening. Who arrived, who I spoke to, what the candles did." He glances at it as if he is not entirely sure he wants to be holding it. "The Estate is fond of paper. So is, I gather, my career."' },
       'Q4': { question: 'Who told you you had the right temperament?', type: 'choice', response: '"Lord Ashworth." With the small helpless pride of a man not certain whether he was praised or recruited. "He did not specify which temperament. He is not, by reputation, the sort of man one asks twice. I have been examining various of mine since, looking for the responsible one. So far, no luck."' },
-      'Q5': { question: 'My mother said it would be like a wedding.', type: 'choice', response: 'A small, surprised laugh — genuine, the only one this evening will produce from him. "Mine said the same. Both of them were wrong about the music, and one of them was wrong about the masks. I will not say which. She will read this notebook one day."' },
     },
   },
 
@@ -258,26 +257,34 @@ function _applyPatches() {
     c.composure        = 100;
     c.composure_state  = 'normal';
     c.deceptions       = undefined;
-    // Replace INTERROGATION_DATA[charId] with a neutered entry. Any code path
-    // that consults composure_variants, backstory_chain, snapbacks, or echoes
-    // during prologue will find empty objects and exit safely.
+    // Replace INTERROGATION_DATA[charId] with a fully neutered entry. Any code path
+    // that consults composure variants, backstory chains, snapbacks, echoes, deception
+    // responses, etc. during prologue will find empty/safe values and exit safely.
     if (window.INTERROGATION_DATA && window.INTERROGATION_DATA[charId]) {
-      window.INTERROGATION_DATA[charId] = {
-        counter_strategy:    'cooperate',
-        optimal_technique:   'account',
-        composure_floor:     100,
-        fracture_threshold:  0,
-        baseline:            { text: '', sentence_avg: 'medium', formality: 'medium', tell: '' },
-        composure_variants:  {},
-        backstory_chain:     {},
-        backstory_chain_addendum: {},
-        scharff_corrections: {},
-        consequence_echoes:  {},
-        word_tell:           null,
-        approach_response:   '',
-        silence_fill:        '',
-        silence_tell:        '',
-      };
+      const orig = window.INTERROGATION_DATA[charId];
+      const neutered = {};
+      // Walk every field on the original; replace each with a type-appropriate empty.
+      // This is exhaustive by construction — any field that exists, post-paywall or
+      // post-launch additions, becomes safe during the prologue.
+      Object.keys(orig).forEach(key => {
+        const val = orig[key];
+        if (val === null || val === undefined)         neutered[key] = val;
+        else if (typeof val === 'string')              neutered[key] = '';
+        else if (typeof val === 'number')              neutered[key] = key === 'composure_floor' ? 100
+                                                                      : key === 'fracture_threshold' ? 0
+                                                                      : 0;
+        else if (typeof val === 'boolean')             neutered[key] = false;
+        else if (Array.isArray(val))                   neutered[key] = [];
+        else if (typeof val === 'object')              neutered[key] = {};
+        else                                            neutered[key] = undefined;
+      });
+      // A handful of fields need stable defaults that the engine reads:
+      neutered.counter_strategy   = 'cooperate';
+      neutered.optimal_technique  = 'account';
+      neutered.composure_floor    = 100;
+      neutered.fracture_threshold = 0;
+      neutered.baseline           = { text: '', sentence_avg: 'medium', formality: 'medium', tell: '' };
+      window.INTERROGATION_DATA[charId] = neutered;
     }
     if (gameState.char_dialogue_complete) {
       gameState.char_dialogue_complete[charId] = {};
