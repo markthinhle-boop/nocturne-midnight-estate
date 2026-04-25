@@ -3,6 +3,14 @@
 // Free-tier pre-murder mingle. 7:00–7:15PM (narrative).
 // Foyer arrival → mingle → Rowe in billiard-room → cinematic →
 // post-murder ballroom → Hale interrogation → paywall.
+//
+// ARCHITECTURE: prologue patches the existing CHARACTERS data
+// store with prologue intros + Tier 1 dialogue, sets is_compact
+// to bypass the technique selector, and routes through the same
+// openConversation() pipeline used post-paywall. Same UI, same
+// portrait, same notepad/board/map. Only the dialogue content
+// differs. On paywall success, originals are restored.
+//
 // Paid: drop into foyer, post-paywall engine takes over.
 // Declined: bounce to train-screen, infinite loop.
 // KB v10-final · Nocturne Studios LLC · MMXXVI
@@ -12,14 +20,15 @@
 
 // ── STATE ──────────────────────────────────────────────────
 window.PROLOGUE_STATE = {
-  active:                false, // true once startPrologue fires
-  phase:                 'mingle', // 'mingle' | 'awaiting_cinematic' | 'cinematic' | 'post_murder' | 'awaiting_paywall' | 'complete'
+  active:                false,
+  phase:                 'mingle',
   rowe_duel_done:        false,
-  cinematic_armed:       false, // armed after rowe duel; fires on next room transition
+  cinematic_armed:       false,
   cinematic_played:      false,
   hale_dialogue_opened:  false,
   hale_dialogue_closed:  false,
-  npc_dialogue_complete: {},    // { charId: { Q1: true, Q2: true, ... } }
+  patches_applied:       false,
+  _originals:            {},
 };
 
 // ── ROOM ACCESS ────────────────────────────────────────────
@@ -28,22 +37,12 @@ const PROLOGUE_FREE_ROOMS = [
   'map-room','dining-room','trophy-room','billiard-room','weapons-room','conservatory'
 ];
 
-const PROLOGUE_LOCKED_ROOMS = [
-  'ballroom','balcony','stage','antechamber',
-  'library','physicians','smoking','archive-path','vault','wine-cellar'
-];
-
-// ── NPC PLACEMENT (PROLOGUE ONLY) ──────────────────────────
-// Curator → foyer (greeter). Rowe → billiard-room (the duel).
-// Surgeon → map-room (per Mark's call — reason TBD later).
-// Voss is a SEPARATE character from the Surgeon. Voss is NOT placed in prologue.
-// Lord Ashworth is alive and masked at the party (he is killed during the cinematic).
-// Lady Ashworth is masked among the guests — only Rowe is unmasked.
+// ── PROLOGUE NPC ROOMS ─────────────────────────────────────
 window.PROLOGUE_NPC_POSITIONS = {
   'foyer':                  ['curator'],
   'gallery':                ['steward','crane'],
   'study':                  ['ashworth'],
-  'terrace':                ['lady-ashworth','baron'],
+  'terrace':                ['baron'],
   'maids-quarters':         ['vivienne'],
   'groundskeeper-cottage':  ['hatch'],
   'map-room':               ['surgeon'],
@@ -54,149 +53,209 @@ window.PROLOGUE_NPC_POSITIONS = {
   'conservatory':           [],
 };
 
-// ── TIER 1 DIALOGUE TREES ──────────────────────────────────
-// 3–4 questions per NPC. Pre-murder small talk. No interrogation content.
-// Lord Ashworth is alive — these are pleasantries before the Rite.
-// Every reply is short, in-character, and contains zero spoilers about
-// the plot or who killed whom.
-const PROLOGUE_DIALOGUE = {
+// ── TIER 1 DIALOGUE PATCHES ─────────────────────────────────
+// Each entry replaces the character's dialogue/intro/room for the
+// prologue. Schema matches CHARACTERS schema so existing renderQuestions
+// and askQuestion work as-is. No gates on these questions.
+// Rowe is NOT patched — his existing engine (intro→FUNNEL→duel) handles him.
+const PROLOGUE_PATCHES = {
+
   'curator': {
-    name: 'The Curator',
-    intro: 'He is waiting in the Foyer. He inclines his head a fraction when you enter — the precise fraction owed to a guest of the house.',
-    questions: {
-      Q1: { q: 'You were expecting me.', a: '"The Estate was. I am one of the Estate\'s instruments tonight. Lord Ashworth thought it appropriate that you be received by someone whose role tonight is largely ceremonial. The ceremony precedes the Rite. The Rite begins at eight."' },
-      Q2: { q: 'What should I do until then?',     a: '"Anything that is not the Ballroom. The Ballroom is closed until the assembly convenes. The grounds are open. The guests are masked. You are not. That is intentional. It is the only courtesy the Estate offers a first-time visitor before the Rite."' },
-      Q3: { q: 'Who am I looking for, exactly?',   a: '"You are looking for nothing. You are being looked at by everyone. Mr. Rowe is in the Billiard Room. Of the guests tonight he is the only one who is not masked. The Estate makes one such exception per Rite. Lord Ashworth thought you should know that the exception, this evening, is Mr. Rowe."' },
-      Q4: { q: 'Anything else I should know?',     a: '"The Rite at eight. The Ballroom at eight. Until then — the manor is yours, within the limits I have already described. Welcome to the Estate, Mr. Grey."' },
+    room: 'foyer',
+    intro: 'He is in the Foyer when you enter, unmasked, hands clasped behind his back. He inclines his head a fraction — the precise fraction owed to a guest of the house. He has been waiting for you.',
+    dialogue: {
+      'Q1': { question: 'You were expecting me.',          type: 'choice', response: '"The Estate was. I am one of the Estate\'s instruments tonight. Lord Ashworth thought it appropriate that you be received by someone whose role this evening is largely ceremonial. The ceremony precedes the Rite. The Rite begins at eight."' },
+      'Q2': { question: 'What should I do until then?',     type: 'choice', response: '"Anything that is not the Ballroom. The Ballroom is closed until the assembly convenes. The grounds are open. The guests are masked. You are not. That is intentional. It is the only courtesy the Estate offers a first-time visitor before the Rite."' },
+      'Q3': { question: 'Who am I looking for, exactly?',   type: 'choice', response: '"You are looking for nothing. You are being looked at by everyone. Mr. Rowe is in the Billiard Room. Of the guests tonight he is the only one who is not masked. The Estate makes one such exception per Rite. Lord Ashworth thought you should know that the exception, this evening, is Mr. Rowe."' },
+      'Q4': { question: 'Anything else I should know?',     type: 'choice', response: '"The Rite at eight. The Ballroom at eight. Until then — the manor is yours, within the limits I have already described. Welcome to the Estate, Mr. Grey."' },
     },
   },
 
   'northcott': {
-    name: 'Cavalier Northcott',
+    room: 'weapons-room',
     intro: 'A young man in the armory, in front of the mounted sabres, hands behind his back. He is not masked — he is staff-rank tonight, or close enough to it. A leather-bound notebook is tucked under his arm.',
-    questions: {
-      Q1: { q: 'Admiring the swords?',         a: '"I am being told something by them. I have not yet decided what. Lord Ashworth asked me to be on the grounds tonight and to keep a notebook. He did not say I had to be in any particular room. I find the room that has decorative weapons usefully clarifies what one is doing here."' },
-      Q2: { q: 'What\'s the notebook for?',    a: '"Arrivals. Lord Ashworth gave it to me six weeks ago. He said: write everyone down, write the time exact, circle anything that seems wrong. I have been wondering what wrong looks like ever since. I will be in the Foyer once the assembly draws closer. Until then I am here."' },
-      Q3: { q: 'You\'re not a member?',        a: '"Not before tonight. Tonight I am being inducted in some fashion that has not been fully explained to me. I find this is consistent with most of my dealings with this Estate."' },
+    dialogue: {
+      'Q1': { question: 'Admiring the swords?',           type: 'choice', response: '"I am being told something by them. I have not yet decided what. Lord Ashworth asked me to be on the grounds tonight and to keep a notebook. He did not say I had to be in any particular room. I find the room that has decorative weapons usefully clarifies what one is doing here."' },
+      'Q2': { question: 'What\'s the notebook for?',       type: 'choice', response: '"Arrivals. Lord Ashworth gave it to me six weeks ago. He said: write everyone down, write the time exact, circle anything that seems wrong. I have been wondering what wrong looks like ever since. I will be in the Foyer once the assembly draws closer. Until then I am here."' },
+      'Q3': { question: 'You\'re not a member?',          type: 'choice', response: '"Not before tonight. Tonight I am being inducted in some fashion that has not been fully explained to me. I find this is consistent with most of my dealings with this Estate."' },
     },
   },
 
   'steward': {
-    name: 'The Steward',
-    intro: 'He is in the Portrait Gallery, adjusting a candle that does not need adjusting. He turns when you enter — slowly, as a man who has been listening to the floorboards.',
-    questions: {
-      Q1: { q: 'Quiet evening so far.',        a: '"It will not stay quiet. The Rite is at eight. They are all here already, most of them. They are waiting to be looked at. They have been waiting six weeks."' },
-      Q2: { q: 'How long have you served here?', a: '"Long enough. Fourteen years. I do not count past that. There is no reason to."' },
-      Q3: { q: 'You\'re polishing candles.',   a: 'A small smile that does not reach. "I do not polish candles. I check that they will burn evenly. The Estate notices small failures more readily than large ones. I have learned to be where the small failures begin."' },
-      Q4: { q: 'Have a good evening.',         a: '"I will have the evening I am given. Good evening, Mr. Grey."' },
+    room: 'gallery',
+    intro: 'He is in the Portrait Gallery, masked, adjusting a candle that does not need adjusting. He turns when you enter — slowly, as a man who has been listening to the floorboards.',
+    dialogue: {
+      'Q1': { question: 'Quiet evening so far.',           type: 'choice', response: '"It will not stay quiet. The Rite is at eight. They are all here already, most of them. They are waiting to be looked at. They have been waiting six weeks."' },
+      'Q2': { question: 'How long have you served here?',  type: 'choice', response: '"Long enough. Fourteen years. I do not count past that. There is no reason to."' },
+      'Q3': { question: 'You\'re polishing candles.',       type: 'choice', response: 'A small smile that does not reach the mask. "I do not polish candles. I check that they will burn evenly. The Estate notices small failures more readily than large ones. I have learned to be where the small failures begin."' },
+      'Q4': { question: 'Have a good evening.',            type: 'choice', response: '"I will have the evening I am given. Good evening, Mr. Grey."' },
     },
   },
 
   'ashworth': {
-    name: 'Lord Ashworth',
-    intro: 'He is in his study. He is alive. He is masked — a heavy carved mask, formal, the Lord of the Rite. He turns the mask toward you and lifts it for a moment so you see him fully.',
-    questions: {
-      Q1: { q: 'Lord Ashworth.',                a: 'He nods. "Mr. Grey. Welcome. I will not detain you. I have one or two arrangements still to make before the Rite. We will speak properly afterward — I have set aside time for it."' },
-      Q2: { q: 'Why am I here?',                a: 'He pauses with the mask half-lifted. Then lowers it back into place. "We will speak afterward. That is my preference and my answer. The Rite first."' },
-      Q3: { q: 'You seem distracted.',          a: 'A long look through the mask. "I am where I expected to be. That is not the same thing as being unworried. Forgive me — the night requires attention I cannot give to conversation. Eight o\'clock, Mr. Grey."' },
-    },
-  },
-
-  'lady-ashworth': {
-    name: 'A masked figure on the terrace',
-    intro: 'A figure on the terrace, alone, looking out at the garden. The mask is silver, simple, worn by someone who knows how to wear it. She does not turn when you approach.',
-    questions: {
-      Q1: { q: 'Cold out here.',               a: '"Yes." She does not look at you. "The garden is the only room of the Estate that does not pretend to be something else."' },
-      Q2: { q: 'Are you a member?',            a: '"I am married to the Estate. That is a different category. The Society has a word for it. I do not use the word."' },
-      Q3: { q: 'Will you be at the Rite?',     a: '"I will be where I am expected to be. I always am." A pause. "The Rite begins at eight. I will see you there, Mr. Grey."' },
+    room: 'study',
+    intro: 'Lord Ashworth in his study. Alive. Masked — a heavy carved mask, formal, the Lord of the Rite. He turns the mask toward you and lifts it for a moment so you see him fully, then lowers it back into place.',
+    dialogue: {
+      'Q1': { question: 'Lord Ashworth.',                  type: 'choice', response: 'He nods through the mask. "Mr. Grey. Welcome. I will not detain you. I have one or two arrangements still to make before the Rite. We will speak properly afterward — I have set aside time for it."' },
+      'Q2': { question: 'Why am I here?',                  type: 'choice', response: 'He pauses with the mask half-lifted. Then settles it again. "We will speak afterward. That is my preference and my answer. The Rite first."' },
+      'Q3': { question: 'You seem distracted.',            type: 'choice', response: 'A long look through the mask. "I am where I expected to be. That is not the same thing as being unworried. Forgive me — the night requires attention I cannot give to conversation. Eight o\'clock, Mr. Grey."' },
     },
   },
 
   'baron': {
-    name: 'A masked figure with a cigarette',
+    room: 'terrace',
     intro: 'A man on the terrace, his back to the door, smoking. The mask is a heavy carnival piece — feathered, expensive, of a kind that draws attention by trying not to.',
-    questions: {
-      Q1: { q: 'Good evening.',                 a: '"Is it." Not a question. He does not turn. "It is an evening. I will reserve judgment until I have seen more of it."' },
-      Q2: { q: 'You don\'t enjoy these things.', a: '"I enjoy things that do not require me to wear a face I did not select." A short exhale. "The Rite is at eight. Until then I am declining to participate in the smaller rite of pretending to enjoy the larger one."' },
-      Q3: { q: 'Fair enough.',                  a: 'He raises the cigarette in a small salute without turning. "Fair enough. Good evening, Mr. Grey."' },
+    dialogue: {
+      'Q1': { question: 'Good evening.',                   type: 'choice', response: '"Is it." Not a question. He does not turn. "It is an evening. I will reserve judgment until I have seen more of it."' },
+      'Q2': { question: 'You don\'t enjoy these things.',  type: 'choice', response: '"I enjoy things that do not require me to wear a face I did not select." A short exhale. "The Rite is at eight. Until then I am declining to participate in the smaller rite of pretending to enjoy the larger one."' },
+      'Q3': { question: 'Fair enough.',                    type: 'choice', response: 'He raises the cigarette in a small salute without turning. "Fair enough. Good evening, Mr. Grey."' },
     },
   },
 
   'crane': {
-    name: 'A masked physician',
+    room: 'gallery',
     intro: 'A woman in the Gallery, in a plain mask of the kind issued to professional members rather than personal guests. She is examining one of the portraits with a clinical attentiveness.',
-    questions: {
-      Q1: { q: 'A friend of yours?',            a: '"None of these are. I am examining the brushwork. The physicians of two centuries ago painted unusually well. I find this is not coincidence."' },
-      Q2: { q: 'You\'re a physician?',          a: '"I am. Estate-affiliated. I attend the Rite in a professional capacity. There is usually no need. Lord Ashworth is meticulous about health, and the Society is generally healthy."' },
-      Q3: { q: 'See you at the Rite.',          a: 'A small nod. "Eight o\'clock, Mr. Grey. The portraits will still be here afterward."' },
+    dialogue: {
+      'Q1': { question: 'A friend of yours?',              type: 'choice', response: '"None of these are. I am examining the brushwork. The physicians of two centuries ago painted unusually well. I find this is not coincidence."' },
+      'Q2': { question: 'You\'re a physician?',            type: 'choice', response: '"I am. Estate-affiliated. I attend the Rite in a professional capacity. There is usually no need. Lord Ashworth is meticulous about health, and the Society is generally healthy."' },
+      'Q3': { question: 'See you at the Rite.',            type: 'choice', response: 'A small nod. "Eight o\'clock, Mr. Grey. The portraits will still be here afterward."' },
     },
   },
 
   'vivienne': {
-    name: 'Vivienne Leclair',
+    room: 'maids-quarters',
     intro: 'A maid at the back of the Estate, smoothing her apron at the door. She does not stop when you enter. She does not bow.',
-    questions: {
-      Q1: { q: 'Good evening.',                 a: '"Bonsoir." A glance, then back to the apron. "You are the one Lord Ashworth has been waiting for."' },
-      Q2: { q: 'He told you about me?',         a: '"He told no one. The house tells. I have been here four years. The house is generous with what it tells me. Other houses are not so generous. I prefer this one."' },
-      Q3: { q: 'I\'ll let you work.',           a: '"Merci. Eight o\'clock the Rite. After eight o\'clock — the house will tell more. It always does."' },
+    dialogue: {
+      'Q1': { question: 'Good evening.',                   type: 'choice', response: '"Bonsoir." A glance, then back to the apron. "You are the one Lord Ashworth has been waiting for."' },
+      'Q2': { question: 'He told you about me?',           type: 'choice', response: '"He told no one. The house tells. I have been here four years. The house is generous with what it tells me. Other houses are not so generous. I prefer this one."' },
+      'Q3': { question: 'I\'ll let you work.',              type: 'choice', response: '"Merci. Eight o\'clock the Rite. After eight o\'clock — the house will tell more. It always does."' },
     },
   },
 
   'hatch': {
-    name: 'Thomas Hatch',
+    room: 'groundskeeper-cottage',
     intro: 'An older man at the door of his cottage. Tools on the wall behind him. He was expecting someone — possibly not you, but someone.',
-    questions: {
-      Q1: { q: 'Mr. Hatch.',                    a: 'He nods. "Mr. Grey. Lord Ashworth said a man named Grey would arrive on the train tonight. He did not say much else. He is sparing with what he says, even to me, and I have been here thirty years."' },
-      Q2: { q: 'Have you seen anything unusual?', a: '"Not yet. I am keeping watch. Lord Ashworth asked me to. He did not say what for. He said I would know it when I saw it. I have not yet seen it."' },
-      Q3: { q: 'I\'ll come back if I need anything.', a: '"You will know where to find me. The cottage is open tonight. It is open most nights, but tonight it is open with intention."' },
+    dialogue: {
+      'Q1': { question: 'Mr. Hatch.',                      type: 'choice', response: 'He nods. "Mr. Grey. Lord Ashworth said a man named Grey would arrive on the train tonight. He did not say much else. He is sparing with what he says, even to me, and I have been here thirty years."' },
+      'Q2': { question: 'Have you seen anything unusual?', type: 'choice', response: '"Not yet. I am keeping watch. Lord Ashworth asked me to. He did not say what for. He said I would know it when I saw it. I have not yet seen it."' },
+      'Q3': { question: 'I\'ll come back if I need anything.', type: 'choice', response: '"You will know where to find me. The cottage is open tonight. It is open most nights, but tonight it is open with intention."' },
     },
   },
 
   'surgeon': {
-    name: 'A masked physician with maps',
+    room: 'map-room',
     intro: 'A man in the Map Room, masked, examining a chart pinned open on the desk. He looks up at the right moment — the precise moment — when you enter.',
-    questions: {
-      Q1: { q: 'Studying maps?',                a: '"A professional habit. I find geography clarifies questions that medicine alone cannot answer. Forgive the abstraction. I am told I have a tendency toward it."' },
-      Q2: { q: 'You\'re a member?',             a: '"I am affiliated. The Estate keeps me on retainer. Tonight is largely ceremonial — there is rarely call for a physician at a Rite. I attend out of courtesy and the chance to see colleagues I do not see often."' },
-      Q3: { q: 'Until eight, then.',            a: '"Until eight. Enjoy the evening, Mr. Grey. The maps will be here when you return — should you return."' },
+    dialogue: {
+      'Q1': { question: 'Studying maps?',                  type: 'choice', response: '"A professional habit. I find geography clarifies questions that medicine alone cannot answer. Forgive the abstraction. I am told I have a tendency toward it."' },
+      'Q2': { question: 'You\'re a member?',               type: 'choice', response: '"I am affiliated. The Estate keeps me on retainer. Tonight is largely ceremonial — there is rarely call for a physician at a Rite. I attend out of courtesy and the chance to see colleagues I do not see often."' },
+      'Q3': { question: 'Until eight, then.',              type: 'choice', response: '"Until eight. Enjoy the evening, Mr. Grey. The maps will be here when you return — should you return."' },
     },
   },
 
   'greaves': {
-    name: 'Sir Greaves',
-    intro: 'An older gentleman at the long dining table, alone, with a drink and a book and a chair pulled out as though he has been considering whether to sit at it for some time.',
-    questions: {
-      Q1: { q: 'Sir Greaves.',                  a: '"Mr. Grey. The Estate said you would arrive tonight. I am pleased the train was on time. Trains in this part of the country are not reliably so."' },
-      Q2: { q: 'You\'re not at the Rite yet?',   a: '"I do not gather before the gathering. I find pre-Rite mingling unproductive. I will be in the Library until the assembly is called. I always am. The Estate knows where to find me."' },
-      Q3: { q: 'See you at eight.',             a: '"Eight o\'clock. I will be where I am usually. Good evening."' },
+    room: 'dining-room',
+    intro: 'An older gentleman at the long dining table, alone, masked. A drink, a book, and a chair pulled out as though he has been considering whether to sit at it for some time.',
+    dialogue: {
+      'Q1': { question: 'Sir Greaves.',                    type: 'choice', response: '"Mr. Grey. The Estate said you would arrive tonight. I am pleased the train was on time. Trains in this part of the country are not reliably so."' },
+      'Q2': { question: 'You\'re not at the Rite yet?',    type: 'choice', response: '"I do not gather before the gathering. I find pre-Rite mingling unproductive. I will be in the Library until the assembly is called. I always am. The Estate knows where to find me."' },
+      'Q3': { question: 'See you at eight.',               type: 'choice', response: '"Eight o\'clock. I will be where I am usually. Good evening."' },
     },
   },
 
   'pemberton-hale': {
-    name: 'Viscount Pemberton-Hale',
+    room: 'trophy-room',
     intro: 'A masked man in the Trophy Room, examining a glass case with his back to the door. He turns slowly, in the manner of someone who heard you coming long before you arrived.',
-    questions: {
-      Q1: { q: 'Quiet in here.',                a: '"It is. The Trophy Room is quiet because the trophies are the most honest people in the Estate. They were what they were and are no longer pretending to be otherwise."' },
-      Q2: { q: 'You\'re a member of the Society?', a: '"I am a Viscount of the Society. There is a difference. The Society notices the difference. I have noticed that the Society notices."' },
-      Q3: { q: 'Until the Rite.',               a: '"Until the Rite. Eight o\'clock. I will be in the Antechamber from quarter to. The Antechamber is where I prefer to be before formal occasions. I have my reasons. They are my own."' },
+    dialogue: {
+      'Q1': { question: 'Quiet in here.',                  type: 'choice', response: '"It is. The Trophy Room is quiet because the trophies are the most honest people in the Estate. They were what they were and are no longer pretending to be otherwise."' },
+      'Q2': { question: 'You\'re a member of the Society?', type: 'choice', response: '"I am a Viscount of the Society. There is a difference. The Society notices the difference. I have noticed that the Society notices."' },
+      'Q3': { question: 'Until the Rite.',                 type: 'choice', response: '"Until the Rite. Eight o\'clock. I will be in the Antechamber from quarter to. The Antechamber is where I prefer to be before formal occasions. I have my reasons. They are my own."' },
     },
   },
 };
+
+// ── PATCH APPLICATION ──────────────────────────────────────
+function _applyPatches() {
+  if (PROLOGUE_STATE.patches_applied) return;
+  if (!window.CHARACTERS) {
+    console.warn('[prologue] CHARACTERS not loaded yet');
+    return;
+  }
+  Object.entries(PROLOGUE_PATCHES).forEach(([charId, patch]) => {
+    const c = window.CHARACTERS[charId];
+    if (!c) {
+      console.warn('[prologue] No CHARACTERS entry for', charId);
+      return;
+    }
+    PROLOGUE_STATE._originals[charId] = {
+      dialogue:         c.dialogue,
+      intro:            c.intro,
+      room:             c.room,
+      is_compact:       c.is_compact,
+      surface_dialogue: c.surface_dialogue,
+      surface_gate:     c.surface_gate,
+      dialogue_limit:   c.dialogue_limit,
+      snap_count:       c.snap_count,
+      snap_limit:       c.snap_limit,
+      composure:        c.composure,
+      composure_state:  c.composure_state,
+      deceptions:       c.deceptions,
+    };
+    c.dialogue         = patch.dialogue;
+    c.intro            = patch.intro;
+    c.room             = patch.room;
+    c.is_compact       = true;
+    c.surface_dialogue = undefined;
+    c.surface_gate     = undefined;
+    c.dialogue_limit   = 99;
+    c.snap_limit       = 0;
+    c.snap_count       = 0;
+    c.composure        = 100;
+    c.composure_state  = 'normal';
+    c.deceptions       = undefined;
+    if (gameState.char_dialogue_complete) {
+      gameState.char_dialogue_complete[charId] = {};
+    }
+  });
+  PROLOGUE_STATE.patches_applied = true;
+}
+
+function _restorePatches() {
+  if (!PROLOGUE_STATE.patches_applied) return;
+  Object.entries(PROLOGUE_STATE._originals).forEach(([charId, orig]) => {
+    const c = window.CHARACTERS[charId];
+    if (!c) return;
+    c.dialogue         = orig.dialogue;
+    c.intro            = orig.intro;
+    c.room             = orig.room;
+    c.is_compact       = orig.is_compact;
+    c.surface_dialogue = orig.surface_dialogue;
+    c.surface_gate     = orig.surface_gate;
+    c.dialogue_limit   = orig.dialogue_limit;
+    c.snap_count       = orig.snap_count;
+    c.snap_limit       = orig.snap_limit;
+    c.composure        = orig.composure;
+    c.composure_state  = orig.composure_state;
+    c.deceptions       = orig.deceptions;
+    if (gameState.char_dialogue_complete) {
+      gameState.char_dialogue_complete[charId] = {};
+    }
+  });
+  PROLOGUE_STATE._originals = {};
+  PROLOGUE_STATE.patches_applied = false;
+}
 
 // ── ACCESS GATE (called from engine.navigateTo) ────────────
 window.isPrologueRoomAccessible = function(roomId) {
   if (!PROLOGUE_STATE.active) return true;
 
-  // Phase: mingle — only free rooms, ballroom/balcony/stage/antechamber/paid all locked
   if (PROLOGUE_STATE.phase === 'mingle' || PROLOGUE_STATE.phase === 'awaiting_cinematic') {
     return PROLOGUE_FREE_ROOMS.includes(roomId);
   }
 
-  // Phase: post_murder — ballroom + antechamber unlocked, balcony/stage/paid still locked
   if (PROLOGUE_STATE.phase === 'post_murder' || PROLOGUE_STATE.phase === 'awaiting_paywall') {
     if (roomId === 'ballroom' || roomId === 'antechamber') return true;
     if (PROLOGUE_FREE_ROOMS.includes(roomId)) return true;
-    return false; // balcony, stage, paid spine all locked until paywall clears
+    return false;
   }
 
   return true;
@@ -211,134 +270,41 @@ window.startPrologue = function() {
   PROLOGUE_STATE.cinematic_played  = false;
   PROLOGUE_STATE.hale_dialogue_opened = false;
   PROLOGUE_STATE.hale_dialogue_closed = false;
-  PROLOGUE_STATE.npc_dialogue_complete = {};
   gameState.prologueActive         = true;
 
-  // Drop player into foyer
+  _applyPatches();
+
   if (typeof navigateTo === 'function') {
     navigateTo('foyer');
   }
   if (typeof saveGame === 'function') saveGame();
 };
 
-// ── DIALOGUE PANEL (shallow, bypasses interrogation engine) ─
-window.openPrologueDialogue = function(charId) {
-  // Rowe is special — let his existing engine handle him (intro→FUNNEL→duel)
-  if (charId === 'rowe') return;
-
-  const data = PROLOGUE_DIALOGUE[charId];
-  if (!data) {
-    console.warn('[prologue] No dialogue data for charId:', charId);
-    return;
-  }
-
-  // Self-contained overlay. Does NOT hijack the post-paywall conversation-panel,
-  // because that panel's CSS layout depends on its native children.
-  let overlay = document.getElementById('prologue-dialogue-overlay');
-  if (overlay) overlay.remove();
-
-  overlay = document.createElement('div');
-  overlay.id = 'prologue-dialogue-overlay';
-  overlay.style.cssText = [
-    'position:fixed', 'top:0', 'left:0', 'right:0', 'bottom:0',
-    'background:rgba(8,6,3,0.92)', 'z-index:9000',
-    'display:flex', 'align-items:center', 'justify-content:center',
-    'padding:20px', 'font-family:Georgia,serif',
-  ].join(';');
-
-  const box = document.createElement('div');
-  box.style.cssText = [
-    'background:#0a0804', 'border:1px solid rgba(184,150,12,0.25)',
-    'width:min(96vw,520px)', 'max-height:88vh', 'overflow-y:auto',
-    'padding:24px', 'color:#d4c49a', 'box-shadow:0 8px 40px rgba(0,0,0,0.6)',
-  ].join(';');
-  overlay.appendChild(box);
-
-  const answered = PROLOGUE_STATE.npc_dialogue_complete[charId] || {};
-
-  function render() {
-    box.innerHTML = '';
-
-    // Header — character name
-    const header = document.createElement('div');
-    header.style.cssText = 'font-size:11px;color:#b8960c;letter-spacing:0.3em;text-transform:uppercase;margin-bottom:14px;text-align:center;padding-bottom:12px;border-bottom:1px solid rgba(184,150,12,0.15);';
-    header.textContent = data.name;
-    box.appendChild(header);
-
-    // Intro
-    const intro = document.createElement('div');
-    intro.style.cssText = 'font-size:14px;color:#c0b090;line-height:1.7;margin-bottom:18px;font-style:italic;';
-    intro.textContent = data.intro;
-    box.appendChild(intro);
-
-    // Question/answer log (already-answered)
-    Object.keys(data.questions).forEach(qKey => {
-      if (answered[qKey]) {
-        const qaBlock = document.createElement('div');
-        qaBlock.style.cssText = 'margin-bottom:16px;border-left:2px solid rgba(184,150,12,0.3);padding-left:14px;';
-        const qLine = document.createElement('div');
-        qLine.style.cssText = 'font-size:12px;color:#8a7a5c;margin-bottom:6px;letter-spacing:0.05em;';
-        qLine.textContent = '— ' + data.questions[qKey].q;
-        qaBlock.appendChild(qLine);
-        const aLine = document.createElement('div');
-        aLine.style.cssText = 'font-size:14px;color:#d4c49a;line-height:1.65;';
-        aLine.textContent = data.questions[qKey].a;
-        qaBlock.appendChild(aLine);
-        box.appendChild(qaBlock);
-      }
-    });
-
-    // Available questions (buttons)
-    const remaining = Object.keys(data.questions).filter(qKey => !answered[qKey]);
-    if (remaining.length > 0) {
-      const qList = document.createElement('div');
-      qList.style.cssText = 'margin-top:14px;display:flex;flex-direction:column;gap:8px;';
-      remaining.forEach(qKey => {
-        const btn = document.createElement('button');
-        btn.style.cssText = 'background:transparent;border:1px solid rgba(184,150,12,0.4);color:#d4c49a;padding:11px 14px;text-align:left;font-size:13px;cursor:pointer;font-family:inherit;line-height:1.4;';
-        btn.textContent = data.questions[qKey].q;
-        btn.onmouseenter = function() { this.style.background = 'rgba(184,150,12,0.08)'; this.style.borderColor = 'rgba(184,150,12,0.7)'; };
-        btn.onmouseleave = function() { this.style.background = 'transparent'; this.style.borderColor = 'rgba(184,150,12,0.4)'; };
-        btn.onclick = function() {
-          answered[qKey] = true;
-          PROLOGUE_STATE.npc_dialogue_complete[charId] = answered;
-          render();
-        };
-        qList.appendChild(btn);
-      });
-      box.appendChild(qList);
+// ── HALE PAYWALL TRIGGER ───────────────────────────────────
+// Wrap closeConversation: when prologue is in post_murder phase
+// and the player closes Hale's dialogue, fire paywall.
+function _wrapCloseConversation() {
+  if (window._prologueWrappedClose) return;
+  if (typeof window.closeConversation !== 'function') return;
+  const _origClose = window.closeConversation;
+  window._prologueWrappedClose = true;
+  window.closeConversation = function() {
+    const wasActive = window._activeCharId
+      || (typeof _activeCharId !== 'undefined' ? _activeCharId : null);
+    const result = _origClose.apply(this, arguments);
+    if (PROLOGUE_STATE.active
+        && wasActive === 'pemberton-hale'
+        && (PROLOGUE_STATE.phase === 'post_murder' || PROLOGUE_STATE.phase === 'awaiting_paywall')
+        && !PROLOGUE_STATE.hale_dialogue_closed) {
+      PROLOGUE_STATE.hale_dialogue_closed = true;
+      PROLOGUE_STATE.phase = 'awaiting_paywall';
+      setTimeout(_firePaywall, 600);
     }
-
-    // Close button — always visible
-    const closeRow = document.createElement('div');
-    closeRow.style.cssText = 'margin-top:24px;text-align:center;padding-top:16px;border-top:1px solid rgba(184,150,12,0.15);';
-    const closeBtn = document.createElement('button');
-    closeBtn.style.cssText = 'background:transparent;border:1px solid #b8960c;color:#b8960c;padding:8px 28px;font-size:11px;letter-spacing:0.25em;text-transform:uppercase;cursor:pointer;font-family:inherit;';
-    closeBtn.textContent = remaining.length === 0 ? 'Step away' : 'Step away';
-    closeBtn.onclick = function() {
-      overlay.remove();
-      // If this was Hale (pemberton-hale) AND we are post-murder, fire paywall
-      if (charId === 'pemberton-hale'
-          && (PROLOGUE_STATE.phase === 'post_murder' || PROLOGUE_STATE.phase === 'awaiting_paywall')
-          && !PROLOGUE_STATE.hale_dialogue_closed) {
-        PROLOGUE_STATE.hale_dialogue_closed = true;
-        PROLOGUE_STATE.phase = 'awaiting_paywall';
-        setTimeout(_firePaywall, 600);
-      }
-    };
-    closeRow.appendChild(closeBtn);
-    box.appendChild(closeRow);
-  }
-
-  // Mark Hale as having been opened in post-murder phase
-  if (charId === 'pemberton-hale'
-      && (PROLOGUE_STATE.phase === 'post_murder' || PROLOGUE_STATE.phase === 'awaiting_paywall')) {
-    PROLOGUE_STATE.hale_dialogue_opened = true;
-  }
-
-  document.body.appendChild(overlay);
-  render();
-};
+    return result;
+  };
+}
+_wrapCloseConversation();
+NocturneEngine.on('engineReady', _wrapCloseConversation);
 
 // ── ROWE DUEL COMPLETION → ARM CINEMATIC ───────────────────
 NocturneEngine.on('roweDuelComplete', function() {
@@ -356,7 +322,6 @@ NocturneEngine.on('roomEntered', function(payload) {
   if (PROLOGUE_STATE.cinematic_played) return;
   if (PROLOGUE_STATE.phase !== 'awaiting_cinematic') return;
 
-  // Player just left billiard-room. Fire cinematic.
   PROLOGUE_STATE.cinematic_armed = false;
   PROLOGUE_STATE.phase           = 'cinematic';
   setTimeout(_playMurderCinematic, 200);
@@ -366,23 +331,18 @@ NocturneEngine.on('roomEntered', function(payload) {
 function _playMurderCinematic() {
   PROLOGUE_STATE.cinematic_played = true;
 
-  // Build full-screen overlay
   let overlay = document.getElementById('prologue-cinematic');
-  if (!overlay) {
-    overlay = document.createElement('div');
-    overlay.id = 'prologue-cinematic';
-    overlay.style.cssText = [
-      'position:fixed','top:0','left:0','right:0','bottom:0',
-      'background:#000','z-index:99999',
-      'display:flex','align-items:center','justify-content:center',
-      'flex-direction:column','padding:40px','text-align:center',
-      'opacity:0','transition:opacity 1.2s ease',
-      'color:#d4c5a0','font-family:Georgia,serif',
-    ].join(';');
-    document.body.appendChild(overlay);
-  }
-
-  overlay.innerHTML = '';
+  if (overlay) overlay.remove();
+  overlay = document.createElement('div');
+  overlay.id = 'prologue-cinematic';
+  overlay.style.cssText = [
+    'position:fixed','top:0','left:0','right:0','bottom:0',
+    'background:#000','z-index:99999',
+    'display:flex','align-items:center','justify-content:center',
+    'flex-direction:column','padding:40px','text-align:center',
+    'opacity:0','transition:opacity 1.2s ease',
+    'color:#d4c5a0','font-family:Georgia,serif',
+  ].join(';');
 
   const time = document.createElement('div');
   time.style.cssText = 'font-size:14px;letter-spacing:0.4em;color:#8a7a5c;margin-bottom:32px;text-transform:uppercase;';
@@ -404,10 +364,9 @@ function _playMurderCinematic() {
   line3.textContent = 'Tap to continue';
   overlay.appendChild(line3);
 
-  // Fade in
+  document.body.appendChild(overlay);
   requestAnimationFrame(() => { overlay.style.opacity = '1'; });
 
-  // Tap or auto-advance
   let advanced = false;
   const advance = function() {
     if (advanced) return;
@@ -419,20 +378,21 @@ function _playMurderCinematic() {
     }, 1200);
   };
   overlay.addEventListener('click', advance);
-  setTimeout(advance, 8000); // auto-advance after 8s
+  setTimeout(advance, 8000);
 }
 
 function _onCinematicComplete() {
   PROLOGUE_STATE.phase = 'post_murder';
-
-  // Force navigate to ballroom (which is now accessible via gate)
+  // Restore originals NOW so post-murder ballroom + Hale show real interrogation content.
+  // The paywall is the gate, not the dialogue change. Hale's full post-paywall interrogation
+  // is the FIRST taste of the real game. Then paywall after he's closed.
+  _restorePatches();
   if (typeof navigateTo === 'function') navigateTo('ballroom');
   if (typeof saveGame === 'function') saveGame();
 }
 
-// ── PAYWALL TRIGGER (after Hale dialogue closes) ───────────
+// ── PAYWALL TRIGGER ────────────────────────────────────────
 function _firePaywall() {
-  // Update curator reflection text for the post-Hale moment
   const reflection = document.getElementById('paywall-curator-text');
   if (reflection) {
     reflection.textContent =
@@ -442,21 +402,17 @@ function _firePaywall() {
 }
 
 // ── PAYWALL OUTCOMES ───────────────────────────────────────
-// handlePurchase() and closePaywall() are overridden in ui.js to call
-// the prologue handlers below when PROLOGUE_STATE.active is true.
-
 window.onProloguePaywallSuccess = function() {
   PROLOGUE_STATE.active   = false;
   PROLOGUE_STATE.phase    = 'complete';
   gameState.prologueActive = false;
-  // Drop player into foyer; existing post-paywall engine takes over
+  _restorePatches();
   if (typeof navigateTo === 'function') navigateTo('foyer');
   if (typeof saveGame === 'function') saveGame();
 };
 
 window.onProloguePaywallDecline = function() {
-  // Bounce to train-screen, infinite loop until paid
-  // Reset prologue state to fresh — they have to mingle again on return
+  _restorePatches();
   PROLOGUE_STATE.active = false;
   PROLOGUE_STATE.phase  = 'mingle';
   PROLOGUE_STATE.rowe_duel_done   = false;
@@ -464,10 +420,8 @@ window.onProloguePaywallDecline = function() {
   PROLOGUE_STATE.cinematic_played = false;
   PROLOGUE_STATE.hale_dialogue_opened = false;
   PROLOGUE_STATE.hale_dialogue_closed = false;
-  PROLOGUE_STATE.npc_dialogue_complete = {};
   gameState.prologueActive = false;
 
-  // Hide game screen, show train, restart train sequence
   const gameScreen = document.getElementById('screen-game');
   if (gameScreen) gameScreen.classList.remove('active');
   if (typeof startTrainSequence === 'function') {
@@ -475,8 +429,12 @@ window.onProloguePaywallDecline = function() {
   }
 };
 
-// ── INIT (called by engine on game boot) ───────────────────
-window.initPrologue = function() {
-  // No-op — startPrologue is the actual entry called when train completes.
-  // This exists so engine.js can probe for prologue presence.
+// ── INIT ───────────────────────────────────────────────────
+window.initPrologue = function() {};
+
+// Compatibility stub — old code path; route to real openConversation
+window.openPrologueDialogue = function(charId) {
+  if (typeof window.openConversation === 'function') {
+    window.openConversation(charId);
+  }
 };

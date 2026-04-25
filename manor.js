@@ -763,19 +763,10 @@ function _syncCharZones(roomId) {
 
 
 function _onCharTap(charId, roomId) {
-  // PROLOGUE — route non-Rowe NPCs to the shallow Tier 1 dialogue.
-  // Rowe falls through to his existing duel engine (intro→FUNNEL→duel).
-  // Uninvited cannot fire during prologue at all (he arrives with the murder).
-  if (gameState.prologueActive) {
-    if (charId === 'uninvited') {
-      showToast('No one else is here right now.');
-      return;
-    }
-    if (charId !== 'rowe' && typeof window.openPrologueDialogue === 'function') {
-      window.openPrologueDialogue(charId);
-      return;
-    }
-    // Rowe falls through to existing handler below
+  // PROLOGUE — Uninvited cannot fire pre-murder. He arrives with the body.
+  if (gameState.prologueActive && charId === 'uninvited') {
+    showToast('No one else is here right now.');
+    return;
   }
 
   if (charId === 'uninvited') {
