@@ -424,18 +424,6 @@ window.startPrologue = function() {
   PROLOGUE_STATE.hale_dialogue_closed = false;
   gameState.prologueActive         = true;
 
-  // Hide board UI during prologue — board is post-paywall only
-  // 1. Hide board HUD icon (next to notepad icon)
-  setTimeout(() => {
-    const hudIcon = document.getElementById('board-hud-icon');
-    if (hudIcon) hudIcon.style.display = 'none';
-  }, 100);
-  // 2. Hide board button inside notepad (runs when notepad opens)
-  setTimeout(() => {
-    const npBtn = document.getElementById('np-board-btn');
-    if (npBtn) npBtn.style.display = 'none';
-  }, 100);
-
   // Clear stale progress from any prior save state — prologue is always fresh.
   // _applyPatches will further wipe per-character dialogue history for patched chars.
   gameState.char_dialogue_complete = {};
@@ -588,14 +576,6 @@ window.onProloguePaywallSuccess = function() {
   PROLOGUE_STATE.active   = false;
   PROLOGUE_STATE.phase    = 'complete';
   gameState.prologueActive = false;
-  
-  // Restore board UI post-paywall
-  setTimeout(() => {
-    const hudIcon = document.getElementById('board-hud-icon');
-    if (hudIcon) hudIcon.style.display = 'flex';
-    const npBtn = document.getElementById('np-board-btn');
-    if (npBtn) npBtn.style.display = 'block';
-  }, 100);
   
   _restorePatches();
   if (typeof window.rebuildCharCards === 'function') {
