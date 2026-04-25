@@ -4007,7 +4007,7 @@ const _interrogationState = {
 
 function openTechniqueSelector(charId) {
   const data = INTERROGATION_DATA[charId];
-  if (!data || (data && data.engine === 'rowe')) {
+  if (!data || (data && (data.engine === 'rowe' || data.engine === 'prologue'))) {
     // Character not in interrogation system, or Alistair Rowe (own engine) — open normally
     if (typeof window._openConversationDirect === 'function') {
       window._openConversationDirect(charId);

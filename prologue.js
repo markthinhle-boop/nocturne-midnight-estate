@@ -284,6 +284,7 @@ function _applyPatches() {
       neutered.composure_floor    = 100;
       neutered.fracture_threshold = 0;
       neutered.baseline           = { text: '', sentence_avg: 'medium', formality: 'medium', tell: '' };
+      neutered.engine             = 'prologue'; // tells openTechniqueSelector to skip overlay → _openConversationDirect
       window.INTERROGATION_DATA[charId] = neutered;
     }
     if (gameState.char_dialogue_complete) {
@@ -291,6 +292,62 @@ function _applyPatches() {
     }
   });
   PROLOGUE_STATE.patches_applied = true;
+
+  // ── LOAD-ORDER GUARD ────────────────────────────────────────
+  // interrogation.js runs `window.INTERROGATION_DATA = INTERROGATION_DATA` at the
+  // bottom of the file (line 5229). If it loads AFTER prologue.js has already
+  // neutered the per-character entries, that assignment overwrites the neutered
+  // data with the original post-paywall content — restoring every leak we cleared.
+  //
+  // Fix: intercept the assignment using a property descriptor trap. If the prologue
+  // is still active when interrogation.js tries to set window.INTERROGATION_DATA,
+  // we let the assignment proceed (so everything else in interrogation.js works)
+  // but immediately re-neutralize the patched characters on the new object.
+  try {
+    let _interrogationDataValue = window.INTERROGATION_DATA;
+    Object.defineProperty(window, 'INTERROGATION_DATA', {
+      configurable: true,
+      enumerable:   true,
+      get: function() { return _interrogationDataValue; },
+      set: function(newVal) {
+        _interrogationDataValue = newVal;
+        // If prologue is still active, immediately re-neutralize patched chars.
+        if (PROLOGUE_STATE.patches_applied && newVal) {
+          Object.keys(PROLOGUE_PATCHES).forEach(function(charId) {
+            if (!newVal[charId]) return;
+            const orig = newVal[charId];
+            const neutered = {};
+            Object.keys(orig).forEach(function(key) {
+              const val = orig[key];
+              if (val === null || val === undefined)    neutered[key] = val;
+              else if (typeof val === 'string')         neutered[key] = '';
+              else if (typeof val === 'number')         neutered[key] = (key === 'composure_floor') ? 100
+                                                                       : (key === 'fracture_threshold') ? 0 : 0;
+              else if (typeof val === 'boolean')        neutered[key] = false;
+              else if (Array.isArray(val))              neutered[key] = [];
+              else if (typeof val === 'object')         neutered[key] = {};
+              else                                      neutered[key] = undefined;
+            });
+            neutered.counter_strategy   = 'cooperate';
+            neutered.optimal_technique  = 'account';
+            neutered.composure_floor    = 100;
+            neutered.fracture_threshold = 0;
+            neutered.baseline           = { text: '', sentence_avg: 'medium', formality: 'medium', tell: '' };
+            neutered.engine             = 'prologue'; // skip technique overlay → _openConversationDirect
+            // Also stash the original so _restorePatches can put it back correctly.
+            if (PROLOGUE_STATE._originals[charId]) {
+              PROLOGUE_STATE._originals[charId].interrogation_data = orig;
+            }
+            newVal[charId] = neutered;
+          });
+        }
+      }
+    });
+  } catch(e) {
+    // Object.defineProperty failed (e.g. already non-configurable). Log and continue —
+    // the earlier neutralization pass is still the first line of defence.
+    console.warn('[prologue] Could not install INTERROGATION_DATA guard:', e);
+  }
 }
 
 function _restorePatches() {
@@ -320,6 +377,23 @@ function _restorePatches() {
   });
   PROLOGUE_STATE._originals = {};
   PROLOGUE_STATE.patches_applied = false;
+
+  // ── TEAR DOWN LOAD-ORDER GUARD ───────────────────────────────
+  // Remove the property descriptor trap now that prologue is over.
+  // The setter checked PROLOGUE_STATE.patches_applied (now false), so it would
+  // no longer re-neutralize anyway — but clean removal prevents any edge cases
+  // if interrogation.js reloads or is reassigned during the post-paywall game.
+  try {
+    const currentVal = window.INTERROGATION_DATA;
+    Object.defineProperty(window, 'INTERROGATION_DATA', {
+      configurable: true,
+      enumerable:   true,
+      writable:     true,
+      value:        currentVal,
+    });
+  } catch(e) {
+    console.warn('[prologue] Could not remove INTERROGATION_DATA guard:', e);
+  }
 }
 
 // ── ACCESS GATE (called from engine.navigateTo) ────────────
