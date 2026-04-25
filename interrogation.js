@@ -24,7 +24,7 @@
 const TECHNIQUES = {
   wait: {
     id:          'wait',
-    label:       'The Wait',
+    label:       'patience · The Wait',
     callum_line: 'Say nothing. See what he fills it with.',
     real_world:  'Scharff + Cognitive combined', // INTERNAL ONLY — not rendered
     composure_multiplier: 0.0,
@@ -35,7 +35,7 @@ const TECHNIQUES = {
   },
   approach: {
     id:          'approach',
-    label:       'The Approach',
+    label:       'conversation · The Approach',
     callum_line: 'Tell him almost everything. See what he corrects.',
     real_world:  'Scharff Technique',           // INTERNAL ONLY — not rendered
     composure_multiplier: 0.4,
@@ -45,7 +45,7 @@ const TECHNIQUES = {
   },
   account: {
     id:          'account',
-    label:       'The Account',
+    label:       'narrative · The Account',
     callum_line: 'Let them talk. See what they choose to include.',
     real_world:  'PEACE / Cognitive Interview',  // INTERNAL ONLY — not rendered
     composure_multiplier: 0.6,
@@ -55,7 +55,7 @@ const TECHNIQUES = {
   },
   record: {
     id:          'record',
-    label:       'The Record',
+    label:       'precision · The Record',
     callum_line: 'Ask first. Show after.',
     real_world:  'Strategic Use of Evidence',   // INTERNAL ONLY — not rendered
     composure_multiplier: 1.0,
@@ -65,7 +65,7 @@ const TECHNIQUES = {
   },
   pressure: {
     id:          'pressure',
-    label:       'The Pressure',
+    label:       'confrontation · The Pressure',
     callum_line: 'He knows I know. Make sure he feels that.',
     real_world:  'Reid (inverted)',              // INTERNAL ONLY — not rendered
     composure_multiplier: 1.8,
@@ -454,21 +454,21 @@ const CONSEQUENCE_ECHOES = {
 // technique named in-world, not in system labels.
 //
 const SUSPECT_DEBRIEF = {
-  "northcott":      { strategy_label: "Cooperative",                     strategy_line: "He wanted to help. The record was ready before you arrived.",                optimal_label: "The Account",     coaching_line: "Let him narrate. He has been holding the sequence for you." },
-  "steward":        { strategy_label: "Formal withholding",              strategy_line: "He will not volunteer. The formality is a wall.",                           optimal_label: "The Record",      coaching_line: "Place the item first. Speech cannot reach him. Paper can." },
-  "ashworth":  { strategy_label: "Grief-redirection",               strategy_line: "She is grieving. She will redirect the conversation toward what she has already accepted.", optimal_label: "The Wait",        coaching_line: "She will fill the silence with what she has been carrying. Do not interrupt the waiting." },
-  "curator":        { strategy_label: "Warm withholding",                strategy_line: "He controls the warmth. The warmth is how he controls the room.",           optimal_label: "The Approach",    coaching_line: "Feed him almost everything. Let him correct the one thing that matters." },
-  "voss":           { strategy_label: "Strategic fragmentation",         strategy_line: "She chooses what to say next. Her silences are selections.",                optimal_label: "The Wait",        coaching_line: "Outlast her selection. What she eventually chooses is what she means." },
-  "pemberton-hale": { strategy_label: "Performed composure",             strategy_line: "The composure is the performance. He has rehearsed it for eight years.",   optimal_label: "The Record",      coaching_line: "An object in his hand breaks the performance. Speech alone will not." },
-  "greaves":        { strategy_label: "Cooperative precision",           strategy_line: "He will tell you exactly what he knows. He will not guess.",                 optimal_label: "The Account",     coaching_line: "Open the narrative. His observation is complete. Your questions do not need to be." },
-  "baron":          { strategy_label: "Fragmentation under noise",       strategy_line: "He produces motion and laughter in place of answers.",                      optimal_label: "The Wait",        coaching_line: "Stop talking. He cannot sustain his own noise. The silence is where the fact appears." },
-  "crane":          { strategy_label: "Clinical fragmentation",          strategy_line: "She is precise in pieces. Each piece is true. The pieces do not assemble.", optimal_label: "The Account",     coaching_line: "Let her sequence the pieces. She has already arranged them in order for you." },
-  "uninvited":      { strategy_label: "Redirective performance",         strategy_line: "He redirects every question into atmosphere and implication.",              optimal_label: "The Approach",    coaching_line: "Feed him your version. His correction will be the only concrete thing he says." },
-  "sovereign":      { strategy_label: "Forty-year cooperation",          strategy_line: "He has been waiting for you. He will give the full sequence. Once.",        optimal_label: "The Account",     coaching_line: "Let him deliver what he has composed. Do not interrupt the structure." },
-  "heir":           { strategy_label: "Fragmented authority",            strategy_line: "She carries the plan in pieces. Each piece is weaponised.",                 optimal_label: "The Wait",        coaching_line: "She will outlast your waiting — but after she does, she will answer completely." },
-  "envoy":          { strategy_label: "Redirective charm",               strategy_line: "He asks you more questions than you ask him. Gently.",                      optimal_label: "The Approach",    coaching_line: "Tell him what you think happened. The correction is the only real move he has." },
-  "archivist":      { strategy_label: "Cooperative through music",       strategy_line: "The piano is her composure. The words are offered freely.",                  optimal_label: "The Account",     coaching_line: "Do not stop the music. Let her narrate while her hands are occupied." },
-  "surgeon":        { strategy_label: "Performed warmth",                strategy_line: "The warmth is calibrated. Every technique adjusts around it. The thing underneath does not move.", optimal_label: "The Record",      coaching_line: "He cannot perform an object he has already touched. The mask is the break." },
+  "northcott":      { strategy_label: "Cooperative",                     strategy_line: "He wanted to help. The record was ready before you arrived.",                optimal_label: "narrative · The Account",     coaching_line: "Let him narrate. He has been holding the sequence for you." },
+  "steward":        { strategy_label: "Formal withholding",              strategy_line: "He will not volunteer. The formality is a wall.",                           optimal_label: "patience · The Wait",        coaching_line: "He defers in conversation. Silence forces him to fill the air with what he was told to hide." },
+  "ashworth":  { strategy_label: "Grief-redirection",               strategy_line: "She is grieving. She will redirect the conversation toward what she has already accepted.", optimal_label: "precision · The Record",      coaching_line: "She wants emotional weight acknowledged. The clinical record reduces grief to a fact, and that is what breaks her." },
+  "curator":        { strategy_label: "Warm withholding",                strategy_line: "He controls the warmth. The warmth is how he controls the room.",           optimal_label: "conversation · The Approach",    coaching_line: "Feed him almost everything. Let him correct the one thing that matters." },
+  "voss":           { strategy_label: "Strategic fragmentation",         strategy_line: "She chooses what to say next. Her silences are selections.",                optimal_label: "patience · The Wait",        coaching_line: "Outlast her selection. What she eventually chooses is what she means." },
+  "pemberton-hale": { strategy_label: "Performed composure",             strategy_line: "The composure is the performance. He has rehearsed it for eight years.",   optimal_label: "precision · The Record",      coaching_line: "An object in his hand breaks the performance. Speech alone will not." },
+  "greaves":        { strategy_label: "Cooperative precision",           strategy_line: "He will tell you exactly what he knows. He will not guess.",                 optimal_label: "narrative · The Account",     coaching_line: "Open the narrative. His observation is complete. Your questions do not need to be." },
+  "baron":          { strategy_label: "Fragmentation under noise",       strategy_line: "He produces motion and laughter in place of answers.",                      optimal_label: "confrontation · The Pressure",    coaching_line: "He uses silence as power. Pressure inverts his dynamic. Make sure he feels that you know." },
+  "crane":          { strategy_label: "Clinical fragmentation",          strategy_line: "She is precise in pieces. Each piece is true. The pieces do not assemble.", optimal_label: "patience · The Wait",        coaching_line: "She wants to give an account. Let her find the silence first. The piece she fills it with is the wrong one." },
+  "uninvited":      { strategy_label: "Redirective performance",         strategy_line: "He redirects every question into atmosphere and implication.",              optimal_label: "conversation · The Approach",    coaching_line: "Feed him your version. His correction will be the only concrete thing he says." },
+  "sovereign":      { strategy_label: "Forty-year cooperation",          strategy_line: "He has been waiting for you. He will give the full sequence. Once.",        optimal_label: "narrative · The Account",     coaching_line: "Let him deliver what he has composed. Do not interrupt the structure." },
+  "heir":           { strategy_label: "Fragmented authority",            strategy_line: "She carries the plan in pieces. Each piece is weaponised.",                 optimal_label: "patience · The Wait",        coaching_line: "She will outlast your waiting — but after she does, she will answer completely." },
+  "envoy":          { strategy_label: "Redirective charm",               strategy_line: "He asks you more questions than you ask him. Gently.",                      optimal_label: "conversation · The Approach",    coaching_line: "Tell him what you think happened. The correction is the only real move he has." },
+  "archivist":      { strategy_label: "Cooperative through music",       strategy_line: "The piano is her composure. The words are offered freely.",                  optimal_label: "narrative · The Account",     coaching_line: "Do not stop the music. Let her narrate while her hands are occupied." },
+  "surgeon":        { strategy_label: "Performed warmth",                strategy_line: "The warmth is calibrated. Every technique adjusts around it. The thing underneath does not move.", optimal_label: "precision · The Record",      coaching_line: "He cannot perform an object he has already touched. The mask is the break." },
 };
 
 // ── RUNTIME HELPERS (Tells, Transitions, Echoes, Debrief) ─────
@@ -4135,7 +4135,7 @@ function openTechniqueSelector(charId) {
 
     const hintLine = document.createElement('div');
     hintLine.style.cssText = 'font-size:13px;color:rgba(200,170,110,0.9);font-style:italic;margin-top:5px;line-height:1.4;letter-spacing:0.08em;text-transform:lowercase;';
-    hintLine.textContent = TECHNIQUE_HINTS[tech.id] || '';
+    hintLine.textContent = tech.label || (TECHNIQUE_HINTS[tech.id] || '');
     btn.appendChild(hintLine);
 
     btn.onclick = (e) => {
