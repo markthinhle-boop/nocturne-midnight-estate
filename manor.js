@@ -749,9 +749,10 @@ function _buildCharDots() {
 // Called when prologue ends (post-cinematic / paywall success) so NPCs
 // reposition from PROLOGUE_NPC_POSITIONS to CHARACTER_POSITIONS.
 function _rebuildCharCards() {
-  // Wipe all existing per-character cards
-  document.querySelectorAll('[id^="char-"]').forEach(el => {
-    if (el.id && el.id.startsWith('char-zone-')) return; // keep zones, just empty them
+  // Wipe existing NPC cards (built by us — identified by class + data-room).
+  // CRITICAL: do NOT use a loose [id^="char-"] selector — that matches #char-response
+  // (the conversation panel's response div) and breaks the panel.
+  document.querySelectorAll('.estate-portrait-zone .train-npc-card[data-room]').forEach(el => {
     el.remove();
   });
   // Empty all zones (keep the zone divs themselves so any CSS keyed off them still applies)
