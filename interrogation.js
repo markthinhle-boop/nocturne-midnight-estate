@@ -459,7 +459,7 @@ const SUSPECT_DEBRIEF = {
   "ashworth":  { strategy_label: "Grief-redirection",               strategy_line: "She is grieving. She will redirect the conversation toward what she has already accepted.", optimal_label: "precision · The Record",      coaching_line: "She wants emotional weight acknowledged. The clinical record reduces grief to a fact, and that is what breaks her." },
   "curator":        { strategy_label: "Warm withholding",                strategy_line: "He controls the warmth. The warmth is how he controls the room.",           optimal_label: "conversation · The Approach",    coaching_line: "Feed him almost everything. Let him correct the one thing that matters." },
   "voss":           { strategy_label: "Strategic fragmentation",         strategy_line: "She chooses what to say next. Her silences are selections.",                optimal_label: "patience · The Wait",        coaching_line: "Outlast her selection. What she eventually chooses is what she means." },
-  "pemberton-hale": { strategy_label: "Performed composure",             strategy_line: "The composure is the performance. He has rehearsed it for eight years.",   optimal_label: "precision · The Record",      coaching_line: "An object in his hand breaks the performance. Speech alone will not." },
+  "pemberton-hale": { strategy_label: "Performed composure",             strategy_line: "The composure is the performance. He has rehearsed it for eight years.",   optimal_label: "conversation · The Approach", coaching_line: "Feed him your version of the Register entry. The forger cannot resist correcting the wording. The correction is the admission." },
   "greaves":        { strategy_label: "Cooperative precision",           strategy_line: "He will tell you exactly what he knows. He will not guess.",                 optimal_label: "narrative · The Account",     coaching_line: "Open the narrative. His observation is complete. Your questions do not need to be." },
   "baron":          { strategy_label: "Fragmentation under noise",       strategy_line: "He produces motion and laughter in place of answers.",                      optimal_label: "confrontation · The Pressure",    coaching_line: "He uses silence as power. Pressure inverts his dynamic. Make sure he feels that you know." },
   "crane":          { strategy_label: "Clinical fragmentation",          strategy_line: "She is precise in pieces. Each piece is true. The pieces do not assemble.", optimal_label: "patience · The Wait",        coaching_line: "She wants to give an account. Let her find the silence first. The piece she fills it with is the wrong one." },
@@ -3484,7 +3484,7 @@ const INTERROGATION_DATA = {
   // ── PEMBERTON-HALE ─────────────────────────────────────────
   'pemberton-hale': {
     counter_strategy:  'perform',
-    optimal_technique: 'record',
+    optimal_technique: 'approach',
     composure_floor:   40,
     fracture_threshold: 55,
 
