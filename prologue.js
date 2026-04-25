@@ -83,12 +83,12 @@ const PROLOGUE_PATCHES = {
 
   'steward': {
     room: 'gallery',
-    intro: 'He is in the Portrait Gallery, masked, adjusting a candle that does not need adjusting. He turns when you enter — slowly, as a man who has been listening to the floorboards.',
+    intro: 'A man in the Portrait Gallery, masked, adjusting a candle that does not need adjusting. He turns when you enter — slowly, as a man who has been listening to the floorboards.',
     dialogue: {
       'Q1': { question: 'Quiet evening so far.',           type: 'choice', response: '"It will not stay quiet. The Rite is at eight. They are all here already, most of them. They are waiting to be looked at. They have been waiting six weeks."' },
-      'Q2': { question: 'How long have you served here?',  type: 'choice', response: '"Long enough. Fourteen years. I do not count past that. There is no reason to."' },
+      'Q2': { question: 'You know the Estate well?',       type: 'choice', response: '"Long enough. I have been here a number of years. I do not count them."' },
       'Q3': { question: 'What kind of man is Lord Ashworth?', type: 'choice', response: '"Lord Ashworth runs the Estate the way estates are run. He keeps records. He makes decisions. Tonight he will open the Black Register at the Rite. I am told it will be memorable. I do not ask what that means."' },
-      'Q4': { question: 'Have a good evening.',            type: 'choice', response: '"I will have the evening I am given. Good evening, Mr. Grey."' },
+      'Q4': { question: 'Have a good evening.',            type: 'choice', response: '"I will have the evening I am given. Good evening."' },
     },
   },
 
@@ -114,29 +114,29 @@ const PROLOGUE_PATCHES = {
 
   'crane': {
     room: 'gallery',
-    intro: 'A woman in the Gallery, in a plain mask of the kind issued to professional members rather than personal guests. She is examining one of the portraits with a clinical attentiveness.',
+    intro: 'A woman in the Gallery, masked, examining one of the portraits with focused attention.',
     dialogue: {
-      'Q1': { question: 'A friend of yours?',              type: 'choice', response: '"None of these are. I am examining the brushwork. The physicians of two centuries ago painted unusually well. I find this is not coincidence."' },
-      'Q2': { question: 'You\'re a physician?',            type: 'choice', response: '"I am. Estate-affiliated. I attend the Rite in a professional capacity. There is usually no need. Lord Ashworth is meticulous about health, and the Society is generally healthy."' },
-      'Q3': { question: 'See you at the Rite.',            type: 'choice', response: 'A small nod. "Eight o\'clock, Mr. Grey. The portraits will still be here afterward."' },
+      'Q1': { question: 'A friend of yours?',              type: 'choice', response: '"None of these are. I am examining the brushwork. The painters of two centuries ago worked with unusual precision."' },
+      'Q2': { question: 'You attend the Rite often?',      type: 'choice', response: '"I attend in a professional capacity. Lord Ashworth is meticulous. The Society is generally well-managed."' },
+      'Q3': { question: 'See you at the Rite.',            type: 'choice', response: 'A small nod. "Eight o\'clock. The portraits will still be here afterward."' },
     },
   },
 
   'vivienne': {
     room: 'maids-quarters',
-    intro: 'A maid at the back of the Estate, smoothing her apron at the door. She does not stop when you enter. She does not bow.',
+    intro: 'A woman at the back of the Estate, smoothing her apron. She does not stop when you enter. She does not bow.',
     dialogue: {
       'Q1': { question: 'Good evening.',                   type: 'choice', response: '"Bonsoir." A glance, then back to the apron. "You are the one Lord Ashworth has been waiting for."' },
-      'Q2': { question: 'He told you about me?',           type: 'choice', response: '"He told no one. The house tells. I have been here four years. The house is generous with what it tells me. Other houses are not so generous. I prefer this one."' },
+      'Q2': { question: 'He told you about me?',           type: 'choice', response: '"He told no one. The house tells. I have been here some years. The house is generous with what it tells me. Other houses are not so generous. I prefer this one."' },
       'Q3': { question: 'I\'ll let you work.',              type: 'choice', response: '"Merci. Eight o\'clock the Rite. After eight o\'clock — the house will tell more. It always does."' },
     },
   },
 
   'hatch': {
     room: 'groundskeeper-cottage',
-    intro: 'An older man at the door of his cottage. Tools on the wall behind him. He was expecting someone — possibly not you, but someone.',
+    intro: 'A man at the door of a cottage. Tools on the wall behind him. He was expecting someone — possibly not you, but someone.',
     dialogue: {
-      'Q1': { question: 'Mr. Hatch.',                      type: 'choice', response: 'He nods. "Mr. Grey. Lord Ashworth said a man named Grey would arrive on the train tonight. He did not say much else. He is sparing with what he says, even to me, and I have been here thirty years."' },
+      'Q1': { question: 'Good evening.',                   type: 'choice', response: 'He nods. "Mr. Grey. Lord Ashworth said a man named Grey would arrive on the train tonight. He did not say much else. He is sparing with what he says."' },
       'Q2': { question: 'Have you seen anything unusual?', type: 'choice', response: '"Not yet. I am keeping watch. Lord Ashworth asked me to. He did not say what for. He said I would know it when I saw it. I have not yet seen it."' },
       'Q3': { question: 'I\'ll come back if I need anything.', type: 'choice', response: '"You will know where to find me. The cottage is open tonight. It is open most nights, but tonight it is open with intention."' },
     },
@@ -146,19 +146,19 @@ const PROLOGUE_PATCHES = {
     room: 'map-room',
     intro: 'A man in the Map Room, masked, examining a chart pinned open on the desk. He looks up at the right moment — the precise moment — when you enter.',
     dialogue: {
-      'Q1': { question: 'Studying maps?',                  type: 'choice', response: '"A professional habit. I find geography clarifies questions that medicine alone cannot answer. Forgive the abstraction. I am told I have a tendency toward it."' },
-      'Q2': { question: 'You\'re a member?',               type: 'choice', response: '"I am affiliated. The Estate keeps me on retainer. Tonight is largely ceremonial — there is rarely call for a physician at a Rite. I attend out of courtesy and the chance to see colleagues I do not see often."' },
-      'Q3': { question: 'Until eight, then.',              type: 'choice', response: '"Until eight. Enjoy the evening, Mr. Grey. The maps will be here when you return — should you return."' },
+      'Q1': { question: 'Studying maps?',                  type: 'choice', response: '"A habit. I find geography clarifies certain questions. Forgive the abstraction."' },
+      'Q2': { question: 'You\'re a member?',               type: 'choice', response: '"Affiliated. I attend out of courtesy and the chance to see colleagues I do not see often."' },
+      'Q3': { question: 'Until eight, then.',              type: 'choice', response: '"Until eight. Enjoy the evening. The maps will be here when you return — should you return."' },
     },
   },
 
   'greaves': {
     room: 'dining-room',
-    intro: 'An older gentleman at the long dining table, alone, masked. A drink, a book, and a chair pulled out as though he has been considering whether to sit at it for some time.',
+    intro: 'A man at the long dining table, alone, masked. A drink, a book, and a chair pulled out as though he has been considering whether to sit at it for some time.',
     dialogue: {
-      'Q1': { question: 'Sir Greaves.',                    type: 'choice', response: '"Mr. Grey. The Estate said you would arrive tonight. I am pleased the train was on time. Trains in this part of the country are not reliably so."' },
-      'Q2': { question: 'You\'re not at the Rite yet?',    type: 'choice', response: '"I do not gather before the gathering. I find pre-Rite mingling unproductive. I will be in the Library until the assembly is called. I always am. The Estate knows where to find me."' },
-      'Q3': { question: 'See you at eight.',               type: 'choice', response: '"Eight o\'clock. I will be where I am usually. Good evening."' },
+      'Q1': { question: 'Good evening.',                   type: 'choice', response: '"Mr. Grey. The Estate said you would arrive tonight. I am pleased the train was on time. Trains in this part of the country are not reliably so."' },
+      'Q2': { question: 'You\'re not at the Rite yet?',    type: 'choice', response: '"I do not gather before the gathering. I find pre-Rite mingling unproductive. I will be elsewhere until the assembly is called. The Estate knows where to find me."' },
+      'Q3': { question: 'See you at eight.',               type: 'choice', response: '"Eight o\'clock. Good evening."' },
     },
   },
 
@@ -167,8 +167,8 @@ const PROLOGUE_PATCHES = {
     intro: 'A masked man in the Trophy Room, examining a glass case with his back to the door. He turns slowly, in the manner of someone who heard you coming long before you arrived.',
     dialogue: {
       'Q1': { question: 'Quiet in here.',                  type: 'choice', response: '"It is. The Trophy Room is quiet because the trophies are the most honest people in the Estate. They were what they were and are no longer pretending to be otherwise."' },
-      'Q2': { question: 'You\'re a member of the Society?', type: 'choice', response: '"I am a Viscount of the Society. There is a difference. The Society notices the difference. I have noticed that the Society notices."' },
-      'Q3': { question: 'Until the Rite.',                 type: 'choice', response: '"Until the Rite. Eight o\'clock. I will be in the Antechamber from quarter to. The Antechamber is where I prefer to be before formal occasions. I have my reasons. They are my own."' },
+      'Q2': { question: 'You\'re a member of the Society?', type: 'choice', response: '"I am. There are ranks within the Society. The Society notices the differences. I have noticed that the Society notices."' },
+      'Q3': { question: 'Until the Rite.',                 type: 'choice', response: '"Until the Rite. Eight o\'clock. I will be nearby from quarter to. I have my reasons. They are my own."' },
     },
   },
 };
