@@ -40,13 +40,13 @@ const PROLOGUE_FREE_ROOMS = [
 // ── PROLOGUE NPC ROOMS ─────────────────────────────────────
 window.PROLOGUE_NPC_POSITIONS = {
   'foyer':                  ['curator'],
-  'gallery':                ['steward','crane'],
-  'study':                  [],
-  'terrace':                ['baron'],
-  'maids-quarters':         ['vivienne'],
-  'groundskeeper-cottage':  ['hatch'],
+  'gallery':                ['crane','greaves'],
+  'study':                  ['baron'],
+  'terrace':                ['vivienne','hatch'],
+  'maids-quarters':         [],
+  'groundskeeper-cottage':  [],
   'map-room':               ['surgeon'],
-  'dining-room':            ['greaves'],
+  'dining-room':            ['steward'],
   'trophy-room':            ['pemberton-hale'],
   'billiard-room':          ['rowe'],
   'weapons-room':           ['northcott'],
@@ -82,8 +82,8 @@ const PROLOGUE_PATCHES = {
   },
 
   'steward': {
-    room: 'gallery',
-    intro: 'A man in the Portrait Gallery, masked, adjusting a candle that does not need adjusting. He turns when you enter — slowly, as a man who has been listening to the floorboards.',
+    room: 'dining-room',
+    intro: 'A man in the Dining Room, masked, adjusting a candle that does not need adjusting. He turns when you enter — slowly, as a man who has been listening to the floorboards.',
     dialogue: {
       'Q1': { question: 'Quiet evening so far.',           type: 'choice', response: '"It will not stay quiet. The Rite is at eight. They are all here already, most of them. They are waiting to be looked at. They have been waiting six weeks."' },
       'Q2': { question: 'You know the Estate well?',       type: 'choice', response: '"Long enough. I have been here a number of years. I do not count them."' },
@@ -93,8 +93,8 @@ const PROLOGUE_PATCHES = {
   },
 
   'baron': {
-    room: 'terrace',
-    intro: 'A man on the terrace, his back to the door, smoking. The mask is a heavy carnival piece — feathered, expensive, of a kind that draws attention by trying not to.',
+    room: 'study',
+    intro: 'A man in the Study, his back to the door, smoking. The mask is a heavy carnival piece — feathered, expensive, of a kind that draws attention by trying not to.',
     dialogue: {
       'Q1': { question: 'Good evening.',                   type: 'choice', response: '"Is it." Not a question. He does not turn. "It is an evening. I will reserve judgment until I have seen more of it."' },
       'Q2': { question: 'You don\'t enjoy these things.',  type: 'choice', response: '"I enjoy things that do not require me to wear a face I did not select." A short exhale. "The Rite is at eight. Until then I am declining to participate in the smaller rite of pretending to enjoy the larger one."' },
@@ -123,8 +123,8 @@ const PROLOGUE_PATCHES = {
   },
 
   'vivienne': {
-    room: 'maids-quarters',
-    intro: 'A woman at the back of the Estate, smoothing her apron. She does not stop when you enter. She does not bow.',
+    room: 'terrace',
+    intro: 'A woman on the terrace, smoothing her apron. She does not stop when you enter. She does not bow.',
     dialogue: {
       'Q1': { question: 'Good evening.',                   type: 'choice', response: '"Bonsoir." A glance, then back to the apron. "You are the one Lord Ashworth has been waiting for."' },
       'Q2': { question: 'He told you about me?',           type: 'choice', response: '"He told no one. The house tells. I have been here some years. The house is generous with what it tells me. Other houses are not so generous. I prefer this one."' },
@@ -133,8 +133,8 @@ const PROLOGUE_PATCHES = {
   },
 
   'hatch': {
-    room: 'groundskeeper-cottage',
-    intro: 'A man at the door of a cottage. Tools on the wall behind him. He was expecting someone — possibly not you, but someone.',
+    room: 'terrace',
+    intro: 'A man on the terrace. Tools visible nearby. He was expecting someone — possibly not you, but someone.',
     dialogue: {
       'Q1': { question: 'Good evening.',                   type: 'choice', response: 'He nods. "Mr. Grey. Lord Ashworth said a man named Grey would arrive on the train tonight. He did not say much else. He is sparing with what he says."' },
       'Q2': { question: 'Have you seen anything unusual?', type: 'choice', response: '"Not yet. I am keeping watch. Lord Ashworth asked me to. He did not say what for. He said I would know it when I saw it. I have not yet seen it."' },
@@ -153,8 +153,8 @@ const PROLOGUE_PATCHES = {
   },
 
   'greaves': {
-    room: 'dining-room',
-    intro: 'A man at the long dining table, alone, masked. A drink, a book, and a chair pulled out as though he has been considering whether to sit at it for some time.',
+    room: 'gallery',
+    intro: 'A man in the Portrait Gallery, alone, masked. A drink, a book, and a chair pulled out as though he has been considering whether to sit at it for some time.',
     dialogue: {
       'Q1': { question: 'Good evening.',                   type: 'choice', response: '"Mr. Grey. The Estate said you would arrive tonight. I am pleased the train was on time. Trains in this part of the country are not reliably so."' },
       'Q2': { question: 'You\'re not at the Rite yet?',    type: 'choice', response: '"I do not gather before the gathering. I find pre-Rite mingling unproductive. I will be elsewhere until the assembly is called. The Estate knows where to find me."' },
