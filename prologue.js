@@ -40,7 +40,7 @@ const PROLOGUE_LOCKED_ROOMS = [
 // Lord Ashworth is alive and masked at the party (he is killed during the cinematic).
 // Lady Ashworth is masked among the guests — only Rowe is unmasked.
 window.PROLOGUE_NPC_POSITIONS = {
-  'foyer':                  ['curator','northcott'],
+  'foyer':                  ['curator'],
   'gallery':                ['steward','crane'],
   'study':                  ['ashworth'],
   'terrace':                ['lady-ashworth','baron'],
@@ -50,7 +50,7 @@ window.PROLOGUE_NPC_POSITIONS = {
   'dining-room':            ['greaves'],
   'trophy-room':            ['pemberton-hale'],
   'billiard-room':          ['rowe'],
-  'weapons-room':           [],
+  'weapons-room':           ['northcott'],
   'conservatory':           [],
 };
 
@@ -66,17 +66,17 @@ const PROLOGUE_DIALOGUE = {
     questions: {
       Q1: { q: 'You were expecting me.', a: '"The Estate was. I am one of the Estate\'s instruments tonight. Lord Ashworth thought it appropriate that you be received by someone whose role tonight is largely ceremonial. The ceremony precedes the Rite. The Rite begins at eight."' },
       Q2: { q: 'What should I do until then?',     a: '"Anything that is not the Ballroom. The Ballroom is closed until the assembly convenes. The grounds are open. The guests are masked. You are not. That is intentional. It is the only courtesy the Estate offers a first-time visitor before the Rite."' },
-      Q3: { q: 'Who am I looking for, exactly?',   a: '"You are looking for nothing. You are being looked at by everyone. Mr. Rowe is in the Billiard Room. He is not masked. He is the only person in this building tonight who is not masked. Lord Ashworth thought you should know that."' },
+      Q3: { q: 'Who am I looking for, exactly?',   a: '"You are looking for nothing. You are being looked at by everyone. Mr. Rowe is in the Billiard Room. Of the guests tonight he is the only one who is not masked. The Estate makes one such exception per Rite. Lord Ashworth thought you should know that the exception, this evening, is Mr. Rowe."' },
       Q4: { q: 'Anything else I should know?',     a: '"The Rite at eight. The Ballroom at eight. Until then — the manor is yours, within the limits I have already described. Welcome to the Estate, Mr. Grey."' },
     },
   },
 
   'northcott': {
     name: 'Cavalier Northcott',
-    intro: 'A young man at a small writing desk near the door. He is not masked because he is staff tonight, not a guest. A leather-bound notebook is open in front of him.',
+    intro: 'A young man in the armory, in front of the mounted sabres, hands behind his back. He is not masked — he is staff-rank tonight, or close enough to it. A leather-bound notebook is tucked under his arm.',
     questions: {
-      Q1: { q: 'You\'re recording arrivals?',  a: '"Every one. Lord Ashworth asked. Six weeks ago. He gave me this notebook and said: write everyone down, write the time exact, circle anything that seems wrong. I have been wondering what wrong looks like ever since."' },
-      Q2: { q: 'Has anything seemed wrong?',   a: 'A pause. "Not yet. The night is young. I will tell you if it does."' },
+      Q1: { q: 'Admiring the swords?',         a: '"I am being told something by them. I have not yet decided what. Lord Ashworth asked me to be on the grounds tonight and to keep a notebook. He did not say I had to be in any particular room. I find the room that has decorative weapons usefully clarifies what one is doing here."' },
+      Q2: { q: 'What\'s the notebook for?',    a: '"Arrivals. Lord Ashworth gave it to me six weeks ago. He said: write everyone down, write the time exact, circle anything that seems wrong. I have been wondering what wrong looks like ever since. I will be in the Foyer once the assembly draws closer. Until then I am here."' },
       Q3: { q: 'You\'re not a member?',        a: '"Not before tonight. Tonight I am being inducted in some fashion that has not been fully explained to me. I find this is consistent with most of my dealings with this Estate."' },
     },
   },
