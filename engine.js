@@ -2678,9 +2678,11 @@ function getSurgeonMaxDepth() {
 function fireDeception(charId, itemId) {
   if (gameState.deceptions_remaining <= 0) return;
   const isCompact = charId.startsWith("c-") || ["sovereign","heir","envoy","archivist"].includes(charId);
-  gameState.deceptions_remaining--;
+  // Capture composure BEFORE the hit — used for fracture-window check after deception resolves
+  const _charStateBefore = gameState.characters[charId] || {};
+  const _composureBefore = _charStateBefore.composure !== undefined ? _charStateBefore.composure : 100;
+  // NOTE: deceptions_remaining decrement deferred to end of function — slot may be preserved if fracture-window hit
   gameState.verdictTracker.deceptions_used++;
-  NocturneEngine.emit('deceptionUsed', { slotsRemaining: gameState.deceptions_remaining });
 
   const DECEPTION_TABLE = {
     "steward": {
@@ -2696,6 +2698,7 @@ function fireDeception(charId, itemId) {
     "northcott": {
       "estate-flower":  { response: "That's — how did you get into the Vault already?", is_effective: true, composure_effect: -20 },
       "northcott-notebook": { response: "You shouldn't have that. That's my personal record.", is_effective: true, composure_effect: -25 },
+      "northcott-placement-letter": { response: "He placed me. He told me where to stand. I didn't ask why. I didn't ask why for six weeks.", is_effective: true, composure_effect: -18 },
     },
     "pemberton-hale": {
       "unsigned-letter": { response: "That letter isn't about me.", is_effective: true, composure_effect: -25 },
@@ -2707,16 +2710,10 @@ function fireDeception(charId, itemId) {
       "appointment-book": { response: "Those entries are standard notation.", is_effective: true, composure_effect: -15 },
       "balcony-case": { response: "I left everything on the balcony exactly as I found it. I did not move the case.", is_effective: true, composure_effect: -18 },
     },
-    "lady-ashworth": {
-      "estate-flower": { response: "The flower was mine. I left it for Edmund before the mingle began. Before anyone arrived. Before —", is_effective: true, composure_effect: -8 },
-      "estate-flower": { response: "The flower was mine. I left it for Edmund before the mingle began. Before anyone arrived. Before —", is_effective: true, composure_effect: -8 },
-      "compact-keepsake": { response: "She looks at it for a long time. Not at you. At it. Something in her face closes. \"I knew that was there.\" She says it very quietly. \"I have known for some time.\" A pause. \"I did not touch it. I did not remove it.\" Another pause. \"That was my decision. It was not a simple decision.\"", is_effective: true, composure_effect: -20 },
-    },
-    // Keep old "ashworth" key as alias for any legacy references
     "ashworth": {
       "estate-flower": { response: "The flower was mine. I left it for Edmund before the mingle began. Before anyone arrived. Before —", is_effective: true, composure_effect: -8 },
-      "estate-flower": { response: "The flower was mine. I left it for Edmund before the mingle began. Before anyone arrived. Before —", is_effective: true, composure_effect: -8 },
       "compact-keepsake": { response: "She looks at it for a long time. Not at you. At it. Something in her face closes. \"I knew that was there.\" She says it very quietly. \"I have known for some time.\" A pause. \"I did not touch it. I did not remove it.\" Another pause. \"That was my decision. It was not a simple decision.\"", is_effective: true, composure_effect: -20 },
+      "candle-request-note": { response: "I requested those candles three weeks ago. I requested candles for every Estate event for fourteen months. That note is signed by me because the candle order required a signature. I did not handle the iron. I did not place anything on the balcony.", is_effective: false, composure_effect: -3 },
     },
     "baron": {
       "ashworths-sunday-letter": { response: "Yes. And now I'm not.", is_effective: true, composure_effect: -30 },
@@ -2799,7 +2796,42 @@ function fireDeception(charId, itemId) {
     gameState.characters[charId] = charState;
     if (typeof updateComposureState === 'function') updateComposureState(charId);
   }
-  haptic(isEffective ? [100, 40, 100, 40, 200] : [10, 5, 10, 5, 10]);
+  // ── FRACTURE WINDOW CHECK ─────────────────────────────────────
+  // If the deception was effective AND composure (before the hit) was in this character's
+  // fracture window, the slot is preserved AND a depth-gating node is granted.
+  // Otherwise the slot consumes normally.
+  const FRACTURE_WINDOWS = {
+    "surgeon":         { min: 43, max: 50 },  // narrow band — hardest to hit
+    "crane":           { min: 45, max: 55 },
+    "pemberton-hale":  { min: 50, max: 60 },  // breaks early
+    "baron":           { min: 30, max: 40 },  // long descent (floor 20)
+    "steward":         { min: 35, max: 45 },
+    "ashworth":        { min: 45, max: 55 },
+    "northcott":       { min: 40, max: 50 },
+  };
+  const _window = FRACTURE_WINDOWS[charId];
+  const _inFractureWindow = !!_window && _composureBefore >= _window.min && _composureBefore <= _window.max;
+  const _slotPreserved = isEffective && _inFractureWindow && !isCompact;
+
+  if (_slotPreserved) {
+    // Grant the fracture-window node — gates a deep question for this character
+    const _fractureNode = charId.replace(/-/g, "_") + "_lie_caught_in_fracture_window";
+    if (typeof window !== "undefined" && typeof window._markNode === "function") {
+      window._markNode(_fractureNode);
+    }
+    if (gameState.node_inventory) gameState.node_inventory[_fractureNode] = true;
+    NocturneEngine.emit("nodeMarked", { nodeId: _fractureNode, charId: charId });
+    NocturneEngine.emit("deceptionFracture", { charId, itemId, composureBefore: _composureBefore, fractureWindow: _window });
+    haptic([100, 40, 100, 40, 200, 40, 100]);  // distinctive fracture haptic
+  } else {
+    // Slot burns
+    gameState.deceptions_remaining--;
+  }
+  NocturneEngine.emit('deceptionUsed', { slotsRemaining: gameState.deceptions_remaining, preserved: _slotPreserved });
+
+  if (!_slotPreserved) {
+    haptic(isEffective ? [100, 40, 100, 40, 200] : [10, 5, 10, 5, 10]);
+  }
   saveGame();
 }
 

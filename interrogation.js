@@ -940,7 +940,7 @@ const INTERROGATION_DATA = {
       },
       'Q9': {
         // Redirect: Steward acknowledgement at 7:00 — not routine
-        requires_composure: 55,
+        unlock_condition: { composure_lte: 55, requires_node: 'northcott_lie_caught_in_fracture_window' },
         composed:   '"Yes." He says it immediately. He holds the notebook. "At seven o\'clock. When I arrived and took my position." A pause. "He crossed the foyer from the direction of the south corridor. He looked at me directly. He nodded." He opens the notebook. "I have noted arrivals and acknowledgements in this house for eleven years. The Steward acknowledges the log in the same manner every Rite evening. A brief nod. Economical." He does not look up. "Tonight\'s acknowledgement was different." A pause. "It was longer. More deliberate. He held the look for approximately two seconds rather than the standard half-second." He looks at you. "Two seconds is not a long time. I have learned that the Steward produces exactly as much acknowledgement as the moment requires. Not more." Another pause. "Two seconds required two seconds. Whatever he was acknowledging at seven o\'clock required two seconds of confirmation." He closes the notebook. "I did not know what that meant at seven o\'clock. I have a clearer picture now."',
         controlled: '"Six o\'clock." He holds the notebook. "The Steward. He acknowledged me." A pause. "Two seconds. Not the standard half-second." He looks at you. "The Steward produces exactly as much acknowledgement as the moment requires. Tonight\'s moment required two seconds." Another pause. "I have been thinking about what that means since eight-oh-one."',
         strained:   '"Six o\'clock." A pause. "The Steward." He looks at the notebook. "Two seconds. Not normal." Another pause. "He was confirming something. I did not know what."',
@@ -1114,7 +1114,7 @@ const INTERROGATION_DATA = {
   // ── STEWARD ────────────────────────────────────────────────
   'steward': {
     counter_strategy:  'withhold',
-    optimal_technique: 'record',
+    optimal_technique: 'wait',
     composure_floor:   30,
     fracture_threshold: 40,
 
@@ -1215,7 +1215,7 @@ const INTERROGATION_DATA = {
       },
       'Q11': {
         // Redirect: Lady Ashworth in garden at 7:40 beneath balcony
-        requires_composure: 55,
+        unlock_condition: { composure_lte: 55, requires_node: 'steward_lie_caught_in_fracture_window' },
         composed:   '"Lady Ashworth." He says it carefully. "She was in the garden at approximately seven forty." A long pause. He looks at the portrait. "I was crossing the terrace on the lamp schedule. She was on the path beneath the balcony." He does not elaborate immediately. "She was standing still. Not walking. Standing at the bench beneath the balcony level." Another pause. "For approximately two minutes." He looks at you. "I noted the time. Seven forty. Lady Ashworth. Garden path. Beneath balcony." He is completely still. "I do not draw conclusions, sir. I record what I see. That is what I recorded."',
         controlled: '"Lady Ashworth was in the garden at seven forty." A pause. He looks at the portrait. "Beneath the balcony. Standing still. Two minutes." He looks at you. "I record positions. That is what I recorded."',
         strained:   '"Seven forty. Lady Ashworth." A pause. "The garden. Beneath the balcony." He looks at the portrait. "Standing. Not walking." Another pause. "Two minutes. I recorded it."',
@@ -1375,7 +1375,7 @@ const INTERROGATION_DATA = {
   // ── LADY ASHWORTH ──────────────────────────────────────────
   'ashworth': {
     counter_strategy:  'redirect',
-    optimal_technique: 'wait',
+    optimal_technique: 'record',
     composure_floor:   40,
     fracture_threshold: 65,
 
@@ -1454,7 +1454,7 @@ const INTERROGATION_DATA = {
 
       'Q6': {
         // Redirect: PH watching the Register — knew what the reading would name
-        requires_composure: 75,
+        unlock_condition: { composure_lte: 75, requires_node: 'ashworth_lie_caught_in_fracture_window' },
         composed:   '"The Viscount." She looks at the fireplace. A long time. "He was watching the Register all evening." A pause. "I observed him from the gallery at approximately seven forty. He was at the lectern. He was not reading the programme. He was reading the Register." She looks at you. "A man who reads a Register he has amended for eight years while waiting for it to be read aloud is a man who knows what the reading will produce." Another long pause. "The Viscount had the most to lose from that reading. He has had the most to lose for eight years." A pause. "Whatever happened at seven forty-five — the Viscount understood what tonight required better than anyone in that ballroom." She says it quietly. "That is not an accusation. It is an observation. I observe things. Edmund taught me to."',
         controlled: '"The Viscount." A pause. She looks at the fireplace. "He was at the Register at seven forty. Reading it." Another pause. "A man who has spent eight years amending a document and reads it on the night it is to be revealed publicly — he knows exactly what is coming." She looks at you. "He had the most to lose."',
         strained:   '"The Viscount." She says it quietly. "Seven forty. At the Register." A pause. "He knew what the reading would name." She looks at the fireplace. "Eight years of amendments. He understood what tonight was."',
@@ -1773,7 +1773,7 @@ const INTERROGATION_DATA = {
       },
       'Q12': {
         // Redirect: Baron at terrace window 7:45 — genuine misdirection
-        requires_composure: 65,
+        unlock_condition: { composure_lte: 65, requires_node: 'surgeon_lie_caught_in_fracture_window' },
         composed:   '"The Baron." He says it before the question finishes. "He was at the terrace window at seven forty-five." A pause. "I saw him from the south corridor as I was passing through." He looks at the desk. "He was watching the terrace with the particular attention of someone who expects to see something." Another pause. "He has not mentioned that. You should ask him why." He looks at you. The warmth is still there. "That is a genuine observation. I am not deflecting. The Baron at that window at that time is relevant." A pause. "Pursue it."',
         controlled: '"The Baron was at the terrace window." A pause. "Seven forty-five. I passed through the south corridor — I saw him." He looks at the desk. "He was watching for something." Another pause. "He has not mentioned that."',
         strained:   '"The Baron." A pause. "Seven forty-five. Terrace window." He looks at the desk. "He was watching. He has not said so." Another pause. "Ask him."',
@@ -2409,7 +2409,7 @@ const INTERROGATION_DATA = {
     // ── DR. CRANE ──────────────────────────────────────────────
   'crane': {
     counter_strategy:  'fragment',
-    optimal_technique: 'account',
+    optimal_technique: 'wait',
     composure_floor:   40,
     fracture_threshold: null,
 
@@ -2512,7 +2512,7 @@ const INTERROGATION_DATA = {
       },
       'Q13': {
         // Redirect: PH and eight years of Register amendments
-        requires_composure: 65,
+        unlock_condition: { composure_lte: 65, requires_node: 'crane_lie_caught_in_fracture_window' },
         composed:   '"The Register is the document that explains tonight." She says it carefully. She touches the bag. "Not because of what it records now. Because of what has been done to it over eight years." A pause. "The Viscount has been making amendments — careful, defensible, individually explicable amendments — for eight years." She looks at you. The composure holds. "Cumulatively they describe a pattern of institutional protection for a channel that ran through this building and that Lord Ashworth was about to name tonight." Another pause. "That investigation predates tonight by eight years. Tonight is its conclusion." She touches the bag again. "I am telling you this because it is accurate. I am also telling you it does not explain what happened on the balcony at seven forty-five. Those are two separate investigations." A pause. "But one of them is eight years old. The other is eight hours old. Start with the one that is eight years old."',
         controlled: '"Eight years of Register amendments." A pause. She touches the bag. "The Viscount. Careful. Defensible. Individually explicable." Another pause. "Cumulatively they describe a pattern. That predates tonight by eight years. Tonight is the conclusion of something." She looks at you. "That is where to look."',
         strained:   '"The Register." A pause. She touches the bag. "Eight years. The Viscount." Another pause. "Look at the amendments in sequence, not individually." She looks at her hands. "That is where this started."',
@@ -2617,7 +2617,7 @@ const INTERROGATION_DATA = {
   // ── THE BARON ──────────────────────────────────────────────
   'baron': {
     counter_strategy:  'fragment',
-    optimal_technique: 'wait',
+    optimal_technique: 'pressure',
     composure_floor:   20,
     fracture_threshold: 35,
 
@@ -2701,7 +2701,7 @@ const INTERROGATION_DATA = {
       },
       'Q7': {
         // Redirect: Steward opened east service gate at 7:44
-        requires_composure: 50,
+        unlock_condition: { composure_lte: 50, requires_node: 'baron_lie_caught_in_fracture_window' },
         composed:   '"The Steward." He picks up the cigarette. Does not light it. Sets it down. "He opened the east service gate at seven forty-four." He looks at the ashtray. "I saw him from this window. The east service gate opens onto the terrace approach directly." A pause. "He stood in the opening for approximately thirty seconds. He was not moving things through it. He was not performing a function that required the gate to be open." He picks up the drink. Sets it down. "A man who opens a gate and stands in it for thirty seconds is either waiting for something to pass through or making sure the path is clear." Another pause. "I have been looking at seven forty-four from this window since the call went up. I have not found an innocent explanation for what I saw." He looks at you. "The Steward has been in this house for fourteen years. He knows what the east service gate connects to. He knows where it leads. He opened it at seven forty-four and stood in it for thirty seconds." A long pause. "That is worth investigating."',
         controlled: '"The Steward opened the east service gate at seven forty-four." A pause. He looks at the ashtray. "I saw him from this window. He stood in the opening thirty seconds." Another pause. "A man stands in an open gate for a reason. That reason is worth knowing."',
         strained:   '"Seven forty-four." A pause. "The Steward. East service gate." He looks at the window. "Open. Thirty seconds. Standing." Another pause. "That connects directly to the terrace approach."',
@@ -3554,7 +3554,7 @@ const INTERROGATION_DATA = {
       },
       'Q7': {
         // Redirect: Curator knew about alterations — allowed Rite to proceed
-        requires_composure: 65,
+        unlock_condition: { composure_lte: 65, requires_node: 'pemberton_hale_lie_caught_in_fracture_window' },
         composed:   '"The Curator." He adjusts his left cuff. Then his right. "He is the correct authority on Register questions. I have said this." A pause. "I will add — and this is the first time I have said this this evening — that the Curator\'s awareness of the alterations predates tonight\'s Rite by some weeks." He looks at you carefully. "He knew. He had been made aware that certain entries required institutional review." Another pause. "He chose to allow the Rite to proceed regardless. That decision was his to make." He adjusts his cuffs again. He does not notice he is doing it. "Whatever happened at eight-oh-one — the Curator understood what the Register contained and allowed the reading to proceed." A pause. "That is a fact. The Curator is the correct authority. He exercised that authority by allowing the evening to continue." He looks at you. "You should ask him what he expected to happen."',
         controlled: '"The Curator knew." A pause. He adjusts his cuffs. "Weeks before tonight. He was aware of the entries." Another pause. "He allowed the Rite to proceed regardless." He looks at you. "That was his decision to make. He made it." Another pause. "Ask him what he expected tonight to produce."',
         strained:   '"The Curator knew about the alterations." A pause. He looks at the writing case. "Weeks ago. He allowed the Rite to happen anyway." Another pause. "Ask him why." He adjusts his left cuff. Then his right.',
