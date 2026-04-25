@@ -1553,7 +1553,7 @@ function updateConversationUI(charId) {
     } else {
       const list = document.getElementById('questions-list');
       if (list) {
-        list.innerHTML = '<div style="padding:14px 20px;font-size:12px;color:var(--text-dim);font-style:italic;">Nothing more is being volunteered. The rest will have to be earned with further evidence.</div>';
+        list.innerHTML = '<div style="padding:14px 20px;font-size:12px;color:var(--text-dim);font-style:italic;">Nothing more is being volunteered. Find what you need elsewhere and return; the next question will surface itself.</div>';
       }
     }
   }
