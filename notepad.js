@@ -120,7 +120,16 @@ function renderNotepadPage(index) {
   const charId   = _padSuspects[index];
   const charData = (window.CHARACTERS && window.CHARACTERS[charId])
                 || (window.COMPACT_CHARACTERS && window.COMPACT_CHARACTERS[charId]);
-  const charName = charData ? (charData.display_name || charData.name || charId) : charId;
+  
+  let charName;
+  if (window.gameState && window.gameState.prologueActive && charData && charData.room) {
+    // PROLOGUE — mask identity, show room instead
+    const roomName = charData.room.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    charName = `Masked figure from the ${roomName}`;
+  } else {
+    charName = charData ? (charData.display_name || charData.name || charId) : charId;
+  }
+  
   const notes    = _getCharNotes(charId);
 
   nameEl.textContent    = charName.toUpperCase();
@@ -513,7 +522,7 @@ function _buildNotepadPanel() {
       <div id="np-header">
         <div id="np-header-title">INVESTIGATOR'S RECORD</div>
         <div style="display:flex;align-items:center;gap:8px;">
-          <button onclick="closeNotepad();openBoard();" style="background:rgba(30,24,14,0.8);border:1px solid rgba(180,155,90,0.3);border-radius:4px;color:#c9a84c;font-size:9px;letter-spacing:0.2em;cursor:pointer;padding:5px 10px;text-transform:uppercase;opacity:0.8;">Board</button>
+          <button id="np-board-btn" onclick="closeNotepad();openBoard();" style="background:rgba(30,24,14,0.8);border:1px solid rgba(180,155,90,0.3);border-radius:4px;color:#c9a84c;font-size:9px;letter-spacing:0.2em;cursor:pointer;padding:5px 10px;text-transform:uppercase;opacity:0.8;">Board</button>
           <button id="np-close-btn" onclick="closeNotepad()">×</button>
         </div>
       </div>
