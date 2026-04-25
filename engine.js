@@ -2689,6 +2689,7 @@ function fireDeception(charId, itemId) {
       "estate-flower":  { response: "Impossible — the cabinet is locked.", is_effective: true, composure_effect: -15 },
       "curators-note":  { response: "That document doesn't — the Curator would never — I see.", is_effective: true, composure_effect: -15 },
       "unsigned-letter": { response: "Where did you find that.", is_effective: true, composure_effect: -20 },
+      "bond-record-volume": { response: "I have read that volume. The Estate keeps a copy in the Library. Members consult it. I have consulted it many times.", is_effective: false, composure_effect: 0 },
     },
     "curator": {
       "barons-incomplete-file": { response: "No signatures in that file.", is_effective: true, composure_effect: -10 },
@@ -2699,6 +2700,7 @@ function fireDeception(charId, itemId) {
       "estate-flower":  { response: "That's — how did you get into the Vault already?", is_effective: true, composure_effect: -20 },
       "northcott-notebook": { response: "You shouldn't have that. That's my personal record.", is_effective: true, composure_effect: -25 },
       "northcott-placement-letter": { response: "He placed me. He told me where to stand. I didn't ask why. I didn't ask why for six weeks.", is_effective: true, composure_effect: -18 },
+      "compact-placement-record": { response: "Yes. I am in that record. Ashworth placed many of us. The Estate has placed members at posts for two centuries. That document is not unusual.", is_effective: false, composure_effect: 0 },
     },
     "pemberton-hale": {
       "unsigned-letter": { response: "That letter isn't about me.", is_effective: true, composure_effect: -25 },
