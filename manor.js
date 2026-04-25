@@ -745,6 +745,98 @@ function _buildCharDots() {
   });
 }
 
+// Rebuild character placements without re-registering event listeners.
+// Called when prologue ends (post-cinematic / paywall success) so NPCs
+// reposition from PROLOGUE_NPC_POSITIONS to CHARACTER_POSITIONS.
+function _rebuildCharCards() {
+  // Wipe all existing per-character cards
+  document.querySelectorAll('[id^="char-"]').forEach(el => {
+    if (el.id && el.id.startsWith('char-zone-')) return; // keep zones, just empty them
+    el.remove();
+  });
+  // Empty all zones (keep the zone divs themselves so any CSS keyed off them still applies)
+  document.querySelectorAll('.estate-portrait-zone').forEach(zone => {
+    zone.innerHTML = '';
+  });
+
+  // Re-place from current source
+  const POSITIONS_SOURCE = (gameState.prologueActive && window.PROLOGUE_NPC_POSITIONS)
+    ? window.PROLOGUE_NPC_POSITIONS
+    : CHARACTER_POSITIONS;
+
+  Object.entries(POSITIONS_SOURCE).forEach(([roomId, chars]) => {
+    if (roomId.startsWith('train-')) return;
+    const roomEl = document.getElementById(`room-${roomId}`);
+    if (!roomEl) return;
+
+    let zone = document.getElementById(`char-zone-${roomId}`);
+    if (!zone) {
+      zone = document.createElement('div');
+      zone.id = `char-zone-${roomId}`;
+      zone.className = 'estate-portrait-zone';
+      zone.style.zIndex = '50';
+      roomEl.appendChild(zone);
+    }
+
+    chars.forEach((charId, idx) => {
+      if (document.getElementById(`char-${charId}`)) return;
+
+      const portraitUrl = getCharPortrait(charId);
+      const charData    = window.CHARACTERS && window.CHARACTERS[charId];
+      const displayName = (charData?.display_name || charId).toUpperCase();
+
+      const card = document.createElement('div');
+      card.className = 'train-npc-card' + (chars.length === 1 ? ' active' : (idx === 0 ? ' active' : ' inactive'));
+      card.id = `char-${charId}`;
+      card.dataset.room = roomId;
+
+      const portrait = document.createElement('div');
+      portrait.className = 'train-npc-portrait';
+      if (portraitUrl) portrait.style.backgroundImage = `url(${portraitUrl})`;
+      card.appendChild(portrait);
+
+      const blend = document.createElement('div');
+      blend.className = 'train-npc-blend';
+      card.appendChild(blend);
+
+      const textArea = document.createElement('div');
+      textArea.className = 'train-npc-text';
+      const nameEl = document.createElement('div');
+      nameEl.className = 'train-npc-name';
+      nameEl.textContent = displayName;
+      textArea.appendChild(nameEl);
+      card.appendChild(textArea);
+
+      if (chars.length > 1) {
+        const hint = document.createElement('div');
+        hint.className = 'train-npc-tap-hint';
+        hint.textContent = 'Tap';
+        card.appendChild(hint);
+      }
+
+      card.addEventListener('click', e => {
+        e.stopPropagation();
+        if (chars.length > 1) {
+          chars.forEach(cId => {
+            const c = document.getElementById(`char-${cId}`);
+            if (!c) return;
+            c.className = 'train-npc-card ' + (cId === charId ? 'active' : 'inactive');
+          });
+        }
+        _onCharTap(charId, roomId);
+      });
+
+      zone.appendChild(card);
+    });
+  });
+
+  // Re-show only current room's zone
+  if (typeof _syncCharZones === 'function') {
+    _syncCharZones(gameState.currentRoom);
+  }
+}
+window.rebuildCharCards = _rebuildCharCards;
+
 function _syncCharZones(roomId) {
   // Hide all estate portrait zones
   document.querySelectorAll('.estate-portrait-zone').forEach(z => {

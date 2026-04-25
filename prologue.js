@@ -273,6 +273,9 @@ window.startPrologue = function() {
   gameState.prologueActive         = true;
 
   _applyPatches();
+  if (typeof window.rebuildCharCards === 'function') {
+    window.rebuildCharCards();
+  }
 
   if (typeof navigateTo === 'function') {
     navigateTo('foyer');
@@ -281,30 +284,22 @@ window.startPrologue = function() {
 };
 
 // ── HALE PAYWALL TRIGGER ───────────────────────────────────
-// Wrap closeConversation: when prologue is in post_murder phase
-// and the player closes Hale's dialogue, fire paywall.
-function _wrapCloseConversation() {
-  if (window._prologueWrappedClose) return;
-  if (typeof window.closeConversation !== 'function') return;
-  const _origClose = window.closeConversation;
-  window._prologueWrappedClose = true;
-  window.closeConversation = function() {
-    const wasActive = window._activeCharId
-      || (typeof _activeCharId !== 'undefined' ? _activeCharId : null);
-    const result = _origClose.apply(this, arguments);
-    if (PROLOGUE_STATE.active
-        && wasActive === 'pemberton-hale'
-        && (PROLOGUE_STATE.phase === 'post_murder' || PROLOGUE_STATE.phase === 'awaiting_paywall')
-        && !PROLOGUE_STATE.hale_dialogue_closed) {
-      PROLOGUE_STATE.hale_dialogue_closed = true;
-      PROLOGUE_STATE.phase = 'awaiting_paywall';
-      setTimeout(_firePaywall, 600);
-    }
-    return result;
-  };
-}
-_wrapCloseConversation();
-NocturneEngine.on('engineReady', _wrapCloseConversation);
+// Paywall fires when player leaves the antechamber post-cinematic.
+// They can talk to Hale freely, close his dialogue, walk around,
+// re-open him — paywall doesn't fire until they actually exit the room.
+NocturneEngine.on('roomLeft', function(payload) {
+  if (!PROLOGUE_STATE.active) return;
+  if (PROLOGUE_STATE.phase !== 'post_murder' && PROLOGUE_STATE.phase !== 'awaiting_paywall') return;
+  if (!payload || payload.roomId !== 'antechamber') return;
+  // Only fire if player has actually entered Hale's dialogue at least once
+  const haleAnswered = (gameState.char_dialogue_complete || {})['pemberton-hale'];
+  const hasTalkedToHale = haleAnswered && Object.keys(haleAnswered).length > 0;
+  if (!hasTalkedToHale) return;
+  if (PROLOGUE_STATE.hale_dialogue_closed) return;
+  PROLOGUE_STATE.hale_dialogue_closed = true;
+  PROLOGUE_STATE.phase = 'awaiting_paywall';
+  setTimeout(_firePaywall, 600);
+});
 
 // ── ROWE DUEL COMPLETION → ARM CINEMATIC ───────────────────
 NocturneEngine.on('roweDuelComplete', function() {
@@ -385,8 +380,12 @@ function _onCinematicComplete() {
   PROLOGUE_STATE.phase = 'post_murder';
   // Restore originals NOW so post-murder ballroom + Hale show real interrogation content.
   // The paywall is the gate, not the dialogue change. Hale's full post-paywall interrogation
-  // is the FIRST taste of the real game. Then paywall after he's closed.
+  // is the FIRST taste of the real game. Then paywall when player leaves the antechamber.
   _restorePatches();
+  // Reposition NPCs to post-paywall positions (Hale → antechamber, Curator → archive-path, etc.)
+  if (typeof window.rebuildCharCards === 'function') {
+    window.rebuildCharCards();
+  }
   if (typeof navigateTo === 'function') navigateTo('ballroom');
   if (typeof saveGame === 'function') saveGame();
 }
@@ -407,6 +406,9 @@ window.onProloguePaywallSuccess = function() {
   PROLOGUE_STATE.phase    = 'complete';
   gameState.prologueActive = false;
   _restorePatches();
+  if (typeof window.rebuildCharCards === 'function') {
+    window.rebuildCharCards();
+  }
   if (typeof navigateTo === 'function') navigateTo('foyer');
   if (typeof saveGame === 'function') saveGame();
 };
