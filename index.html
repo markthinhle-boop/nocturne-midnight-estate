@@ -764,6 +764,13 @@
         if (typeof initMap === 'function') initMap();
         if (typeof initNotepad === 'function') initNotepad();
         updateInventoryCounter();
+
+        // PROLOGUE — if save predates paywall, force prologue mingle from foyer.
+        // Dev room takes precedence (skip prologue when debugging a specific room).
+        if (!_devRoomTarget && !gameState.paidTierUnlocked && typeof window.startPrologue === 'function') {
+          window.startPrologue();
+        }
+
         if (_devRoomTarget) {
           setTimeout(() => {
             if (_devRoomTarget.startsWith('c') && typeof arriveAtCompact === 'function') {

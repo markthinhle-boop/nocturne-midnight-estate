@@ -272,6 +272,25 @@ window.startPrologue = function() {
   PROLOGUE_STATE.hale_dialogue_closed = false;
   gameState.prologueActive         = true;
 
+  // Clear stale progress from any prior save state — prologue is always fresh.
+  // _applyPatches will further wipe per-character dialogue history for patched chars.
+  gameState.char_dialogue_complete = {};
+  gameState.examined_objects       = [];
+  gameState.inventory              = [];
+  gameState.fired_chains           = [];
+  gameState.node_inventory         = {};
+  gameState.dropped_items          = {};
+  gameState.object_taps            = {};
+  gameState.item_taps              = {};
+  gameState.hotspots_pulsed        = {};
+  gameState.essential_left         = {};
+  gameState.puzzles_solved         = [];
+  gameState.puzzle_states          = {};
+  gameState.characters             = {};
+  gameState.deceptions_remaining   = 3;
+  gameState.investigation_closed   = false;
+  gameState.last_talked_to         = null;
+
   _applyPatches();
   if (typeof window.rebuildCharCards === 'function') {
     window.rebuildCharCards();
