@@ -595,6 +595,12 @@ function _onCinematicComplete() {
   if (window.renderCurrentRoom && window.renderCurrentRoom._isIntercept) {
     window.renderCurrentRoom = window.renderCurrentRoom._original;
   }
+  // Force ballroom to render now — the intercept's earlier _origNavigateTo('ballroom')
+  // fired roomEntered, but renderCurrentRoom was the no-op at the time, so ballroom
+  // never got its .active class. Call the real one now.
+  if (typeof window.renderCurrentRoom === 'function') {
+    window.renderCurrentRoom();
+  }
   // Restore originals NOW so post-murder ballroom + Hale show real interrogation content.
   // The paywall is the gate, not the dialogue change. Hale's full post-paywall interrogation
   // is the FIRST taste of the real game. Then paywall when player leaves the antechamber.
