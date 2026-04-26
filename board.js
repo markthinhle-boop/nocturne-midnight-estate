@@ -574,21 +574,19 @@ function closeBoard() {
 
 // ── CENTER BOARD ───────────────────────────────────────────
 function _centerBoard() {
-  const vw = window.innerWidth;
-  const vh = window.innerHeight;
+  const appEl = document.getElementById('app');
+  const vw = appEl ? appEl.clientWidth  : window.innerWidth;
+  const vh = appEl ? appEl.clientHeight : window.innerHeight;
   const isMobile = vw < 768;
 
-  // Mobile: smaller scale so character row fits within screen width
-  // Desktop: slightly larger
   if (isMobile) {
-    _scale = (vw - 16) / BOARD_W;
-    _panX = 8;
-    _panY = vh * 0.06;
+    _scale = Math.min(0.42, (vw - 24) / BOARD_W);
   } else {
     _scale = 0.65;
-    _panX = (vw - BOARD_W * _scale) / 2;
-    _panY = vh * 0.08;
   }
+
+  _panX = (vw - BOARD_W * _scale) / 2;
+  _panY = isMobile ? vh * 0.06 : vh * 0.08;
   _applyTransform();
 }
 
@@ -1342,7 +1340,7 @@ function _updateGateMessage() {
     msg = document.createElement('div');
     msg.id = 'board-gate-msg';
     msg.style.cssText = [
-      'position:fixed', 'bottom:44px', 'left:50%',
+      'position:absolute', 'bottom:44px', 'left:50%',
       'transform:translateX(-50%)',
       'z-index:10',
       'font-size:9px', 'letter-spacing:0.2em',
@@ -1608,7 +1606,7 @@ function _buildBoardPanel() {
   const panel = document.createElement('div');
   panel.id = 'board-panel';
   panel.style.cssText = [
-    'position:fixed', 'inset:0', 'z-index:9998',
+    'position:absolute', 'inset:0', 'z-index:9998',
     'display:none', 'overflow:hidden',
     'opacity:0', 'transition:opacity 300ms ease',
     'cursor:grab',
@@ -1627,7 +1625,7 @@ function _buildBoardPanel() {
   const closeBtn = document.createElement('button');
   closeBtn.id = 'board-close-btn';
   closeBtn.style.cssText = [
-    'position:fixed', 'top:16px', 'right:16px',
+    'position:absolute', 'top:16px', 'right:16px',
     'z-index:10',
     'background:rgba(20,14,6,0.85)',
     'border:1px solid rgba(180,155,90,0.4)',
@@ -1643,7 +1641,7 @@ function _buildBoardPanel() {
   const notepadBtn = document.createElement('button');
   notepadBtn.id = 'board-notepad-btn';
   notepadBtn.style.cssText = [
-    'position:fixed', 'top:16px', 'right:64px',
+    'position:absolute', 'top:16px', 'right:64px',
     'z-index:10',
     'background:rgba(20,14,6,0.85)',
     'border:1px solid rgba(180,155,90,0.4)',
@@ -1663,7 +1661,7 @@ function _buildBoardPanel() {
   // Header label
   const header = document.createElement('div');
   header.style.cssText = [
-    'position:fixed', 'top:20px', 'left:50%',
+    'position:absolute', 'top:20px', 'left:50%',
     'transform:translateX(-50%)',
     'z-index:10',
     'font-size:9px', 'letter-spacing:0.32em',
@@ -1675,7 +1673,7 @@ function _buildBoardPanel() {
   // Hint
   const hint = document.createElement('div');
   hint.style.cssText = [
-    'position:fixed', 'bottom:20px', 'left:50%',
+    'position:absolute', 'bottom:20px', 'left:50%',
     'transform:translateX(-50%)',
     'z-index:10',
     'font-size:8px', 'letter-spacing:0.2em',
