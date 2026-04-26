@@ -515,9 +515,12 @@ NocturneEngine.on('roweDuelComplete', function() {
 
       // Suppress the renderCurrentRoom() call that follows navigateTo()
       // in the nav handler — prevents current room parallax-enter refiring.
-      window.renderCurrentRoom = function() {
+      const _noop = function() {
         window.renderCurrentRoom = _origRenderCurrentRoom;
       };
+      _noop._isIntercept = true;
+      _noop._original = _origRenderCurrentRoom;
+      window.renderCurrentRoom = _noop;
 
       // Navigate to ballroom now so engine state is correct;
       // blocker covers the render.
@@ -586,6 +589,12 @@ function _playMurderCinematic() {
 
 function _onCinematicComplete() {
   PROLOGUE_STATE.phase = 'post_murder';
+  // Restore renderCurrentRoom immediately if the intercept replaced it with a no-op.
+  // Without this, the first post-cinematic room render is silently swallowed,
+  // producing a black screen for ballroom (and sometimes antechamber on mobile).
+  if (window.renderCurrentRoom && window.renderCurrentRoom._isIntercept) {
+    window.renderCurrentRoom = window.renderCurrentRoom._original;
+  }
   // Restore originals NOW so post-murder ballroom + Hale show real interrogation content.
   // The paywall is the gate, not the dialogue change. Hale's full post-paywall interrogation
   // is the FIRST taste of the real game. Then paywall when player leaves the antechamber.
