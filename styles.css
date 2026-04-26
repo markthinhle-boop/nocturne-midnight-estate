@@ -355,7 +355,7 @@ html, body {
 @keyframes dust-drift { 0% { background-position: 0 0; } 100% { background-position: 180px 60px; } }
 
 /* Ballroom — body visible at rest */
-#room-ballroom .room-bg { background-position: center 85%; }
+#room-ballroom .room-bg { background-position: center 30%; }
 
 /* Item thumbnail hotspots */
 .hotspot.no-star::before { display: none; }
