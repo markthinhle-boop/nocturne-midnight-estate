@@ -2406,8 +2406,12 @@ function handlePurchase() {
   gameState.paidTierUnlocked = true;
   closePaywall();
   if (typeof initPaidTier === 'function') initPaidTier();
-  navigateTo('ballroom');
-  saveGame();
+  if (typeof onProloguePaywallSuccess === 'function') {
+    onProloguePaywallSuccess();
+  } else {
+    navigateTo('foyer');
+    saveGame();
+  }
 }
 
 // ── VERDICT DELIVERY ───────────────────────────────────────
