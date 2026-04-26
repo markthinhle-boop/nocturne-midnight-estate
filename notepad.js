@@ -121,14 +121,7 @@ function renderNotepadPage(index) {
   const charData = (window.CHARACTERS && window.CHARACTERS[charId])
                 || (window.COMPACT_CHARACTERS && window.COMPACT_CHARACTERS[charId]);
   
-  let charName;
-  if (window.gameState && window.gameState.prologueActive && charData && charData.room) {
-    // PROLOGUE — mask identity, show room instead
-    const roomName = charData.room.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-    charName = `Masked figure from the ${roomName}`;
-  } else {
-    charName = charData ? (charData.display_name || charData.name || charId) : charId;
-  }
+  const charName = charData ? (charData.display_name || charData.name || charId) : charId;
   
   const notes    = _getCharNotes(charId);
 
