@@ -9,7 +9,7 @@
   <meta name="theme-color" content="#0A0A0A">
   <title>Nocturne: Midnight Estate</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%230A0A0A' stroke='%23B8960C' stroke-width='3'/><text y='65' x='50' text-anchor='middle' font-size='50' fill='%23B8960C'>N</text></svg>">
-  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 <div id="app">
@@ -22,7 +22,7 @@
 
   <!-- ── SCREEN 2: TITLE ───────────────────────────────── -->
   <div id="screen-title" class="screen">
-    <div class="franchise-seal"><img src="./assets/UI/nocturne-seal.png" style="width:60px;height:60px;object-fit:contain;" onerror="this.style.display='none'"></div>
+    <div class="franchise-seal"><img src="assets/UI/nocturne-seal.png" style="width:60px;height:60px;object-fit:contain;" onerror="this.style.display='none'"></div>
     <div class="title-rule"></div>
     <div class="game-title">Nocturne</div>
     <div class="game-subtitle">Midnight Estate</div>
@@ -47,19 +47,19 @@
       </div>
       <div class="mask-cards">
         <div class="mask-card" data-rank="aspirant">
-          <img src="./assets/UI/nocturne-mask-aspirant.png" style="width:48px;height:48px;object-fit:contain;" onerror="this.style.display='none'">
+          <img src="assets/UI/nocturne-mask-aspirant.png" style="width:48px;height:48px;object-fit:contain;" onerror="this.style.display='none'">
           <div class="mask-name">Aspirant</div>
           <div class="mask-desc">The Estate has not yet decided what to make of you. It will find that useful.</div>
           <div class="mask-pill">Lenient judgment · Characters warm</div>
         </div>
         <div class="mask-card selected" data-rank="envoy">
-          <img src="./assets/UI/nocturne-mask-envoy.png" style="width:48px;height:48px;object-fit:contain;" onerror="this.style.display='none'">
+          <img src="assets/UI/nocturne-mask-envoy.png" style="width:48px;height:48px;object-fit:contain;" onerror="this.style.display='none'">
           <div class="mask-name">Envoy</div>
           <div class="mask-desc">You were sent. The Estate will not ask by whom. It will watch what you do instead.</div>
           <div class="mask-pill">Standard judgment · Characters cautious</div>
         </div>
         <div class="mask-card" data-rank="cavalier">
-          <img src="./assets/UI/nocturne-mask-cavalier.png" style="width:48px;height:48px;object-fit:contain;" onerror="this.style.display='none'">
+          <img src="assets/UI/nocturne-mask-cavalier.png" style="width:48px;height:48px;object-fit:contain;" onerror="this.style.display='none'">
           <div class="mask-name">Cavalier</div>
           <div class="mask-desc">A formal rank within the Estate. The gold edge is recognised. Members will expect more from you — and give less away.</div>
           <div class="mask-pill">Firm judgment · Characters demanding</div>
@@ -171,7 +171,7 @@
 
     <div id="train-invitation-screen" style="display:none;">
       <div id="invitation-card-visual">
-        <img src="./assets/UI/nocturne-invitation-card.png"
+        <img src="assets/UI/nocturne-invitation-card.png"
              style="width:180px;height:auto;object-fit:contain;"
              onerror="this.style.opacity='0.4'">
       </div>
@@ -667,13 +667,14 @@
   <!-- ── PAYWALL SCREEN ─────────────────────────────────── -->
   <div id="paywall-screen">
     <div class="paywall-curator-reflection" id="paywall-curator-text">
-      You have seen the body. You have seen the room. You have seen the hand pointing at something no one else has noticed. The investigation does not end here. It begins here. The Estate has set a price for the truth.
+      You have seen the body. You have heard the man in the Antechamber. The investigation does not end here. It begins here. The Estate has set a price for the truth.
     </div>
-    <div class="paywall-price" id="paywall-price">£3.99</div>
-    <div class="paywall-action">
-      <button class="btn-primary" id="btn-paywall-purchase" onclick="handlePurchase()">Complete the Investigation</button>
+    <!-- DEV TEST PAYWALL — replace with real IAP before launch -->
+    <div style="margin:24px 0 8px;font-size:9px;letter-spacing:0.3em;color:rgba(180,155,90,0.5);text-transform:uppercase;text-align:center;">Dev Build — Paywall Test</div>
+    <div class="paywall-action" style="display:flex;gap:16px;justify-content:center;">
+      <button class="btn-primary" id="btn-paywall-purchase" onclick="handlePurchase()" style="min-width:120px;">ACCEPT</button>
+      <button class="btn-primary" id="btn-paywall-decline" onclick="handlePaywallDecline()" style="min-width:120px;background:transparent;border:1px solid rgba(180,155,90,0.4);color:var(--cream-dim);">REJECT</button>
     </div>
-    <div class="paywall-not-now" onclick="handlePaywallDecline()">Not yet. The body will keep.</div>
   </div>
 
   <!-- ── VERDICT SCREEN ─────────────────────────────────── -->
@@ -693,34 +694,34 @@
 </div><!-- /app -->
 
 <!-- ── SCRIPTS ────────────────────────────────────────────── -->
-<script src="./engine.js"></script>
-<script src="./onboarding.js"></script>
-<script src="./sounds.js"></script>
-<script src="./manor.js"></script>
-<script src="./characters.js"></script>
-<script src="./paid-tier.js"></script>
-<script src="./puzzles.js"></script>
-<script src="./inventory.js"></script>
-<script src="./map.js"></script>
-<script src="./verdict.js"></script>
-<script src="./tunnel.js"></script>
-<script src="./train.js"></script>
-<script src="./train-voice.js"></script>
-<script src="./compact.js"></script>
-<script src="./compact-characters.js"></script>
-<script src="./notepad.js"></script>
-<script src="./board.js"></script>
-<script src="./ambient.js"></script>
-<script src="./billiards.js"></script>
-<script src="./chess.js"></script>
+<script src="engine.js"></script>
+<script src="onboarding.js"></script>
+<script src="sounds.js"></script>
+<script src="manor.js"></script>
+<script src="characters.js"></script>
+<script src="paid-tier.js"></script>
+<script src="puzzles.js"></script>
+<script src="inventory.js"></script>
+<script src="map.js"></script>
+<script src="verdict.js"></script>
+<script src="tunnel.js"></script>
+<script src="train.js"></script>
+<script src="train-voice.js"></script>
+<script src="compact.js"></script>
+<script src="compact-characters.js"></script>
+<script src="notepad.js"></script>
+<script src="board.js"></script>
+<script src="ambient.js"></script>
+<script src="billiards.js"></script>
+<script src="chess.js"></script>
 
-<script src="./ui.js"></script>
-<script src="./rowe.js"></script>
-<script src="./prologue.js"></script>
-<script src="./interrogation.js"></script>
-<script src="./behavioral_logger.js"></script>
-<script src="./nis.js"></script>
-<script src="./career.js"></script>
+<script src="ui.js"></script>
+<script src="rowe.js"></script>
+<script src="prologue.js"></script>
+<script src="interrogation.js"></script>
+<script src="behavioral_logger.js"></script>
+<script src="nis.js"></script>
+<script src="career.js"></script>
 
 <!-- Stubs for incomplete modules -->
 <script>

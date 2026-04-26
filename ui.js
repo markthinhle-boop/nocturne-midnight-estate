@@ -2391,8 +2391,8 @@ function activateWalkthrough() {
 
 // ── PAYWALL ────────────────────────────────────────────────
 function openPaywall() {
-  const price = `£${NocturneConfig.PRICE_ESTATE.toFixed(2)}`;
-  document.getElementById('paywall-price').textContent = price;
+  const priceEl = document.getElementById('paywall-price');
+  if (priceEl) priceEl.textContent = `£${NocturneConfig.PRICE_ESTATE.toFixed(2)}`;
   document.getElementById('paywall-screen').classList.add('active');
 }
 
@@ -2401,13 +2401,30 @@ function closePaywall() {
 }
 
 function handlePurchase() {
-  // Platform purchase abstraction
+  // DEV: simulate successful purchase — routes through prologue success handler
   gameSettings.paidTierUnlocked = true;
   gameState.paidTierUnlocked = true;
   closePaywall();
   if (typeof initPaidTier === 'function') initPaidTier();
-  navigateTo('ballroom');
-  saveGame();
+  if (typeof onProloguePaywallSuccess === 'function') {
+    onProloguePaywallSuccess();
+  } else {
+    navigateTo('foyer');
+    saveGame();
+  }
+}
+
+function handlePaywallDecline() {
+  // DEV: simulate decline — full reset back to start of train
+  closePaywall();
+  // Ensure game screen is visible before train re-initialises into it
+  if (typeof showScreen === 'function') showScreen('screen-game');
+  if (typeof onProloguePaywallDecline === 'function') {
+    onProloguePaywallDecline();
+  } else {
+    localStorage.clear();
+    location.reload();
+  }
 }
 
 // ── VERDICT DELIVERY ───────────────────────────────────────
@@ -2539,6 +2556,7 @@ window.activateWalkthrough = activateWalkthrough;
 window.openPaywall = openPaywall;
 window.closePaywall = closePaywall;
 window.handlePurchase = handlePurchase;
+window.handlePaywallDecline = handlePaywallDecline;
 window.closeExaminePanel = closeExaminePanel;
 window.handleExamineMore = handleExamineMore;
 window.handleExamineKeep = handleExamineKeep;
@@ -2757,11 +2775,18 @@ function renderRoomNav() {
       if (roomState !== 'visited' && roomState !== 'completed') return;
 
       const isPaid = PAID_ROOMS.includes(roomId) && !gameState.paidTierUnlocked;
+
+      // Prologue paywall gate — fires when leaving antechamber after Hale dialogue
+      const isPrologueGate = gameState.prologueActive &&
+        window.PROLOGUE_STATE && window.PROLOGUE_STATE.hale_dialogue_closed &&
+        ['ballroom', 'library', 'physicians'].includes(roomId);
+
       const btn = document.createElement('button');
       btn.className = 'room-nav-btn' + (isPaid ? ' locked' : '');
       btn.textContent = (ROOM_NAMES[roomId] || roomId) + (isPaid ? ' ·' : '');
       if (isPaid) btn.title = 'Paid tier required';
       btn.onclick = () => {
+        if (isPrologueGate) { openPaywall(); return; }
         if (isPaid) { openPaywall(); return; }
         if (roomId === 'stage') { openStage(); return; }
         navigateTo(roomId);
@@ -2836,12 +2861,7 @@ NocturneEngine.on('roomEntered', function(payload) {
 });
 
 // On paywall decline: re-hide icons, clear gate
-window.onProloguePaywallDecline = function() {
-  gameState.antechamberGateOpen = false;
-  document.querySelectorAll('[data-hud-gate]').forEach(function(el) {
-    el.style.display = 'none';
-  });
-};
+// onProloguePaywallDecline defined in prologue.js — do not redefine here
 
 NocturneEngine.on('roomEntered',   () => renderRoomNav());
 NocturneEngine.on('objectExamined', () => renderRoomNav()); // unlock nav after examination
