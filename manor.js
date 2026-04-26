@@ -898,7 +898,7 @@ function _curatorBallroomEncounter() {
   if (gameState._curatorBallroomDone) return;
 
   const LINES = [
-    { label: 'Mr. Grey.', text: '"Mr. Grey." He says it without turning from the room. "Lord Ashworth arranged for someone from outside. Someone who would follow the evidence without asking to be managed away from it." A pause. "That arrangement is now active. The investigation is yours."' },
+    { label: 'Mr. Grey.', text: '"Mr. Grey." He says it without turning from the room. "Lord Ashworth arranged for someone from outside. Someone who would follow the evidence without asking to be managed away from it." A pause. "That arrangement is now active. The investigation is yours." He looks toward the door. "Start with the Antechamber."' },
     { label: 'The Register.', text: '"The Register is where it has always been. The body has not been moved. Nobody has moved anything." A pause. "That is either professional discipline or collective shock. Possibly both." He looks at the room. "You will find that the evidence has been arranged to suggest something specific. I would encourage you to consider whether it was arranged by the crime or by the criminal."' },
     { label: '—', text: 'He looks at you for the first time. "I will be in the Archive." A pause — the specific pause of a man who has said what he came to say and has no interest in adding to it. "That is where I will be when you need me." He steps back. The portrait fades.' },
   ];
