@@ -630,7 +630,9 @@ window.onProloguePaywallDecline = function() {
   gameState.prologueActive = false;
 
   const gameScreen = document.getElementById('screen-game');
-  if (gameScreen) gameScreen.classList.remove('active');
+  if (gameScreen && !gameScreen.classList.contains('active')) {
+    gameScreen.classList.add('active');
+  }
   if (typeof startTrainSequence === 'function') {
     startTrainSequence();
   }
