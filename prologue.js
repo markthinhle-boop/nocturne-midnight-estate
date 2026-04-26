@@ -487,6 +487,20 @@ NocturneEngine.on('roweDuelComplete', function() {
   PROLOGUE_STATE.phase            = 'awaiting_cinematic';
 });
 
+// Black out on roomLeft the moment cinematic is armed — before next room renders
+NocturneEngine.on('roomLeft', function() {
+  if (!PROLOGUE_STATE.active) return;
+  if (!PROLOGUE_STATE.cinematic_armed) return;
+  if (PROLOGUE_STATE.cinematic_played) return;
+  if (PROLOGUE_STATE.phase !== 'awaiting_cinematic') return;
+  let blocker = document.getElementById('prologue-cinematic');
+  if (blocker) return; // already up
+  blocker = document.createElement('div');
+  blocker.id = 'prologue-cinematic';
+  blocker.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:#000;z-index:99999;opacity:1;';
+  document.body.appendChild(blocker);
+});
+
 // ── ROOM TRANSITION → FIRE CINEMATIC IF ARMED ──────────────
 NocturneEngine.on('roomEntered', function(payload) {
   if (!PROLOGUE_STATE.active) return;
@@ -496,15 +510,6 @@ NocturneEngine.on('roomEntered', function(payload) {
 
   PROLOGUE_STATE.cinematic_armed = false;
   PROLOGUE_STATE.phase           = 'cinematic';
-
-  // Instantly black out so the room never flashes before the cinematic
-  let blocker = document.getElementById('prologue-cinematic');
-  if (blocker) blocker.remove();
-  blocker = document.createElement('div');
-  blocker.id = 'prologue-cinematic';
-  blocker.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:#000;z-index:99999;opacity:1;';
-  document.body.appendChild(blocker);
-
   setTimeout(_playMurderCinematic, 200);
 });
 
