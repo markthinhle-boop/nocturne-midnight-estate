@@ -493,7 +493,6 @@ NocturneEngine.on('roweDuelComplete', function() {
 // so the current room's parallax-enter never refires under the blocker.
 (function _installCinematicIntercept() {
   const _origNavigateTo      = window.navigateTo;
-  const _origRenderCurrentRoom = window.renderCurrentRoom;
 
   window.navigateTo = function(roomId) {
     if (
@@ -514,14 +513,10 @@ NocturneEngine.on('roweDuelComplete', function() {
         document.body.appendChild(blocker);
       }
 
-      // Suppress the renderCurrentRoom() call that goToRoom() makes right after
-      // navigateTo() returns — that call would re-trigger the parallax-enter fade
-      // on the current room background, producing a visible room flicker.
-      window.renderCurrentRoom = function() {
-        window.renderCurrentRoom = _origRenderCurrentRoom; // restore immediately
-      };
+      // Navigate to ballroom so the subsequent renderCurrentRoom() call shows
+      // ballroom instead of billiard-room (avoids the billiard-room parallax fade).
+      if (typeof _origNavigateTo === 'function') _origNavigateTo('ballroom');
 
-      // Do NOT navigate yet — ballroom renders after cinematic completes.
       setTimeout(_playMurderCinematic, 200);
       return; // swallow the player's intended destination
     }
