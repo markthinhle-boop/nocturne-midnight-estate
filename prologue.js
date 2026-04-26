@@ -600,6 +600,47 @@ function _onCinematicComplete() {
   if (typeof window.rebuildCharCards === 'function') {
     window.rebuildCharCards();
   }
+  // Guarantee Curator card exists in ballroom zone — rebuildCharCards may skip
+  // it if char-curator already exists from the foyer prologue phase.
+  (function _injectCuratorInBallroom() {
+    const roomEl = document.getElementById('room-ballroom');
+    if (!roomEl) return;
+    let zone = document.getElementById('char-zone-ballroom');
+    if (!zone) {
+      zone = document.createElement('div');
+      zone.id = 'char-zone-ballroom';
+      zone.className = 'estate-portrait-zone';
+      zone.style.zIndex = '50';
+      roomEl.appendChild(zone);
+    }
+    const stale = document.getElementById('char-curator');
+    if (stale) stale.remove();
+    const portraitUrl = (typeof getCharPortrait === 'function') ? getCharPortrait('curator') : '';
+    const card = document.createElement('div');
+    card.className = 'train-npc-card active';
+    card.id = 'char-curator';
+    card.dataset.room = 'ballroom';
+    const portrait = document.createElement('div');
+    portrait.className = 'train-npc-portrait';
+    if (portraitUrl) portrait.style.backgroundImage = 'url(' + portraitUrl + ')';
+    card.appendChild(portrait);
+    const blend = document.createElement('div');
+    blend.className = 'train-npc-blend';
+    card.appendChild(blend);
+    const textArea = document.createElement('div');
+    textArea.className = 'train-npc-text';
+    const nameEl = document.createElement('div');
+    nameEl.className = 'train-npc-name';
+    nameEl.textContent = 'THE CURATOR';
+    textArea.appendChild(nameEl);
+    card.appendChild(textArea);
+    card.addEventListener('click', function(e) {
+      e.stopPropagation();
+      if (typeof _curatorBallroomEncounter === 'function') _curatorBallroomEncounter();
+    });
+    zone.innerHTML = '';
+    zone.appendChild(card);
+  })();
   if (typeof navigateTo === 'function') navigateTo('ballroom');
   // Stage should not flash — mark visited
   if (window.gameState && window.gameState.rooms) {
