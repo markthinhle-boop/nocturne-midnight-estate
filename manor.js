@@ -346,11 +346,11 @@ const CHARACTER_POSITIONS = {
   "study":        ["ashworth"],
   "archive-path": ["curator","voss"],
   "terrace":      ["ashworth"],
-  "ballroom":     ["curator"],
+  "ballroom":     [],
   "antechamber":  ["pemberton-hale"],
   "library":      ["greaves"],
   "smoking":      ["baron"],
-  "physicians":   ["crane","surgeon","uninvited"],
+  "physicians":   ["crane","surgeon"],
   "vault":        [],
   "wine-cellar":  [],
   "maids-quarters":    ["vivienne"],
@@ -513,7 +513,7 @@ function initRooms() {
 }
 
 function _buildHotspots() {
-  const THUMB_ROOMS = new Set(['study']);
+  const THUMB_ROOMS = new Set(['study', 'foyer']);
 
   Object.entries(ROOM_OBJECTS).forEach(([objectId, obj]) => {
     const layer = document.getElementById(`hotspots-${obj.room}`);
@@ -527,7 +527,8 @@ function _buildHotspots() {
       hs.classList.add('no-star', 'item-thumb-hotspot');
       const img = document.createElement('img');
       img.src = getItemThumb(obj.item_id);
-      img.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.8));';
+      img.classList.add('landing');
+      img.addEventListener('animationend', () => img.classList.remove('landing'), { once: true });
       img.onerror = () => { img.style.display = 'none'; };
       hs.appendChild(img);
     }
@@ -645,12 +646,11 @@ function _buildCharDots() {
     }
   };
 
-  const ALL_UNINVITED_ROOMS = ['physicians', 'library', 'vault', 'wine-cellar'];
+  const ALL_UNINVITED_ROOMS = ['ballroom', 'library', 'vault', 'wine-cellar'];
 
   function _isUninvitedGateOpen(roomId) {
     if (roomId === 'vault')       return !!gameState.vaultOpen;
     if (roomId === 'wine-cellar') return !!gameState.tunnelFound;
-    if (roomId === 'physicians')  return !!gameState._curatorBallroomDone;
     return true;
   }
 
@@ -846,10 +846,9 @@ function _syncCharZones(roomId) {
   });
   // Uninvited rooms: zone is shown only when encounter opens (_uninvitedEncounter sets conv-portrait-zone).
   // Don't show passively — the card blocks hotspots behind it.
-  // vault/wine-cellar have NO regular chars — Uninvited only, don't show zone
-  // ballroom now has Curator — show zone normally
+  // ballroom/vault/wine-cellar have NO regular chars — Uninvited only, don't show zone
   // library has Greaves — show zone normally (Uninvited handles himself separately)
-  const UNINVITED_ONLY_ROOMS = ['vault', 'wine-cellar'];
+  const UNINVITED_ONLY_ROOMS = ['ballroom', 'vault', 'wine-cellar'];
   if (UNINVITED_ONLY_ROOMS.includes(roomId)) return;
   // Show only the current room's zone
   const zone = document.getElementById(`char-zone-${roomId}`);
@@ -864,13 +863,8 @@ function _onCharTap(charId, roomId) {
     return;
   }
 
-  if (charId === 'curator' && roomId === 'ballroom') {
-    _curatorBallroomEncounter();
-    return;
-  }
-
   if (charId === 'uninvited') {
-    if (roomId === 'physicians') { _uninvitedEncounter(roomId); return; }
+    if (roomId === 'ballroom') { _uninvitedEncounter(roomId); return; }
     if (roomId === 'library')  { _uninvitedEncounter(roomId); return; }
     if (roomId === 'vault') {
       if (!gameState.vaultOpen) { showToast('No one else is here right now.'); return; }
@@ -891,116 +885,6 @@ function _getUninvitedComposureVariant() {
   const tech = gameState._uninvitedTechnique || 'composed';
   const map = { account: 'composed', pressure: 'strained', approach: 'controlled', record: 'controlled', wait: 'fractured' };
   return map[tech] || 'composed';
-}
-
-function _curatorBallroomEncounter() {
-  // Only fires once — if already dismissed, dot is gone
-  if (gameState._curatorBallroomDone) return;
-
-  const LINES = [
-    { label: 'Mr. Grey.', text: '"Mr. Grey." He says it without turning from the room. "Lord Ashworth arranged for someone from outside. Someone who would follow the evidence without asking to be managed away from it." A pause. "That arrangement is now active. The investigation is yours." He looks toward the door. "Start with the Antechamber."' },
-    { label: 'The Register.', text: '"The Register is where it has always been. The body has not been moved. Nobody has moved anything." A pause. "That is either professional discipline or collective shock. Possibly both." He looks at the room. "You will find that the evidence has been arranged to suggest something specific. I would encourage you to consider whether it was arranged by the crime or by the criminal."' },
-    { label: '—', text: 'He looks at you for the first time. "I will be in the Archive." A pause — the specific pause of a man who has said what he came to say and has no interest in adding to it. "That is where I will be when you need me." He steps back. The portrait fades.' },
-  ];
-
-  let _lineIndex = 0;
-  const _dismissKey = '_curatorBallroomDone';
-
-  const panel = document.getElementById('conversation-panel');
-  const respEl = document.getElementById('char-response');
-  const listEl = document.getElementById('questions-list');
-  if (!panel || !respEl || !listEl) return;
-
-  panel.style.display = '';
-  panel.classList.add('open');
-
-  // Portrait — same pattern as Uninvited
-  const portraitUrl = (typeof getCharAsset === 'function') ? getCharAsset('curator') : '';
-  const zone = document.getElementById('conv-portrait-zone');
-  if (zone) {
-    zone.innerHTML = '';
-    zone.style.display = '';
-    if (portraitUrl) {
-      const card = document.createElement('div');
-      card.className = 'train-npc-card active';
-      const portrait = document.createElement('div');
-      portrait.className = 'train-npc-portrait';
-      portrait.style.backgroundImage = 'url(' + portraitUrl + ')';
-      card.appendChild(portrait);
-      const blend = document.createElement('div');
-      blend.className = 'train-npc-blend';
-      card.appendChild(blend);
-      const textArea = document.createElement('div');
-      textArea.className = 'train-npc-text';
-      const nameEl = document.createElement('div');
-      nameEl.className = 'train-npc-name';
-      nameEl.textContent = 'THE CURATOR';
-      textArea.appendChild(nameEl);
-      card.appendChild(textArea);
-      zone.appendChild(card);
-    }
-    // Fade in
-    zone.style.opacity = '0';
-    zone.style.transition = 'opacity 800ms ease';
-    setTimeout(() => { zone.style.opacity = '1'; }, 50);
-  }
-
-  document.querySelectorAll('.estate-portrait-zone').forEach(z => {
-    z.style.visibility = 'hidden';
-    z.style.pointerEvents = 'none';
-  });
-
-  function _renderLine() {
-    const line = LINES[_lineIndex];
-    if (!line) return;
-
-    if (typeof renderWordByWord === 'function') {
-      renderWordByWord(respEl, line.text, 50);
-    } else {
-      respEl.textContent = line.text;
-    }
-
-    listEl.innerHTML = '';
-
-    const isLast = _lineIndex === LINES.length - 1;
-    const btn = document.createElement('div');
-    btn.className = 'question-item';
-    btn.style.cssText = isLast ? 'color:var(--gold-dim);font-style:italic;' : '';
-    btn.textContent = isLast ? '—' : LINES[_lineIndex + 1] ? LINES[_lineIndex].label : '—';
-
-    btn.onclick = () => {
-      _lineIndex++;
-      if (_lineIndex >= LINES.length) {
-        // Last line done — fade out portrait, close panel, remove dot
-        if (zone) {
-          zone.style.transition = 'opacity 600ms ease';
-          zone.style.opacity = '0';
-        }
-        setTimeout(() => {
-          panel.classList.remove('open');
-          document.querySelectorAll('.estate-portrait-zone').forEach(z => {
-            z.style.visibility = '';
-            z.style.pointerEvents = '';
-          });
-          // Remove curator dot from ballroom
-          const dot = document.getElementById('char-curator');
-          if (dot) dot.style.display = 'none';
-          gameState._curatorBallroomDone = true;
-          if (typeof saveGame === 'function') saveGame();
-        }, 650);
-        return;
-      }
-      setTimeout(_renderLine, 150);
-    };
-
-    setTimeout(() => {
-      listEl.innerHTML = '';
-      listEl.appendChild(btn);
-    }, 600);
-  }
-
-  respEl.textContent = '';
-  setTimeout(_renderLine, 200);
 }
 
 function _closeUninvitedEncounter(roomId) {
@@ -1104,7 +988,7 @@ function _uninvitedEncounter(roomId) {
 
   // Observation tap labels
   const LABELS = {
-    physicians:  { Q1: 'Lady Ashworth.', Q2: 'Northcott.', Q3: 'The Register.' },
+    ballroom:    { Q1: 'Lady Ashworth.', Q2: 'Northcott.', Q3: 'The Register.' },
     library:     { Q1: 'The Register.', Q2: 'The Library.', Q3: 'The investigation.' },
     vault:       { Q1: 'The candidates.', Q2: 'The Register chain.', Q3: 'Why you are here.' },
     wine_cellar: { Q1: 'You found something.', Q2: 'A question.' },
@@ -1530,9 +1414,9 @@ const ROOM_CHARACTERS = {
   'archive-path': ['curator', 'voss'],
   'antechamber':  ['pemberton-hale'],
   'library':      ['greaves', 'uninvited'],
-  'physicians':   ['crane', 'surgeon', 'uninvited'],
+  'physicians':   ['crane', 'surgeon'],
   'smoking':      ['baron'],
-  'ballroom':     ['curator'],
+  'ballroom':     ['uninvited'],
   'vault':        ['uninvited'],
   'wine-cellar':  ['uninvited'],
   'c3-original':  ['sovereign'],
