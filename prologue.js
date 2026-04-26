@@ -513,9 +513,7 @@ NocturneEngine.on('roweDuelComplete', function() {
         document.body.appendChild(blocker);
       }
 
-      // Navigate to ballroom in the background (no render visible under blocker)
-      if (typeof _origNavigateTo === 'function') _origNavigateTo('ballroom');
-
+      // Do NOT navigate yet — ballroom renders after cinematic completes.
       setTimeout(_playMurderCinematic, 200);
       return; // swallow the player's intended destination
     }
