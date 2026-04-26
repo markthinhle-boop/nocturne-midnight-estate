@@ -2323,6 +2323,11 @@ html, body {
   flex: 0 0 32%;
 }
 
+/* ── ANTECHAMBER — raise card clear of 3-row nav ── */
+#char-zone-antechamber {
+  bottom: 220px;
+}
+
 /* ── BALLROOM — Uninvited card above center figure ── */
 #char-zone-ballroom {
   bottom: auto;
