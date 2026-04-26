@@ -247,6 +247,8 @@ function handleRoomCompleted({ roomId }) { updateMapRoom(roomId); }
 
 // ── POPUP ──────────────────────────────────────────────────
 function handleShowPopup({ objectId, tapX, tapY, alreadyHave }) {
+  // Hotspots neutered until player enters the antechamber
+  if (!gameState.antechamberGateOpen) return;
   _activeObjectId = objectId;
   const popup = document.getElementById('tap-popup');
   const examineBtn = document.getElementById('popup-examine');
@@ -1712,13 +1714,10 @@ function _openConversationDirect(charId) {
 
   // ROWE DUEL — hide Close button during intro/duel (one-way street)
   const dismissBtn = document.getElementById('btn-dismiss-conv');
-  const completeBtn = document.getElementById('btn-rowe-complete');
-  if (charId === 'rowe') {
-    if (dismissBtn) dismissBtn.style.display = 'none';
-    if (completeBtn) completeBtn.style.display = '';
-  } else {
-    if (dismissBtn) dismissBtn.style.display = '';
-    if (completeBtn) completeBtn.style.display = 'none';
+  if (charId === 'rowe' && dismissBtn) {
+    dismissBtn.style.display = 'none';
+  } else if (dismissBtn) {
+    dismissBtn.style.display = '';
   }
 
   // Clear inline display:none set by train sequence
@@ -2397,34 +2396,6 @@ function openPaywall() {
   document.getElementById('paywall-screen').classList.add('active');
 }
 
-function handleRoweComplete() {
-  // Skip the duel — mark as player win and surface post-duel dialogue.
-  if (!window.ROWE_STATE) window.ROWE_STATE = {};
-  window.ROWE_STATE.duel_complete = true;
-  window.ROWE_STATE.duel_outcome  = 'player_wins';
-  if (!gameState.char_dialogue_complete['rowe']) gameState.char_dialogue_complete['rowe'] = {};
-  gameState.char_dialogue_complete['rowe']['DUEL_WIN']  = true;
-  gameState.char_dialogue_complete['rowe']['FUNNEL']    = true;
-  // Render the win response
-  const roweChar = window.CHARACTERS && window.CHARACTERS['rowe'];
-  const winQ     = roweChar && roweChar.dialogue && roweChar.dialogue['DUEL_WIN'];
-  const resp     = document.getElementById('char-response');
-  if (winQ && resp) {
-    if (typeof window._renderResponse === 'function') window._renderResponse(resp, winQ.response, 55);
-    else resp.innerHTML = winQ.response;
-    resp.scrollTop = 0;
-  }
-  // Swap Complete out, Close in
-  const completeBtn = document.getElementById('btn-rowe-complete');
-  const dismissBtn  = document.getElementById('btn-dismiss-conv');
-  if (completeBtn) completeBtn.style.display = 'none';
-  if (dismissBtn)  dismissBtn.style.display  = '';
-  // Refresh questions so post-duel Q5/Q6 appear
-  setTimeout(() => { if (typeof renderQuestions === 'function') renderQuestions('rowe'); }, 100);
-  if (typeof saveGame === 'function') saveGame();
-}
-window.handleRoweComplete = handleRoweComplete;
-
 function closePaywall() {
   document.getElementById('paywall-screen').classList.remove('active');
 }
@@ -2809,6 +2780,60 @@ function renderRoomNav() {
 }
 
 // Wire room nav to room changes and object examination
+
+// ── ANTECHAMBER GATE ───────────────────────────────────────
+// HUD icons hidden until player enters antechamber.
+// Hotspots are always active (no popup gate).
+// When antechamber entered: show all [data-hud-gate] elements,
+// ensure Hale is in ROOM_CHARACTERS for the antechamber.
+
+document.addEventListener('DOMContentLoaded', function() {
+  setTimeout(function() {
+    if (!gameState.antechamberGateOpen) {
+      document.querySelectorAll('[data-hud-gate]').forEach(function(el) {
+        el.style.display = 'none';
+      });
+    }
+  }, 100);
+});
+
+NocturneEngine.on('roomEntered', function(payload) {
+  const roomId = payload && payload.roomId;
+  if (roomId !== 'antechamber') return;
+  if (gameState.antechamberGateOpen) return;
+  gameState.antechamberGateOpen = true;
+  // Reveal all gated HUD icons
+  document.querySelectorAll('[data-hud-gate]').forEach(function(el) {
+    el.style.display = '';
+    el.style.transition = 'opacity 400ms';
+    el.style.opacity = '0';
+    setTimeout(function() {
+      el.style.opacity = '1';
+      setTimeout(function() { el.style.opacity = '0.2'; }, 400);
+      setTimeout(function() { el.style.opacity = '1';   }, 700);
+      setTimeout(function() { el.style.opacity = '0.2'; }, 1000);
+      setTimeout(function() { el.style.opacity = '1';   }, 1300);
+      setTimeout(function() { el.style.transition = ''; }, 1600);
+    }, 100);
+  });
+  // Ensure Hale is registered in ROOM_CHARACTERS for antechamber
+  if (window.ROOM_CHARACTERS) {
+    const ac = window.ROOM_CHARACTERS['antechamber'] || [];
+    if (!ac.includes('pemberton-hale')) {
+      window.ROOM_CHARACTERS['antechamber'] = ['pemberton-hale'].concat(ac);
+    }
+  }
+  if (typeof saveGame === 'function') saveGame();
+});
+
+// On paywall decline: re-hide icons, clear gate
+window.onProloguePaywallDecline = function() {
+  gameState.antechamberGateOpen = false;
+  document.querySelectorAll('[data-hud-gate]').forEach(function(el) {
+    el.style.display = 'none';
+  });
+};
+
 NocturneEngine.on('roomEntered',   () => renderRoomNav());
 NocturneEngine.on('objectExamined', () => renderRoomNav()); // unlock nav after examination
 NocturneEngine.on('itemCollected',  () => renderRoomNav());
