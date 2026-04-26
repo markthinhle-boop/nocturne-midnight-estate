@@ -2140,6 +2140,7 @@ function _injectBoardHudIcon() {
       'cursor:pointer', 'opacity:0.7',
       'transition:opacity 200ms,color 200ms',
       'flex-shrink:0', 'margin-left:4px',
+      'align-self:center',
     ].join(';');
 
     btn.innerHTML = `<svg width="16" height="15" viewBox="0 0 16 15" fill="none">
