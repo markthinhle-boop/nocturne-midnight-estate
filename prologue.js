@@ -589,6 +589,8 @@ function _onCinematicComplete() {
     // Antechamber must flash — force adjacent so newly-discovered animation fires
     if (window.gameState.rooms['antechamber']) window.gameState.rooms['antechamber'].state = 'adjacent';
   }
+  // Re-render nav so the state changes above take effect
+  if (typeof renderRoomNav === 'function') renderRoomNav();
   if (typeof saveGame === 'function') saveGame();
 }
 

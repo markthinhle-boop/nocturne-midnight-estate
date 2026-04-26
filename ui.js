@@ -2401,13 +2401,26 @@ function closePaywall() {
 }
 
 function handlePurchase() {
-  // Platform purchase abstraction
   gameSettings.paidTierUnlocked = true;
   gameState.paidTierUnlocked = true;
   closePaywall();
   if (typeof initPaidTier === 'function') initPaidTier();
-  navigateTo('ballroom');
-  saveGame();
+  if (typeof onProloguePaywallSuccess === 'function') {
+    onProloguePaywallSuccess();
+  } else {
+    navigateTo('foyer');
+    saveGame();
+  }
+}
+
+function handlePaywallDecline() {
+  closePaywall();
+  if (typeof onProloguePaywallDecline === 'function') {
+    onProloguePaywallDecline();
+  } else {
+    localStorage.clear();
+    location.reload();
+  }
 }
 
 // ── VERDICT DELIVERY ───────────────────────────────────────
@@ -2539,6 +2552,7 @@ window.activateWalkthrough = activateWalkthrough;
 window.openPaywall = openPaywall;
 window.closePaywall = closePaywall;
 window.handlePurchase = handlePurchase;
+window.handlePaywallDecline = handlePaywallDecline;
 window.closeExaminePanel = closeExaminePanel;
 window.handleExamineMore = handleExamineMore;
 window.handleExamineKeep = handleExamineKeep;
@@ -2853,12 +2867,7 @@ NocturneEngine.on('roomEntered', function(payload) {
 });
 
 // On paywall decline: re-hide icons, clear gate
-window.onProloguePaywallDecline = function() {
-  gameState.antechamberGateOpen = false;
-  document.querySelectorAll('[data-hud-gate]').forEach(function(el) {
-    el.style.display = 'none';
-  });
-};
+// onProloguePaywallDecline defined in prologue.js — do not redefine here
 
 NocturneEngine.on('roomEntered',   () => renderRoomNav());
 NocturneEngine.on('objectExamined', () => renderRoomNav()); // unlock nav after examination
