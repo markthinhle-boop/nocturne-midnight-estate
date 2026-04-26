@@ -1712,49 +1712,13 @@ function _openConversationDirect(charId) {
 
   // ROWE DUEL — hide Close button during intro/duel (one-way street)
   const dismissBtn = document.getElementById('btn-dismiss-conv');
-  if (charId === 'rowe' && dismissBtn) {
-    dismissBtn.style.display = 'none';
-  } else if (dismissBtn) {
-    dismissBtn.style.display = '';
-  }
-
-  // ROWE DUEL — inject dev "Complete" button (top-right, skips duel entirely)
-  const _existingComplete = document.getElementById('btn-rowe-complete');
+  const completeBtn = document.getElementById('btn-rowe-complete');
   if (charId === 'rowe') {
-    if (!_existingComplete) {
-      const completeBtn = document.createElement('button');
-      completeBtn.id = 'btn-rowe-complete';
-      completeBtn.textContent = 'Complete';
-      completeBtn.style.cssText = 'position:absolute;top:10px;right:12px;z-index:999;background:rgba(30,24,14,0.85);border:1px solid rgba(180,155,90,0.4);color:#c9a84c;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;padding:5px 10px;border-radius:3px;cursor:pointer;';
-      completeBtn.onclick = function() {
-        // Skip the duel — mark as player win, fire same outcome path as _launchRoweDuel callback
-        if (!window.ROWE_STATE) window.ROWE_STATE = {};
-        window.ROWE_STATE.duel_complete = true;
-        window.ROWE_STATE.duel_outcome  = 'player_wins';
-        if (!gameState.char_dialogue_complete['rowe']) gameState.char_dialogue_complete['rowe'] = {};
-        gameState.char_dialogue_complete['rowe']['DUEL_WIN'] = true;
-        // Also mark funnel complete so post-duel questions unlock
-        gameState.char_dialogue_complete['rowe']['FUNNEL'] = true;
-        // Render win response if available
-        const roweChar = window.CHARACTERS && window.CHARACTERS['rowe'];
-        const winQ = roweChar && roweChar.dialogue && roweChar.dialogue['DUEL_WIN'];
-        const resp = document.getElementById('char-response');
-        if (winQ && resp && typeof window._renderResponse === 'function') {
-          window._renderResponse(resp, winQ.response, 55);
-          resp.scrollTop = 0;
-        }
-        // Restore close button and refresh questions
-        const db = document.getElementById('btn-dismiss-conv');
-        if (db) db.style.display = '';
-        completeBtn.remove();
-        setTimeout(() => { if (typeof renderQuestions === 'function') renderQuestions('rowe'); }, 100);
-        if (typeof saveGame === 'function') saveGame();
-      };
-      panel.style.position = panel.style.position || 'relative';
-      panel.appendChild(completeBtn);
-    }
-  } else if (_existingComplete) {
-    _existingComplete.remove();
+    if (dismissBtn) dismissBtn.style.display = 'none';
+    if (completeBtn) completeBtn.style.display = '';
+  } else {
+    if (dismissBtn) dismissBtn.style.display = '';
+    if (completeBtn) completeBtn.style.display = 'none';
   }
 
   // Clear inline display:none set by train sequence
@@ -2432,6 +2396,34 @@ function openPaywall() {
   document.getElementById('paywall-price').textContent = price;
   document.getElementById('paywall-screen').classList.add('active');
 }
+
+function handleRoweComplete() {
+  // Skip the duel — mark as player win and surface post-duel dialogue.
+  if (!window.ROWE_STATE) window.ROWE_STATE = {};
+  window.ROWE_STATE.duel_complete = true;
+  window.ROWE_STATE.duel_outcome  = 'player_wins';
+  if (!gameState.char_dialogue_complete['rowe']) gameState.char_dialogue_complete['rowe'] = {};
+  gameState.char_dialogue_complete['rowe']['DUEL_WIN']  = true;
+  gameState.char_dialogue_complete['rowe']['FUNNEL']    = true;
+  // Render the win response
+  const roweChar = window.CHARACTERS && window.CHARACTERS['rowe'];
+  const winQ     = roweChar && roweChar.dialogue && roweChar.dialogue['DUEL_WIN'];
+  const resp     = document.getElementById('char-response');
+  if (winQ && resp) {
+    if (typeof window._renderResponse === 'function') window._renderResponse(resp, winQ.response, 55);
+    else resp.innerHTML = winQ.response;
+    resp.scrollTop = 0;
+  }
+  // Swap Complete out, Close in
+  const completeBtn = document.getElementById('btn-rowe-complete');
+  const dismissBtn  = document.getElementById('btn-dismiss-conv');
+  if (completeBtn) completeBtn.style.display = 'none';
+  if (dismissBtn)  dismissBtn.style.display  = '';
+  // Refresh questions so post-duel Q5/Q6 appear
+  setTimeout(() => { if (typeof renderQuestions === 'function') renderQuestions('rowe'); }, 100);
+  if (typeof saveGame === 'function') saveGame();
+}
+window.handleRoweComplete = handleRoweComplete;
 
 function closePaywall() {
   document.getElementById('paywall-screen').classList.remove('active');
