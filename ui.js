@@ -225,12 +225,10 @@ function handleRoomEntered({ roomId, hourWindow }) {
     }
   }
 
-  // Top bar — hidden during train
-  const topBar = document.getElementById('top-bar');
-  if (topBar) topBar.style.display = isTrain ? 'none' : '';
-
-  // Room nav — hidden during train
+  // Top bar — hidden during train only (room nav never hidden by gate)
+  const topBar  = document.getElementById('top-bar');
   const roomNav = document.getElementById('room-nav');
+  if (topBar)  topBar.style.display  = isTrain ? 'none' : '';
   if (roomNav) roomNav.style.display = isTrain ? 'none' : '';
 
   updateInventoryCounter();
@@ -247,6 +245,9 @@ function handleRoomCompleted({ roomId }) { updateMapRoom(roomId); }
 
 // ── POPUP ──────────────────────────────────────────────────
 function handleShowPopup({ objectId, tapX, tapY, alreadyHave }) {
+  // Hotspots are neutered until the player enters the antechamber.
+  // Tapping anything in the world does nothing until the investigation begins.
+  if (!gameState.antechamberGateOpen) return;
   _activeObjectId = objectId;
   const popup = document.getElementById('tap-popup');
   const examineBtn = document.getElementById('popup-examine');
@@ -2400,12 +2401,30 @@ function closePaywall() {
 
 function handlePurchase() {
   // Platform purchase abstraction
-  gameSettings.paidTierUnlocked = true;
-  gameState.paidTierUnlocked = true;
+  gameSettings.paidTierUnlocked  = true;
+  gameState.paidTierUnlocked     = true;
+  gameState.antechamberGateOpen  = true;  // gate stays open on payment
   closePaywall();
+  // Reveal the 4 gated HUD icons
+  document.querySelectorAll('[data-hud-gate]').forEach(el => { el.style.display = ''; });
   if (typeof initPaidTier === 'function') initPaidTier();
   navigateTo('ballroom');
   saveGame();
+}
+
+function handlePaywallDecline() {
+  // Player chose not to pay — close paywall, reset gate, restart from train.
+  closePaywall();
+  gameState.antechamberGateOpen = false;
+  // Hide the 4 gated HUD icons
+  document.querySelectorAll('[data-hud-gate]').forEach(el => { el.style.display = 'none'; });
+  // Full reset to train
+  if (typeof resetGame === 'function') {
+    resetGame();
+  } else {
+    localStorage.clear();
+    window.location.reload();
+  }
 }
 
 // ── VERDICT DELIVERY ───────────────────────────────────────
@@ -2536,7 +2555,8 @@ window.closePuzzle = closePuzzle;
 window.activateWalkthrough = activateWalkthrough;
 window.openPaywall = openPaywall;
 window.closePaywall = closePaywall;
-window.handlePurchase = handlePurchase;
+window.handlePurchase       = handlePurchase;
+window.handlePaywallDecline = handlePaywallDecline;
 window.closeExaminePanel = closeExaminePanel;
 window.handleExamineMore = handleExamineMore;
 window.handleExamineKeep = handleExamineKeep;
@@ -2779,6 +2799,31 @@ function renderRoomNav() {
 
 // Wire room nav to room changes and object examination
 NocturneEngine.on('roomEntered',   () => renderRoomNav());
+
+// ── ANTECHAMBER GATE ───────────────────────────────────────
+// HUD and hotspots are locked until the player first enters the antechamber.
+// This is the first moment of true investigation — Hale's room.
+NocturneEngine.on('roomEntered', ({ roomId }) => {
+  if (roomId !== 'antechamber') return;
+  if (gameState.antechamberGateOpen) return;  // already open
+  gameState.antechamberGateOpen = true;
+  // Reveal and flash the 4 gated HUD icons — one time only
+  document.querySelectorAll('[data-hud-gate]').forEach(el => {
+    el.style.display = '';
+    el.style.transition = 'opacity 300ms ease';
+    el.style.opacity = '0';
+    setTimeout(() => {
+      el.style.opacity = '1';
+      // Two more pulses so player notices
+      setTimeout(() => { el.style.opacity = '0.2'; }, 400);
+      setTimeout(() => { el.style.opacity = '1';   }, 700);
+      setTimeout(() => { el.style.opacity = '0.2'; }, 1000);
+      setTimeout(() => { el.style.opacity = '1';   }, 1300);
+      setTimeout(() => { el.style.transition = ''; }, 1600);
+    }, 150);
+  });
+  if (typeof saveGame === 'function') saveGame();
+});
 NocturneEngine.on('objectExamined', () => renderRoomNav()); // unlock nav after examination
 NocturneEngine.on('itemCollected',  () => renderRoomNav());
 NocturneEngine.on('roomCompleted',  () => renderRoomNav());
