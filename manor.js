@@ -846,9 +846,10 @@ function _syncCharZones(roomId) {
   });
   // Uninvited rooms: zone is shown only when encounter opens (_uninvitedEncounter sets conv-portrait-zone).
   // Don't show passively — the card blocks hotspots behind it.
-  // ballroom/vault/wine-cellar have NO regular chars — Uninvited only, don't show zone
+  // vault/wine-cellar have NO regular chars — Uninvited only, don't show zone
+  // ballroom now has Curator — show zone normally
   // library has Greaves — show zone normally (Uninvited handles himself separately)
-  const UNINVITED_ONLY_ROOMS = ['ballroom', 'vault', 'wine-cellar'];
+  const UNINVITED_ONLY_ROOMS = ['vault', 'wine-cellar'];
   if (UNINVITED_ONLY_ROOMS.includes(roomId)) return;
   // Show only the current room's zone
   const zone = document.getElementById(`char-zone-${roomId}`);
