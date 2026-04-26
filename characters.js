@@ -244,7 +244,7 @@ const CHARACTERS = {
       "Q9": { question: "Why didn't you warn him?", requires_q: "Q8", response: "\"Because he didn't want to be warned. Edmund knew what was coming. He chose to attend the Rite. He chose to open the Register.\" A pause. \"He wasn't unprepared.\"" },
       // TWO-CHAR ROOM — only available when Baron is present
       "Q10_TWO_CHAR": { question: "What are you protecting him from?", two_char_only: true, response: "She glances at the Baron. He does not look back. \"I am not protecting anyone.\" A pause that lasts too long to be true. \"I am ensuring the correct verdict is the one that gets recorded.\" The Baron's composure goes somewhere it hasn't been this evening." },
-      "Q11_TWO_CHAR": { question: "You chose the investigator.", two_char_only: true, response: "She looks at the garden for a long time. \"I made a recommendation.\" The Baron sets down his drink. \"The Compact acted on it.\" She looks at you. For the first time this evening she is not managing the conversation. She is ending it. \"Find the second name. The rest is already decided.\"" },
+      "Q11_TWO_CHAR": { question: "The Curator arranged your husband's investigator.", two_char_only: true, response: "She looks at the garden for a long time. \"Edmund approved the arrangement.\" The Baron sets down his drink. \"The Curator handled the invitation. Edmund handled the name.\" She looks at you. For the first time this evening she is not managing the conversation. She is ending it. \"Find the second name. The rest is already decided.\"" },
       // CROSS-CHARACTER — the most important line in the Estate
       "Q12_CROSS": {
         question: "Dr. Crane says she was told it was for a patient who chose their death.",

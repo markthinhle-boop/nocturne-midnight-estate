@@ -1513,31 +1513,33 @@ const INTERROGATION_DATA = {
         },
       },
       'C': {
-        label:            'The recommendation',
+        label:            'What Edmund asked',
         unlock_condition: { requires_char_branch: { char: 'steward', branch: 'B' } },
         questions: {
           'BC1': {
-            text:     '"You recommended the investigator to the Compact."',
+            text:     '"Edmund told you to find someone."',
             type:     'narrative_statement',
             cost:     3,
-            response_composed:   '"I made a recommendation." She says it without turning from the garden.',
-            response_strained:   '"I told the Sovereign there was an investigator whose investigator the Compact had been watching for eighteen months." She doesn\'t elaborate.',
-            response_fractured:  '"I told them your name. I said you would follow the evidence without asking to be managed away from it." A pause. "Edmund agreed. He said you were the one he\'d have chosen."',
+            response_composed:   '"He said: if something goes wrong, trust no one inside the building." She says it without turning from the garden. "He said find someone from outside. Tell them to look at the Register." A pause. "He did not say who. He said the arrangement was already in place. That someone would arrive."',
+            response_strained:   '"He told me." She says it to the garden. "Six weeks ago. He said: if I am not here to present the evidence, find the investigator who is already coming and tell them to look at the Register. The Curator arranged the invitation. Edmund approved the name." A pause. "He did not tell me the name."',
+            response_fractured:  '"He said find the investigator." A pause. "He said: the Curator arranged it. Someone will come." She looks at the garden. "He did not tell me who. He said I would know by the wound." A pause. "I knew."',
             grants_node: 'ashworth_sovereign_correspond',
           },
           'BC2': {
-            text:     '"Why that name specifically."',
+            text:     '"He didn\'t tell you who was coming."',
             type:     'focused_follow_up',
             cost:     8,
-            response_composed:   '"Because Edmund had been watching you for eighteen months.\" She says it directly. \"Not him personally. The Compact had been watching the investigation work \u2014 the cases you took, how you conducted them, what you were willing to pursue past the point where most investigators stop.\" A pause. \"He said: I need someone who will not be managed. Someone the other side has not already identified as a useful instrument.\" She looks at the garden. \"He spent eighteen months finding that.\" Another pause. \"I agreed with his reasoning. Whether the outcome justifies it is a question he is no longer here to answer."',
+            response_composed:   '"No." She says it simply. "Edmund was careful about what he told me and what he did not. He said: you do not need the name. You need to tell them where the Register is and what is in the Vault." She looks at the garden. "I have done that. Or I am doing it now." A pause. "He said the investigator would follow the evidence without asking to be protected from it. That was all I was given."',
+            response_strained:   '"He said the Curator had handled it." A pause. "That was enough for Edmund. He trusted the Curator\'s arrangements. He said: all you need to do is point them at the Register." She looks at the garden. "That is what I am doing."',
             unlocks: 'BC3',
             grants_node: 'callum_selected_after_eighteen_months_observation',
           },
           'BC3': {
-            text:     '"Did Edmund know who was watching you."',
+            text:     '"The Curator chose the name."',
             type:     'focused_follow_up',
             cost:     15,
-            response_composed:   'She looks at Callum directly. For the first time this evening. "He knew the Seal had an interest in the investigation. He knew an investigator positioned by the Seal would be pointed toward the wrong verdict." A pause. "He did not know they had already positioned you. That information came later — from the Compact." She is quiet for a moment. "When he found out, he said: that is exactly why it has to be him. If they positioned him for one function, he can be repositioned for another." She does not say whether Edmund was right. She has been deciding since she found out. She does not have a conclusion yet.',
+            response_composed:   'She looks at Callum directly. For the first time this evening. "Edmund approved it. The Curator arranged it. There is a difference." A pause. "Edmund said: whoever is coming was selected because they will follow the evidence further than is comfortable. He said: someone else may have had reasons for that selection that were not Edmund\'s reasons." She is very still. "He said that twice. The second time he looked at me and said: find the second name." A pause. "I did not understand what he meant until just now."',
+            response_strained:   '"The Curator arranged the invitation." She says it to the garden. "Edmund said someone else may have wanted the same investigator for different reasons." A pause. "He said: find the second name. I did not know what that meant." Another pause. "I think I do now."',
             grants_node: 'ashworth_knew_seal_interest_in_investigation',
             cross_links: [{ char: 'compact_sovereign', branch: 'q4_unlock' }],
           },
@@ -1660,7 +1662,7 @@ const INTERROGATION_DATA = {
       },
     },
 
-    cognitive_load_response: '"Edmund." While watching you write. "He chose the Rite. He chose the Register. He chose —" She stops. "He chose the audience. He needed witnesses." A pause she didn\'t plan. "He needed you specifically."',
+    cognitive_load_response: '"Edmund." While watching you write. "He chose the Rite. He chose the Register. He chose —" She stops. "He chose the audience. He needed witnesses." A pause she didn\'t plan. "He arranged for someone from outside. He said the Curator had handled it." She does not say anything else.',
 
   },
 
