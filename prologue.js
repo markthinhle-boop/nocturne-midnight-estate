@@ -485,43 +485,24 @@ NocturneEngine.on('roweDuelComplete', function() {
   PROLOGUE_STATE.rowe_duel_done   = true;
   PROLOGUE_STATE.cinematic_armed  = true;
   PROLOGUE_STATE.phase            = 'awaiting_cinematic';
-
-  // Wait for the rowe-duel-overlay to be dismissed (Close button removes it),
-  // then black out and fire the cinematic.
-  const observer = new MutationObserver(function() {
-    if (document.getElementById('rowe-duel-overlay')) return; // still open
-    observer.disconnect();
-    if (PROLOGUE_STATE.cinematic_played) return;
-
-    let blocker = document.getElementById('prologue-cinematic');
-    if (blocker) blocker.remove();
-    blocker = document.createElement('div');
-    blocker.id = 'prologue-cinematic';
-    blocker.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:#000;z-index:99999;opacity:1;';
-    document.body.appendChild(blocker);
-
-    PROLOGUE_STATE.cinematic_armed = false;
-    PROLOGUE_STATE.phase           = 'cinematic';
-    setTimeout(_playMurderCinematic, 200);
-  });
-  observer.observe(document.body, { childList: true, subtree: true });
 });
 
-// Black out on roomLeft the moment cinematic is armed — before next room renders
-NocturneEngine.on('roomLeft', function() {
+// ── ROOM TRANSITION → FIRE CINEMATIC IF ARMED ──────────────
+// Black out the moment player leaves billiard-room so next room never shows
+NocturneEngine.on('roomLeft', function(payload) {
   if (!PROLOGUE_STATE.active) return;
   if (!PROLOGUE_STATE.cinematic_armed) return;
   if (PROLOGUE_STATE.cinematic_played) return;
   if (PROLOGUE_STATE.phase !== 'awaiting_cinematic') return;
+  if (!payload || payload.roomId !== 'billiard-room') return;
   let blocker = document.getElementById('prologue-cinematic');
-  if (blocker) return; // already up
+  if (blocker) return;
   blocker = document.createElement('div');
   blocker.id = 'prologue-cinematic';
   blocker.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:#000;z-index:99999;opacity:1;';
   document.body.appendChild(blocker);
 });
 
-// ── ROOM TRANSITION → FIRE CINEMATIC IF ARMED ──────────────
 NocturneEngine.on('roomEntered', function(payload) {
   if (!PROLOGUE_STATE.active) return;
   if (!PROLOGUE_STATE.cinematic_armed) return;
@@ -602,6 +583,9 @@ function _onCinematicComplete() {
     window.rebuildCharCards();
   }
   if (typeof navigateTo === 'function') navigateTo('ballroom');
+  if (window.gameState && window.gameState.rooms && window.gameState.rooms['stage']) {
+    window.gameState.rooms['stage'].state = 'visited';
+  }
   if (typeof saveGame === 'function') saveGame();
 }
 
