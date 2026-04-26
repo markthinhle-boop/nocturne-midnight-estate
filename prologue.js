@@ -496,6 +496,15 @@ NocturneEngine.on('roomEntered', function(payload) {
 
   PROLOGUE_STATE.cinematic_armed = false;
   PROLOGUE_STATE.phase           = 'cinematic';
+
+  // Instantly black out so the room never flashes before the cinematic
+  let blocker = document.getElementById('prologue-cinematic');
+  if (blocker) blocker.remove();
+  blocker = document.createElement('div');
+  blocker.id = 'prologue-cinematic';
+  blocker.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:#000;z-index:99999;opacity:1;';
+  document.body.appendChild(blocker);
+
   setTimeout(_playMurderCinematic, 200);
 });
 
@@ -568,9 +577,6 @@ function _onCinematicComplete() {
     window.rebuildCharCards();
   }
   if (typeof navigateTo === 'function') navigateTo('ballroom');
-  if (window.gameState && window.gameState.rooms && window.gameState.rooms['stage']) {
-    window.gameState.rooms['stage'].state = 'visited';
-  }
   if (typeof saveGame === 'function') saveGame();
 }
 
