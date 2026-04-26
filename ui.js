@@ -225,10 +225,12 @@ function handleRoomEntered({ roomId, hourWindow }) {
     }
   }
 
-  // Top bar — hidden during train only (room nav never hidden by gate)
-  const topBar  = document.getElementById('top-bar');
+  // Top bar — hidden during train
+  const topBar = document.getElementById('top-bar');
+  if (topBar) topBar.style.display = isTrain ? 'none' : '';
+
+  // Room nav — hidden during train
   const roomNav = document.getElementById('room-nav');
-  if (topBar)  topBar.style.display  = isTrain ? 'none' : '';
   if (roomNav) roomNav.style.display = isTrain ? 'none' : '';
 
   updateInventoryCounter();
@@ -245,9 +247,6 @@ function handleRoomCompleted({ roomId }) { updateMapRoom(roomId); }
 
 // ── POPUP ──────────────────────────────────────────────────
 function handleShowPopup({ objectId, tapX, tapY, alreadyHave }) {
-  // Hotspots are neutered until the player enters the antechamber.
-  // Tapping anything in the world does nothing until the investigation begins.
-  if (!gameState.antechamberGateOpen) return;
   _activeObjectId = objectId;
   const popup = document.getElementById('tap-popup');
   const examineBtn = document.getElementById('popup-examine');
@@ -1719,6 +1718,45 @@ function _openConversationDirect(charId) {
     dismissBtn.style.display = '';
   }
 
+  // ROWE DUEL — inject dev "Complete" button (top-right, skips duel entirely)
+  const _existingComplete = document.getElementById('btn-rowe-complete');
+  if (charId === 'rowe') {
+    if (!_existingComplete) {
+      const completeBtn = document.createElement('button');
+      completeBtn.id = 'btn-rowe-complete';
+      completeBtn.textContent = 'Complete';
+      completeBtn.style.cssText = 'position:absolute;top:10px;right:12px;z-index:999;background:rgba(30,24,14,0.85);border:1px solid rgba(180,155,90,0.4);color:#c9a84c;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;padding:5px 10px;border-radius:3px;cursor:pointer;';
+      completeBtn.onclick = function() {
+        // Skip the duel — mark as player win, fire same outcome path as _launchRoweDuel callback
+        if (!window.ROWE_STATE) window.ROWE_STATE = {};
+        window.ROWE_STATE.duel_complete = true;
+        window.ROWE_STATE.duel_outcome  = 'player_wins';
+        if (!gameState.char_dialogue_complete['rowe']) gameState.char_dialogue_complete['rowe'] = {};
+        gameState.char_dialogue_complete['rowe']['DUEL_WIN'] = true;
+        // Also mark funnel complete so post-duel questions unlock
+        gameState.char_dialogue_complete['rowe']['FUNNEL'] = true;
+        // Render win response if available
+        const roweChar = window.CHARACTERS && window.CHARACTERS['rowe'];
+        const winQ = roweChar && roweChar.dialogue && roweChar.dialogue['DUEL_WIN'];
+        const resp = document.getElementById('char-response');
+        if (winQ && resp && typeof window._renderResponse === 'function') {
+          window._renderResponse(resp, winQ.response, 55);
+          resp.scrollTop = 0;
+        }
+        // Restore close button and refresh questions
+        const db = document.getElementById('btn-dismiss-conv');
+        if (db) db.style.display = '';
+        completeBtn.remove();
+        setTimeout(() => { if (typeof renderQuestions === 'function') renderQuestions('rowe'); }, 100);
+        if (typeof saveGame === 'function') saveGame();
+      };
+      panel.style.position = panel.style.position || 'relative';
+      panel.appendChild(completeBtn);
+    }
+  } else if (_existingComplete) {
+    _existingComplete.remove();
+  }
+
   // Clear inline display:none set by train sequence
   panel.style.display = '';
   document.getElementById('conv-portrait-zone').style.display = '';
@@ -2401,30 +2439,12 @@ function closePaywall() {
 
 function handlePurchase() {
   // Platform purchase abstraction
-  gameSettings.paidTierUnlocked  = true;
-  gameState.paidTierUnlocked     = true;
-  gameState.antechamberGateOpen  = true;  // gate stays open on payment
+  gameSettings.paidTierUnlocked = true;
+  gameState.paidTierUnlocked = true;
   closePaywall();
-  // Reveal the 4 gated HUD icons
-  document.querySelectorAll('[data-hud-gate]').forEach(el => { el.style.display = ''; });
   if (typeof initPaidTier === 'function') initPaidTier();
   navigateTo('ballroom');
   saveGame();
-}
-
-function handlePaywallDecline() {
-  // Player chose not to pay — close paywall, reset gate, restart from train.
-  closePaywall();
-  gameState.antechamberGateOpen = false;
-  // Hide the 4 gated HUD icons
-  document.querySelectorAll('[data-hud-gate]').forEach(el => { el.style.display = 'none'; });
-  // Full reset to train
-  if (typeof resetGame === 'function') {
-    resetGame();
-  } else {
-    localStorage.clear();
-    window.location.reload();
-  }
 }
 
 // ── VERDICT DELIVERY ───────────────────────────────────────
@@ -2555,8 +2575,7 @@ window.closePuzzle = closePuzzle;
 window.activateWalkthrough = activateWalkthrough;
 window.openPaywall = openPaywall;
 window.closePaywall = closePaywall;
-window.handlePurchase       = handlePurchase;
-window.handlePaywallDecline = handlePaywallDecline;
+window.handlePurchase = handlePurchase;
 window.closeExaminePanel = closeExaminePanel;
 window.handleExamineMore = handleExamineMore;
 window.handleExamineKeep = handleExamineKeep;
@@ -2799,31 +2818,6 @@ function renderRoomNav() {
 
 // Wire room nav to room changes and object examination
 NocturneEngine.on('roomEntered',   () => renderRoomNav());
-
-// ── ANTECHAMBER GATE ───────────────────────────────────────
-// HUD and hotspots are locked until the player first enters the antechamber.
-// This is the first moment of true investigation — Hale's room.
-NocturneEngine.on('roomEntered', ({ roomId }) => {
-  if (roomId !== 'antechamber') return;
-  if (gameState.antechamberGateOpen) return;  // already open
-  gameState.antechamberGateOpen = true;
-  // Reveal and flash the 4 gated HUD icons — one time only
-  document.querySelectorAll('[data-hud-gate]').forEach(el => {
-    el.style.display = '';
-    el.style.transition = 'opacity 300ms ease';
-    el.style.opacity = '0';
-    setTimeout(() => {
-      el.style.opacity = '1';
-      // Two more pulses so player notices
-      setTimeout(() => { el.style.opacity = '0.2'; }, 400);
-      setTimeout(() => { el.style.opacity = '1';   }, 700);
-      setTimeout(() => { el.style.opacity = '0.2'; }, 1000);
-      setTimeout(() => { el.style.opacity = '1';   }, 1300);
-      setTimeout(() => { el.style.transition = ''; }, 1600);
-    }, 150);
-  });
-  if (typeof saveGame === 'function') saveGame();
-});
 NocturneEngine.on('objectExamined', () => renderRoomNav()); // unlock nav after examination
 NocturneEngine.on('itemCollected',  () => renderRoomNav());
 NocturneEngine.on('roomCompleted',  () => renderRoomNav());
