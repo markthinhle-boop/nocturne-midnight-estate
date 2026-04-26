@@ -486,18 +486,25 @@ NocturneEngine.on('roweDuelComplete', function() {
   PROLOGUE_STATE.cinematic_armed  = true;
   PROLOGUE_STATE.phase            = 'awaiting_cinematic';
 
-  // Fire cinematic immediately — no room transition required.
-  // Black out now before any render can happen.
-  let blocker = document.getElementById('prologue-cinematic');
-  if (blocker) blocker.remove();
-  blocker = document.createElement('div');
-  blocker.id = 'prologue-cinematic';
-  blocker.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:#000;z-index:99999;opacity:1;';
-  document.body.appendChild(blocker);
+  // Wait for the rowe-duel-overlay to be dismissed (Close button removes it),
+  // then black out and fire the cinematic.
+  const observer = new MutationObserver(function() {
+    if (document.getElementById('rowe-duel-overlay')) return; // still open
+    observer.disconnect();
+    if (PROLOGUE_STATE.cinematic_played) return;
 
-  PROLOGUE_STATE.cinematic_armed = false;
-  PROLOGUE_STATE.phase           = 'cinematic';
-  setTimeout(_playMurderCinematic, 400);
+    let blocker = document.getElementById('prologue-cinematic');
+    if (blocker) blocker.remove();
+    blocker = document.createElement('div');
+    blocker.id = 'prologue-cinematic';
+    blocker.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:#000;z-index:99999;opacity:1;';
+    document.body.appendChild(blocker);
+
+    PROLOGUE_STATE.cinematic_armed = false;
+    PROLOGUE_STATE.phase           = 'cinematic';
+    setTimeout(_playMurderCinematic, 200);
+  });
+  observer.observe(document.body, { childList: true, subtree: true });
 });
 
 // Black out on roomLeft the moment cinematic is armed — before next room renders
