@@ -568,6 +568,9 @@ function _onCinematicComplete() {
     window.rebuildCharCards();
   }
   if (typeof navigateTo === 'function') navigateTo('ballroom');
+  if (window.gameState && window.gameState.rooms && window.gameState.rooms['stage']) {
+    window.gameState.rooms['stage'].state = 'visited';
+  }
   if (typeof saveGame === 'function') saveGame();
 }
 

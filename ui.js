@@ -2391,8 +2391,8 @@ function activateWalkthrough() {
 
 // ── PAYWALL ────────────────────────────────────────────────
 function openPaywall() {
-  const price = `£${NocturneConfig.PRICE_ESTATE.toFixed(2)}`;
-  document.getElementById('paywall-price').textContent = price;
+  const priceEl = document.getElementById('paywall-price');
+  if (priceEl) priceEl.textContent = `£${NocturneConfig.PRICE_ESTATE.toFixed(2)}`;
   document.getElementById('paywall-screen').classList.add('active');
 }
 
@@ -2762,7 +2762,18 @@ function renderRoomNav() {
       btn.textContent = (ROOM_NAMES[roomId] || roomId) + (isPaid ? ' ·' : '');
       if (isPaid) btn.title = 'Paid tier required';
       btn.onclick = () => {
-        if (isPaid) { openPaywall(); return; }
+        if (isPaid) {
+          if (gameState.prologueActive) {
+            const haleAnswered = (gameState.char_dialogue_complete || {})['pemberton-hale'];
+            const hasTalkedToHale = haleAnswered && Object.keys(haleAnswered).length > 0;
+            if (!hasTalkedToHale) {
+              if (typeof showToast === 'function') showToast('That room is not accessible.');
+              return;
+            }
+          }
+          openPaywall();
+          return;
+        }
         if (roomId === 'stage') { openStage(); return; }
         navigateTo(roomId);
         renderCurrentRoom();
