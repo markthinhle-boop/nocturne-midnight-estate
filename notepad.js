@@ -613,9 +613,9 @@ if (document.readyState === 'loading') {
     const icon = document.getElementById('board-hud-icon');
     if (!icon) return;
     icon.setAttribute('data-hud-gate', '');
-    if (!window.gameState || !window.gameState.antechamberGateOpen) {
-      icon.style.display = 'none';
-    }
+    // Fix vertical alignment to match other HUD icons
+    icon.style.verticalAlign = 'middle';
+    icon.style.display = (!window.gameState || !window.gameState.antechamberGateOpen) ? 'none' : (icon.style.display || '');
   }
   _check();
   setTimeout(_check, 500);

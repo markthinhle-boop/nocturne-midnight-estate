@@ -2800,9 +2800,25 @@ document.addEventListener('DOMContentLoaded', function() {
 NocturneEngine.on('roomEntered', function(payload) {
   const roomId = payload && payload.roomId;
   if (roomId !== 'antechamber') return;
+
+  // Ensure Hale is in ROOM_CHARACTERS every time antechamber is entered
+  if (window.ROOM_CHARACTERS) {
+    const ac = window.ROOM_CHARACTERS['antechamber'] || [];
+    if (!ac.includes('pemberton-hale')) {
+      window.ROOM_CHARACTERS['antechamber'] = ['pemberton-hale'].concat(ac);
+    }
+  }
+  // Also restore Hale's room field directly in case patches left it stale
+  if (window.CHARACTERS && window.CHARACTERS['pemberton-hale']) {
+    window.CHARACTERS['pemberton-hale'].room = 'antechamber';
+  }
+  // Rebuild character cards so portrait appears
+  if (typeof window.rebuildCharCards === 'function') window.rebuildCharCards();
+  if (typeof window.updateCharacterDots === 'function') window.updateCharacterDots('antechamber');
+
+  // HUD reveal — one time only
   if (gameState.antechamberGateOpen) return;
   gameState.antechamberGateOpen = true;
-  // Reveal all gated HUD icons
   document.querySelectorAll('[data-hud-gate]').forEach(function(el) {
     el.style.display = '';
     el.style.transition = 'opacity 400ms';
@@ -2816,13 +2832,6 @@ NocturneEngine.on('roomEntered', function(payload) {
       setTimeout(function() { el.style.transition = ''; }, 1600);
     }, 100);
   });
-  // Ensure Hale is registered in ROOM_CHARACTERS for antechamber
-  if (window.ROOM_CHARACTERS) {
-    const ac = window.ROOM_CHARACTERS['antechamber'] || [];
-    if (!ac.includes('pemberton-hale')) {
-      window.ROOM_CHARACTERS['antechamber'] = ['pemberton-hale'].concat(ac);
-    }
-  }
   if (typeof saveGame === 'function') saveGame();
 });
 
