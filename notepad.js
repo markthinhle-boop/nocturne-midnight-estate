@@ -324,6 +324,12 @@ function _injectHudIcon() {
 
     // Insert after anchor
     anchor.insertAdjacentElement('afterend', btn);
+
+    // Gate: hide until antechamber unlocked
+    btn.setAttribute('data-hud-gate', '');
+    if (!window.gameState || !window.gameState.antechamberGateOpen) {
+      btn.style.display = 'none';
+    }
   };
 
   // Try immediately, then on room entry, then poll
@@ -598,3 +604,22 @@ if (document.readyState === 'loading') {
 } else {
   initNotepad();
 }
+
+// ── BOARD ICON GATE ────────────────────────────────────────
+// board-hud-icon is injected by board.js after DOM ready.
+// Poll briefly to catch it and hide if gate not yet open.
+(function _gateBoardIcon() {
+  function _check() {
+    const icon = document.getElementById('board-hud-icon');
+    if (!icon) return;
+    icon.setAttribute('data-hud-gate', '');
+    if (!window.gameState || !window.gameState.antechamberGateOpen) {
+      icon.style.display = 'none';
+    }
+  }
+  _check();
+  setTimeout(_check, 500);
+  setTimeout(_check, 1500);
+  setTimeout(_check, 3000);
+  if (window.NocturneEngine) NocturneEngine.on('roomEntered', _check);
+})();
