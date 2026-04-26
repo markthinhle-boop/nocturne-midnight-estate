@@ -2132,18 +2132,10 @@ function _injectBoardHudIcon() {
 
     const btn = document.createElement('div');
     btn.id = 'board-hud-icon';
+    btn.className = 'np-hud-icon';
     btn.title = 'Investigation Board';
-    btn.style.cssText = [
-      'display:flex', 'align-items:center', 'justify-content:center',
-      'width:32px', 'height:32px',
-      'color:var(--cream-dim,#b8a98a)',
-      'cursor:pointer', 'opacity:0.7',
-      'transition:opacity 200ms,color 200ms',
-      'flex-shrink:0', 'margin-left:4px',
-      'align-self:center',
-    ].join(';');
 
-    btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="display:block;transform:translateY(1px);">
+    btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="display:block;">
       <rect x="2" y="3" width="12" height="11" rx="1" stroke="currentColor" stroke-width="1.2" fill="none"/>
       <line x1="2" y1="6.5" x2="14" y2="6.5" stroke="currentColor" stroke-width="0.9"/>
       <line x1="5" y1="2" x2="5" y2="4" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
@@ -2155,8 +2147,6 @@ function _injectBoardHudIcon() {
       <circle cx="8" cy="11.5" r="0.7" fill="currentColor"/>
     </svg>`;
 
-    btn.addEventListener('mouseover',  () => { btn.style.opacity = '1'; btn.style.color = 'var(--gold,#c9a84c)'; });
-    btn.addEventListener('mouseout',   () => { btn.style.opacity = '0.7'; btn.style.color = 'var(--cream-dim,#b8a98a)'; });
     btn.addEventListener('click', openBoard);
 
     notepadIcon.insertAdjacentElement('afterend', btn);
