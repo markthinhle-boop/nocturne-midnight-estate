@@ -488,31 +488,40 @@ NocturneEngine.on('roweDuelComplete', function() {
 });
 
 // ── ROOM TRANSITION → FIRE CINEMATIC IF ARMED ──────────────
-// Black out the moment player leaves billiard-room so next room never shows
-NocturneEngine.on('roomLeft', function(payload) {
-  if (!PROLOGUE_STATE.active) return;
-  if (!PROLOGUE_STATE.cinematic_armed) return;
-  if (PROLOGUE_STATE.cinematic_played) return;
-  if (PROLOGUE_STATE.phase !== 'awaiting_cinematic') return;
-  if (!payload || payload.roomId !== 'billiard-room') return;
-  let blocker = document.getElementById('prologue-cinematic');
-  if (blocker) return;
-  blocker = document.createElement('div');
-  blocker.id = 'prologue-cinematic';
-  blocker.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:#000;z-index:99999;opacity:1;';
-  document.body.appendChild(blocker);
-});
+// Intercept navigateTo: when cinematic_armed, black out immediately,
+// skip the destination room entirely, and fire the cinematic.
+// This prevents the destination room from rendering even for one frame.
+(function _installCinematicIntercept() {
+  const _origNavigateTo = window.navigateTo;
+  window.navigateTo = function(roomId) {
+    if (
+      PROLOGUE_STATE.active &&
+      PROLOGUE_STATE.cinematic_armed &&
+      !PROLOGUE_STATE.cinematic_played &&
+      PROLOGUE_STATE.phase === 'awaiting_cinematic'
+    ) {
+      // Arm is consumed — put up the black screen synchronously
+      // before any room render can happen, then play cinematic.
+      PROLOGUE_STATE.cinematic_armed = false;
+      PROLOGUE_STATE.phase           = 'cinematic';
 
-NocturneEngine.on('roomEntered', function(payload) {
-  if (!PROLOGUE_STATE.active) return;
-  if (!PROLOGUE_STATE.cinematic_armed) return;
-  if (PROLOGUE_STATE.cinematic_played) return;
-  if (PROLOGUE_STATE.phase !== 'awaiting_cinematic') return;
+      let blocker = document.getElementById('prologue-cinematic');
+      if (!blocker) {
+        blocker = document.createElement('div');
+        blocker.id = 'prologue-cinematic';
+        blocker.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:#000;z-index:99999;opacity:1;';
+        document.body.appendChild(blocker);
+      }
 
-  PROLOGUE_STATE.cinematic_armed = false;
-  PROLOGUE_STATE.phase           = 'cinematic';
-  setTimeout(_playMurderCinematic, 200);
-});
+      // Navigate to ballroom in the background (no render visible under blocker)
+      if (typeof _origNavigateTo === 'function') _origNavigateTo('ballroom');
+
+      setTimeout(_playMurderCinematic, 200);
+      return; // swallow the player's intended destination
+    }
+    if (typeof _origNavigateTo === 'function') _origNavigateTo(roomId);
+  };
+})();
 
 // ── CINEMATIC (TEXT PLACEHOLDER) ───────────────────────────
 function _playMurderCinematic() {
