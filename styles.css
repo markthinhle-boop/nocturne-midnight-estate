@@ -361,26 +361,7 @@ html, body {
 .hotspot.no-star::before { display: none; }
 .hotspot.item-thumb-hotspot { background: transparent; }
 .hotspot.item-thumb-hotspot::before { display: none; }
-.hotspot.item-thumb-hotspot img {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  pointer-events: none;
-  filter:
-    drop-shadow(0px 2px 3px rgba(0,0,0,0.95))
-    drop-shadow(0px 5px 10px rgba(0,0,0,0.7))
-    drop-shadow(0px 12px 28px rgba(0,0,0,0.45));
-  transition: filter 180ms ease, transform 180ms ease;
-}
-.hotspot.item-thumb-hotspot:active img {
-  filter:
-    drop-shadow(0px 1px 2px rgba(0,0,0,0.95))
-    drop-shadow(0px 3px 6px rgba(0,0,0,0.75))
-    drop-shadow(0px 0px 16px rgba(201,168,76,0.3));
-  transform: scale(0.96);
-}
+.hotspot.item-thumb-hotspot:active { opacity: 0.7; }
 
 /* Parallax entry */
 .room-bg.parallax-enter {
@@ -2347,18 +2328,15 @@ html, body {
   bottom: 220px;
 }
 
-/* ── BALLROOM — Uninvited card above center figure ── */
+/* ── BALLROOM — Curator card, standard portrait sizing ── */
 #char-zone-ballroom {
-  bottom: auto;
-  top: 56%;
-  margin-left: 4%;
-  height: calc(var(--app-height, 100vh) * 0.13);
-  max-height: calc(var(--app-height, 100vh) * 0.13);
-  align-items: flex-start;
+  bottom: 160px;
+  height: calc(var(--app-height, 100vh) * 0.22);
+  max-height: calc(var(--app-height, 100vh) * 0.22);
 }
 #char-zone-ballroom .train-npc-card {
-  flex: 0 0 32%;
-  max-width: 32%;
+  flex: 0 0 38%;
+  max-width: 42%;
 }
 
 /* ── DIALOGUE AREA — below portrait ────────────────────── */

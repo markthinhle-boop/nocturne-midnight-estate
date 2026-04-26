@@ -1391,7 +1391,7 @@ const ROOM_OBJECTS = {
     tap_2: "Lady Ashworth leaves flowers. It is a habit. This one was left for Edmund.",
     tap_3: "The stem is clean. The petals have not wilted. It has been here less than twelve hours.",
     item_id: "estate-flower", item_at_depth: 1, is_essential: false, is_deception_item: true, slow_drag: false, max_depth: 3,
-    hotspot: { left: 10.0, top: 70.0, width: 10.0, height: 8.0 },
+    hotspot: { left: 64.1, top: 52.8, width: 3.7, height: 3.1 },
   },
   "curators-note-obj": {
     room: "foyer",
