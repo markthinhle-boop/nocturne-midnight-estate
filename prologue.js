@@ -488,11 +488,13 @@ NocturneEngine.on('roweDuelComplete', function() {
 });
 
 // ── ROOM TRANSITION → FIRE CINEMATIC IF ARMED ──────────────
-// Intercept navigateTo: when cinematic_armed, black out immediately,
-// skip the destination room entirely, and fire the cinematic.
-// This prevents the destination room from rendering even for one frame.
+// Intercept navigateTo + renderCurrentRoom: when cinematic_armed, black out
+// immediately and suppress the render call that follows in the nav handler,
+// so the current room's parallax-enter never refires under the blocker.
 (function _installCinematicIntercept() {
-  const _origNavigateTo = window.navigateTo;
+  const _origNavigateTo      = window.navigateTo;
+  const _origRenderCurrentRoom = window.renderCurrentRoom;
+
   window.navigateTo = function(roomId) {
     if (
       PROLOGUE_STATE.active &&
@@ -500,8 +502,7 @@ NocturneEngine.on('roweDuelComplete', function() {
       !PROLOGUE_STATE.cinematic_played &&
       PROLOGUE_STATE.phase === 'awaiting_cinematic'
     ) {
-      // Arm is consumed — put up the black screen synchronously
-      // before any room render can happen, then play cinematic.
+      // Consume the arm synchronously and put up the black screen.
       PROLOGUE_STATE.cinematic_armed = false;
       PROLOGUE_STATE.phase           = 'cinematic';
 
@@ -512,6 +513,13 @@ NocturneEngine.on('roweDuelComplete', function() {
         blocker.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:#000;z-index:99999;opacity:1;';
         document.body.appendChild(blocker);
       }
+
+      // Suppress the renderCurrentRoom() call that goToRoom() makes right after
+      // navigateTo() returns — that call would re-trigger the parallax-enter fade
+      // on the current room background, producing a visible room flicker.
+      window.renderCurrentRoom = function() {
+        window.renderCurrentRoom = _origRenderCurrentRoom; // restore immediately
+      };
 
       // Do NOT navigate yet — ballroom renders after cinematic completes.
       setTimeout(_playMurderCinematic, 200);
