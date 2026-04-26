@@ -800,6 +800,7 @@ function launchDuel(onComplete) {
       <div class="pip-row" id="rd-rpips"></div>
     </div>
   </div>
+  <button id="rd-dev-skip" onclick="window._roweDevSkip&&window._roweDevSkip()" style="position:absolute;top:8px;right:8px;background:rgba(180,150,12,0.15);border:1px solid rgba(180,150,12,0.35);color:rgba(200,170,80,0.8);font-size:9px;letter-spacing:0.18em;padding:4px 9px;cursor:pointer;border-radius:2px;font-family:var(--font-ui,'Georgia'),serif;text-transform:uppercase;z-index:10;">DEV WIN</button>
   <div class="rd-bar"><div class="rd-fill" id="rd-tf" style="width:100%"></div></div>
   <div class="rd-round-badge" id="rd-badge"></div>
   <div class="rd-ri" id="rd-ri"></div>
@@ -1471,6 +1472,24 @@ function launchDuel(onComplete) {
 
   pips();
   startRound();
+
+  // ── DEV SHORTCUT — remove before launch ───────────────────
+  window._roweDevSkip = function() {
+    // Force player win: set scores then call showFinal
+    overallPs = 3;
+    overallRs = 0;
+    // Clear any running timers that belong to the active puzzle
+    // (timers are local to each round closure — just remove overlay and call showFinal)
+    const box = document.getElementById('rowe-duel-box');
+    if (box) {
+      // Hide arena so the final overlay renders cleanly over a blank state
+      const arena = box.querySelector('.rd-arena');
+      if (arena) arena.style.visibility = 'hidden';
+      const bar = document.getElementById('rd-tf');
+      if (bar) { bar.style.transition = 'none'; bar.style.width = '0%'; }
+    }
+    showFinal();
+  };
 }
 
 // ── ROWE ENGINE API ────────────────────────────────────────────
