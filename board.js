@@ -545,7 +545,7 @@ function openBoard() {
   _boardOpen = true;
   const panel = document.getElementById('board-panel');
   if (!panel) return;
-  panel.style.display = 'flex';
+  panel.style.display = 'block';
   panel.style.pointerEvents = 'all';
   panel.style.background = '#3d2e1a';
   panel.style.backgroundImage = [
@@ -581,15 +581,14 @@ function _centerBoard() {
   // Mobile: smaller scale so character row fits within screen width
   // Desktop: slightly larger
   if (isMobile) {
-    // Scale so BOARD_W fits within viewport with some padding
-    _scale = Math.min(0.42, (vw - 24) / BOARD_W);
+    _scale = (vw - 16) / BOARD_W;
+    _panX = 8;
+    _panY = vh * 0.06;
   } else {
     _scale = 0.65;
+    _panX = (vw - BOARD_W * _scale) / 2;
+    _panY = vh * 0.08;
   }
-
-  // Center horizontally, drop slightly from top so header clears
-  _panX = (vw - BOARD_W * _scale) / 2;
-  _panY = isMobile ? vh * 0.06 : vh * 0.08;
   _applyTransform();
 }
 

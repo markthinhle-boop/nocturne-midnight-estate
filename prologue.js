@@ -424,6 +424,12 @@ window.startPrologue = function() {
   PROLOGUE_STATE.hale_dialogue_closed = false;
   gameState.prologueActive         = true;
 
+  // Reset NPC positions to mingle-phase state (may have been mutated by a prior run)
+  if (window.PROLOGUE_NPC_POSITIONS) {
+    window.PROLOGUE_NPC_POSITIONS['trophy-room'] = ['pemberton-hale'];
+    delete window.PROLOGUE_NPC_POSITIONS['antechamber'];
+  }
+
   // Clear stale progress from any prior save state — prologue is always fresh.
   // _applyPatches will further wipe per-character dialogue history for patched chars.
   gameState.char_dialogue_complete = {};
@@ -553,7 +559,11 @@ function _onCinematicComplete() {
   // The paywall is the gate, not the dialogue change. Hale's full post-paywall interrogation
   // is the FIRST taste of the real game. Then paywall when player leaves the antechamber.
   _restorePatches();
-  // Reposition NPCs to post-paywall positions (Hale → antechamber, Curator → archive-path, etc.)
+  // Reposition NPCs: Hale moves trophy-room → antechamber for post-murder phase.
+  if (window.PROLOGUE_NPC_POSITIONS) {
+    window.PROLOGUE_NPC_POSITIONS['trophy-room'] = [];
+    window.PROLOGUE_NPC_POSITIONS['antechamber'] = ['pemberton-hale'];
+  }
   if (typeof window.rebuildCharCards === 'function') {
     window.rebuildCharCards();
   }
