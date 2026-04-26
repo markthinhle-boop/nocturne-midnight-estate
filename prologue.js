@@ -583,8 +583,11 @@ function _onCinematicComplete() {
     window.rebuildCharCards();
   }
   if (typeof navigateTo === 'function') navigateTo('ballroom');
-  if (window.gameState && window.gameState.rooms && window.gameState.rooms['stage']) {
-    window.gameState.rooms['stage'].state = 'visited';
+  // Stage should not flash — mark visited
+  if (window.gameState && window.gameState.rooms) {
+    if (window.gameState.rooms['stage']) window.gameState.rooms['stage'].state = 'visited';
+    // Antechamber must flash — force adjacent so newly-discovered animation fires
+    if (window.gameState.rooms['antechamber']) window.gameState.rooms['antechamber'].state = 'adjacent';
   }
   if (typeof saveGame === 'function') saveGame();
 }

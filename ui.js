@@ -2406,12 +2406,8 @@ function handlePurchase() {
   gameState.paidTierUnlocked = true;
   closePaywall();
   if (typeof initPaidTier === 'function') initPaidTier();
-  if (typeof onProloguePaywallSuccess === 'function') {
-    onProloguePaywallSuccess();
-  } else {
-    navigateTo('foyer');
-    saveGame();
-  }
+  navigateTo('ballroom');
+  saveGame();
 }
 
 // ── VERDICT DELIVERY ───────────────────────────────────────
@@ -2777,6 +2773,12 @@ function renderRoomNav() {
           }
           openPaywall();
           return;
+        }
+        if (roomId === 'stage' || roomId === 'balcony') {
+          if (gameState.prologueActive) {
+            if (typeof showToast === 'function') showToast('That room is not accessible.');
+            return;
+          }
         }
         if (roomId === 'stage') { openStage(); return; }
         navigateTo(roomId);
