@@ -850,7 +850,7 @@ const INTERROGATION_DATA = {
 
     duel_config: {
       id:         'rowe_iq_duel',
-      rounds:     3,
+      rounds:     1,
       rowe_level: 0.94,
       on_win:     'DUEL_WIN',
       on_lose:    'DUEL_LOSE',
@@ -4007,7 +4007,7 @@ const _interrogationState = {
 
 function openTechniqueSelector(charId) {
   const data = INTERROGATION_DATA[charId];
-  if (!data || (data && (data.engine === 'rowe' || data.engine === 'prologue'))) {
+  if (!data || (data && data.engine === 'rowe')) {
     // Character not in interrogation system, or Alistair Rowe (own engine) — open normally
     if (typeof window._openConversationDirect === 'function') {
       window._openConversationDirect(charId);
