@@ -1714,8 +1714,7 @@ function _buildBoardPanel() {
     document.head.appendChild(style);
   }
 
-  const appEl = document.getElementById('app') || document.body;
-  appEl.appendChild(panel);
+  document.body.appendChild(panel);
 
   _initInteraction();
 }

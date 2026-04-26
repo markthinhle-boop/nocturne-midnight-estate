@@ -1475,14 +1475,14 @@ function launchDuel(onComplete) {
 
   // ── DEV SHORTCUT — remove before launch ───────────────────
   window._roweDevSkip = function() {
-    // Force player win: set scores then call showFinal
+    // Force player win — kill all pending timers, then jump to showFinal
+    active = false;           // stops cInt / roweTapTimer interval guards
+    clearTimeout(rTimer);     // stops Rowe's pending answer timer
+    clearInterval(tInt);      // stops countdown bar interval
     overallPs = 3;
     overallRs = 0;
-    // Clear any running timers that belong to the active puzzle
-    // (timers are local to each round closure — just remove overlay and call showFinal)
     const box = document.getElementById('rowe-duel-box');
     if (box) {
-      // Hide arena so the final overlay renders cleanly over a blank state
       const arena = box.querySelector('.rd-arena');
       if (arena) arena.style.visibility = 'hidden';
       const bar = document.getElementById('rd-tf');
