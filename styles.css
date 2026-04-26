@@ -2328,18 +2328,15 @@ html, body {
   bottom: 220px;
 }
 
-/* ── BALLROOM — Uninvited card above center figure ── */
+/* ── BALLROOM — Curator card, standard portrait sizing ── */
 #char-zone-ballroom {
-  bottom: auto;
-  top: 56%;
-  margin-left: 4%;
-  height: calc(var(--app-height, 100vh) * 0.13);
-  max-height: calc(var(--app-height, 100vh) * 0.13);
-  align-items: flex-start;
+  bottom: 160px;
+  height: calc(var(--app-height, 100vh) * 0.22);
+  max-height: calc(var(--app-height, 100vh) * 0.22);
 }
 #char-zone-ballroom .train-npc-card {
-  flex: 0 0 32%;
-  max-width: 32%;
+  flex: 0 0 38%;
+  max-width: 42%;
 }
 
 /* ── DIALOGUE AREA — below portrait ────────────────────── */
