@@ -2143,14 +2143,16 @@ function _injectBoardHudIcon() {
       'align-self:center',
     ].join(';');
 
-    btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="display:block;">
-      <rect x="1" y="1.5" width="14" height="13" rx="1" stroke="currentColor" stroke-width="1.2" fill="none"/>
-      <line x1="1" y1="5.5" x2="15" y2="5.5" stroke="currentColor" stroke-width="0.8"/>
-      <circle cx="4" cy="3.5" r="0.8" fill="currentColor"/>
-      <circle cx="7" cy="3.5" r="0.8" fill="currentColor"/>
-      <circle cx="10" cy="3.5" r="0.8" fill="currentColor"/>
-      <line x1="4" y1="8.5" x2="12" y2="8.5" stroke="currentColor" stroke-width="0.7" stroke-linecap="round"/>
-      <line x1="4" y1="11" x2="9" y2="11" stroke="currentColor" stroke-width="0.7" stroke-linecap="round"/>
+    btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="display:block;transform:translateY(1px);">
+      <rect x="2" y="3" width="12" height="11" rx="1" stroke="currentColor" stroke-width="1.2" fill="none"/>
+      <line x1="2" y1="6.5" x2="14" y2="6.5" stroke="currentColor" stroke-width="0.9"/>
+      <line x1="5" y1="2" x2="5" y2="4" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
+      <line x1="11" y1="2" x2="11" y2="4" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
+      <circle cx="5" cy="9" r="0.7" fill="currentColor"/>
+      <circle cx="8" cy="9" r="0.7" fill="currentColor"/>
+      <circle cx="11" cy="9" r="0.7" fill="currentColor"/>
+      <circle cx="5" cy="11.5" r="0.7" fill="currentColor"/>
+      <circle cx="8" cy="11.5" r="0.7" fill="currentColor"/>
     </svg>`;
 
     btn.addEventListener('mouseover',  () => { btn.style.opacity = '1'; btn.style.color = 'var(--gold,#c9a84c)'; });
