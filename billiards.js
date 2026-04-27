@@ -866,6 +866,13 @@
 
 
   function resolveShot() {
+    // Drill mode: physics resolves but no game rules apply
+    if (state.mode === 'drill') {
+      state.gamePhase = 'aiming';
+      state.firstContact = null;
+      // Don't reset pocketedThisShot here — checkDrillResult needs it
+      return;
+    }
     const pocketed = state.pocketedThisShot;
     const shooter = state.turn;
     const cueBall = state.balls[0];
@@ -2503,6 +2510,9 @@
     else if (screenState === 'formatSelect') drawFormatSelect();
     else if (screenState === 'interstitial') drawInterstitial();
     else if (screenState === 'matchEnd') drawMatchEnd();
+    else if (screenState === 'tutorialMenu') drawTutorialMenu();
+    else if (screenState === 'tutorialReader') drawTutorialReader();
+    else if (screenState === 'tutorialDrills') drawTutorialDrillMenu();
   }
 
   function _screenBg() {
@@ -2560,6 +2570,7 @@
     screens.mode = _stackButtons(tY + 42, [
       { key: 'solo', title: 'SOLO PRACTICE', subtitle: 'Rack. Break. Play at your own pace.', primary: true },
       { key: 'vs',   title: 'CHALLENGE ALISTAIR', subtitle: 'Loser owes a truthful answer.', primary: true },
+      { key: 'tutorial', title: 'TUTORIAL & DRILLS', subtitle: 'Learn the game. Become a player.', primary: true },
       { key: 'exit', title: 'LEAVE THE TABLE', subtitle: null, primary: false }
     ]);
   }
@@ -2948,8 +2959,82 @@
       const r = screens.mode || {};
       if (hitRect(p.x, p.y, r.solo)) { newGame('solo'); screenState = 'game'; return; }
       if (hitRect(p.x, p.y, r.vs))   { screenState = 'formatSelect'; return; }
+      if (hitRect(p.x, p.y, r.tutorial)) { screenState = 'tutorialMenu'; return; }
       if (hitRect(p.x, p.y, r.exit)) { closeBilliards(); return; }
       return;
+    }
+    if (screenState === 'tutorialMenu') {
+      const r = screens.tutorial || {};
+      if (hitRect(p.x, p.y, r.quickStart)) {
+        tutorial.section = 'quickStart'; tutorial.page = 0;
+        screenState = 'tutorialReader';
+        return;
+      }
+      if (hitRect(p.x, p.y, r.manual)) {
+        tutorial.section = 'shots'; tutorial.page = 0;
+        screenState = 'tutorialReader';
+        return;
+      }
+      if (hitRect(p.x, p.y, r.drills)) { screenState = 'tutorialDrills'; return; }
+      if (hitRect(p.x, p.y, r.back))   { screenState = 'modeSelect'; return; }
+      return;
+    }
+    if (screenState === 'tutorialReader') {
+      if (hitRect(p.x, p.y, screens.readerPrev)) {
+        if (tutorial.page > 0) tutorial.page--;
+        else {
+          // Go to previous section's last page
+          const i = tutorial.sectionList.indexOf(tutorial.section);
+          if (i > 0) {
+            tutorial.section = tutorial.sectionList[i - 1];
+            tutorial.page = TUTORIAL_PAGES[tutorial.section].length - 1;
+          }
+        }
+        return;
+      }
+      if (hitRect(p.x, p.y, screens.readerNext)) {
+        const sectionPages = TUTORIAL_PAGES[tutorial.section];
+        if (tutorial.page < sectionPages.length - 1) tutorial.page++;
+        else {
+          // Advance to next section
+          const i = tutorial.sectionList.indexOf(tutorial.section);
+          if (i < tutorial.sectionList.length - 1) {
+            tutorial.section = tutorial.sectionList[i + 1];
+            tutorial.page = 0;
+          }
+        }
+        return;
+      }
+      if (hitRect(p.x, p.y, screens.readerMenu)) {
+        screenState = 'tutorialMenu';
+        return;
+      }
+      return;
+    }
+    if (screenState === 'tutorialDrills') {
+      const r = screens.drills || {};
+      for (const key of Object.keys(DRILLS)) {
+        if (hitRect(p.x, p.y, r[key])) {
+          startDrill(key);
+          return;
+        }
+      }
+      if (hitRect(p.x, p.y, r.back)) { screenState = 'tutorialMenu'; return; }
+      return;
+    }
+    if (screenState === 'drill' && state) {
+      // If drill result is showing, tap retries
+      if (state.drillResult) {
+        startDrill(state.drillKey);
+        return;
+      }
+      // EXIT DRILL button
+      if (hud.exitDrill && hitRect(p.x, p.y, hud.exitDrill)) {
+        state = null;
+        screenState = 'tutorialDrills';
+        return;
+      }
+      // Otherwise fall through to normal game input below
     }
     if (screenState === 'formatSelect') {
       const r = screens.format || {};
@@ -3367,6 +3452,727 @@
     // else player breaks — state.turn is already 'player'
   }
 
+
+  // ============================================================================
+  // TUTORIAL & DRILLS
+  // ============================================================================
+
+  // ---------- Reference manual content ------------------------------------
+  // Pages organized by section. Each page = title + body paragraphs.
+  // Bodies use \n for paragraph breaks, ¶ for bullet items.
+  const TUTORIAL_PAGES = {
+    quickStart: [
+      { title: 'WELCOME TO POOL', body:
+        "Pool — properly called pocket billiards — is a game of geometry, control, and patience.\n\n" +
+        "The object: pocket your assigned group of seven balls (solids 1-7 or stripes 9-15), then legally pocket the eight ball to win.\n\n" +
+        "The cue ball is yours. The other balls are the table's. You strike the cue ball with the cue stick to hit object balls into the six pockets."
+      },
+      { title: 'BASIC CONTROLS', body:
+        "Aim: drag the cue stick handle to rotate around the cue ball, OR pull back from the cue ball like drawing a bow.\n\n" +
+        "Power: the slider on the right edge — or how far you pull back when using the bow gesture.\n\n" +
+        "Spin: the small white ball at the bottom shows where the cue tip will strike. Move the dot up for top spin (follow), down for back spin (draw), left/right for sidespin.\n\n" +
+        "Shoot: the SHOOT button, or release the pull-back gesture."
+      },
+      { title: 'YOUR FIRST RACK', body:
+        "The break: from the head string (the line near you), strike the racked balls. WPA rule: at least four balls must reach a cushion, or you must pocket a ball, otherwise the break is illegal.\n\n" +
+        "If you pocket a solid on the break, solids are yours. A stripe — stripes. Pocket nothing? The table is OPEN — your group is not yet decided.\n\n" +
+        "After a legal pot, you continue. Miss, and your turn ends."
+      },
+      { title: 'WIN THE GAME', body:
+        "Pocket all seven of your group, then call your pocket and sink the 8-ball.\n\n" +
+        "LOSE INSTANTLY by:\n" +
+        "¶ Pocketing the 8-ball before clearing your group (early eight)\n" +
+        "¶ Pocketing the 8-ball in the wrong called pocket\n" +
+        "¶ Pocketing the cue ball when you sink the 8-ball (cue scratch on eight)\n" +
+        "¶ Knocking the 8-ball off the table\n\n" +
+        "Three consecutive fouls also lose the frame."
+      }
+    ],
+
+    shots: [
+      { title: 'THE STOP SHOT', body:
+        "Also called the STUN SHOT. Strike the cue ball dead center with no spin. When it hits an object ball squarely, the cue ball stops dead at contact.\n\n" +
+        "Use it for: position play when you want the cue ball to stay put after potting.\n\n" +
+        "How: aim at the center of the object ball through the center of the cue ball. Spin dial centered. Medium power. The harder the hit, the more important pure center contact becomes."
+      },
+      { title: 'THE FOLLOW SHOT', body:
+        "Top spin shot. Strike the cue ball ABOVE center.\n\n" +
+        "After contact with an object ball, the cue ball continues forward, following through. Distance traveled depends on amount of top spin and shot power.\n\n" +
+        "Use it for: getting the cue ball to a position past the object ball, or following through to take the next shot."
+      },
+      { title: 'THE DRAW SHOT', body:
+        "Back spin shot. Strike the cue ball BELOW center.\n\n" +
+        "After contact, the cue ball reverses direction — drawing back toward you. The amount of draw depends on the amount of back spin imparted and how cleanly you struck the ball.\n\n" +
+        "Use it for: pulling the cue ball back to your side of the table for position. Master draw and you control the table."
+      },
+      { title: 'CUT SHOTS', body:
+        "When you strike an object ball off-center, it deflects at an angle.\n\n" +
+        "The cut angle is measured from a line through the centers of cue ball and object ball at contact, to the path you want the object ball to take.\n\n" +
+        "Half-ball hit: you strike the object ball with the edge of the cue ball at the half-way point. Object ball deflects 30 degrees from the cut line. The most consistent cut shot.\n\n" +
+        "Thin cuts (over 60 degrees): difficult, less power transfers, position becomes unpredictable. Avoid when possible."
+      },
+      { title: 'THE BANK SHOT', body:
+        "Bouncing an object ball off one or more cushions to reach a pocket.\n\n" +
+        "Geometric principle: angle of incidence equals angle of reflection — almost. Real cushions absorb energy and modify the angle slightly. Hard banks tend to come off the rail at a tighter angle than geometry predicts.\n\n" +
+        "Mirror trick: imagine the pocket reflected on the other side of the rail. Aim the object ball at that mirrored pocket. The cushion will bounce it back to the real one.\n\n" +
+        "Bank with sidespin: english on the cue ball transfers to the object ball at contact, slightly altering the rebound angle."
+      },
+      { title: 'KICK SHOTS', body:
+        "When the cue ball must hit a cushion BEFORE reaching the object ball.\n\n" +
+        "Used when: snookered behind another ball, or when the object ball is hidden.\n\n" +
+        "Same mirror principle as banks — but applied to where the cue ball must aim. One-cushion kicks are common; two and three cushion kicks require careful angle calculation and are advanced shots."
+      },
+      { title: 'COMBINATION SHOTS', body:
+        "Striking object ball A so it hits and pockets object ball B.\n\n" +
+        "Lower percentage than direct shots but sometimes the only option. Critical: only use combos when the angle is favorable and the balls are well-aligned with the pocket.\n\n" +
+        "Frozen combinations (balls touching) are highly predictable. Gap combinations require precise angle calculation."
+      },
+      { title: 'THE BREAK SHOT', body:
+        "Power matters less than placement. A clean break with the cue ball striking the head ball squarely spreads the rack effectively.\n\n" +
+        "Aim point: center of the apex (front) ball.\n\n" +
+        "Position: cue ball on the head string, slightly off-center can produce a better spread.\n\n" +
+        "WPA rule: at least 4 balls must reach a cushion or you must pocket a ball — otherwise the opponent gets ball-in-hand.\n\n" +
+        "Pocketing the 8-ball on the break? Most rule sets: spot the 8 and continue. Some: you win. Check house rules. WPA: spot it."
+      },
+      { title: 'MASSE SHOT', body:
+        "Curving the cue ball around an obstacle by striking it with extreme sidespin and a steep cue angle.\n\n" +
+        "Difficult, dramatic, often illegal in casual play (cloth damage). The cue is held nearly vertical and strikes the cue ball off-center.\n\n" +
+        "When: when you're snookered and a kick won't work.\n\n" +
+        "In tournament play: legal but rare. Practice on a worn cloth before attempting on a fresh one."
+      },
+      { title: 'THE JUMP SHOT', body:
+        "Striking the cue ball downward to make it leap over an obstructing ball.\n\n" +
+        "Technique: elevated cue, strike the cue ball below center but high relative to the cloth — the ball is squeezed between cue and table, popping up.\n\n" +
+        "Tournament regulation: must use a legal jump cue (typically shorter, lighter than a playing cue). Scooping the cue ball with a sub-vertical stroke is a foul.\n\n" +
+        "When: when there is no kick or masse option, and the obstruction is not too tall."
+      }
+    ],
+
+    strategy: [
+      { title: 'THINK THREE SHOTS AHEAD', body:
+        "Beginners think about the next shot. Intermediate players think about the next two. Pros think about the next three or more.\n\n" +
+        "Before shooting, ask: where will the cue ball end up? Will it leave me a shot on my next ball? And then where after that?\n\n" +
+        "Position play — controlling the cue ball's final resting position — separates a runner from a chaser."
+      },
+      { title: 'POSITION PLAY', body:
+        "The art of leaving the cue ball where you want it for the next shot.\n\n" +
+        "Tools: speed, spin, and angle.\n" +
+        "¶ Speed: harder shots produce more cue ball travel. Soft shots stay close.\n" +
+        "¶ Spin: top spin moves the cue ball forward post-contact. Back spin pulls it back. Sidespin angles it off cushions.\n" +
+        "¶ Angle: a half-ball cut sends the cue ball perpendicular to the original line. A thin cut barely moves it.\n\n" +
+        "Plan two-rail position routes when straight-line position isn't possible."
+      },
+      { title: 'PATTERN PLAY', body:
+        "Look at the table. Identify the order in which you'll pocket your seven balls.\n\n" +
+        "Key principles:\n" +
+        "¶ Pocket problem balls early (clusters, balls near rails or other balls)\n" +
+        "¶ Save easy balls for the end as 'insurance'\n" +
+        "¶ End your run on the 8-ball — the last object ball before the 8 should leave the cue near a 8-ball pocket\n\n" +
+        "Walk around the table before deciding. The view from the other side reveals shots and clusters you missed."
+      },
+      { title: 'SAFETY PLAY', body:
+        "When no good offensive shot exists, play defensively. Hide the cue ball where the opponent has no clear shot.\n\n" +
+        "WPA rule: declare safety before shooting. Any ball you pocket goes to your count anyway, but a declared safety ends your turn even if you sink one.\n\n" +
+        "Best safety positions: cue ball touching one of your own balls (frozen), or hidden behind a cluster, or against a rail with the object ball blocked.\n\n" +
+        "A great safety can win a game without you potting another ball."
+      },
+      { title: 'CLUSTERS', body:
+        "Two or more balls touching or close together. Often blocking shots and pockets.\n\n" +
+        "Break them out: when you have a shot that leaves the cue ball traveling into a cluster, take it. Even if you don't pocket a ball, breaking the cluster opens new angles.\n\n" +
+        "Don't break a cluster you don't have to — if you can avoid it and still pocket your group, do so. Clusters that contain your opponent's balls are often best left alone."
+      },
+      { title: 'THE FOOT SPOT', body:
+        "The spot at the foot of the table where balls are spotted after fouls.\n\n" +
+        "If a ball is pocketed illegally and must be respotted, it goes here. If the spot is occupied, the ball is placed touching it on the long string toward the foot rail.\n\n" +
+        "Spotted balls cluster near the foot. Plan around this — don't leave easy shots for your opponent in this zone."
+      },
+      { title: 'TEMPO AND RHYTHM', body:
+        "Pool is mental. Stay relaxed. Breathe. Don't rush a shot you're unsure of.\n\n" +
+        "Pre-shot routine: walk the line, set your stance, address the cue ball, take a practice stroke or two, then shoot. Same routine every time.\n\n" +
+        "When you miss, walk around the table. Reset. Don't shoot in anger.\n\n" +
+        "When you're running balls, don't slow down — but don't speed up either. Rhythm wins more than skill at the highest levels."
+      },
+      { title: 'READING THE TABLE', body:
+        "Before any shot, read:\n" +
+        "¶ Score and game state — are you ahead, behind, on the 8?\n" +
+        "¶ Your group remaining — count them, plan the order\n" +
+        "¶ Opponent's group — what shots do they have if you miss?\n" +
+        "¶ Pocket access — which pockets are open for which balls\n" +
+        "¶ Cue ball position post-shot — where does it end up?\n\n" +
+        "Reading takes more time than shooting. That is correct."
+      }
+    ],
+
+    lingo: [
+      { title: 'BASIC TERMS', body:
+        "BALL IN HAND: after a foul, the opposing player can place the cue ball anywhere on the table.\n\n" +
+        "BREAK: the opening shot that scatters the racked balls.\n\n" +
+        "BREAKING BALL: the cue ball at the break.\n\n" +
+        "CALL: declare the pocket you intend to sink a ball into. Required for the 8-ball.\n\n" +
+        "CLUSTER: two or more balls grouped tightly together.\n\n" +
+        "CUSHION: the rubber-edged inner border of the rails. Where balls bounce."
+      },
+      { title: 'SHOT TERMS', body:
+        "DRAW: backward spin on the cue ball.\n\n" +
+        "ENGLISH: side spin (sidespin), causing the cue ball to deflect off cushions at unusual angles.\n\n" +
+        "FOLLOW: top spin on the cue ball.\n\n" +
+        "FROZEN: two balls touching, or a ball touching a rail.\n\n" +
+        "JAW: the curved sides of a pocket.\n\n" +
+        "JUMP: a legal jump shot using a designated jump cue.\n\n" +
+        "MASSE: a curving shot using extreme sidespin and an elevated cue.\n\n" +
+        "STUN: a shot where the cue ball stops dead at contact (no spin)."
+      },
+      { title: 'GAME TERMS', body:
+        "FOUL: an infraction that ends your turn and gives ball-in-hand to the opponent.\n\n" +
+        "FRAME: a single game of pool.\n\n" +
+        "MATCH: a series of frames, e.g., race to 5.\n\n" +
+        "OPEN TABLE: after the break, before either player has been assigned a group.\n\n" +
+        "RACE: a match played to a number of frames (race to 5 = first to 5 wins).\n\n" +
+        "RACK: the wooden triangle used to set up the balls; or the set of 15 balls itself.\n\n" +
+        "SAFETY: a defensive shot where you intentionally do not try to pocket a ball.\n\n" +
+        "SCRATCH: pocketing the cue ball, or failing to make a legal contact. Always a foul.\n\n" +
+        "SHOT CLOCK: the time limit per shot in tournament play (typically 45 seconds).\n\n" +
+        "SNOOKERED: when there is no straight-line shot to one of your own balls."
+      },
+      { title: 'ANGLE TERMS', body:
+        "BANK: a shot that uses one or more cushions to reach the pocket.\n\n" +
+        "CARROM (or CAROM): a shot where the cue ball strikes object ball A, then object ball B.\n\n" +
+        "COMBO: a shot where ball A strikes ball B into the pocket.\n\n" +
+        "CUT: any shot where the object ball is struck off-center.\n\n" +
+        "HALF-BALL: a cut where the cue ball overlaps the object ball by half its diameter.\n\n" +
+        "KICK: a shot where the cue ball hits a cushion before reaching the object ball.\n\n" +
+        "POSITION (POSITION PLAY): controlling where the cue ball ends up.\n\n" +
+        "THIN: a cut shot taken on the very edge of the object ball."
+      },
+      { title: 'SLANG & POOL HALL', body:
+        "ACTION: betting or money play.\n\n" +
+        "DOG IT: to choke under pressure on an easy shot.\n\n" +
+        "GAS: heavy cue ball spin (lots of english).\n\n" +
+        "HUSTLE: pretending to be worse than you are to draw bigger bets.\n\n" +
+        "LUCK OUT (or ROLL): when good fortune saves a poor shot.\n\n" +
+        "PUSH OUT: a special shot in 9-ball after the break where the shooter can place the cue ball without restriction.\n\n" +
+        "ROAD PLAYER: a traveling pro who wins money in unfamiliar pool halls.\n\n" +
+        "SHARK: to distract or psychologically pressure an opponent."
+      }
+    ],
+
+    rulebook: [
+      { title: 'WPA 8-BALL: OBJECT', body:
+        "Players are assigned the group of solids (1-7) or stripes (9-15). The first player to legally pocket all balls in their assigned group, then legally pocket the 8-ball into a called pocket, wins.\n\n" +
+        "The cue ball is the only ball directly struck by the cue stick. Striking any other ball directly is a foul."
+      },
+      { title: 'THE BREAK', body:
+        "The break shooter places the cue ball anywhere behind the head string and strikes the racked balls.\n\n" +
+        "LEGAL BREAK requires either:\n" +
+        "¶ Pocketing at least one ball, OR\n" +
+        "¶ Driving at least four balls to a cushion\n\n" +
+        "If neither: the incoming player has the option of accepting the table as is, or rebreaking.\n\n" +
+        "Pocketing the cue ball on the break: foul. Opponent gets cue ball in hand behind the head string.\n\n" +
+        "Pocketing the 8-ball on the break: the breaker may either re-rack and break again, or have the 8 spotted and continue."
+      },
+      { title: 'GROUP ASSIGNMENT', body:
+        "Until a player legally pockets a ball after the break, the table is OPEN.\n\n" +
+        "On an open table: a player may strike any ball first (except the 8-ball can only be struck first if it is the only legal target).\n\n" +
+        "Group assignment occurs the moment a player LEGALLY pockets a ball after the break (cue ball strikes the chosen group's ball first AND that ball is pocketed). The shooter is then assigned that group; opponent gets the other.\n\n" +
+        "The break itself does NOT assign groups even if balls are pocketed."
+      },
+      { title: 'FOULS', body:
+        "These actions are fouls. After a foul, the opponent receives ball-in-hand (place cue ball anywhere on table).\n\n" +
+        "¶ Failure to hit a legal ball first\n" +
+        "¶ No ball contacts a cushion after first contact (and no ball is pocketed)\n" +
+        "¶ Pocketing the cue ball (scratch)\n" +
+        "¶ Knocking a ball off the table\n" +
+        "¶ Touching any ball with anything other than the cue tip during a stroke\n" +
+        "¶ Double hit (cue tip strikes cue ball twice in one stroke)\n" +
+        "¶ Push shot (continued contact between tip and cue ball)\n" +
+        "¶ Foot off the floor during a stroke\n" +
+        "¶ Shot clock expiry (in timed play)"
+      },
+      { title: 'THREE-FOUL RULE', body:
+        "Three consecutive fouls by the same player results in loss of game.\n\n" +
+        "After the second consecutive foul, the player must be warned. If they then commit a third consecutive foul, they lose the game.\n\n" +
+        "Any legal shot resets the foul count to zero."
+      },
+      { title: 'WINNING THE 8-BALL', body:
+        "Once a player has pocketed all of their group's balls, they shoot for the 8-ball.\n\n" +
+        "REQUIRED: call the pocket before shooting. The 8-ball must be pocketed in the called pocket.\n\n" +
+        "WIN: legal contact, called pocket, no scratch, no foul.\n\n" +
+        "LOSS:\n" +
+        "¶ Pocketing the 8-ball before clearing your group\n" +
+        "¶ Pocketing the 8-ball into a different pocket than called\n" +
+        "¶ Scratching while pocketing the 8-ball\n" +
+        "¶ Knocking the 8-ball off the table\n" +
+        "¶ Pocketing the 8-ball on a foul shot"
+      },
+      { title: 'STALEMATE', body:
+        "If both players are reduced to defensive shots and no progress can be made over three innings (turns), the rack is declared a stalemate and replayed.\n\n" +
+        "Tournament: same break order. Casual: alternate."
+      },
+      { title: 'EQUIPMENT', body:
+        "TABLE: 9-foot WPA-spec table for tournament play. 8-foot for many leagues.\n\n" +
+        "BALLS: phenolic resin, 2-1/4 inch diameter (57mm), 5.5-6.0 oz weight.\n\n" +
+        "CUE: 57-59 inches long, 17-21 oz, leather tip 12-13mm diameter.\n\n" +
+        "RACK: triangle (8-ball, 14.1) or diamond (9-ball)."
+      }
+    ],
+
+    psychology: [
+      { title: 'CONTROL THE INNER GAME', body:
+        "Pool reveals character. The table doesn't lie.\n\n" +
+        "Tilt: the state of frustration after a missed shot or run-out failure. A tilted player makes worse decisions, hits harder than needed, plays without thinking.\n\n" +
+        "Recognize tilt in yourself: are you angry? Are you skipping the pre-shot routine? Are you breathing fast? Step back. Take three breaths. Reset."
+      },
+      { title: 'PRESSURE SHOTS', body:
+        "The 8-ball with money on the line. The hill-hill rack. The make-or-break combination.\n\n" +
+        "Truth: you've made this shot a thousand times in practice. The shot does not change because of pressure. Only your mind changes.\n\n" +
+        "Slow your routine, not speed it up. Trust your stroke. Don't think about the consequences of the miss. Think only about pocketing the ball."
+      },
+      { title: 'READING OPPONENTS', body:
+        "Tilted opponents take risks. Confident opponents play position.\n\n" +
+        "Watch their body language. A player who walks fast is rushed. A player who lingers is unsure. A player who looks at the score is distracted.\n\n" +
+        "Pace yourself to disrupt them. If they want fast, slow down. If they want slow, keep moving. Both are sharking — within the rules."
+      },
+      { title: 'HOW TO LOSE WELL', body:
+        "Every player loses. The pros lose with grace and learn.\n\n" +
+        "After a loss: don't replay the missed shots. Replay your DECISIONS. What did you misread? What pattern did you choose wrong?\n\n" +
+        "The shot you missed is the shot you missed. The decision that led you to that shot is the lesson."
+      }
+    ]
+  };
+
+
+  // ---------- Tutorial state ----------------------------------------------
+  const tutorial = {
+    section: 'quickStart',   // current section key
+    page: 0,                 // current page index within section
+    sectionList: ['quickStart', 'shots', 'strategy', 'lingo', 'rulebook', 'psychology'],
+    sectionTitles: {
+      quickStart: 'QUICK START',
+      shots: 'THE SHOTS',
+      strategy: 'STRATEGY',
+      lingo: 'LINGO & TERMS',
+      rulebook: 'WPA RULEBOOK',
+      psychology: 'THE INNER GAME'
+    },
+    drillKey: null,          // current active drill name
+    drillResult: null,       // 'success' | 'fail' | null
+    drillAttempts: 0,
+    drillSuccesses: 0
+  };
+
+  // Drill definitions — each describes a ball setup and a goal
+  const DRILLS = {
+    stopShot: {
+      name: 'THE STOP SHOT',
+      description: 'Strike with no spin. Cue ball should stop where the object ball was. Sink the object ball in the bottom-right pocket.',
+      hint: 'Center spin. Aim through the object ball center. Medium power.',
+      setup: function() {
+        // Cue ball at near end, object ball mid-table aligned with bottom-right pocket
+        return [
+          { id: 0, n: 0, x: PLAY_X0 + PLAY_W * 0.75, y: TABLE_H / 2, vx:0, vy:0, wx:0, wy:0, spinX:0, spinY:0, inPlay: true, pocketed: false },
+          { id: 1, n: 1, x: PLAY_X0 + PLAY_W * 0.45, y: TABLE_H / 2 + 30, vx:0, vy:0, wx:0, wy:0, spinX:0, spinY:0, inPlay: true, pocketed: false }
+        ];
+      },
+      checkSuccess: function(state) {
+        // Object ball pocketed AND cue ball within 30 units of where object ball was
+        const obj = state.balls.find(b => b.n === 1);
+        const cue = state.balls[0];
+        if (!obj.pocketed) return null;
+        if (!cue.inPlay) return 'fail';  // scratched
+        // The original object position
+        const origX = PLAY_X0 + PLAY_W * 0.45;
+        const origY = TABLE_H / 2 + 30;
+        const dist = Math.hypot(cue.x - origX, cue.y - origY);
+        return dist < 60 ? 'success' : 'fail';
+      }
+    },
+
+    followShot: {
+      name: 'THE FOLLOW SHOT',
+      description: 'Top spin. Sink the object ball, then have the cue ball travel forward at least 100 units past contact point.',
+      hint: 'Spin dial up. Medium-firm power. Aim center of object ball.',
+      setup: function() {
+        return [
+          { id: 0, n: 0, x: PLAY_X0 + PLAY_W * 0.85, y: TABLE_H / 2, vx:0, vy:0, wx:0, wy:0, spinX:0, spinY:0, inPlay: true, pocketed: false },
+          { id: 1, n: 1, x: PLAY_X0 + PLAY_W * 0.50, y: TABLE_H / 2, vx:0, vy:0, wx:0, wy:0, spinX:0, spinY:0, inPlay: true, pocketed: false }
+        ];
+      },
+      checkSuccess: function(state) {
+        const obj = state.balls.find(b => b.n === 1);
+        const cue = state.balls[0];
+        if (!obj.pocketed) return null;
+        if (!cue.inPlay) return 'fail';
+        const origX = PLAY_X0 + PLAY_W * 0.50;
+        // Cue ball should be PAST the contact point (lower x = farther forward in portrait)
+        return cue.x < origX - 50 ? 'success' : 'fail';
+      }
+    },
+
+    drawShot: {
+      name: 'THE DRAW SHOT',
+      description: 'Back spin. Sink the object ball, then DRAW the cue ball back at least 80 units toward you.',
+      hint: 'Spin dial DOWN. Firm power. Aim center of object ball.',
+      setup: function() {
+        return [
+          { id: 0, n: 0, x: PLAY_X0 + PLAY_W * 0.85, y: TABLE_H / 2, vx:0, vy:0, wx:0, wy:0, spinX:0, spinY:0, inPlay: true, pocketed: false },
+          { id: 1, n: 1, x: PLAY_X0 + PLAY_W * 0.55, y: TABLE_H / 2, vx:0, vy:0, wx:0, wy:0, spinX:0, spinY:0, inPlay: true, pocketed: false }
+        ];
+      },
+      checkSuccess: function(state) {
+        const obj = state.balls.find(b => b.n === 1);
+        const cue = state.balls[0];
+        if (!obj.pocketed) return null;
+        if (!cue.inPlay) return 'fail';
+        const origX = PLAY_X0 + PLAY_W * 0.55;
+        // Cue ball should be BEHIND contact point (higher x = back toward starting end)
+        return cue.x > origX + 50 ? 'success' : 'fail';
+      }
+    },
+
+    cutShot: {
+      name: 'CUT SHOT',
+      description: 'Cut the object ball into the upper-right corner pocket from a 30-degree angle.',
+      hint: 'Aim slightly left of object ball center. Center spin. Medium power.',
+      setup: function() {
+        return [
+          { id: 0, n: 0, x: PLAY_X0 + PLAY_W * 0.5, y: TABLE_H / 2, vx:0, vy:0, wx:0, wy:0, spinX:0, spinY:0, inPlay: true, pocketed: false },
+          { id: 1, n: 1, x: PLAY_X0 + PLAY_W * 0.3, y: TABLE_H / 2 + 60, vx:0, vy:0, wx:0, wy:0, spinX:0, spinY:0, inPlay: true, pocketed: false }
+        ];
+      },
+      checkSuccess: function(state) {
+        const obj = state.balls.find(b => b.n === 1);
+        if (!obj.pocketed) return null;
+        const cue = state.balls[0];
+        return cue.inPlay ? 'success' : 'fail';
+      }
+    },
+
+    bankShot: {
+      name: 'BANK SHOT',
+      description: 'Bank the object ball off the far rail into a corner pocket on your side.',
+      hint: 'Aim at a point on the far rail such that the reflection angle sends the ball to your near corner.',
+      setup: function() {
+        return [
+          { id: 0, n: 0, x: PLAY_X0 + PLAY_W * 0.85, y: TABLE_H / 2, vx:0, vy:0, wx:0, wy:0, spinX:0, spinY:0, inPlay: true, pocketed: false },
+          { id: 1, n: 1, x: PLAY_X0 + PLAY_W * 0.5, y: TABLE_H / 2 + 50, vx:0, vy:0, wx:0, wy:0, spinX:0, spinY:0, inPlay: true, pocketed: false }
+        ];
+      },
+      checkSuccess: function(state) {
+        const obj = state.balls.find(b => b.n === 1);
+        if (!obj.pocketed) return null;
+        // Bank shot: object ball should have hit a cushion before being pocketed
+        return state.balls[0].inPlay ? 'success' : 'fail';
+      }
+    },
+
+    breakShot: {
+      name: 'THE BREAK',
+      description: 'Full rack. Practice your break. At least 4 balls must reach a cushion.',
+      hint: 'Aim slightly off-center of the apex ball for better spread. Maximum power.',
+      setup: function() {
+        // Use the standard rack
+        const balls = [
+          { id: 0, n: 0, x: PLAY_X0 + PLAY_W * 0.75, y: TABLE_H / 2, vx:0, vy:0, wx:0, wy:0, spinX:0, spinY:0, inPlay: true, pocketed: false }
+        ];
+        const order = [[1], [9, 2], [3, 8, 10], [11, 4, 5, 12], [6, 13, 7, 14, 15]];
+        const foot = { x: PLAY_X0 + PLAY_W * 0.28, y: TABLE_H / 2 };
+        const dx = BALL_R * 2 * 0.866 + 0.4;
+        const dy = BALL_R * 2 + 0.4;
+        for (let row = 0; row < order.length; row++) {
+          const rowBalls = order[row];
+          const rowX = foot.x + row * dx;
+          const rowY0 = foot.y - ((rowBalls.length - 1) * dy) / 2;
+          for (let i = 0; i < rowBalls.length; i++) {
+            balls.push({
+              id: balls.length,
+              n: rowBalls[i],
+              x: rowX, y: rowY0 + i * dy,
+              vx:0, vy:0, wx:0, wy:0, spinX:0, spinY:0, inPlay: true, pocketed: false
+            });
+          }
+        }
+        return balls;
+      },
+      checkSuccess: function(state) {
+        // Drill counts as success if any ball is pocketed OR 4+ balls reached cushion
+        const sunk = state.pocketedThisShot.filter(b => b.n !== 0).length;
+        if (sunk > 0) return 'success';
+        // Otherwise check cushion contacts (we don't track per-ball, so use heuristic)
+        return 'fail';
+      }
+    }
+  };
+
+  // ---------- Tutorial screen rendering -----------------------------------
+  function drawTutorialMenu() {
+    _screenBg();
+    const W = canvas.width, H = canvas.height;
+    ctx.fillStyle = '#ebdab3';
+    ctx.textAlign = 'center';
+    ctx.font = 'italic bold 22px Georgia, serif';
+    const tY = Math.max(56, H * 0.10);
+    ctx.fillText('TUTORIAL & DRILLS', W / 2, tY);
+    ctx.font = 'italic 12px Georgia, serif';
+    ctx.fillStyle = '#c9b98a';
+    ctx.fillText('Learn the game. Or refresh what you knew.', W / 2, tY + 22);
+    screens.tutorial = _stackButtons(tY + 42, [
+      { key: 'quickStart', title: 'QUICK START', subtitle: 'The basics in five short pages.', primary: true },
+      { key: 'manual',     title: 'REFERENCE MANUAL', subtitle: 'Shots, strategy, lingo, full rulebook.', primary: true },
+      { key: 'drills',     title: 'DRILL PRACTICE', subtitle: 'Practice each shot type interactively.', primary: true },
+      { key: 'back',       title: '← BACK', subtitle: null, primary: false }
+    ]);
+  }
+
+  function drawTutorialReader() {
+    _screenBg();
+    const W = canvas.width, H = canvas.height;
+    const sectionPages = TUTORIAL_PAGES[tutorial.section] || [];
+    const page = sectionPages[tutorial.page] || { title: '', body: '' };
+
+    // Top: section name
+    ctx.fillStyle = '#d9a679';
+    ctx.font = 'italic 11px Georgia, serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'alphabetic';
+    const sectTitle = tutorial.sectionTitles[tutorial.section];
+    ctx.fillText(sectTitle, W / 2, 28);
+
+    // Page title
+    ctx.fillStyle = '#f5ecd7';
+    ctx.font = 'italic bold 18px Georgia, serif';
+    const titleY = 60;
+    ctx.fillText(page.title, W / 2, titleY);
+
+    // Page indicator
+    ctx.fillStyle = '#8a6b2e';
+    ctx.font = '10px Georgia, serif';
+    ctx.fillText((tutorial.page + 1) + ' / ' + sectionPages.length, W / 2, titleY + 18);
+
+    // Body — paragraphs and bullets
+    ctx.fillStyle = '#e8dcc3';
+    ctx.font = '12px Georgia, serif';
+    ctx.textAlign = 'left';
+    const bodyY0 = titleY + 40;
+    const bodyMax = H - 110;
+    const margin = 22;
+    const wrapW = W - margin * 2;
+    let y = bodyY0;
+    const paragraphs = page.body.split('\n\n');
+    for (const para of paragraphs) {
+      const isBullet = para.startsWith('¶');
+      // Handle bullet inline (each bullet on its own line)
+      const bulletLines = para.split('¶').filter(s => s.trim());
+      if (isBullet || para.includes('¶')) {
+        for (const bp of bulletLines) {
+          const bullet = bp.trim();
+          if (!bullet) continue;
+          // Draw bullet marker
+          ctx.fillStyle = '#d9a679';
+          ctx.fillText('•', margin, y);
+          ctx.fillStyle = '#e8dcc3';
+          const lines = wrapText(bullet, wrapW - 14);
+          for (const l of lines) {
+            if (y > bodyMax) { y = bodyMax + 30; break; }
+            ctx.fillText(l, margin + 14, y);
+            y += 16;
+          }
+          y += 4;
+        }
+      } else {
+        const lines = wrapText(para, wrapW);
+        for (const l of lines) {
+          if (y > bodyMax) { y = bodyMax + 30; break; }
+          ctx.fillText(l, margin, y);
+          y += 16;
+        }
+        y += 8;
+      }
+      if (y > bodyMax) break;
+    }
+
+    // Navigation buttons at bottom
+    const btnH = 44;
+    const btnY = H - btnH - 14;
+    const btnW = (W - 60) / 3;
+
+    // PREV
+    const prevX = 16;
+    ctx.fillStyle = tutorial.page > 0 ? '#2a1206' : '#1a0a04';
+    roundRect(ctx, prevX, btnY, btnW, btnH, 6); ctx.fill();
+    ctx.strokeStyle = tutorial.page > 0 ? '#8a6b2e' : '#3a1f10';
+    ctx.lineWidth = 1; ctx.stroke();
+    ctx.fillStyle = tutorial.page > 0 ? '#c9b98a' : '#5a4a2a';
+    ctx.font = 'bold 12px Georgia, serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('← PREV', prevX + btnW/2, btnY + btnH/2);
+    screens.readerPrev = { x: prevX, y: btnY, w: btnW, h: btnH };
+
+    // SECTION (jump to next section or menu)
+    const secX = prevX + btnW + 12;
+    ctx.fillStyle = '#4a1808';
+    roundRect(ctx, secX, btnY, btnW, btnH, 6); ctx.fill();
+    ctx.strokeStyle = '#d9a679'; ctx.stroke();
+    ctx.fillStyle = '#f5ecd7';
+    ctx.fillText('MENU', secX + btnW/2, btnY + btnH/2);
+    screens.readerMenu = { x: secX, y: btnY, w: btnW, h: btnH };
+
+    // NEXT
+    const nextX = secX + btnW + 12;
+    const hasNext = tutorial.page < sectionPages.length - 1 ||
+                    tutorial.sectionList.indexOf(tutorial.section) < tutorial.sectionList.length - 1;
+    ctx.fillStyle = hasNext ? '#2a1206' : '#1a0a04';
+    roundRect(ctx, nextX, btnY, btnW, btnH, 6); ctx.fill();
+    ctx.strokeStyle = hasNext ? '#8a6b2e' : '#3a1f10'; ctx.stroke();
+    ctx.fillStyle = hasNext ? '#c9b98a' : '#5a4a2a';
+    ctx.fillText('NEXT →', nextX + btnW/2, btnY + btnH/2);
+    screens.readerNext = { x: nextX, y: btnY, w: btnW, h: btnH };
+  }
+
+  function drawTutorialDrillMenu() {
+    _screenBg();
+    const W = canvas.width, H = canvas.height;
+    ctx.fillStyle = '#ebdab3';
+    ctx.textAlign = 'center';
+    ctx.font = 'italic bold 20px Georgia, serif';
+    const tY = Math.max(50, H * 0.08);
+    ctx.fillText('DRILL PRACTICE', W / 2, tY);
+    ctx.font = 'italic 11px Georgia, serif';
+    ctx.fillStyle = '#c9b98a';
+    ctx.fillText('Each drill teaches one essential shot type.', W / 2, tY + 20);
+
+    const drillKeys = Object.keys(DRILLS);
+    const buttons = drillKeys.map(k => ({
+      key: k,
+      title: DRILLS[k].name,
+      subtitle: DRILLS[k].description.slice(0, 60) + (DRILLS[k].description.length > 60 ? '...' : ''),
+      primary: true
+    }));
+    buttons.push({ key: 'back', title: '← BACK', subtitle: null, primary: false });
+    screens.drills = _stackButtons(tY + 42, buttons);
+  }
+
+  // Drill HUD — shows drill name + description + result
+  function drawDrillHUD() {
+    if (!state || !state.drillKey) return;
+    const drill = DRILLS[state.drillKey];
+    if (!drill) return;
+    const W = canvas.width, H = canvas.height;
+
+    // Top banner with drill info
+    ctx.save();
+    ctx.fillStyle = 'rgba(20,12,8,0.92)';
+    ctx.fillRect(0, 32, W, 84);
+    ctx.fillStyle = '#d9a679';
+    ctx.font = 'italic bold 13px Georgia, serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText(drill.name, W / 2, 38);
+    ctx.fillStyle = '#e8dcc3';
+    ctx.font = '10px Georgia, serif';
+    const descLines = wrapText(drill.description, W - 24);
+    let descY = 56;
+    for (const l of descLines.slice(0, 3)) {
+      ctx.fillText(l, W / 2, descY);
+      descY += 12;
+    }
+    // Hint in italic
+    ctx.fillStyle = '#c9b98a';
+    ctx.font = 'italic 10px Georgia, serif';
+    ctx.fillText('HINT: ' + drill.hint, W / 2, descY + 4);
+
+    // Attempts counter top-right
+    ctx.fillStyle = '#f7c948';
+    ctx.font = 'bold 11px Georgia, serif';
+    ctx.textAlign = 'right';
+    ctx.fillText(tutorial.drillSuccesses + ' / ' + tutorial.drillAttempts, W - 10, 16);
+    ctx.restore();
+
+    // Result overlay
+    if (state.drillResult) {
+      ctx.save();
+      ctx.fillStyle = 'rgba(10,5,2,0.85)';
+      ctx.fillRect(0, H/2 - 60, W, 120);
+      const isSuccess = state.drillResult === 'success';
+      ctx.fillStyle = isSuccess ? '#6adc6a' : '#c0392b';
+      ctx.font = 'italic bold 22px Georgia, serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(isSuccess ? '✓  WELL DONE' : '✗  TRY AGAIN', W/2, H/2 - 12);
+      ctx.fillStyle = '#c9b98a';
+      ctx.font = '12px Georgia, serif';
+      ctx.fillText('Tap to retry', W/2, H/2 + 18);
+      ctx.restore();
+    }
+
+    // EXIT DRILL button bottom-right (replaces normal SAFE button)
+    if (!state.drillResult) {
+      const exitW = 90, exitH = 32;
+      const exitX = W - exitW - 10;
+      const exitY = H - exitH - 10;
+      ctx.save();
+      ctx.fillStyle = 'rgba(40,20,10,0.85)';
+      roundRect(ctx, exitX, exitY, exitW, exitH, 5); ctx.fill();
+      ctx.strokeStyle = '#8a6b2e'; ctx.lineWidth = 1; ctx.stroke();
+      ctx.fillStyle = '#c9b98a';
+      ctx.font = '11px Georgia, serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('EXIT DRILL', exitX + exitW/2, exitY + exitH/2);
+      hud.exitDrill = { x: exitX, y: exitY, w: exitW, h: exitH };
+      ctx.restore();
+    }
+  }
+
+  function startDrill(drillKey) {
+    const drill = DRILLS[drillKey];
+    if (!drill) return;
+    tutorial.drillKey = drillKey;
+    tutorial.drillResult = null;
+    tutorial.drillAttempts++;
+    state = {
+      mode: 'drill',
+      drillKey: drillKey,
+      drillResult: null,
+      balls: drill.setup(),
+      aimX: PLAY_X0 + PLAY_W * 0.28,
+      aimY: TABLE_H / 2,
+      power: 0.5,
+      pullBack: 0,
+      spinX: 0, spinY: 0,
+      turn: 'player',
+      gamePhase: 'aiming',
+      openTable: true,
+      pocketedThisShot: [],
+      firstContact: null,
+      _cueTouchedCushion: 0,
+      _ballsToCushion: 0,
+      shotClockStart: null,
+      shotClockLimit: 999999,
+      shotClockExpired: false,
+      consecutiveFouls: { player: 0, alistair: 0 },
+      intentionalSafety: false,
+      playerStats: { shotsTaken: 0, shotsMissed: 0, ballsSunk: 0, scratches: 0, skill: 0.5 },
+      ballInHand: false,
+      calledPocket: null,
+      showCallPocket: false,
+      dialogue: '',
+      dialogueTimer: 0
+    };
+    screenState = 'drill';
+  }
+
+  function checkDrillResult() {
+    if (!state || state.mode !== 'drill') return;
+    const drill = DRILLS[state.drillKey];
+    if (!drill) return;
+    const result = drill.checkSuccess(state);
+    if (result) {
+      state.drillResult = result;
+      if (result === 'success') tutorial.drillSuccesses++;
+      // Reset shot data for next attempt
+      state.pocketedThisShot = [];
+    }
+  }
+
   // ---------- Loop --------------------------------------------------------
   function loop() {
     if (!canvas) return;
@@ -3378,6 +4184,15 @@
       drawScreenOverlay();
     } else if (screenState === 'interstitial' || screenState === 'matchEnd') {
       drawScreenOverlay();
+    } else if (screenState === 'drill' && state) {
+      if (state.gamePhase === 'simulating') step();
+      // Check drill result after balls stop
+      if (state.gamePhase === 'aiming' && !state.drillResult) {
+        checkDrillResult();
+      }
+      render();
+      // Drill HUD overlays normal UI
+      drawDrillHUD();
     } else if (state) {
       if (state.gamePhase === 'simulating') step();
       if (state.mode === 'vs' && state.turn === 'alistair' && state.gamePhase === 'aiming') {
