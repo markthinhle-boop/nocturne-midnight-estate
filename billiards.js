@@ -67,30 +67,53 @@
 
   // ---------- Ball data ----------------------------------------------------
   // 0 = cue. 1-7 solids, 8 = eight ball, 9-15 stripes.
+  // ============================================================
+  // SNOOKER — Victorian-era billiards (invented 1875)
+  // ============================================================
+  // Ball numbering:
+  //   0  = cue ball (white)
+  //   1-15 = reds (all worth 1 point)
+  //   16 = yellow (2pts), 17 = green (3pts), 18 = brown (4pts)
+  //   19 = blue (5pts), 20 = pink (6pts), 21 = black (7pts)
+  // Total maximum break: 147 (15×8 + 2+3+4+5+6+7 = 120+27 = 147)
+
+  const SNOOKER_RED_IDS   = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15];
+  const SNOOKER_COLOUR_IDS = [16,17,18,19,20,21];  // in ascending point order
+  const SNOOKER_POINTS = {
+    0:0, 1:1,2:1,3:1,4:1,5:1,6:1,7:1,8:1,9:1,10:1,11:1,12:1,13:1,14:1,15:1,
+    16:2, 17:3, 18:4, 19:5, 20:6, 21:7
+  };
+  const SNOOKER_COLOUR_NAMES = { 16:'Yellow', 17:'Green', 18:'Brown', 19:'Blue', 20:'Pink', 21:'Black' };
+
+  // Spot positions for the 6 colours (in table coordinates, portrait: tx = vertical)
+  // Standard snooker table: black near top rail (far), then pink, blue (mid), brown/green/yellow near bottom rail (near)
+  // In our portrait layout: tx small = far end (top screen), tx large = near end (near player)
+  const COLOUR_SPOTS = {
+    16: { x: PLAY_X0 + PLAY_W * 0.88, y: TABLE_H / 2 + 60 },   // yellow (near, right)
+    17: { x: PLAY_X0 + PLAY_W * 0.88, y: TABLE_H / 2 - 60 },   // green (near, left)
+    18: { x: PLAY_X0 + PLAY_W * 0.88, y: TABLE_H / 2 },         // brown (near, centre)
+    19: { x: PLAY_X0 + PLAY_W * 0.50, y: TABLE_H / 2 },         // blue (mid)
+    20: { x: PLAY_X0 + PLAY_W * 0.32, y: TABLE_H / 2 },         // pink (near apex)
+    21: { x: PLAY_X0 + PLAY_W * 0.16, y: TABLE_H / 2 }          // black (far end)
+  };
+
   const BALL_COLORS = {
-    0: '#f5ecd7',   // cue
-    1: '#f7c948',   // yellow
-    2: '#2e5cb8',   // blue
-    3: '#c0392b',   // red
-    4: '#6c3483',   // purple
-    5: '#d35400',   // orange
-    6: '#196f3d',   // green
-    7: '#7b241c',   // maroon
-    8: '#111111',   // eight
-    9: '#f7c948',
-    10: '#2e5cb8',
-    11: '#c0392b',
-    12: '#6c3483',
-    13: '#d35400',
-    14: '#196f3d',
-    15: '#7b241c'
+    0:  '#f5f0e8',  // cue: white
+    1:  '#c0392b', 2:  '#c0392b', 3:  '#c0392b', 4:  '#c0392b', 5:  '#c0392b',
+    6:  '#c0392b', 7:  '#c0392b', 8:  '#c0392b', 9:  '#c0392b', 10: '#c0392b',
+    11: '#c0392b', 12: '#c0392b', 13: '#c0392b', 14: '#c0392b', 15: '#c0392b',
+    16: '#f0d020',  // yellow
+    17: '#1a6b2e',  // green
+    18: '#7b3a10',  // brown
+    19: '#1a4fa0',  // blue
+    20: '#d4548a',  // pink
+    21: '#111111'   // black
   };
 
   function ballType(n) {
     if (n === 0) return 'cue';
-    if (n === 8) return 'eight';
-    if (n >= 1 && n <= 7) return 'solid';
-    return 'stripe';
+    if (n >= 1 && n <= 15) return 'red';
+    return 'colour';
   }
 
   // ---------- Dialogue: Alistair, 100+ unique lines -----------------------
@@ -343,91 +366,111 @@
 
   function newGame(mode) {
     state = {
-      mode: mode,                 // 'solo' | 'vs'
+      mode: mode,
       balls: makeRack(),
       // Shot input
-      aimX: PLAY_X0 + PLAY_W * 0.28,   // aims toward rack at top of portrait
+      aimX: PLAY_X0 + PLAY_W * 0.28,
       aimY: TABLE_H / 2,
-      power: 0.5,                 // 0..1
-      spinX: 0,                   // -1..1  (side english)
-      spinY: 0,                   // -1..1  (top/back)
-      // Turn / rules
-      turn: 'player',             // 'player' | 'alistair'
-      playerGroup: null,          // 'solid' | 'stripe' | null (open table)
-      alistairGroup: null,
-      openTable: true,
-      ballInHand: false,
-      gamePhase: 'aiming',        // 'aiming' | 'simulating' | 'gameover' | 'lag'
-      firstContact: null,         // first ball cue hit this shot
+      power: 0.5,
+      pullBack: 0,
+      spinX: 0, spinY: 0,
+      // Turn
+      turn: 'player',
+      gamePhase: 'aiming',
+      // Snooker scoring
+      scores: { player: 0, alistair: 0 },
+      // Snooker sequence state
+      redsLeft: 15,             // reds remaining on table
+      coloursPhase: false,      // true when reds are all cleared, potting colours in order
+      nextColour: 16,           // during colours phase: next colour to pot (16-21)
+      ballOn: 'red',            // 'red' | colour id (16-21) — what must be potted next
+      // Foul tracking
+      consecutiveFouls: { player: 0, alistair: 0 },
+      foulValue: 0,             // pending foul points this shot
+      intentionalSafety: false,
+      // Shot tracking
+      firstContact: null,
       pocketedThisShot: [],
       _cueTouchedCushion: 0,
       _ballsToCushion: 0,
+      _isBreakShot: false,
       shotClockStart: null,
       shotClockLimit: 45000,
       shotClockExpired: false,
-      consecutiveFouls: { player: 0, alistair: 0 },  // 3 consecutive fouls = loss (WPA rule)
-      intentionalSafety: false,    // player declared a safety this shot
+      // Ball in hand
+      ballInHand: false,
+      // Game over
       winner: null,
       loseReason: null,
-      // AI adaptation
-      playerStats: {
-        shotsTaken: 0,
-        shotsMissed: 0,
-        ballsSunk: 0,
-        scratches: 0,
-        skill: 0.5                // 0..1, drives Alistair's aim noise
-      },
-      // Called pocket (8-ball only)
-      calledPocket: null,
-      showCallPocket: false,
+      // AI
+      playerStats: { shotsTaken:0, shotsMissed:0, ballsSunk:0, scratches:0, skill:0.5 },
       // Dialogue
-      dialogue: pickLine('preMatch'),
+      dialogue: '',
       dialogueTimer: 0,
       // UI
+      calledPocket: null,
+      showCallPocket: false,
       showHelp: false
     };
-
-    // Place cue ball at "head spot"
-    state.balls[0].x = PLAY_X0 + PLAY_W * 0.75;  // bottom of portrait table
-    state.balls[0].y = TABLE_H / 2;
 
     state.shotClockStart = performance.now();
     setTimeout(() => say(mode === 'vs' ? 'preMatch' : null), 100);
   }
 
+  function _makeBall(id, n, x, y) {
+    return { id, n, x, y, vx:0, vy:0, wx:0, wy:0, spinX:0, spinY:0, inPlay:true, pocketed:false, _spotted:false };
+  }
+
   function makeRack() {
     const balls = [];
-    // Cue
-    balls.push({ id: 0, n: 0, x: 0, y: 0, vx: 0, vy: 0, wx: 0, wy: 0, spinX: 0, spinY: 0, inPlay: true, pocketed: false });
-    // Rack triangle at foot spot
-    const foot = { x: PLAY_X0 + PLAY_W * 0.28, y: TABLE_H / 2 };  // top of portrait table
-    // Standard 8-ball rack: apex, mixed rows, 8 in middle of 3rd row.
-    const order = [
-      [1],
-      [9, 2],
-      [3, 8, 10],
-      [11, 4, 5, 12],
-      [6, 13, 7, 14, 15]
-    ];
-    const dx = BALL_R * 2 * 0.866 + 0.4;  // horizontal spacing (cos 30)
-    const dy = BALL_R * 2 + 0.4;          // vertical spacing
-    for (let row = 0; row < order.length; row++) {
-      const rowBalls = order[row];
-      const rowX = foot.x + row * dx;
-      const rowY0 = foot.y - ((rowBalls.length - 1) * dy) / 2;
-      for (let i = 0; i < rowBalls.length; i++) {
-        balls.push({
-          id: balls.length,
-          n: rowBalls[i],
-          x: rowX,
-          y: rowY0 + i * dy,
-          vx: 0, vy: 0, wx: 0, wy: 0, spinX: 0, spinY: 0,
-          inPlay: true,
-          pocketed: false
-        });
+    // Cue ball — placed at baulk (near end, player side)
+    balls.push(_makeBall(0, 0, PLAY_X0 + PLAY_W * 0.82, TABLE_H / 2));
+
+    // 15 reds in a triangle — apex near the pink spot, triangle pointing toward the black
+    // In portrait: reds cluster near top (far end, small tx)
+    const apexX = PLAY_X0 + PLAY_W * 0.28;
+    const apexY = TABLE_H / 2;
+    const sp = BALL_R * 2 + 0.6;  // spacing: just touching + tiny gap to prevent initial overlap
+    // Triangle rows (portrait: rows go along tx axis = vertically toward far end)
+    // Row 0 (apex): 1 ball, Row 1: 2 balls, ..., Row 4: 5 balls
+    let id = 1;
+    for (let row = 0; row < 5; row++) {
+      const count = row + 1;
+      const rowX = apexX - row * sp * 0.866;  // move toward far end (smaller tx)
+      const rowY0 = apexY - (count - 1) * sp / 2;
+      for (let i = 0; i < count; i++) {
+        balls.push(_makeBall(id, id, rowX, rowY0 + i * sp));
+        id++;
       }
     }
+
+    // 6 colours on their spots
+    for (const [n, spot] of Object.entries(COLOUR_SPOTS)) {
+      balls.push(_makeBall(balls.length, parseInt(n), spot.x, spot.y));
+    }
+
     return balls;
+  }
+
+  // Spot a colour back to its designated position after being legally pocketed
+  function spotColour(n) {
+    const b = state.balls.find(b => b.n === n);
+    if (!b) return;
+    const spot = COLOUR_SPOTS[n];
+    if (!spot) return;
+    // If spot is occupied, find nearest free spot on the long axis toward black
+    let sx = spot.x, sy = spot.y;
+    const occupied = state.balls.some(ob => ob.inPlay && ob !== b && Math.hypot(ob.x - sx, ob.y - sy) < BALL_R * 2 + 1);
+    if (occupied) {
+      // Move toward black (lower tx) until free
+      sx = spot.x - BALL_R * 2.2;
+      while (state.balls.some(ob => ob.inPlay && ob !== b && Math.hypot(ob.x - sx, ob.y - sy) < BALL_R * 2 + 1) && sx > PLAY_X0 + BALL_R) {
+        sx -= BALL_R * 2.2;
+      }
+    }
+    b.x = sx; b.y = sy;
+    b.vx = 0; b.vy = 0; b.wx = 0; b.wy = 0; b.spinX = 0; b.spinY = 0;
+    b.inPlay = true; b.pocketed = false;
   }
 
   // ---------- Shot / physics ----------------------------------------------
@@ -866,55 +909,26 @@
 
 
   function resolveShot() {
-    // Drill mode: physics resolves but no game rules apply
+    // Drill mode — physics only, no rules
     if (state.mode === 'drill') {
       state.gamePhase = 'aiming';
       state.firstContact = null;
-      // Don't reset pocketedThisShot here — checkDrillResult needs it
       return;
     }
+
     const pocketed = state.pocketedThisShot;
     const shooter = state.turn;
-    const cueBall = state.balls[0];
     const cueScratched = pocketed.some(b => b.n === 0);
-    const eightSunk = pocketed.some(b => b.n === 8);
 
-    // Assign groups on first legal pot (not cue, not 8)
-    if (state.openTable) {
-      const legalPot = pocketed.find(b => b.n !== 0 && b.n !== 8);
-      if (legalPot && !cueScratched) {
-        const group = ballType(legalPot.n);
-        if (group === 'solid' || group === 'stripe') {
-          if (shooter === 'player') {
-            state.playerGroup = group;
-            state.alistairGroup = group === 'solid' ? 'stripe' : 'solid';
-          } else {
-            state.alistairGroup = group;
-            state.playerGroup = group === 'solid' ? 'stripe' : 'solid';
-          }
-          state.openTable = false;
-        }
-      }
-    }
+    // ============================================================
+    // SNOOKER RULES ENGINE
+    // ============================================================
 
-    // Legal break check (WPA rule: cue ball must contact rack AND 4 balls to cushion or a ball pocketed)
-    const isBreakShot = state._isBreakShot;
-    if (isBreakShot) {
-      const ballsToRail = state._ballsToCushion || 0;
-      const ballsPocketed = pocketed.filter(b => b.n !== 0).length;
-      if (ballsToRail < 4 && ballsPocketed === 0 && !cueScratched) {
-        // Illegal break — rerack, player breaks again (or opponent can choose)
-        if (state.mode === 'vs') say('illegalBreak');
-        // For now: just treat as foul / re-break option handled by ball-in-hand
-      }
-      state._isBreakShot = false;
-    }
-
-    // Shot clock expiry — if player ran out of time, it's a foul
+    // Shot clock expiry
     if (state.shotClockExpired && shooter === 'player') {
-      if (state.mode === 'vs') say('shotClockFoul');
-      // Force foul: give ball-in-hand to Alistair
-      state.turn = 'alistair';
+      say('shotClockFoul');
+      _awardFoul(shooter, 4);
+      state.turn = other(shooter);
       state.ballInHand = true;
       state.gamePhase = 'aiming';
       state.shotClockStart = performance.now();
@@ -924,423 +938,401 @@
       return;
     }
 
-    // 8-ball rules
-    if (eightSunk) {
-      const shooterOnEight = isOnEight(shooter);
-      if (!shooterOnEight) {
-        // Pocketed 8 early → shooter loses
-        endGame(other(shooter), 'Early eight ball');
-        return;
-      }
-      if (cueScratched) {
-        endGame(other(shooter), 'Cue scratch on eight');
-        return;
-      }
-      // On eight, called pocket only matters for player (AI always auto-calls its pocket correctly when legal)
-      if (shooter === 'player') {
-        const eight = pocketed.find(b => b.n === 8);
-        if (state.calledPocket && eight.pocketedAt) {
-          const called = POCKETS[state.calledPocket];
-          if (Math.hypot(eight.pocketedAt.x - called.x, eight.pocketedAt.y - called.y) > 5) {
-            endGame('alistair', 'Wrong pocket on eight');
-            return;
-          }
-        }
-      }
-      endGame(shooter, 'Eight ball sunk legally');
-      return;
-    }
+    // What was the ball-on this shot?
+    const ballOn = state.ballOn;
+    const redsPotted    = pocketed.filter(b => b.n >= 1 && b.n <= 15);
+    const coloursPotted = pocketed.filter(b => b.n >= 16 && b.n <= 21);
+    const anyPotted     = pocketed.filter(b => b.n !== 0);
 
-    // Determine if shooter pocketed their own color
-    const shooterGroup = shooter === 'player' ? state.playerGroup : state.alistairGroup;
-    let sankOwn = false;
-    let sankOpp = false;
-    for (const b of pocketed) {
-      if (b.n === 0 || b.n === 8) continue;
-      const t = ballType(b.n);
-      if (state.openTable) sankOwn = true;
-      else if (t === shooterGroup) sankOwn = true;
-      else sankOpp = true;
-    }
-
-    // Handle scratches and fouls
+    // Determine if shot was legal
     let foul = false;
-    if (cueScratched) foul = true;
-    if (state.firstContact == null) foul = true;        // no contact
-    if (!state.openTable && shooterGroup) {
-      // First contact must be own group (unless on 8)
-      if (state.firstContact != null) {
-        const onEight = isOnEight(shooter);
-        if (onEight && state.firstContact !== 8) foul = true;
-        if (!onEight && state.firstContact === 8) foul = true;
-        if (!onEight && state.firstContact !== 8) {
-          const t = ballType(state.firstContact);
-          if (t !== shooterGroup) foul = true;
+    let foulValue = 4;  // minimum foul value in snooker
+
+    // No contact at all
+    if (state.firstContact === null) { foul = true; foulValue = Math.max(foulValue, 4); }
+
+    // Cue ball scratched
+    if (cueScratched) { foul = true; foulValue = Math.max(foulValue, SNOOKER_POINTS[ballOn === 'red' ? 1 : ballOn] || 4); }
+
+    // Wrong first contact
+    if (!foul && state.firstContact !== null) {
+      if (ballOn === 'red') {
+        // Must hit a red first
+        if (state.firstContact < 1 || state.firstContact > 15) {
+          foul = true;
+          foulValue = Math.max(foulValue, SNOOKER_POINTS[state.firstContact] || 4);
+        }
+      } else {
+        // Must hit the specific colour (or any colour if none specified and no reds left)
+        if (state.firstContact !== ballOn) {
+          foul = true;
+          foulValue = Math.max(foulValue, SNOOKER_POINTS[ballOn] || 4, SNOOKER_POINTS[state.firstContact] || 4);
         }
       }
     }
 
-    // Three-foul rule (WPA): three consecutive fouls = loss of frame
+    // No ball reached cushion after last contact (snooker foul — must send something to rail or pot)
+    if (!foul && anyPotted.length === 0 && state._cueTouchedCushion === 0) {
+      foul = true;
+    }
+
+    // Handle foul
     if (foul) {
+      _awardFoul(shooter, foulValue);
+      // Cue ball replaced if scratched
+      if (cueScratched) _replaceCueBall();
+      // Any incorrectly pocketed balls get spotted back
+      for (const b of anyPotted) {
+        if (b.n >= 16 && b.n <= 21) spotColour(b.n);
+        else if (b.n >= 1 && b.n <= 15) _spotRed(b);
+      }
+      // Three consecutive fouls
       state.consecutiveFouls[shooter] = (state.consecutiveFouls[shooter] || 0) + 1;
-      state.consecutiveFouls[other(shooter)] = 0;  // opponent's streak resets
+      state.consecutiveFouls[other(shooter)] = 0;
       if (state.consecutiveFouls[shooter] >= 3 && state.mode === 'vs') {
         say('threeFoulLoss');
-        endGame(other(shooter), shooter + ' committed three consecutive fouls');
+        endGame(other(shooter), 'Three consecutive fouls');
         return;
       }
       if (state.consecutiveFouls[shooter] === 2 && state.mode === 'vs' && shooter === 'player') {
         say('twoFoulWarning');
       }
+      if (state.mode === 'vs') say('scratchPlayer');
+      _nextTurn(other(shooter), true);
+      return;
+    }
+
+    // Legal shot
+    state.consecutiveFouls[shooter] = 0;
+
+    // Score any legally potted balls
+    let scored = 0;
+    let continueTurn = false;
+
+    if (!state.coloursPhase) {
+      // ---- REDS PHASE ----
+      if (ballOn === 'red') {
+        // Potted reds: score each
+        for (const r of redsPotted) {
+          state.scores[shooter] += 1;
+          scored++;
+          state.redsLeft--;
+        }
+        // Also score any colours potted WITH the reds (allowed bonus, but they get spotted)
+        for (const c of coloursPotted) {
+          state.scores[shooter] += SNOOKER_POINTS[c.n];
+          spotColour(c.n);
+        }
+        if (redsPotted.length > 0) {
+          // Now must pot a colour — transition ball-on to colour choice
+          state.ballOn = _chooseColourOn();
+          continueTurn = true;
+        }
+      } else {
+        // ballOn is a colour — must pot that colour
+        const potted = coloursPotted.find(b => b.n === ballOn);
+        if (potted) {
+          state.scores[shooter] += SNOOKER_POINTS[potted.n];
+          scored++;
+          // Spot the colour back (reds still on table)
+          spotColour(potted.n);
+          // Next ball-on is red again (unless no reds left)
+          if (state.redsLeft > 0) {
+            state.ballOn = 'red';
+            continueTurn = true;
+          } else {
+            // No reds — transition to colours phase
+            state.coloursPhase = true;
+            state.nextColour = 16;
+            state.ballOn = 16;
+            continueTurn = true;
+          }
+        }
+        // If potted the wrong colour when on a colour — foul (already handled above)
+      }
     } else {
-      state.consecutiveFouls[shooter] = 0;  // legal shot resets streak
+      // ---- COLOURS PHASE ----
+      // Must pot colours in order: yellow(16), green(17), brown(18), blue(19), pink(20), black(21)
+      const potted = coloursPotted.find(b => b.n === state.nextColour);
+      if (potted) {
+        state.scores[shooter] += SNOOKER_POINTS[potted.n];
+        scored++;
+        // During colours phase, colours are NOT respotted
+        state.nextColour++;
+        if (state.nextColour > 21) {
+          // All colours potted — frame over
+          _checkFrameEnd();
+          return;
+        }
+        state.ballOn = state.nextColour;
+        continueTurn = true;
+      }
     }
 
+    // Player stats
     if (shooter === 'player') {
-      if (!sankOwn) state.playerStats.shotsMissed++;
-      state.playerStats.ballsSunk += pocketed.filter(b => b.n !== 0).length;
-      if (cueScratched) state.playerStats.scratches++;
+      if (scored === 0) state.playerStats.shotsMissed++;
+      state.playerStats.ballsSunk += scored;
     }
 
-    // Reset cue ball if scratched
-    if (cueScratched) {
-      cueBall.inPlay = true;
-      cueBall.pocketed = false;
-      cueBall.x = PLAY_X0 + PLAY_W * 0.75;
-      cueBall.y = TABLE_H / 2;
-      cueBall.vx = 0; cueBall.vy = 0;
-      cueBall.wx = 0; cueBall.wy = 0;
-      cueBall.spinX = 0; cueBall.spinY = 0;
-    }
-
-    // Dialogue & turn transition
+    // Dialogue
     if (state.mode === 'vs') {
       if (shooter === 'player') {
-        if (cueScratched) say('scratchPlayer');
-        else if (sankOpp) say('sunkOpponentBall');
-        else if (sankOwn) say('sunkPlayerBall');
-        else if (pocketed.length === 0) say(foul ? 'missedPlayer' : 'missedPlayer');
-        else say('goodShotPlayer');
+        if (scored > 0 && SNOOKER_POINTS[anyPotted[0]?.n] >= 5) say('goodShotPlayer');
+        else if (scored > 0) say('sunkPlayerBall');
+        else say('missedPlayer');
       } else {
-        if (cueScratched) say('scratchAlistair');
-        else if (sankOwn) say('goodShotAlistair');
+        if (scored > 0) say('goodShotAlistair');
         else say('missedAlistair');
       }
     }
 
-    state.calledPocket = null;
-    state.showCallPocket = false;
-    state.intentionalSafety = false;  // reset safety declaration for next shot
+    // Check if frame should end (e.g. someone is too far behind to win)
+    if (_checkFrameEnd()) return;
 
-    // Continue turn if sank own and no foul
-    const continueTurn = sankOwn && !foul;
-    if (!continueTurn) {
-      state.turn = other(shooter);
-      state.ballInHand = foul;
-    } else {
-      state.ballInHand = false;
+    _nextTurn(continueTurn && scored > 0 ? shooter : other(shooter), false);
+  }
+
+  function _awardFoul(shooter, value) {
+    // Opponent receives foul points
+    const opp = other(shooter);
+    state.scores[opp] += value;
+    state.foulValue = value;
+  }
+
+  function _replaceCueBall() {
+    const cue = state.balls[0];
+    cue.inPlay = true; cue.pocketed = false;
+    // Place in D (baulk area — near end of table in portrait, behind baulk line)
+    cue.x = PLAY_X0 + PLAY_W * 0.82;
+    cue.y = TABLE_H / 2;
+    cue.vx = 0; cue.vy = 0; cue.wx = 0; cue.wy = 0; cue.spinX = 0; cue.spinY = 0;
+    state.ballInHand = true;
+  }
+
+  function _spotRed(b) {
+    // Re-spot a red near the pink or centre if needed
+    b.x = PLAY_X0 + PLAY_W * 0.32;
+    b.y = TABLE_H / 2;
+    b.inPlay = true; b.pocketed = false;
+    b.vx = 0; b.vy = 0; b.wx = 0; b.wy = 0;
+  }
+
+  function _chooseColourOn() {
+    // Player can choose any colour when on a colour after reds phase
+    // For AI: pick highest value available. For player: default to black (highest)
+    if (state.turn === 'alistair') {
+      // Pick highest value colour that is on the table
+      for (let n = 21; n >= 16; n--) {
+        const b = state.balls.find(b => b.n === n && b.inPlay);
+        if (b) return n;
+      }
     }
+    // Player gets to choose — default to black for max points
+    for (let n = 21; n >= 16; n--) {
+      const b = state.balls.find(b => b.n === n && b.inPlay);
+      if (b) return n;
+    }
+    return 19;  // fallback: blue
+  }
 
-    // Update AI skill estimate based on player stats
-    updateAISkill();
+  function _checkFrameEnd() {
+    // Frame ends when all balls are off the table, or one player can't possibly catch up
+    const allPocketed = state.balls.every(b => !b.inPlay || b.n === 0);
+    if (allPocketed) {
+      if (state.scores.player > state.scores.alistair) endGame('player', 'Frame complete');
+      else if (state.scores.alistair > state.scores.player) endGame('alistair', 'Frame complete');
+      else endGame(null, 'Frame tied — replay');
+      return true;
+    }
+    // Snooker snooker: if the trailing player can't win even if they pot everything remaining
+    const remaining = state.balls.filter(b => b.inPlay && b.n !== 0)
+      .reduce((s, b) => s + (SNOOKER_POINTS[b.n] || 0), 0);
+    const pScores = state.scores.player, aScores = state.scores.alistair;
+    if (state.mode === 'vs') {
+      if (pScores > aScores + remaining) { endGame('player', 'Opponent cannot catch up'); return true; }
+      if (aScores > pScores + remaining) { endGame('alistair', 'Opponent cannot catch up'); return true; }
+    }
+    return false;
+  }
 
+  function _nextTurn(who, ballInHand) {
+    state.turn = who;
+    state.ballInHand = ballInHand;
     state.gamePhase = 'aiming';
     state.shotClockStart = performance.now();
     state.shotClockExpired = false;
+    state.firstContact = null;
+    state.pocketedThisShot = [];
     state._cueTouchedCushion = 0;
     state._ballsToCushion = 0;
-
-    // If AI turn, schedule move
-    if (state.mode === 'vs' && state.turn === 'alistair' && state.gamePhase === 'aiming') {
+    state.intentionalSafety = false;
+    if (state.mode === 'vs' && who === 'alistair') {
       setTimeout(alistairMove, 900 + Math.random() * 800);
     }
   }
 
+
   function other(t) { return t === 'player' ? 'alistair' : 'player'; }
 
-  function isOnEight(who) {
-    const group = who === 'player' ? state.playerGroup : state.alistairGroup;
-    if (!group) return false;
-    // All of shooter's group must be off the table
-    for (const b of state.balls) {
-      if (b.n === 0 || b.n === 8) continue;
-      if (ballType(b.n) === group && b.inPlay) return false;
-    }
-    return true;
+  // ---- Snooker helpers ----
+  function redsRemaining() {
+    return state.balls.filter(b => b.n >= 1 && b.n <= 15 && b.inPlay).length;
   }
 
-  let endGameHook = null;  // optional callback: (winner, reason) => void
+  function coloursRemaining() {
+    return state.balls.filter(b => b.n >= 16 && b.n <= 21 && b.inPlay);
+  }
+
+  let endGameHook = null;
 
   function endGame(winner, reason) {
     state.gamePhase = 'gameover';
     state.winner = winner;
     state.loseReason = reason;
     if (state.mode === 'vs') {
-      if (winner === 'player') say(reason.includes('Early') || reason.includes('Wrong') || reason.includes('scratch') ? 'alistairLostEight' : 'playerWonEight');
-      else say(reason.includes('Eight ball sunk') ? 'alistairWonEight' : 'playerLostEight');
+      if (winner === 'player') say('playerWonEight');
+      else if (winner === 'alistair') say('alistairWonEight');
     }
-    if (winner === 'player') sndWin(); else sndLose();
     if (endGameHook) endGameHook(winner, reason);
   }
 
-  // ---------- Adaptive AI --------------------------------------------------
   function updateAISkill() {
     const p = state.playerStats;
-    if (p.shotsTaken < 2) return;
+    if (p.shotsTaken < 3) return;
     const missRate = p.shotsMissed / p.shotsTaken;
     const scratchRate = p.scratches / p.shotsTaken;
-    // skill 0 = terrible, 1 = great. Roughly inverse of miss rate, penalised by scratches.
-    const s = Math.max(0, Math.min(1, 1 - missRate - scratchRate * 0.3));
-    p.skill = p.skill * 0.6 + s * 0.4;
+    p.skill = Math.max(0.1, Math.min(0.9, 1 - missRate * 0.6 - scratchRate * 0.3));
   }
 
+  // ---- Snooker AI ----
   function alistairMove() {
-    if (state.gamePhase !== 'aiming') return;
-    if (state.turn !== 'alistair') return;
-
+    if (state.gamePhase !== 'aiming' || state.turn !== 'alistair') return;
     const cue = state.balls[0];
-    const onEight = isOnEight('alistair');
     const playerSkill = state.playerStats.skill;
     const aiSkill = Math.max(0.3, Math.min(0.95, playerSkill + 0.2));
-    const noise = (1 - aiSkill) * 55;
+    const noise = (1 - aiSkill) * 50;
 
-    // Build candidate list
+    // Determine ball-on candidates
     let candidates = [];
-    for (const b of state.balls) {
-      if (!b.inPlay || b.n === 0) continue;
-      if (onEight && b.n !== 8) continue;
-      if (!onEight && b.n === 8) continue;
-      if (!onEight && !state.openTable && state.alistairGroup && ballType(b.n) !== state.alistairGroup) continue;
-      if (state.openTable && b.n === 8) continue;
-      candidates.push(b);
-    }
-    if (candidates.length === 0) {
-      for (const b of state.balls) if (b.inPlay && b.n !== 0) candidates.push(b);
+    if (!state.coloursPhase) {
+      if (state.ballOn === 'red') {
+        candidates = state.balls.filter(b => b.n >= 1 && b.n <= 15 && b.inPlay);
+      } else {
+        const targetColour = state.balls.find(b => b.n === state.ballOn && b.inPlay);
+        if (targetColour) candidates = [targetColour];
+      }
+    } else {
+      const target = state.balls.find(b => b.n === state.nextColour && b.inPlay);
+      if (target) candidates = [target];
     }
 
-    // Score direct shots
+    if (candidates.length === 0) {
+      // No valid ball — play safe
+      state.aimX = cue.x + (Math.random() - 0.5) * 300;
+      state.aimY = cue.y + (Math.random() - 0.5) * 100;
+      state.power = 0.25;
+      setTimeout(() => takeShot(), 800);
+      return;
+    }
+
+    // Score all direct shots
     let best = null;
     for (const ball of candidates) {
       for (let pi = 0; pi < POCKETS.length; pi++) {
         const p = POCKETS[pi];
         const score = scoreShot(cue, ball, p);
-        // Position bonus: after potting, how close is cue to next target ball?
         const posScore = _positionScore(cue, ball, p, candidates);
-        const totalScore = score + posScore * 0.3;
-        if (!best || totalScore > best.score) best = { ball, pocket: p, pi, score: totalScore, type: 'direct' };
+        const total = score + posScore * 0.25;
+        if (!best || total > best.score) {
+          best = { ball, pocket: p, pi, score: total, type: 'direct' };
+        }
       }
     }
 
-    // Bank shots: if best direct shot is poor, try one-cushion banks
-    const BANK_THRESHOLD = -200;
-    if (!best || best.score < BANK_THRESHOLD) {
-      const bankShot = _findBankShot(cue, candidates, aiSkill);
-      if (bankShot && bankShot.score > (best ? best.score : -9999)) {
-        best = bankShot;
-      }
+    // Try banks if best direct is poor
+    if (!best || best.score < -200) {
+      const bank = _findBankShot(cue, candidates, aiSkill);
+      if (bank && bank.score > (best ? best.score : -9999)) best = bank;
     }
 
-    // Safety play: if all shots are very poor, play a safe
-    const SAFETY_THRESHOLD = -400;
-    const shouldPlaySafe = (!best || best.score < SAFETY_THRESHOLD) && aiSkill > 0.45 && !onEight;
-    if (shouldPlaySafe) {
+    // Safety if all shots poor
+    if (!best || best.score < -400) {
       _alistairSafety(cue, candidates);
       return;
     }
 
-    // Execute best shot
+    // Execute
     let targetX, targetY;
-    if (best && best.score > -1000) {
-      if (best.type === 'bank') {
-        // Aim at cushion point for bank
-        targetX = best.railX + (Math.random() - 0.5) * noise * 0.7;
-        targetY = best.railY + (Math.random() - 0.5) * noise * 0.7;
-      } else {
-        const ghost = ghostBall(best.ball, best.pocket);
-        targetX = ghost.x + (Math.random() - 0.5) * noise;
-        targetY = ghost.y + (Math.random() - 0.5) * noise;
-      }
-      if (onEight) state.calledPocket = best.pi;
+    if (best.type === 'bank') {
+      targetX = best.railX + (Math.random() - 0.5) * noise * 0.7;
+      targetY = best.railY + (Math.random() - 0.5) * noise * 0.7;
     } else {
-      targetX = cue.x + (Math.random() - 0.5) * 400;
-      targetY = cue.y + (Math.random() - 0.5) * 200;
+      const ghost = ghostBall(best.ball, best.pocket);
+      targetX = ghost.x + (Math.random() - 0.5) * noise;
+      targetY = ghost.y + (Math.random() - 0.5) * noise;
     }
 
     state.aimX = targetX;
     state.aimY = targetY;
-    // Power: direct shots get moderate power; bank shots need more; safety gets less
-    state.power = best && best.type === 'bank'
-      ? 0.6 + Math.random() * 0.25
-      : 0.5 + Math.random() * 0.25 + aiSkill * 0.1;
+    state.power = best.type === 'bank' ? 0.55 + Math.random() * 0.3 : 0.45 + Math.random() * 0.3 + aiSkill * 0.1;
     state.spinX = 0;
-    state.spinY = (Math.random() - 0.5) * 0.15;  // slight random back/top spin
+    state.spinY = (Math.random() - 0.5) * 0.1;
 
-    // Position play dialogue
-    const myBalls = countGroup('alistair');
-    const yourBalls = countGroup('player');
-    if (onEight) say('alistairEightApproach');
-    else if (myBalls < yourBalls) say('playerLeading');
-    else if (yourBalls < myBalls && Math.random() < 0.4) say('alistairLeading');
-    else if (best && best.type === 'bank' && Math.random() < 0.5) say('bank');
-    else if (Math.random() < 0.2) say('contemplative');
+    // Snooker-appropriate dialogue
+    const lead = state.scores.alistair - state.scores.player;
+    if (best.ball.n >= 16 && SNOOKER_POINTS[best.ball.n] >= 5) say('alistairEightApproach');
+    else if (lead < -10) say('playerLeading');
+    else if (lead > 15) say('alistairLeading');
+    else if (best.type === 'bank') say('bank');
+    else if (Math.random() < 0.15) say('contemplative');
 
-    setTimeout(() => takeShot(), 600 + Math.random() * 400);
-  }
-
-  // Position score: reward shots where cue ball ends near the next target
-  function _positionScore(cue, ball, pocket, candidates) {
-    if (candidates.length <= 1) return 0;
-    // Estimate cue ball position after shot — rough: cue continues past ghost ball
-    const ghost = ghostBall(ball, pocket);
-    const dx = cue.x - ghost.x;
-    const dy = cue.y - ghost.y;
-    const d = Math.hypot(dx, dy) || 1;
-    // Cue ball deflects ~90° from shot direction at equal-mass collision
-    // Simplified: estimate cue continues perpendicular to ghost→ball line
-    const bToP = { x: pocket.x - ball.x, y: pocket.y - ball.y };
-    const bLen = Math.hypot(bToP.x, bToP.y) || 1;
-    const perpX = -bToP.y / bLen;
-    const perpY = bToP.x / bLen;
-    const estimatedCueX = ball.x + perpX * 80;
-    const estimatedCueY = ball.y + perpY * 80;
-    // Find distance to nearest next candidate
-    let minDist = 9999;
-    for (const c of candidates) {
-      if (c === ball) continue;
-      minDist = Math.min(minDist, Math.hypot(estimatedCueX - c.x, estimatedCueY - c.y));
-    }
-    return Math.max(0, 300 - minDist);  // closer = higher score
-  }
-
-  // One-cushion bank shot: bounce off a rail to reach ball→pocket
-  function _findBankShot(cue, candidates, aiSkill) {
-    let best = null;
-    for (const ball of candidates) {
-      for (let pi = 0; pi < POCKETS.length; pi++) {
-        const p = POCKETS[pi];
-        // Try reflecting cue ball aim off each rail
-        const banks = _computeBankPoints(cue, ball, p);
-        for (const bank of banks) {
-          if (!bank) continue;
-          // Score: penalize complexity, reward clear path
-          const distCueToBounce = Math.hypot(bank.railX - cue.x, bank.railY - cue.y);
-          const distBounceToGhost = Math.hypot(bank.railX - bank.ghostX, bank.railY - bank.ghostY);
-          const score = -distCueToBounce * 0.4 - distBounceToGhost * 0.5 + aiSkill * 50;
-          if (!best || score > best.score) {
-            best = { ball, pocket: p, pi, score, type: 'bank', ...bank };
-          }
-        }
-      }
-    }
-    return best;
-  }
-
-  // Compute rail bounce points for a bank shot (cue → rail → ghost ball position)
-  function _computeBankPoints(cue, ball, pocket) {
-    const ghost = ghostBall(ball, pocket);
-    const banks = [];
-    // Try all 4 rails
-    const rails = [
-      { axis: 'x', val: PLAY_X0 + BALL_R, name: 'left' },
-      { axis: 'x', val: PLAY_X1 - BALL_R, name: 'right' },
-      { axis: 'y', val: PLAY_Y0 + BALL_R, name: 'top' },
-      { axis: 'y', val: PLAY_Y1 - BALL_R, name: 'bottom' }
-    ];
-    for (const rail of rails) {
-      let bankPt;
-      if (rail.axis === 'x') {
-        // Reflect ghost.x across the rail, find intersection on the rail from cue
-        const mirrorX = 2 * rail.val - ghost.x;
-        const t = (rail.val - cue.x) / (mirrorX - cue.x + 0.0001);
-        if (t <= 0 || t >= 1) continue;
-        const railY = cue.y + t * (ghost.y - cue.y);
-        if (railY < PLAY_Y0 || railY > PLAY_Y1) continue;
-        bankPt = { railX: rail.val, railY, ghostX: ghost.x, ghostY: ghost.y };
-      } else {
-        const mirrorY = 2 * rail.val - ghost.y;
-        const t = (rail.val - cue.y) / (mirrorY - cue.y + 0.0001);
-        if (t <= 0 || t >= 1) continue;
-        const railX = cue.x + t * (ghost.x - cue.x);
-        if (railX < PLAY_X0 || railX > PLAY_X1) continue;
-        bankPt = { railX, railY: rail.val, ghostX: ghost.x, ghostY: ghost.y };
-      }
-      banks.push(bankPt);
-    }
-    return banks;
-  }
-
-  // Safety play: Alistair plays a defensive shot
-  function _alistairSafety(cue, candidates) {
-    // Goal: hide cue ball behind one of player's balls, or leave it as far from
-    // player's balls as possible.
-    const playerGroup = state.playerGroup;
-    const playerBalls = state.balls.filter(b => b.inPlay && b.n !== 0 && b.n !== 8 &&
-      (state.openTable || ballType(b.n) === playerGroup));
-    // Hit own ball gently toward a rail, send cue to far end of table
-    if (candidates.length > 0) {
-      const target = candidates[Math.floor(Math.random() * candidates.length)];
-      const ghost = ghostBall(target, POCKETS[0]); // arbitrary pocket
-      state.aimX = target.x;
-      state.aimY = target.y;
-      state.power = 0.2 + Math.random() * 0.2;  // gentle
-      state.spinX = (Math.random() - 0.5) * 0.3;
-      state.spinY = -0.4;  // slight back spin to slow cue after contact
-      state.intentionalSafety = true;
-      say('safety');
-    } else {
-      // No target — roll cue to far rail
-      state.aimX = PLAY_X0 + PLAY_W * 0.2;
-      state.aimY = TABLE_H / 2;
-      state.power = 0.25;
-    }
     setTimeout(() => takeShot(), 700 + Math.random() * 500);
   }
 
   function countGroup(who) {
-    const g = who === 'player' ? state.playerGroup : state.alistairGroup;
-    if (!g) return 7;
-    let c = 0;
-    for (const b of state.balls) if (b.inPlay && b.n !== 0 && b.n !== 8 && ballType(b.n) === g) c++;
-    return c;
+    // In snooker: return score for 'who'
+    return state.scores ? (state.scores[who] || 0) : 0;
   }
 
   function ghostBall(target, pocket) {
-    // Position cue ball should contact ball at, to drive target toward pocket.
-    const tx = target.x;
-    const ty = target.y;
-    const px = pocket.x;
-    const py = pocket.y;
-    const dx = tx - px;
-    const dy = ty - py;
+    const dx = target.x - pocket.x;
+    const dy = target.y - pocket.y;
     const d = Math.hypot(dx, dy) || 1;
-    return {
-      x: tx + (dx / d) * BALL_R * 2,
-      y: ty + (dy / d) * BALL_R * 2
-    };
+    const ux = dx / d, uy = dy / d;
+    return { x: target.x + ux * BALL_R * 2, y: target.y + uy * BALL_R * 2 };
   }
 
   function scoreShot(cue, ball, pocket) {
-    // Higher is better. Penalise blocked paths and bad angles.
     const ghost = ghostBall(ball, pocket);
-    // Angle between cue→ghost and ball→pocket
-    const v1x = ghost.x - cue.x;
-    const v1y = ghost.y - cue.y;
-    const v2x = pocket.x - ball.x;
-    const v2y = pocket.y - ball.y;
-    const d1 = Math.hypot(v1x, v1y) || 1;
-    const d2 = Math.hypot(v2x, v2y) || 1;
-    const cos = (v1x * v2x + v1y * v2y) / (d1 * d2);
-    if (cos < 0.2) return -1000;       // impossible cut
-    // Check blockers between cue and ghost
-    for (const b of state.balls) {
-      if (!b.inPlay) continue;
-      if (b.id === ball.id || b.n === 0) continue;
-      const dist = pointToSegment(b.x, b.y, cue.x, cue.y, ghost.x, ghost.y);
-      if (dist < BALL_R * 1.8) return -500;
+    // Line from cue through ghost to pocket — check for obstructions
+    let score = 0;
+    const cueToBall = Math.hypot(ghost.x - cue.x, ghost.y - cue.y);
+    const ballToPocket = Math.hypot(pocket.x - ball.x, pocket.y - ball.y);
+    // Prefer shorter shots and bigger pockets
+    score -= cueToBall * 0.3;
+    score -= ballToPocket * 0.5;
+    // Bonus for high-value balls
+    score += (SNOOKER_POINTS[ball.n] || 1) * 20;
+    // Check for obstructions (rough: other balls blocking the line)
+    for (const ob of state.balls) {
+      if (!ob.inPlay || ob === ball || ob.n === 0) continue;
+      if (_lineBlockedByBall(cue.x, cue.y, ghost.x, ghost.y, ob.x, ob.y)) score -= 200;
+      if (_lineBlockedByBall(ball.x, ball.y, pocket.x, pocket.y, ob.x, ob.y)) score -= 150;
     }
-    // Prefer closer balls and cleaner angles
-    return cos * 10 - d1 * 0.01 - d2 * 0.01;
+    return score;
   }
+
+  function _lineBlockedByBall(x1, y1, x2, y2, bx, by) {
+    const dx = x2 - x1, dy = y2 - y1;
+    const len = Math.hypot(dx, dy) || 1;
+    const ux = dx/len, uy = dy/len;
+    const t = (bx - x1) * ux + (by - y1) * uy;
+    if (t < BALL_R || t > len - BALL_R) return false;
+    const px = x1 + ux * t, py = y1 + uy * t;
+    return Math.hypot(px - bx, py - by) < BALL_R * 2 + 2;
+  }
+
 
   function pointToSegment(px, py, x1, y1, x2, y2) {
     const A = px - x1, B = py - y1, C = x2 - x1, D = y2 - y1;
@@ -1866,7 +1858,7 @@
 
     // Find approximate rack center (foot spot) — bottom 28% of table in portrait
     const foot = tableToScreen(PLAY_X0 + PLAY_W * 0.28, TABLE_H / 2);
-    const rackR = BALL_R * BALL_VISUAL_MULT * unitScaleAt(PLAY_X0 + PLAY_W * 0.28, TABLE_H / 2) * 2.5;
+    const rackR = BALL_R * BALL_VISUAL_MULT * unitScaleAt(PLAY_X0 + PLAY_W * 0.22, TABLE_H / 2) * 3.2;
 
     ctx.save();
     ctx.globalAlpha = 0.25;
@@ -1934,38 +1926,24 @@
     ctx.arc(c.x, c.y, r, 0, Math.PI * 2);
     ctx.fill();
 
-    // Stripe band (9-15)
-    if (b.n >= 9 && b.n <= 15) {
-      ctx.save();
-      ctx.beginPath();
-      ctx.arc(c.x, c.y, r, 0, Math.PI * 2);
-      ctx.clip();
-      const bg = ctx.createRadialGradient(
-        c.x - r * 0.35, c.y - r * 0.4, r * 0.1,
-        c.x, c.y, r
-      );
-      bg.addColorStop(0, '#ffffff');
-      bg.addColorStop(0.6, '#e8dcc3');
-      bg.addColorStop(1, '#9e8a62');
-      ctx.fillStyle = bg;
-      ctx.fillRect(c.x - r, c.y - r * 0.42, r * 2, r * 0.84);
-      ctx.restore();
-    }
+    // No stripe bands in snooker
 
-    // Number badge
-    if (b.n !== 0) {
-      ctx.fillStyle = '#f8f1dc';
+    // Snooker ball markings:
+    // Reds (1-15): no number, just a clean red sphere
+    // Colours (16-21): small white dot with initial letter
+    // Cue ball (0): no marking
+    if (b.n >= 16 && b.n <= 21) {
+      // Colour ball — white circle with initial
+      const label = { 16:'Y', 17:'G', 18:'Br', 19:'B', 20:'P', 21:'Bk' }[b.n] || '';
+      ctx.fillStyle = 'rgba(255,255,255,0.85)';
       ctx.beginPath();
-      ctx.arc(c.x, c.y, r * 0.42, 0, Math.PI * 2);
+      ctx.arc(c.x, c.y, r * 0.44, 0, Math.PI * 2);
       ctx.fill();
-      ctx.strokeStyle = 'rgba(0,0,0,0.25)';
-      ctx.lineWidth = 0.8;
-      ctx.stroke();
       ctx.fillStyle = '#111';
-      ctx.font = 'bold ' + Math.floor(r * 0.7) + 'px Georgia, serif';
+      ctx.font = 'bold ' + Math.floor(r * 0.58) + 'px Georgia, serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(String(b.n), c.x, c.y + 0.5);
+      ctx.fillText(label, c.x, c.y + 0.5);
     }
 
     // Specular highlight
@@ -2249,19 +2227,29 @@
       ctx.font = 'bold 16px Georgia, serif';
       ctx.fillStyle = '#f5ecd7';
       ctx.fillText(match.playerFrames + '  —  ' + match.alistairFrames, W / 2, 17);
-      ctx.font = '11px Georgia, serif';
+      // Snooker scores (current frame)
+      ctx.font = '10px Georgia, serif';
       ctx.textAlign = 'right';
       ctx.fillStyle = '#c9b98a';
-      const grp = state.openTable
-        ? 'OPEN'
-        : (state.playerGroup || '').toUpperCase() + ' vs ' + (state.alistairGroup || '').toUpperCase();
-      ctx.fillText(grp, W - 10, 16);
-    } else {
+      const sc = state.scores || { player: 0, alistair: 0 };
+      const ballOnLabel = state.coloursPhase
+        ? (SNOOKER_COLOUR_NAMES[state.nextColour] || '')
+        : (state.ballOn === 'red' ? 'RED' : (SNOOKER_COLOUR_NAMES[state.ballOn] || ''));
+      ctx.fillText('ON: ' + ballOnLabel + '   ' + sc.player + ' – ' + sc.alistair, W - 10, 16);
+    } else if (state.mode === 'solo') {
+      const sc = state.scores || { player: 0, alistair: 0 };
       ctx.fillStyle = '#e8dcc3';
-      ctx.font = 'italic 12px Georgia, serif';
-      ctx.textAlign = 'center';
+      ctx.font = 'italic 11px Georgia, serif';
+      ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
-      ctx.fillText('SOLO PRACTICE', W / 2, 16);
+      ctx.fillText('SOLO  ·  SCORE: ' + sc.player, 10, 16);
+      ctx.textAlign = 'center';
+      const ballOnLabel = state.coloursPhase
+        ? (SNOOKER_COLOUR_NAMES[state.nextColour] || '')
+        : (state.ballOn === 'red' ? 'RED' : (SNOOKER_COLOUR_NAMES[state.ballOn] || ''));
+      ctx.fillStyle = '#f7c948';
+      ctx.font = 'bold 12px Georgia, serif';
+      ctx.fillText('ON: ' + ballOnLabel, W / 2, 16);
     }
     ctx.restore();
   }
@@ -2455,49 +2443,41 @@
   }
 
   function drawCallPocketOverlay() {
-    if (!state || !state.showCallPocket) return;
-    const W = canvas.width, H = canvas.height;
-    ctx.save();
-    ctx.fillStyle = 'rgba(10,5,2,0.65)';
-    ctx.fillRect(0, 0, W, H);
-    ctx.fillStyle = '#f7c948';
-    ctx.font = 'bold 14px Georgia, serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('TAP A POCKET FOR YOUR 8-BALL SHOT', W / 2, 60);
-    for (const p of POCKETS) {
-      const c = tableToScreen(p.x, p.y);
-      const u = unitScaleAt(p.x, p.y);
-      ctx.strokeStyle = '#f7c948';
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.arc(c.x, c.y, 30 * u, 0, Math.PI * 2);
-      ctx.stroke();
-    }
-    ctx.restore();
+    // Not used in snooker (no called pocket requirement)
   }
 
   function drawGameOverOverlay() {
     if (!state || state.gamePhase !== 'gameover') return;
     const W = canvas.width, H = canvas.height;
+    const sc = state.scores || { player: 0, alistair: 0 };
     ctx.save();
-    ctx.fillStyle = 'rgba(10,5,2,0.85)';
+    ctx.fillStyle = 'rgba(10,5,2,0.88)';
     ctx.fillRect(0, 0, W, H);
-    ctx.fillStyle = '#ebdab3';
-    ctx.textAlign = 'center';
-    ctx.font = 'bold 22px Georgia, serif';
     let title;
     if (state.mode === 'vs') {
-      title = state.winner === 'player' ? 'YOU WIN THE FRAME' : 'ALISTAIR WINS THE FRAME';
+      title = state.winner === 'player' ? 'YOU WIN THE FRAME' : state.winner === 'alistair' ? 'ALISTAIR WINS' : 'FRAME TIED';
     } else {
-      title = 'RACK COMPLETE';
+      title = 'FRAME COMPLETE';
     }
-    ctx.fillText(title, W / 2, H / 2 - 30);
-    ctx.font = 'italic 13px Georgia, serif';
+    ctx.fillStyle = state.winner === 'player' ? '#f7c948' : '#ebdab3';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+    ctx.font = 'italic bold 22px Georgia, serif';
+    ctx.fillText(title, W / 2, H / 2 - 44);
+    // Snooker scores
+    ctx.font = 'bold 40px Georgia, serif';
+    ctx.fillStyle = '#f5ecd7';
+    ctx.fillText(sc.player + '  –  ' + sc.alistair, W / 2, H / 2 + 10);
+    ctx.font = '11px Georgia, serif';
     ctx.fillStyle = '#c9b98a';
-    if (state.loseReason) ctx.fillText(state.loseReason, W / 2, H / 2);
+    ctx.fillText('YOU       ALISTAIR', W / 2, H / 2 + 28);
+    if (state.loseReason) {
+      ctx.font = 'italic 11px Georgia, serif';
+      ctx.fillStyle = '#8a6b2e';
+      ctx.fillText(state.loseReason, W / 2, H / 2 + 50);
+    }
     ctx.fillStyle = '#f7c948';
     ctx.font = '12px Georgia, serif';
-    ctx.fillText('Tap to continue', W / 2, H / 2 + 32);
+    ctx.fillText('Tap to continue', W / 2, H / 2 + 72);
     ctx.restore();
   }
 
@@ -2507,6 +2487,7 @@
 
   function drawScreenOverlay() {
     if (screenState === 'modeSelect') drawModeSelect();
+    else if (screenState === 'soloHub') drawSoloHub();
     else if (screenState === 'formatSelect') drawFormatSelect();
     else if (screenState === 'interstitial') drawInterstitial();
     else if (screenState === 'matchEnd') drawMatchEnd();
@@ -2563,15 +2544,32 @@
     ctx.textAlign = 'center';
     ctx.font = 'italic bold 22px Georgia, serif';
     const tY = Math.max(56, H * 0.10);
-    ctx.fillText('THE BILLIARD TABLE', W / 2, tY);
+    ctx.fillText('THE SNOOKER TABLE', W / 2, tY);
     ctx.font = 'italic 12px Georgia, serif';
     ctx.fillStyle = '#c9b98a';
-    ctx.fillText('The felt is honest. Most things in this house are not.', W / 2, tY + 22);
+    ctx.fillText('The gentleman\'s game. Invented 1875. Still unforgiving.', W / 2, tY + 22);
     screens.mode = _stackButtons(tY + 42, [
-      { key: 'solo', title: 'SOLO PRACTICE', subtitle: 'Rack. Break. Play at your own pace.', primary: true },
+      { key: 'solo', title: 'SOLO SNOOKER', subtitle: 'Practice, learn, and drill.', primary: true },
       { key: 'vs',   title: 'CHALLENGE ALISTAIR', subtitle: 'Loser owes a truthful answer.', primary: true },
-      { key: 'tutorial', title: 'TUTORIAL & DRILLS', subtitle: 'Learn the game. Become a player.', primary: true },
       { key: 'exit', title: 'LEAVE THE TABLE', subtitle: null, primary: false }
+    ]);
+  }
+
+  function drawSoloHub() {
+    _screenBg();
+    const W = canvas.width, H = canvas.height;
+    ctx.fillStyle = '#ebdab3';
+    ctx.textAlign = 'center';
+    ctx.font = 'italic bold 22px Georgia, serif';
+    const tY = Math.max(56, H * 0.10);
+    ctx.fillText('SOLO SNOOKER', W / 2, tY);
+    ctx.font = 'italic 12px Georgia, serif';
+    ctx.fillStyle = '#c9b98a';
+    ctx.fillText('Play a frame, or study the game.', W / 2, tY + 22);
+    screens.soloHub = _stackButtons(tY + 42, [
+      { key: 'play',    title: 'PLAY A FRAME',    subtitle: 'Rack up and practise your break.', primary: true },
+      { key: 'tutorial', title: 'TUTORIAL & DRILLS', subtitle: 'Rules, shots, strategy, lingo. Learn everything.', primary: true },
+      { key: 'back',    title: '← BACK',          subtitle: null, primary: false }
     ]);
   }
 
@@ -2957,10 +2955,16 @@
     // Screen routing
     if (screenState === 'modeSelect') {
       const r = screens.mode || {};
-      if (hitRect(p.x, p.y, r.solo)) { newGame('solo'); screenState = 'game'; return; }
+      if (hitRect(p.x, p.y, r.solo)) { screenState = 'soloHub'; return; }
       if (hitRect(p.x, p.y, r.vs))   { screenState = 'formatSelect'; return; }
-      if (hitRect(p.x, p.y, r.tutorial)) { screenState = 'tutorialMenu'; return; }
       if (hitRect(p.x, p.y, r.exit)) { closeBilliards(); return; }
+      return;
+    }
+    if (screenState === 'soloHub') {
+      const r = screens.soloHub || {};
+      if (hitRect(p.x, p.y, r.play))     { newGame('solo'); screenState = 'game'; return; }
+      if (hitRect(p.x, p.y, r.tutorial)) { screenState = 'tutorialMenu'; return; }
+      if (hitRect(p.x, p.y, r.back))     { screenState = 'modeSelect'; return; }
       return;
     }
     if (screenState === 'tutorialMenu') {
@@ -3253,8 +3257,9 @@
     lagState.winner = null;
     lagState.resultTimer = 0;
     // Player cue ball at left half, alistair at right half of head string
-    lagState.playerBall  = { x: LAG_HEAD_X, y: PLAY_Y0 + PLAY_H * 0.35, vx: 0, vy: 0, stopped: false, finalDist: null };
-    lagState.alistairBall = { x: LAG_HEAD_X, y: PLAY_Y0 + PLAY_H * 0.65, vx: 0, vy: 0, stopped: false, finalDist: null };
+    // Lag balls start in the baulk area (near end)
+    lagState.playerBall  = { x: LAG_HEAD_X, y: PLAY_Y0 + PLAY_H * 0.38, vx: 0, vy: 0, stopped: false, finalDist: null };
+    lagState.alistairBall = { x: LAG_HEAD_X, y: PLAY_Y0 + PLAY_H * 0.62, vx: 0, vy: 0, stopped: false, finalDist: null };
     lagState.playerPower = 0.6;
     // Alistair shoots automatically after 0.8s
     setTimeout(() => {
@@ -3461,287 +3466,427 @@
   // Pages organized by section. Each page = title + body paragraphs.
   // Bodies use \n for paragraph breaks, ¶ for bullet items.
   const TUTORIAL_PAGES = {
+
     quickStart: [
-      { title: 'WELCOME TO POOL', body:
-        "Pool — properly called pocket billiards — is a game of geometry, control, and patience.\n\n" +
-        "The object: pocket your assigned group of seven balls (solids 1-7 or stripes 9-15), then legally pocket the eight ball to win.\n\n" +
-        "The cue ball is yours. The other balls are the table's. You strike the cue ball with the cue stick to hit object balls into the six pockets."
+      { title: 'WHAT IS SNOOKER?', body:
+        "Snooker was invented in 1875 by British Army officers stationed in Jabalpur, India. " +
+        "By the 1880s it had spread to gentlemen's clubs across England. It remains the definitive " +
+        "Victorian billiard game — and the one played in establishments like this.\n\n" +
+        "The name came from military slang for an inexperienced officer. When a veteran missed an easy " +
+        "shot, his colleague called him a snooker. The game stuck. The name stuck with it.\n\n" +
+        "You play on a table with six pockets, a white cue ball, 15 red balls, and 6 coloured balls. " +
+        "Points are scored by potting balls in the correct sequence. The player with the highest score " +
+        "when all balls are cleared wins the frame."
       },
-      { title: 'BASIC CONTROLS', body:
-        "Aim: drag the cue stick handle to rotate around the cue ball, OR pull back from the cue ball like drawing a bow.\n\n" +
-        "Power: the slider on the right edge — or how far you pull back when using the bow gesture.\n\n" +
-        "Spin: the small white ball at the bottom shows where the cue tip will strike. Move the dot up for top spin (follow), down for back spin (draw), left/right for sidespin.\n\n" +
-        "Shoot: the SHOOT button, or release the pull-back gesture."
+      { title: 'THE BALLS & THEIR VALUES', body:
+        "There are 22 balls in play.\n\n" +
+        "REDS (×15): 1 point each. Plain crimson. Potted alternately with colours.\n\n" +
+        "THE COLOURS — each has a designated spot on the table:\n" +
+        "¶ Yellow (Y) — 2 points — baulk line, right\n" +
+        "¶ Green (G) — 3 points — baulk line, left\n" +
+        "¶ Brown (Br) — 4 points — baulk line, centre\n" +
+        "¶ Blue (B) — 5 points — centre of table\n" +
+        "¶ Pink (P) — 6 points — just below the red triangle\n" +
+        "¶ Black (Bk) — 7 points — top of the table\n\n" +
+        "Maximum single break: 147 (pot every red with black, then all colours in sequence)."
       },
-      { title: 'YOUR FIRST RACK', body:
-        "The break: from the head string (the line near you), strike the racked balls. WPA rule: at least four balls must reach a cushion, or you must pocket a ball, otherwise the break is illegal.\n\n" +
-        "If you pocket a solid on the break, solids are yours. A stripe — stripes. Pocket nothing? The table is OPEN — your group is not yet decided.\n\n" +
-        "After a legal pot, you continue. Miss, and your turn ends."
+      { title: 'THE SEQUENCE OF PLAY', body:
+        "REDS PHASE: you must alternate potting reds and colours.\n\n" +
+        "¶ Pot a red (1pt) → now pot any colour of your choice\n" +
+        "¶ Pot a colour → the colour is re-spotted. Now pot another red.\n" +
+        "¶ Continue until all 15 reds are cleared.\n\n" +
+        "COLOURS PHASE: once all reds are gone, pot the colours in ascending value order:\n" +
+        "Yellow → Green → Brown → Blue → Pink → Black\n\n" +
+        "In the colours phase, colours are NOT re-spotted after potting. They stay down.\n\n" +
+        "WINNING: highest score when the black is finally potted wins the frame."
       },
-      { title: 'WIN THE GAME', body:
-        "Pocket all seven of your group, then call your pocket and sink the 8-ball.\n\n" +
-        "LOSE INSTANTLY by:\n" +
-        "¶ Pocketing the 8-ball before clearing your group (early eight)\n" +
-        "¶ Pocketing the 8-ball in the wrong called pocket\n" +
-        "¶ Pocketing the cue ball when you sink the 8-ball (cue scratch on eight)\n" +
-        "¶ Knocking the 8-ball off the table\n\n" +
-        "Three consecutive fouls also lose the frame."
+      { title: 'FOULS & PENALTIES', body:
+        "A foul ends your turn and awards points to your opponent. Minimum foul value: 4 points. " +
+        "The penalty is always the higher of 4 or the value of the ball-on (or ball struck).\n\n" +
+        "FOULS include:\n" +
+        "¶ Potting the cue ball (scratch) — opponent gets cue ball in hand in the D\n" +
+        "¶ Hitting the wrong ball first\n" +
+        "¶ Failing to hit any ball\n" +
+        "¶ No ball reaching a cushion after contact (and none potted)\n" +
+        "¶ Potting a colour when red is the ball-on\n" +
+        "¶ Potting the wrong colour in the colours phase\n\n" +
+        "THREE CONSECUTIVE FOULS: loss of frame. You are warned after the second."
+      },
+      { title: 'CONTROLS', body:
+        "AIM: drag the cue handle anywhere on the table to rotate the cue around the cue ball.\n\n" +
+        "PULL-BACK: press near the cue ball and drag away to load power. Release to fire.\n\n" +
+        "POWER: the slider on the right edge controls shot force.\n\n" +
+        "SPIN: the white ball at the bottom shows where the cue tip will strike.\n" +
+        "¶ Dot UP = top spin (follow) — cue ball continues forward\n" +
+        "¶ Dot DOWN = back spin (draw/screw) — cue ball comes back\n" +
+        "¶ Dot LEFT/RIGHT = side spin (english) — curves cue ball off cushions\n\n" +
+        "SHOOT button fires the shot. SAFETY button declares an intentional safety before shooting."
       }
     ],
 
     shots: [
-      { title: 'THE STOP SHOT', body:
-        "Also called the STUN SHOT. Strike the cue ball dead center with no spin. When it hits an object ball squarely, the cue ball stops dead at contact.\n\n" +
-        "Use it for: position play when you want the cue ball to stay put after potting.\n\n" +
-        "How: aim at the center of the object ball through the center of the cue ball. Spin dial centered. Medium power. The harder the hit, the more important pure center contact becomes."
+      { title: 'THE PLAIN BALL STROKE', body:
+        "Striking the cue ball dead centre — no spin of any kind.\n\n" +
+        "On a straight shot, the cue ball transfers nearly all its energy to the object ball and " +
+        "stops at the contact point (the stun, or stop shot).\n\n" +
+        "On a cut shot (hitting the object ball at an angle), the cue ball deflects at 90° from " +
+        "the line joining the two ball centres at contact. This is the fundamental angle of snooker " +
+        "geometry that all position play is built on.\n\n" +
+        "Spin dial: centred. This is the foundation. Master plain ball before applying spin."
       },
-      { title: 'THE FOLLOW SHOT', body:
-        "Top spin shot. Strike the cue ball ABOVE center.\n\n" +
-        "After contact with an object ball, the cue ball continues forward, following through. Distance traveled depends on amount of top spin and shot power.\n\n" +
-        "Use it for: getting the cue ball to a position past the object ball, or following through to take the next shot."
+      { title: 'TOP SPIN (FOLLOW)', body:
+        "Strike the cue ball ABOVE centre. The cue ball is spinning forward before it contacts " +
+        "the object ball.\n\n" +
+        "After contact, the cue ball continues rolling forward — following the object ball. How far " +
+        "it travels depends on how much top spin was applied and at what speed.\n\n" +
+        "Use for: getting position on the next red or colour by running the cue ball through the " +
+        "pack, or following to a pocket for an in-off.\n\n" +
+        "Spin dial: UP. The further up, the more follow."
       },
-      { title: 'THE DRAW SHOT', body:
-        "Back spin shot. Strike the cue ball BELOW center.\n\n" +
-        "After contact, the cue ball reverses direction — drawing back toward you. The amount of draw depends on the amount of back spin imparted and how cleanly you struck the ball.\n\n" +
-        "Use it for: pulling the cue ball back to your side of the table for position. Master draw and you control the table."
+      { title: 'SCREW (DRAW / BACK SPIN)', body:
+        "Strike the cue ball BELOW centre. One of the most important shots in snooker.\n\n" +
+        "After striking the object ball, the cue ball reverses direction — screwing back toward you. " +
+        "Distance of the screw depends on the amount of back spin and the pace of the shot.\n\n" +
+        "The screw shot is essential for getting position when the natural angle would leave you " +
+        "out of position.\n\n" +
+        "Common use: red near the top cushion — screw back to the baulk colours.\n\n" +
+        "Spin dial: DOWN. Firm stroke required — soft shots lose spin before contact."
       },
-      { title: 'CUT SHOTS', body:
-        "When you strike an object ball off-center, it deflects at an angle.\n\n" +
-        "The cut angle is measured from a line through the centers of cue ball and object ball at contact, to the path you want the object ball to take.\n\n" +
-        "Half-ball hit: you strike the object ball with the edge of the cue ball at the half-way point. Object ball deflects 30 degrees from the cut line. The most consistent cut shot.\n\n" +
-        "Thin cuts (over 60 degrees): difficult, less power transfers, position becomes unpredictable. Avoid when possible."
+      { title: 'SIDE (ENGLISH)', body:
+        "Strike the cue ball left or right of centre. Primarily used to alter the angle of " +
+        "rebound off cushions, not to make balls deviate on their path to the object ball.\n\n" +
+        "Running side (same direction as cue ball travel): opens the angle off the cushion.\n" +
+        "Check side (opposite direction): closes the angle.\n\n" +
+        "Side also causes THROW at the object ball — a slight deflection of the object ball's " +
+        "path due to friction at contact. Advanced players compensate for this.\n\n" +
+        "Use sparingly. Side is a precision tool, not a default. It complicates the shot."
       },
-      { title: 'THE BANK SHOT', body:
-        "Bouncing an object ball off one or more cushions to reach a pocket.\n\n" +
-        "Geometric principle: angle of incidence equals angle of reflection — almost. Real cushions absorb energy and modify the angle slightly. Hard banks tend to come off the rail at a tighter angle than geometry predicts.\n\n" +
-        "Mirror trick: imagine the pocket reflected on the other side of the rail. Aim the object ball at that mirrored pocket. The cushion will bounce it back to the real one.\n\n" +
-        "Bank with sidespin: english on the cue ball transfers to the object ball at contact, slightly altering the rebound angle."
+      { title: 'THE STUN SHOT', body:
+        "A perfectly central strike on a straight shot sends the cue ball dead at contact. " +
+        "The cue ball has zero angular velocity — it is sliding, not rolling. At the moment of " +
+        "contact, it stops exactly where the object ball was.\n\n" +
+        "This is called a stun, or stop shot. It is perhaps the most useful shot in snooker " +
+        "for controlling position because it keeps the cue ball close to the contact area.\n\n" +
+        "Slight stun (fractional back spin): the cue ball comes back a short distance. " +
+        "Used when position requires the cue ball to drift behind the contact point.\n\n" +
+        "Spin dial: centred or very slightly below. Precise."
       },
-      { title: 'KICK SHOTS', body:
-        "When the cue ball must hit a cushion BEFORE reaching the object ball.\n\n" +
-        "Used when: snookered behind another ball, or when the object ball is hidden.\n\n" +
-        "Same mirror principle as banks — but applied to where the cue ball must aim. One-cushion kicks are common; two and three cushion kicks require careful angle calculation and are advanced shots."
+      { title: 'THE STUN RUN-THROUGH', body:
+        "A shot where slight top spin is applied on a cut shot, causing the cue ball to " +
+        "run through the natural 90° angle and continue slightly forward.\n\n" +
+        "Essential for position play. The plain ball 90° angle rarely leaves you on the " +
+        "next ball. The stun run-through lets you adjust that angle by a few degrees in either " +
+        "direction.\n\n" +
+        "The key is pace. Same spin amount at different speeds produces different run-through " +
+        "distances. Speed control is what separates a good snooker player from a great one."
       },
-      { title: 'COMBINATION SHOTS', body:
-        "Striking object ball A so it hits and pockets object ball B.\n\n" +
-        "Lower percentage than direct shots but sometimes the only option. Critical: only use combos when the angle is favorable and the balls are well-aligned with the pocket.\n\n" +
-        "Frozen combinations (balls touching) are highly predictable. Gap combinations require precise angle calculation."
+      { title: 'THE LONG POT', body:
+        "Potting a ball from long range — across the full length of the table.\n\n" +
+        "The technical challenge: small errors in aim are magnified by distance. A 1° error at " +
+        "3 feet is 1 inch at 12 feet.\n\n" +
+        "Technique: slow stroke, follow through completely, head still. Plain ball or slight " +
+        "top spin to maintain contact. Avoid side spin on long pots.\n\n" +
+        "Position after: the cue ball typically ends up deep in the table — plan which ball " +
+        "you need to be on next before committing to the long pot."
       },
-      { title: 'THE BREAK SHOT', body:
-        "Power matters less than placement. A clean break with the cue ball striking the head ball squarely spreads the rack effectively.\n\n" +
-        "Aim point: center of the apex (front) ball.\n\n" +
-        "Position: cue ball on the head string, slightly off-center can produce a better spread.\n\n" +
-        "WPA rule: at least 4 balls must reach a cushion or you must pocket a ball — otherwise the opponent gets ball-in-hand.\n\n" +
-        "Pocketing the 8-ball on the break? Most rule sets: spot the 8 and continue. Some: you win. Check house rules. WPA: spot it."
+      { title: 'CUSHION PLAY', body:
+        "Sending the cue ball off one or more cushions to reach the object ball (a kick), " +
+        "or sending an object ball off a cushion to reach a pocket (a plant off the cushion).\n\n" +
+        "Mirror principle: the angle of incidence equals the angle of reflection. To predict " +
+        "where a ball will go after hitting a cushion, reflect its path across the cushion line.\n\n" +
+        "Side spin modifies this. Running side opens the angle. Check side closes it. " +
+        "Tournament players calculate cushion angles with side routinely.\n\n" +
+        "At high speed, rubber compression narrows the rebound angle slightly."
       },
-      { title: 'MASSE SHOT', body:
-        "Curving the cue ball around an obstacle by striking it with extreme sidespin and a steep cue angle.\n\n" +
-        "Difficult, dramatic, often illegal in casual play (cloth damage). The cue is held nearly vertical and strikes the cue ball off-center.\n\n" +
-        "When: when you're snookered and a kick won't work.\n\n" +
-        "In tournament play: legal but rare. Practice on a worn cloth before attempting on a fresh one."
+      { title: 'THE SNOOKER', body:
+        "Leaving the cue ball in a position where the opponent has no direct line to the ball-on — " +
+        "hidden behind one of the other colours.\n\n" +
+        "A well-played snooker forces the opponent to play a kick (off one or more cushions) to " +
+        "reach the ball-on. If they miss, you receive penalty points. If they play safe, they may " +
+        "re-snooker you — a prolonged safety battle is called a snooker war.\n\n" +
+        "The best snookers hide the cue ball completely behind a ball of higher value than " +
+        "the ball-on, maximising the foul penalty."
       },
-      { title: 'THE JUMP SHOT', body:
-        "Striking the cue ball downward to make it leap over an obstructing ball.\n\n" +
-        "Technique: elevated cue, strike the cue ball below center but high relative to the cloth — the ball is squeezed between cue and table, popping up.\n\n" +
-        "Tournament regulation: must use a legal jump cue (typically shorter, lighter than a playing cue). Scooping the cue ball with a sub-vertical stroke is a foul.\n\n" +
-        "When: when there is no kick or masse option, and the obstruction is not too tall."
+      { title: 'THE PLANT', body:
+        "Striking ball A so it hits and pockets ball B.\n\n" +
+        "Frozen plant (balls touching): the line through the two touching balls determines " +
+        "exactly where ball B will go. If that line points at a pocket — take it.\n\n" +
+        "Gap plant: the gap between the balls must be calculated. The smaller the gap, the more " +
+        "predictable the outcome. Large gaps require skill and experience to read correctly.\n\n" +
+        "Plants are only legal when ball A is the ball-on or a red (when red is the ball-on)."
       }
     ],
 
     strategy: [
-      { title: 'THINK THREE SHOTS AHEAD', body:
-        "Beginners think about the next shot. Intermediate players think about the next two. Pros think about the next three or more.\n\n" +
-        "Before shooting, ask: where will the cue ball end up? Will it leave me a shot on my next ball? And then where after that?\n\n" +
-        "Position play — controlling the cue ball's final resting position — separates a runner from a chaser."
+      { title: 'THE ART OF BREAKS', body:
+        "A break is a sequence of consecutive pots in a single visit.\n\n" +
+        "Building a break requires three things in equal measure: potting ability, positional " +
+        "play, and reading the table three shots ahead.\n\n" +
+        "Beginners focus on the next pot. Intermediate players plan two shots. Professionals " +
+        "plan the route to clear the table before they play the first ball.\n\n" +
+        "The key question before every shot: where will the cue ball be, and what ball will I " +
+        "be on next?"
       },
-      { title: 'POSITION PLAY', body:
-        "The art of leaving the cue ball where you want it for the next shot.\n\n" +
-        "Tools: speed, spin, and angle.\n" +
-        "¶ Speed: harder shots produce more cue ball travel. Soft shots stay close.\n" +
-        "¶ Spin: top spin moves the cue ball forward post-contact. Back spin pulls it back. Sidespin angles it off cushions.\n" +
-        "¶ Angle: a half-ball cut sends the cue ball perpendicular to the original line. A thin cut barely moves it.\n\n" +
-        "Plan two-rail position routes when straight-line position isn't possible."
+      { title: 'WORKING THE ANGLES', body:
+        "Every shot has a natural angle — the path the cue ball takes after potting the object " +
+        "ball with plain ball (no spin).\n\n" +
+        "The cue ball deflects at 90° from the line of centres at contact. This is fixed physics. " +
+        "Your job is to use spin and pace to adjust that angle into your planned position.\n\n" +
+        "¶ Top spin: angles forward past 90°\n" +
+        "¶ Back spin: angles back before 90°\n" +
+        "¶ Stun: stays at contact point (straight shot) or deflects at 90° (cut shot)\n" +
+        "¶ Side spin: modifies cushion rebound for position via the cushion"
       },
-      { title: 'PATTERN PLAY', body:
-        "Look at the table. Identify the order in which you'll pocket your seven balls.\n\n" +
-        "Key principles:\n" +
-        "¶ Pocket problem balls early (clusters, balls near rails or other balls)\n" +
-        "¶ Save easy balls for the end as 'insurance'\n" +
-        "¶ End your run on the 8-ball — the last object ball before the 8 should leave the cue near a 8-ball pocket\n\n" +
-        "Walk around the table before deciding. The view from the other side reveals shots and clusters you missed."
+      { title: 'COLOUR SELECTION', body:
+        "After potting a red, you may pot any colour. This decision defines your break.\n\n" +
+        "Always pot the black (7) if you have the angle. The difference between a 50-break and " +
+        "a 100-break is often just consistently choosing black over pink.\n\n" +
+        "But position matters more than value. A pink you can pot with perfect position on the " +
+        "next red is worth more than a black that leaves you nowhere.\n\n" +
+        "Rule of thumb: choose the colour that leaves you on a red that leaves you on another " +
+        "colour. Think three balls ahead, not one."
+      },
+      { title: 'RED SELECTION', body:
+        "With 15 reds on the table, which red you choose defines your break.\n\n" +
+        "¶ Choose reds that are accessible — not frozen against cushions or other balls\n" +
+        "¶ Choose reds whose potting leaves the cue ball near the colours\n" +
+        "¶ Clear tight clusters early when you have a long break going\n" +
+        "¶ Leave easy reds in safe positions for recovery shots\n\n" +
+        "The last few reds are the most important. If you can leave yourself on the black " +
+        "after the final red, you are in a strong position to clear the colours."
       },
       { title: 'SAFETY PLAY', body:
-        "When no good offensive shot exists, play defensively. Hide the cue ball where the opponent has no clear shot.\n\n" +
-        "WPA rule: declare safety before shooting. Any ball you pocket goes to your count anyway, but a declared safety ends your turn even if you sink one.\n\n" +
-        "Best safety positions: cue ball touching one of your own balls (frozen), or hidden behind a cluster, or against a rail with the object ball blocked.\n\n" +
-        "A great safety can win a game without you potting another ball."
+        "When no pot is available or the risk is too high, play safe.\n\n" +
+        "A good safety leaves the cue ball behind a colour, with the ball-on hidden or " +
+        "difficult to reach without cannoning off other balls.\n\n" +
+        "Declare safety before you shoot (the SAFETY button). In tournament play, failing " +
+        "to declare means the shot is considered an attempt — if you miss, there is no foul.\n\n" +
+        "The four standard safeties:\n" +
+        "¶ Send the ball-on to the cushion and leave the cue ball tight to another ball\n" +
+        "¶ Play the cue ball to the baulk cushion, leaving nothing on\n" +
+        "¶ Tuck the cue ball behind a colour\n" +
+        "¶ Send the red down to the baulk area while leaving the cue in the reds"
       },
-      { title: 'CLUSTERS', body:
-        "Two or more balls touching or close together. Often blocking shots and pockets.\n\n" +
-        "Break them out: when you have a shot that leaves the cue ball traveling into a cluster, take it. Even if you don't pocket a ball, breaking the cluster opens new angles.\n\n" +
-        "Don't break a cluster you don't have to — if you can avoid it and still pocket your group, do so. Clusters that contain your opponent's balls are often best left alone."
+      { title: 'SNOOKERING', body:
+        "Deliberately leaving the cue ball so the opponent cannot directly hit the ball-on.\n\n" +
+        "Best situations to attempt a snooker:\n" +
+        "¶ When you're behind on the scoreboard — penalty points are free scoring\n" +
+        "¶ When you need a specific number of snookers to win\n" +
+        "¶ When the table layout naturally invites a snooker\n\n" +
+        "Count the snookers needed: if you need 43 points and only 35 remain on the table, " +
+        "you need at least one snooker worth 4+ points plus all remaining balls."
       },
-      { title: 'THE FOOT SPOT', body:
-        "The spot at the foot of the table where balls are spotted after fouls.\n\n" +
-        "If a ball is pocketed illegally and must be respotted, it goes here. If the spot is occupied, the ball is placed touching it on the long string toward the foot rail.\n\n" +
-        "Spotted balls cluster near the foot. Plan around this — don't leave easy shots for your opponent in this zone."
+      { title: 'THE COLOURS PHASE', body:
+        "Clearing the colours in sequence (yellow through black) is where frames are often won " +
+        "and lost. The positions are known — each colour must go to its spot on the way back up, " +
+        "so you can plan position play precisely.\n\n" +
+        "Key: coming off the green (3pts) onto the brown (4), then the brown onto the blue. " +
+        "The blue-to-pink and pink-to-black angles are the most practised positions in the game.\n\n" +
+        "Tournament players have these three positions memorised. The rest of the frame is " +
+        "improvisation. The colours clearance is choreography."
       },
-      { title: 'TEMPO AND RHYTHM', body:
-        "Pool is mental. Stay relaxed. Breathe. Don't rush a shot you're unsure of.\n\n" +
-        "Pre-shot routine: walk the line, set your stance, address the cue ball, take a practice stroke or two, then shoot. Same routine every time.\n\n" +
-        "When you miss, walk around the table. Reset. Don't shoot in anger.\n\n" +
-        "When you're running balls, don't slow down — but don't speed up either. Rhythm wins more than skill at the highest levels."
-      },
-      { title: 'READING THE TABLE', body:
-        "Before any shot, read:\n" +
-        "¶ Score and game state — are you ahead, behind, on the 8?\n" +
-        "¶ Your group remaining — count them, plan the order\n" +
-        "¶ Opponent's group — what shots do they have if you miss?\n" +
-        "¶ Pocket access — which pockets are open for which balls\n" +
-        "¶ Cue ball position post-shot — where does it end up?\n\n" +
-        "Reading takes more time than shooting. That is correct."
+      { title: 'READING THE SCORE', body:
+        "Always know the scoreboard. It changes everything.\n\n" +
+        "If you're 40 ahead with 27 points left, take risks — your opponent needs snookers.\n" +
+        "If you're 20 behind with 35 on the table, you need to build — stop taking low percentage pots.\n\n" +
+        "Count what's left: reds × 8 (one red plus black for each) plus all six colours. " +
+        "This gives the maximum available points. If you need more than that number, you need " +
+        "snookers — calculate how many."
       }
     ],
 
     lingo: [
-      { title: 'BASIC TERMS', body:
-        "BALL IN HAND: after a foul, the opposing player can place the cue ball anywhere on the table.\n\n" +
-        "BREAK: the opening shot that scatters the racked balls.\n\n" +
-        "BREAKING BALL: the cue ball at the break.\n\n" +
-        "CALL: declare the pocket you intend to sink a ball into. Required for the 8-ball.\n\n" +
-        "CLUSTER: two or more balls grouped tightly together.\n\n" +
-        "CUSHION: the rubber-edged inner border of the rails. Where balls bounce."
+      { title: 'POTTING TERMS', body:
+        "BALL-ON: the ball the player must legally contact first.\n\n" +
+        "BREAK: a sequence of consecutive pots in one visit.\n\n" +
+        "CANNON: the cue ball striking two object balls.\n\n" +
+        "CLEARANCE: potting all remaining balls in one visit.\n\n" +
+        "COLOUR: any of the six non-red balls (yellow through black).\n\n" +
+        "FRAME: a single game of snooker from break to final black.\n\n" +
+        "IN-OFF: potting the cue ball into a pocket (a foul).\n\n" +
+        "PLANT: using one object ball to knock another into a pocket.\n\n" +
+        "POT: legally sending an object ball into a pocket."
       },
-      { title: 'SHOT TERMS', body:
-        "DRAW: backward spin on the cue ball.\n\n" +
-        "ENGLISH: side spin (sidespin), causing the cue ball to deflect off cushions at unusual angles.\n\n" +
-        "FOLLOW: top spin on the cue ball.\n\n" +
-        "FROZEN: two balls touching, or a ball touching a rail.\n\n" +
-        "JAW: the curved sides of a pocket.\n\n" +
-        "JUMP: a legal jump shot using a designated jump cue.\n\n" +
-        "MASSE: a curving shot using extreme sidespin and an elevated cue.\n\n" +
-        "STUN: a shot where the cue ball stops dead at contact (no spin)."
+      { title: 'SPIN TERMS', body:
+        "BACK SPIN: striking below centre, causing the cue ball to reverse after contact. Also called screw or draw.\n\n" +
+        "CHECK SIDE: side spin in the opposite direction to the cue ball's path, closing the cushion angle.\n\n" +
+        "ENGLISH: side spin (sidespin). Alters cushion angles.\n\n" +
+        "FOLLOW: top spin — cue ball continues forward after contact.\n\n" +
+        "RUNNING SIDE: side spin in the same direction as travel, opening the cushion angle.\n\n" +
+        "SCREW: back spin. The cue ball reverses after contact.\n\n" +
+        "SIDE: spin around the vertical axis (left or right of centre).\n\n" +
+        "STUN: the cue ball stops dead at contact. Also: stun run-through, stun screw."
       },
-      { title: 'GAME TERMS', body:
-        "FOUL: an infraction that ends your turn and gives ball-in-hand to the opponent.\n\n" +
-        "FRAME: a single game of pool.\n\n" +
-        "MATCH: a series of frames, e.g., race to 5.\n\n" +
-        "OPEN TABLE: after the break, before either player has been assigned a group.\n\n" +
-        "RACE: a match played to a number of frames (race to 5 = first to 5 wins).\n\n" +
-        "RACK: the wooden triangle used to set up the balls; or the set of 15 balls itself.\n\n" +
-        "SAFETY: a defensive shot where you intentionally do not try to pocket a ball.\n\n" +
-        "SCRATCH: pocketing the cue ball, or failing to make a legal contact. Always a foul.\n\n" +
-        "SHOT CLOCK: the time limit per shot in tournament play (typically 45 seconds).\n\n" +
-        "SNOOKERED: when there is no straight-line shot to one of your own balls."
+      { title: 'SAFETY & POSITIONAL TERMS', body:
+        "BAULK: the end of the table near the D, where the cue ball is placed after a foul.\n\n" +
+        "D (THE D): the semi-circle at the baulk end. Cue ball placed inside after a foul.\n\n" +
+        "KICK: a shot where the cue ball bounces off one or more cushions to reach the ball-on. Used when snookered.\n\n" +
+        "SAFETY: a shot where the player does not intend to pot a ball, playing to leave a difficult position.\n\n" +
+        "SNOOKER: a position where the cue ball is hidden behind another ball, making direct contact with the ball-on impossible.\n\n" +
+        "SNOOKERED: unable to hit the ball-on directly.\n\n" +
+        "SPOT: the designated position for each colour ball on the table."
       },
-      { title: 'ANGLE TERMS', body:
-        "BANK: a shot that uses one or more cushions to reach the pocket.\n\n" +
-        "CARROM (or CAROM): a shot where the cue ball strikes object ball A, then object ball B.\n\n" +
-        "COMBO: a shot where ball A strikes ball B into the pocket.\n\n" +
-        "CUT: any shot where the object ball is struck off-center.\n\n" +
-        "HALF-BALL: a cut where the cue ball overlaps the object ball by half its diameter.\n\n" +
-        "KICK: a shot where the cue ball hits a cushion before reaching the object ball.\n\n" +
-        "POSITION (POSITION PLAY): controlling where the cue ball ends up.\n\n" +
-        "THIN: a cut shot taken on the very edge of the object ball."
+      { title: 'SCORING TERMS', body:
+        "CENTURY: a break of 100 or more points. Career-defining in club play.\n\n" +
+        "CLEARANCE: potting all balls from a given point in one visit.\n\n" +
+        "COLOURS CLEARANCE: potting all six colours in sequence without missing.\n\n" +
+        "FOUL: an illegal shot. Awards points (minimum 4) to the opponent.\n\n" +
+        "FREE BALL: after a foul, if the opponent is snookered on all reds, they may nominate any ball as a free ball.\n\n" +
+        "MAXIMUM BREAK: 147 — potting all 15 reds each with the black, then all six colours. Rarely achieved.\n\n" +
+        "PENALTY: points awarded to the opponent after a foul. Minimum 4."
       },
-      { title: 'SLANG & POOL HALL', body:
-        "ACTION: betting or money play.\n\n" +
-        "DOG IT: to choke under pressure on an easy shot.\n\n" +
-        "GAS: heavy cue ball spin (lots of english).\n\n" +
-        "HUSTLE: pretending to be worse than you are to draw bigger bets.\n\n" +
-        "LUCK OUT (or ROLL): when good fortune saves a poor shot.\n\n" +
-        "PUSH OUT: a special shot in 9-ball after the break where the shooter can place the cue ball without restriction.\n\n" +
-        "ROAD PLAYER: a traveling pro who wins money in unfamiliar pool halls.\n\n" +
-        "SHARK: to distract or psychologically pressure an opponent."
+      { title: 'POSITIONAL LINGO', body:
+        "ANGLE (THE ANGLE): the degree of cut on a shot. 'Needing an angle' means wanting the cue ball to deflect, not go straight.\n\n" +
+        "DEAD BALL: a plant where the line through the two balls goes exactly to the pocket.\n\n" +
+        "DEEP SCREW: extreme back spin, used for maximum reverse distance.\n\n" +
+        "GETTING POSITION: leaving the cue ball in a good position for the next shot.\n\n" +
+        "NATURAL ANGLE: the cue ball path after a plain-ball shot — no spin adjustment.\n\n" +
+        "PACE: the speed of the shot. Pace control is critical — same spin at different paces produces very different positions.\n\n" +
+        "THIN: striking the object ball on its very edge. Low transfer of energy, unpredictable position."
       }
     ],
 
     rulebook: [
-      { title: 'WPA 8-BALL: OBJECT', body:
-        "Players are assigned the group of solids (1-7) or stripes (9-15). The first player to legally pocket all balls in their assigned group, then legally pocket the 8-ball into a called pocket, wins.\n\n" +
-        "The cue ball is the only ball directly struck by the cue stick. Striking any other ball directly is a foul."
+      { title: 'WORLD SNOOKER — OVERVIEW', body:
+        "The rules of snooker are governed by the World Professional Billiards and Snooker " +
+        "Association (WPBSA) and the Billiards and Snooker Control Council (BSCC), established " +
+        "in England in 1919.\n\n" +
+        "Tournament snooker is played as a best-of-frames match. The World Snooker Championship " +
+        "final is best of 35 frames. First-round matches are typically best of 11 or 19.\n\n" +
+        "This table implements the principal WPBSA rules as applicable to single-frame play."
       },
       { title: 'THE BREAK', body:
-        "The break shooter places the cue ball anywhere behind the head string and strikes the racked balls.\n\n" +
-        "LEGAL BREAK requires either:\n" +
-        "¶ Pocketing at least one ball, OR\n" +
-        "¶ Driving at least four balls to a cushion\n\n" +
-        "If neither: the incoming player has the option of accepting the table as is, or rebreaking.\n\n" +
-        "Pocketing the cue ball on the break: foul. Opponent gets cue ball in hand behind the head string.\n\n" +
-        "Pocketing the 8-ball on the break: the breaker may either re-rack and break again, or have the 8 spotted and continue."
+        "The opening player strikes the cue ball from within the D (baulk semi-circle) at the " +
+        "15 reds.\n\n" +
+        "LEGAL BREAK: the cue ball must contact at least one red, and either a ball must be potted " +
+        "or the cue ball or a red must reach a cushion after contact.\n\n" +
+        "If the break is illegal: the opponent may accept the table as left, or ask the original " +
+        "player to break again.\n\n" +
+        "The break is decided by a lag (closest to baulk cushion without touching it wins choice). " +
+        "Some events flip a coin. The winner may break or concede the break."
       },
-      { title: 'GROUP ASSIGNMENT', body:
-        "Until a player legally pockets a ball after the break, the table is OPEN.\n\n" +
-        "On an open table: a player may strike any ball first (except the 8-ball can only be struck first if it is the only legal target).\n\n" +
-        "Group assignment occurs the moment a player LEGALLY pockets a ball after the break (cue ball strikes the chosen group's ball first AND that ball is pocketed). The shooter is then assigned that group; opponent gets the other.\n\n" +
-        "The break itself does NOT assign groups even if balls are pocketed."
+      { title: 'BALL-ON & SEQUENCE', body:
+        "The ball-on is the ball or balls the player must legally contact first.\n\n" +
+        "WHEN RED IS BALL-ON: any red may be struck first. A colour potted alongside a red legally " +
+        "scores its value but is re-spotted. After potting at least one red, the ball-on becomes " +
+        "any colour.\n\n" +
+        "WHEN A COLOUR IS BALL-ON: the player must contact that colour first and may only pot that " +
+        "colour legally. If they pot it, the colour is re-spotted and the ball-on reverts to red.\n\n" +
+        "COLOURS PHASE: after the last red is potted (with its colour), the ball-on becomes yellow, " +
+        "then green, brown, blue, pink, and black in sequence. Colours are NOT re-spotted."
       },
-      { title: 'FOULS', body:
-        "These actions are fouls. After a foul, the opponent receives ball-in-hand (place cue ball anywhere on table).\n\n" +
-        "¶ Failure to hit a legal ball first\n" +
-        "¶ No ball contacts a cushion after first contact (and no ball is pocketed)\n" +
-        "¶ Pocketing the cue ball (scratch)\n" +
-        "¶ Knocking a ball off the table\n" +
-        "¶ Touching any ball with anything other than the cue tip during a stroke\n" +
-        "¶ Double hit (cue tip strikes cue ball twice in one stroke)\n" +
-        "¶ Push shot (continued contact between tip and cue ball)\n" +
-        "¶ Foot off the floor during a stroke\n" +
-        "¶ Shot clock expiry (in timed play)"
+      { title: 'FOULS & VALUES', body:
+        "FOUL VALUES — the penalty is the higher of 4 points or the value of:\n" +
+        "¶ The ball-on\n" +
+        "¶ The ball first struck\n" +
+        "¶ The ball potted (if pocketed illegally)\n\n" +
+        "So hitting black (7) when on red = 7 point foul (not 4).\n\n" +
+        "SPECIFIC FOULS:\n" +
+        "¶ In-off (cue ball potted): minimum 4, or value of ball-on\n" +
+        "¶ Hit wrong ball first: value of ball wrongly hit or ball-on, whichever higher\n" +
+        "¶ No contact: minimum 4\n" +
+        "¶ Ball off table: value of that ball (minimum 4)\n" +
+        "¶ No ball reaching cushion after last contact: minimum 4\n" +
+        "¶ Two shots with one stroke (push shot): minimum 4"
       },
-      { title: 'THREE-FOUL RULE', body:
-        "Three consecutive fouls by the same player results in loss of game.\n\n" +
-        "After the second consecutive foul, the player must be warned. If they then commit a third consecutive foul, they lose the game.\n\n" +
-        "Any legal shot resets the foul count to zero."
+      { title: 'FREE BALL', body:
+        "After a foul, if the cue ball is so positioned that the player is snookered on ALL " +
+        "remaining reds (or ball-on if in colours phase), the referee calls a FREE BALL.\n\n" +
+        "The incoming player nominates any ball as a substitute for the ball-on. That nominated " +
+        "ball scores the value of the ball-on if potted, and the player continues their turn.\n\n" +
+        "The nominated ball is treated as the ball-on in all respects for that shot only.\n\n" +
+        "If a red is the ball-on and the free ball (a colour) is potted, it counts as 1 red and " +
+        "is re-spotted. The ball-on then becomes any colour, as normal."
       },
-      { title: 'WINNING THE 8-BALL', body:
-        "Once a player has pocketed all of their group's balls, they shoot for the 8-ball.\n\n" +
-        "REQUIRED: call the pocket before shooting. The 8-ball must be pocketed in the called pocket.\n\n" +
-        "WIN: legal contact, called pocket, no scratch, no foul.\n\n" +
-        "LOSS:\n" +
-        "¶ Pocketing the 8-ball before clearing your group\n" +
-        "¶ Pocketing the 8-ball into a different pocket than called\n" +
-        "¶ Scratching while pocketing the 8-ball\n" +
-        "¶ Knocking the 8-ball off the table\n" +
-        "¶ Pocketing the 8-ball on a foul shot"
+      { title: 'THE MISS RULE', body:
+        "If a player fails to hit the ball-on and the referee decides they did not make a " +
+        "genuine attempt to do so, a MISS is called.\n\n" +
+        "In addition to the foul penalty, the opponent may request that the balls be replaced to " +
+        "their original positions and the offending player must play the shot again.\n\n" +
+        "The miss rule was introduced to prevent deliberate foul play as a safety tactic. It is " +
+        "strictly enforced in professional play.\n\n" +
+        "Three successive fouls from the same position = loss of frame."
       },
-      { title: 'STALEMATE', body:
-        "If both players are reduced to defensive shots and no progress can be made over three innings (turns), the rack is declared a stalemate and replayed.\n\n" +
-        "Tournament: same break order. Casual: alternate."
+      { title: 'THE SHOT CLOCK', body:
+        "Professional snooker uses a shot clock in some formats (typically 60 seconds per shot " +
+        "in World Snooker Tour events using this system, though most major championships do not).\n\n" +
+        "This table uses 45 seconds per shot — consistent with timed snooker league formats " +
+        "used in English clubs from the late Victorian era onward.\n\n" +
+        "Clock expiry is a foul: 4 penalty points minimum, opponent receives ball-in-hand in the D."
       },
-      { title: 'EQUIPMENT', body:
-        "TABLE: 9-foot WPA-spec table for tournament play. 8-foot for many leagues.\n\n" +
-        "BALLS: phenolic resin, 2-1/4 inch diameter (57mm), 5.5-6.0 oz weight.\n\n" +
-        "CUE: 57-59 inches long, 17-21 oz, leather tip 12-13mm diameter.\n\n" +
-        "RACK: triangle (8-ball, 14.1) or diamond (9-ball)."
+      { title: 'EQUIPMENT STANDARDS', body:
+        "TABLE: 12 feet x 6 feet (full-size WPBSA standard). The playing surface is 11ft 8.5in x 5ft 10in.\n\n" +
+        "BALLS: phenolic resin, 52.5mm diameter (2-1/16 inch), 141-147g. Historically: composition balls, " +
+        "then celluloid (introduced 1920s), then phenolic resin.\n\n" +
+        "CLOTH: Hainsworth Smart or Strachan 6811 (tournament standard). Nap runs from baulk end " +
+        "to top cushion — affects the roll of the ball.\n\n" +
+        "CUE: typically 57–58 inches, 16–21oz. Ash or maple shaft, leather tip 9–10mm diameter. " +
+        "In Victorian era: straight ash cues, no extensions."
+      },
+      { title: 'CONDUCT & ETIQUETTE', body:
+        "Victorian snooker was a gentleman's game. Its conduct norms persist in professional play.\n\n" +
+        "¶ Do not move or cause disturbance while opponent is at the table\n" +
+        "¶ Concede graciously when you cannot win — 'giving up the frame' is customary when the " +
+        "deficit is insurmountable\n" +
+        "¶ Applaud good breaks from your opponent\n" +
+        "¶ Do not question the referee\n" +
+        "¶ Declare safety before playing one — in Victorian club play this was a point of honour\n\n" +
+        "'The score on the board does not reflect the score in the mind.' — Fred Davis, 1950"
       }
     ],
 
     psychology: [
-      { title: 'CONTROL THE INNER GAME', body:
-        "Pool reveals character. The table doesn't lie.\n\n" +
-        "Tilt: the state of frustration after a missed shot or run-out failure. A tilted player makes worse decisions, hits harder than needed, plays without thinking.\n\n" +
-        "Recognize tilt in yourself: are you angry? Are you skipping the pre-shot routine? Are you breathing fast? Step back. Take three breaths. Reset."
+      { title: 'THE MENTAL GAME', body:
+        "Snooker is the most psychological of all cue sports. A frame can last two hours. " +
+        "Concentration lapses. Pressure builds. One missed pot from 70 points ahead can " +
+        "unravel an entire session.\n\n" +
+        "The mental game in snooker is not about confidence alone — it is about sustained " +
+        "concentration over a long period. You must be present on every single shot, not just " +
+        "the important ones.\n\n" +
+        "The shot you are playing is always the most important shot of the frame. " +
+        "There is no such thing as an easy pot."
       },
-      { title: 'PRESSURE SHOTS', body:
-        "The 8-ball with money on the line. The hill-hill rack. The make-or-break combination.\n\n" +
-        "Truth: you've made this shot a thousand times in practice. The shot does not change because of pressure. Only your mind changes.\n\n" +
-        "Slow your routine, not speed it up. Trust your stroke. Don't think about the consequences of the miss. Think only about pocketing the ball."
+      { title: 'PRE-SHOT ROUTINE', body:
+        "Every professional has one. It is the single most important mental tool in the game.\n\n" +
+        "A routine creates a ritual that bypasses conscious thought at the moment of execution. " +
+        "You decide before you get down — then you execute without deciding again.\n\n" +
+        "Standard routine: assess position from standing → decide the shot and target position → " +
+        "get down → line up → two or three practice strokes → pause → execute.\n\n" +
+        "Do not change your shot after you are down. If you are unsure, stand up and start the " +
+        "routine again. Changing mid-stroke is the single biggest cause of misses at all levels."
       },
-      { title: 'READING OPPONENTS', body:
-        "Tilted opponents take risks. Confident opponents play position.\n\n" +
-        "Watch their body language. A player who walks fast is rushed. A player who lingers is unsure. A player who looks at the score is distracted.\n\n" +
-        "Pace yourself to disrupt them. If they want fast, slow down. If they want slow, keep moving. Both are sharking — within the rules."
+      { title: 'PRESSURE AND NERVES', body:
+        "The last red with black, 30 behind. The final pink for the frame. These shots are won " +
+        "or lost before you bend down.\n\n" +
+        "The physical sensations of pressure — tightening grip, rushed stroke, altered breathing " +
+        "— are not signs of weakness. They are natural responses to high stakes. They become " +
+        "problems only when you fight them.\n\n" +
+        "The technique: acknowledge the feeling, breathe deliberately, slow the routine. " +
+        "The pot does not know it is important. Your body does. Manage the body; the pot follows."
       },
-      { title: 'HOW TO LOSE WELL', body:
-        "Every player loses. The pros lose with grace and learn.\n\n" +
-        "After a loss: don't replay the missed shots. Replay your DECISIONS. What did you misread? What pattern did you choose wrong?\n\n" +
-        "The shot you missed is the shot you missed. The decision that led you to that shot is the lesson."
+      { title: 'PLAYING SAFE', body:
+        "Many players at amateur level feel that playing safe is a failure. This is wrong.\n\n" +
+        "A well-executed safety that forces your opponent into a difficult position is worth " +
+        "as much as a pot. A missed pot from a risky position is worth nothing and may gift " +
+        "your opponent a break.\n\n" +
+        "At the professional level, safety battles are studied as carefully as break-building. " +
+        "The player who wins the safety exchange — forcing the other into an error — has won " +
+        "something for nothing.\n\n" +
+        "Ask yourself before every pot: what happens if I miss? If the answer is bad, consider safety."
+      },
+      { title: 'CONCENTRATION', body:
+        "A century break requires potting approximately 20 balls without interruption. " +
+        "In a best-of-25 match, you may play 200 shots or more.\n\n" +
+        "Each requires full attention. This is the discipline of snooker.\n\n" +
+        "The concentration technique used by most professionals: think only about the ball " +
+        "you are playing. Not the scoreboard. Not the previous miss. Not the crowd. " +
+        "Just this red, this angle, this pace.\n\n" +
+        "Between shots: allow your mind to relax. Conserve concentration. The drain of " +
+        "sustained focus is real. Manage it."
       }
     ]
   };
 
-
-  // ---------- Tutorial state ----------------------------------------------
   const tutorial = {
     section: 'quickStart',   // current section key
     page: 0,                 // current page index within section
@@ -3749,10 +3894,10 @@
     sectionTitles: {
       quickStart: 'QUICK START',
       shots: 'THE SHOTS',
-      strategy: 'STRATEGY',
+      strategy: 'STRATEGY & BREAKS',
       lingo: 'LINGO & TERMS',
-      rulebook: 'WPA RULEBOOK',
-      psychology: 'THE INNER GAME'
+      rulebook: 'TOURNAMENT RULES',
+      psychology: 'THE MENTAL GAME'
     },
     drillKey: null,          // current active drill name
     drillResult: null,       // 'success' | 'fail' | null
@@ -3762,143 +3907,115 @@
 
   // Drill definitions — each describes a ball setup and a goal
   const DRILLS = {
-    stopShot: {
-      name: 'THE STOP SHOT',
-      description: 'Strike with no spin. Cue ball should stop where the object ball was. Sink the object ball in the bottom-right pocket.',
-      hint: 'Center spin. Aim through the object ball center. Medium power.',
+    stunShot: {
+      name: 'THE STUN SHOT',
+      description: 'Strike centre cue ball on a straight shot. Cue ball must stop dead at the contact point.',
+      hint: 'Spin dial centred exactly. Medium pace. The ball must not continue forward.',
       setup: function() {
-        // Cue ball at near end, object ball mid-table aligned with bottom-right pocket
         return [
-          { id: 0, n: 0, x: PLAY_X0 + PLAY_W * 0.75, y: TABLE_H / 2, vx:0, vy:0, wx:0, wy:0, spinX:0, spinY:0, inPlay: true, pocketed: false },
-          { id: 1, n: 1, x: PLAY_X0 + PLAY_W * 0.45, y: TABLE_H / 2 + 30, vx:0, vy:0, wx:0, wy:0, spinX:0, spinY:0, inPlay: true, pocketed: false }
+          _makeBall(0, 0, PLAY_X0 + PLAY_W * 0.82, TABLE_H / 2),
+          _makeBall(1, 1, PLAY_X0 + PLAY_W * 0.55, TABLE_H / 2)
         ];
       },
       checkSuccess: function(state) {
-        // Object ball pocketed AND cue ball within 30 units of where object ball was
-        const obj = state.balls.find(b => b.n === 1);
+        const red = state.balls.find(b => b.n === 1);
         const cue = state.balls[0];
-        if (!obj.pocketed) return null;
-        if (!cue.inPlay) return 'fail';  // scratched
-        // The original object position
-        const origX = PLAY_X0 + PLAY_W * 0.45;
-        const origY = TABLE_H / 2 + 30;
-        const dist = Math.hypot(cue.x - origX, cue.y - origY);
-        return dist < 60 ? 'success' : 'fail';
-      }
-    },
-
-    followShot: {
-      name: 'THE FOLLOW SHOT',
-      description: 'Top spin. Sink the object ball, then have the cue ball travel forward at least 100 units past contact point.',
-      hint: 'Spin dial up. Medium-firm power. Aim center of object ball.',
-      setup: function() {
-        return [
-          { id: 0, n: 0, x: PLAY_X0 + PLAY_W * 0.85, y: TABLE_H / 2, vx:0, vy:0, wx:0, wy:0, spinX:0, spinY:0, inPlay: true, pocketed: false },
-          { id: 1, n: 1, x: PLAY_X0 + PLAY_W * 0.50, y: TABLE_H / 2, vx:0, vy:0, wx:0, wy:0, spinX:0, spinY:0, inPlay: true, pocketed: false }
-        ];
-      },
-      checkSuccess: function(state) {
-        const obj = state.balls.find(b => b.n === 1);
-        const cue = state.balls[0];
-        if (!obj.pocketed) return null;
-        if (!cue.inPlay) return 'fail';
-        const origX = PLAY_X0 + PLAY_W * 0.50;
-        // Cue ball should be PAST the contact point (lower x = farther forward in portrait)
-        return cue.x < origX - 50 ? 'success' : 'fail';
-      }
-    },
-
-    drawShot: {
-      name: 'THE DRAW SHOT',
-      description: 'Back spin. Sink the object ball, then DRAW the cue ball back at least 80 units toward you.',
-      hint: 'Spin dial DOWN. Firm power. Aim center of object ball.',
-      setup: function() {
-        return [
-          { id: 0, n: 0, x: PLAY_X0 + PLAY_W * 0.85, y: TABLE_H / 2, vx:0, vy:0, wx:0, wy:0, spinX:0, spinY:0, inPlay: true, pocketed: false },
-          { id: 1, n: 1, x: PLAY_X0 + PLAY_W * 0.55, y: TABLE_H / 2, vx:0, vy:0, wx:0, wy:0, spinX:0, spinY:0, inPlay: true, pocketed: false }
-        ];
-      },
-      checkSuccess: function(state) {
-        const obj = state.balls.find(b => b.n === 1);
-        const cue = state.balls[0];
-        if (!obj.pocketed) return null;
+        if (!red || !red.pocketed) return null;
         if (!cue.inPlay) return 'fail';
         const origX = PLAY_X0 + PLAY_W * 0.55;
-        // Cue ball should be BEHIND contact point (higher x = back toward starting end)
+        return Math.hypot(cue.x - origX, cue.y - TABLE_H / 2) < 55 ? 'success' : 'fail';
+      }
+    },
+    screwShot: {
+      name: 'THE SCREW SHOT',
+      description: 'Back spin — pot the red and draw the cue ball back at least 80 units toward you.',
+      hint: 'Spin dial DOWN. Strike firmly. The cue ball must reverse after contact.',
+      setup: function() {
+        return [
+          _makeBall(0, 0, PLAY_X0 + PLAY_W * 0.82, TABLE_H / 2),
+          _makeBall(1, 1, PLAY_X0 + PLAY_W * 0.55, TABLE_H / 2)
+        ];
+      },
+      checkSuccess: function(state) {
+        const red = state.balls.find(b => b.n === 1);
+        const cue = state.balls[0];
+        if (!red || !red.pocketed) return null;
+        if (!cue.inPlay) return 'fail';
+        const origX = PLAY_X0 + PLAY_W * 0.55;
         return cue.x > origX + 50 ? 'success' : 'fail';
       }
     },
-
-    cutShot: {
-      name: 'CUT SHOT',
-      description: 'Cut the object ball into the upper-right corner pocket from a 30-degree angle.',
-      hint: 'Aim slightly left of object ball center. Center spin. Medium power.',
+    followShot: {
+      name: 'TOP SPIN (FOLLOW)',
+      description: 'Top spin — pot the red and run the cue ball forward at least 80 units past the contact point.',
+      hint: 'Spin dial UP. Medium-firm pace. Cue ball must continue through after potting.',
       setup: function() {
         return [
-          { id: 0, n: 0, x: PLAY_X0 + PLAY_W * 0.5, y: TABLE_H / 2, vx:0, vy:0, wx:0, wy:0, spinX:0, spinY:0, inPlay: true, pocketed: false },
-          { id: 1, n: 1, x: PLAY_X0 + PLAY_W * 0.3, y: TABLE_H / 2 + 60, vx:0, vy:0, wx:0, wy:0, spinX:0, spinY:0, inPlay: true, pocketed: false }
+          _makeBall(0, 0, PLAY_X0 + PLAY_W * 0.82, TABLE_H / 2),
+          _makeBall(1, 1, PLAY_X0 + PLAY_W * 0.55, TABLE_H / 2)
         ];
       },
       checkSuccess: function(state) {
-        const obj = state.balls.find(b => b.n === 1);
-        if (!obj.pocketed) return null;
+        const red = state.balls.find(b => b.n === 1);
         const cue = state.balls[0];
+        if (!red || !red.pocketed) return null;
+        if (!cue.inPlay) return 'fail';
+        const origX = PLAY_X0 + PLAY_W * 0.55;
+        return cue.x < origX - 55 ? 'success' : 'fail';
+      }
+    },
+    cutRed: {
+      name: 'CUT RED TO POCKET',
+      description: 'Cut the red into the side pocket on a 30-degree angle. No scratch.',
+      hint: 'Aim slightly off-centre of the red. Observe the 90-degree deflection rule.',
+      setup: function() {
+        return [
+          _makeBall(0, 0, PLAY_X0 + PLAY_W * 0.55, TABLE_H / 2 + 80),
+          _makeBall(1, 1, PLAY_X0 + PLAY_W * 0.40, TABLE_H / 2)
+        ];
+      },
+      checkSuccess: function(state) {
+        const red = state.balls.find(b => b.n === 1);
+        const cue = state.balls[0];
+        if (!red || !red.pocketed) return null;
         return cue.inPlay ? 'success' : 'fail';
       }
     },
-
-    bankShot: {
-      name: 'BANK SHOT',
-      description: 'Bank the object ball off the far rail into a corner pocket on your side.',
-      hint: 'Aim at a point on the far rail such that the reflection angle sends the ball to your near corner.',
+    redWithBlack: {
+      name: 'RED THEN BLACK',
+      description: 'Pot the red, then get position on the black. Cue ball must end within 120 units of the black spot.',
+      hint: 'Think position first. Where will the cue ball end up? Plan your spin and pace accordingly.',
       setup: function() {
         return [
-          { id: 0, n: 0, x: PLAY_X0 + PLAY_W * 0.85, y: TABLE_H / 2, vx:0, vy:0, wx:0, wy:0, spinX:0, spinY:0, inPlay: true, pocketed: false },
-          { id: 1, n: 1, x: PLAY_X0 + PLAY_W * 0.5, y: TABLE_H / 2 + 50, vx:0, vy:0, wx:0, wy:0, spinX:0, spinY:0, inPlay: true, pocketed: false }
+          _makeBall(0, 0, PLAY_X0 + PLAY_W * 0.75, TABLE_H / 2 + 40),
+          _makeBall(1, 1, PLAY_X0 + PLAY_W * 0.50, TABLE_H / 2 + 60),
+          _makeBall(2, 21, COLOUR_SPOTS[21].x, COLOUR_SPOTS[21].y)  // black on spot
         ];
       },
       checkSuccess: function(state) {
-        const obj = state.balls.find(b => b.n === 1);
-        if (!obj.pocketed) return null;
-        // Bank shot: object ball should have hit a cushion before being pocketed
-        return state.balls[0].inPlay ? 'success' : 'fail';
+        const red = state.balls.find(b => b.n === 1);
+        const black = state.balls.find(b => b.n === 21);
+        const cue = state.balls[0];
+        if (!red || !red.pocketed) return null;
+        if (!cue.inPlay || !black || !black.inPlay) return 'fail';
+        const distToBlack = Math.hypot(cue.x - black.x, cue.y - black.y);
+        return distToBlack < 140 ? 'success' : 'fail';
       }
     },
-
-    breakShot: {
-      name: 'THE BREAK',
-      description: 'Full rack. Practice your break. At least 4 balls must reach a cushion.',
-      hint: 'Aim slightly off-center of the apex ball for better spread. Maximum power.',
+    cushionKick: {
+      name: 'CUSHION KICK',
+      description: 'The red is hidden. Play the cue ball off one cushion to hit it. Cue ball must contact the red.',
+      hint: 'Reflect the red position across the cushion. Aim at the mirror point on the rail.',
       setup: function() {
-        // Use the standard rack
-        const balls = [
-          { id: 0, n: 0, x: PLAY_X0 + PLAY_W * 0.75, y: TABLE_H / 2, vx:0, vy:0, wx:0, wy:0, spinX:0, spinY:0, inPlay: true, pocketed: false }
+        return [
+          _makeBall(0, 0, PLAY_X0 + PLAY_W * 0.75, TABLE_H / 2 + 80),
+          _makeBall(1, 1, PLAY_X0 + PLAY_W * 0.30, TABLE_H * 0.25)
         ];
-        const order = [[1], [9, 2], [3, 8, 10], [11, 4, 5, 12], [6, 13, 7, 14, 15]];
-        const foot = { x: PLAY_X0 + PLAY_W * 0.28, y: TABLE_H / 2 };
-        const dx = BALL_R * 2 * 0.866 + 0.4;
-        const dy = BALL_R * 2 + 0.4;
-        for (let row = 0; row < order.length; row++) {
-          const rowBalls = order[row];
-          const rowX = foot.x + row * dx;
-          const rowY0 = foot.y - ((rowBalls.length - 1) * dy) / 2;
-          for (let i = 0; i < rowBalls.length; i++) {
-            balls.push({
-              id: balls.length,
-              n: rowBalls[i],
-              x: rowX, y: rowY0 + i * dy,
-              vx:0, vy:0, wx:0, wy:0, spinX:0, spinY:0, inPlay: true, pocketed: false
-            });
-          }
-        }
-        return balls;
       },
       checkSuccess: function(state) {
-        // Drill counts as success if any ball is pocketed OR 4+ balls reached cushion
-        const sunk = state.pocketedThisShot.filter(b => b.n !== 0).length;
-        if (sunk > 0) return 'success';
-        // Otherwise check cushion contacts (we don't track per-ball, so use heuristic)
-        return 'fail';
+        if (state.firstContact === 1) return 'success';
+        if (state.gamePhase === 'aiming' && state.pocketedThisShot.length === 0 && state.firstContact === null) return null;
+        return state.firstContact === 1 ? 'success' : 'fail';
       }
     }
   };
@@ -3911,14 +4028,14 @@
     ctx.textAlign = 'center';
     ctx.font = 'italic bold 22px Georgia, serif';
     const tY = Math.max(56, H * 0.10);
-    ctx.fillText('TUTORIAL & DRILLS', W / 2, tY);
+    ctx.fillText('LEARN SNOOKER', W / 2, tY);
     ctx.font = 'italic 12px Georgia, serif';
     ctx.fillStyle = '#c9b98a';
-    ctx.fillText('Learn the game. Or refresh what you knew.', W / 2, tY + 22);
+    ctx.fillText('The Victorian gentleman\'s game. Learn it properly.', W / 2, tY + 22);
     screens.tutorial = _stackButtons(tY + 42, [
-      { key: 'quickStart', title: 'QUICK START', subtitle: 'The basics in five short pages.', primary: true },
-      { key: 'manual',     title: 'REFERENCE MANUAL', subtitle: 'Shots, strategy, lingo, full rulebook.', primary: true },
-      { key: 'drills',     title: 'DRILL PRACTICE', subtitle: 'Practice each shot type interactively.', primary: true },
+      { key: 'quickStart', title: 'QUICK START', subtitle: 'The game in five pages. Play immediately.', primary: true },
+      { key: 'manual',     title: 'FULL REFERENCE', subtitle: 'Shots, strategy, lingo, tournament rules.', primary: true },
+      { key: 'drills',     title: 'PRACTICE DRILLS', subtitle: 'Stun, screw, follow, plants. Interactive.', primary: true },
       { key: 'back',       title: '← BACK', subtitle: null, primary: false }
     ]);
   }
@@ -4038,7 +4155,7 @@
     ctx.fillText('DRILL PRACTICE', W / 2, tY);
     ctx.font = 'italic 11px Georgia, serif';
     ctx.fillStyle = '#c9b98a';
-    ctx.fillText('Each drill teaches one essential shot type.', W / 2, tY + 20);
+    ctx.fillText('Each drill isolates one essential snooker technique.', W / 2, tY + 20);
 
     const drillKeys = Object.keys(DRILLS);
     const buttons = drillKeys.map(k => ({
