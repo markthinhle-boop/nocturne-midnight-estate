@@ -1052,37 +1052,19 @@
   function computeView() {
     const W = canvas.width;
     const H = canvas.height;
-    view.portrait = H > W;
+    view.portrait = true;  // always portrait — long axis runs vertically on all screens
 
-    // Reserve top space for top bar + dialogue, bottom for HUD.
     const topReserve = 84;
     const bottomReserve = 110;
-
-    if (view.portrait) {
-      // Long axis (TABLE_W=800) runs vertically. Short axis (TABLE_H=400) runs horizontally.
-      // We need to fit (TABLE_W vertically) and (TABLE_H * TILT_FAR_SCALE horizontally at the top, full at the bottom).
-      const availW = W - 24;
-      const availH = H - topReserve - bottomReserve;
-      // Bounded by both axes:
-      const sByW = availW / TABLE_H;            // px per table-unit if width is the limiter
-      const sByH = availH / TABLE_W;            // px per table-unit if height is the limiter
-      view.pxPerUnit = Math.min(sByW, sByH);
-      view.boardW = TABLE_H * view.pxPerUnit;   // short axis on screen = horizontal
-      view.boardH = TABLE_W * view.pxPerUnit;   // long axis on screen = vertical
-      view.boardX = (W - view.boardW) / 2;
-      view.boardY = topReserve + (availH - view.boardH) / 2;
-    } else {
-      // Landscape: long axis horizontal, short axis vertical (default orientation)
-      const availW = W - 24;
-      const availH = H - topReserve - bottomReserve;
-      const sByW = availW / TABLE_W;
-      const sByH = availH / TABLE_H;
-      view.pxPerUnit = Math.min(sByW, sByH);
-      view.boardW = TABLE_W * view.pxPerUnit;
-      view.boardH = TABLE_H * view.pxPerUnit;
-      view.boardX = (W - view.boardW) / 2;
-      view.boardY = topReserve + (availH - view.boardH) / 2;
-    }
+    const availW = W - 24;
+    const availH = H - topReserve - bottomReserve;
+    const sByW = availW / TABLE_H;   // short axis fills width
+    const sByH = availH / TABLE_W;   // long axis fills height
+    view.pxPerUnit = Math.min(sByW, sByH);
+    view.boardW = TABLE_H * view.pxPerUnit;
+    view.boardH = TABLE_W * view.pxPerUnit;
+    view.boardX = (W - view.boardW) / 2;
+    view.boardY = topReserve + (availH - view.boardH) / 2;
     view.isReady = true;
   }
 
