@@ -352,6 +352,13 @@
     if (state.gamePhase !== 'aiming') return;
     const cue = state.balls[0];
     if (!cue.inPlay) return;
+    // Sound: cue strike (break vs normal shot)
+    const isBreak = !state.pocketedThisShot || state.pocketedThisShot.length === 0;
+    if (isBreak && state.balls.filter(b => b.inPlay && b.n !== 0).length === 15) {
+      sndBreak(state.power);
+    } else {
+      sndCueStrike(state.power);
+    }
 
     // 8-ball: if player is on eight, require called pocket
     if (state.turn === 'player' && isOnEight('player') && !state.calledPocket) {
@@ -401,10 +408,10 @@
     // Cushions
     for (const b of balls) {
       if (!b.inPlay) continue;
-      if (b.x < PLAY_X0 + BALL_R) { b.x = PLAY_X0 + BALL_R; b.vx = -b.vx * CUSHION_DAMP; b.spinX *= 0.5; }
-      if (b.x > PLAY_X1 - BALL_R) { b.x = PLAY_X1 - BALL_R; b.vx = -b.vx * CUSHION_DAMP; b.spinX *= 0.5; }
-      if (b.y < PLAY_Y0 + BALL_R) { b.y = PLAY_Y0 + BALL_R; b.vy = -b.vy * CUSHION_DAMP; b.spinY *= 0.5; }
-      if (b.y > PLAY_Y1 - BALL_R) { b.y = PLAY_Y1 - BALL_R; b.vy = -b.vy * CUSHION_DAMP; b.spinY *= 0.5; }
+      if (b.x < PLAY_X0 + BALL_R) { b.x = PLAY_X0 + BALL_R; const _cs1 = Math.abs(b.vx); b.vx = -b.vx * CUSHION_DAMP; b.spinX *= 0.5; sndCushion(_cs1); }
+      if (b.x > PLAY_X1 - BALL_R) { b.x = PLAY_X1 - BALL_R; const _cs2 = Math.abs(b.vx); b.vx = -b.vx * CUSHION_DAMP; b.spinX *= 0.5; sndCushion(_cs2); }
+      if (b.y < PLAY_Y0 + BALL_R) { b.y = PLAY_Y0 + BALL_R; const _cs3 = Math.abs(b.vy); b.vy = -b.vy * CUSHION_DAMP; b.spinY *= 0.5; sndCushion(_cs3); }
+      if (b.y > PLAY_Y1 - BALL_R) { b.y = PLAY_Y1 - BALL_R; const _cs4 = Math.abs(b.vy); b.vy = -b.vy * CUSHION_DAMP; b.spinY *= 0.5; sndCushion(_cs4); }
     }
 
     // Ball-ball collisions
@@ -438,6 +445,7 @@
           a.vy -= p * ny;
           b.vx += p * nx;
           b.vy += p * ny;
+          sndBallCollide(Math.abs(p) * 8);
           // spin transfer on cue ball (English)
           if (a.n === 0) {
             b.vx += a.spinX * 0.4;
@@ -467,6 +475,7 @@
           b.vx = 0; b.vy = 0;
           b.pocketedAt = p;
           state.pocketedThisShot.push(b);
+          if (b.n === 0) sndScratch(); else sndPocket();
           break;
         }
       }
@@ -474,10 +483,14 @@
 
     // Stop condition: all balls at rest
     let allStopped = true;
+    let _totalSpeed = 0;
     for (const b of balls) {
       if (!b.inPlay) continue;
-      if (Math.abs(b.vx) > MIN_SPEED || Math.abs(b.vy) > MIN_SPEED) { allStopped = false; break; }
+      const _sp = Math.hypot(b.vx, b.vy);
+      _totalSpeed += _sp;
+      if (_sp > MIN_SPEED) allStopped = false;
     }
+    if (_totalSpeed > 0.5) sndCloth(_totalSpeed);
 
     // Safety timeout
     const elapsed = performance.now() - shotStartTime;
@@ -642,6 +655,7 @@
       if (winner === 'player') say(reason.includes('Early') || reason.includes('Wrong') || reason.includes('scratch') ? 'alistairLostEight' : 'playerWonEight');
       else say(reason.includes('Eight ball sunk') ? 'alistairWonEight' : 'playerLostEight');
     }
+    if (winner === 'player') sndWin(); else sndLose();
     if (endGameHook) endGameHook(winner, reason);
   }
 
@@ -790,6 +804,222 @@
   // ============================================================================
   //  POOL v3 — 2.5D portrait rendering + input + screens
   // ============================================================================
+
+  // ---------- Audio engine ------------------------------------------------
+  // All sounds synthesized via Web Audio API. No external files.
+  // Mobile-compatible: AudioContext created on first user gesture (pointer down).
+
+  let _ac = null;          // AudioContext
+  let _masterGain = null;  // master gain node
+  let _audioReady = false;
+
+  // Cooldown timestamps to prevent sound spam from physics loop
+  const _lastSoundAt = {};
+  function _cooldown(key, ms) {
+    const now = performance.now();
+    if (_lastSoundAt[key] && now - _lastSoundAt[key] < ms) return false;
+    _lastSoundAt[key] = now;
+    return true;
+  }
+
+  function _initAudio() {
+    if (_audioReady) return true;
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return false;
+      _ac = new AC();
+      _masterGain = _ac.createGain();
+      _masterGain.gain.value = 0.7;
+      _masterGain.connect(_ac.destination);
+      _audioReady = true;
+      return true;
+    } catch (e) { return false; }
+  }
+
+  function _resumeAudio() {
+    if (_ac && _ac.state === 'suspended') _ac.resume();
+  }
+
+  // Core synthesis helpers
+  function _now() { return _ac.currentTime; }
+
+  // Gain envelope: attack/decay/sustain/release
+  function _envelope(gainNode, t, a, d, s, r, peak) {
+    gainNode.gain.setValueAtTime(0.0001, t);
+    gainNode.gain.linearRampToValueAtTime(peak, t + a);
+    gainNode.gain.linearRampToValueAtTime(s * peak, t + a + d);
+    gainNode.gain.setValueAtTime(s * peak, t + a + d);
+    gainNode.gain.linearRampToValueAtTime(0.0001, t + a + d + r);
+  }
+
+  // Filtered noise burst (cushion, scratch, cloth)
+  function _noise(durationSec, freqLo, freqHi, vol, t) {
+    if (!_ac) return;
+    const bufSize = Math.ceil(_ac.sampleRate * durationSec);
+    const buf = _ac.createBuffer(1, bufSize, _ac.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < bufSize; i++) data[i] = (Math.random() * 2 - 1);
+    const src = _ac.createBufferSource();
+    src.buffer = buf;
+    const bpf = _ac.createBiquadFilter();
+    bpf.type = 'bandpass';
+    bpf.frequency.value = (freqLo + freqHi) / 2;
+    bpf.Q.value = (freqLo + freqHi) / (2 * (freqHi - freqLo));
+    const g = _ac.createGain();
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + durationSec);
+    src.connect(bpf);
+    bpf.connect(g);
+    g.connect(_masterGain);
+    src.start(t);
+    src.stop(t + durationSec);
+  }
+
+  function _tone(freq, durationSec, vol, t, type) {
+    if (!_ac) return;
+    const osc = _ac.createOscillator();
+    osc.type = type || 'sine';
+    osc.frequency.value = freq;
+    const g = _ac.createGain();
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + durationSec);
+    osc.connect(g);
+    g.connect(_masterGain);
+    osc.start(t);
+    osc.stop(t + durationSec + 0.01);
+  }
+
+  function _toneSweep(freqStart, freqEnd, durationSec, vol, t, type) {
+    if (!_ac) return;
+    const osc = _ac.createOscillator();
+    osc.type = type || 'sine';
+    osc.frequency.setValueAtTime(freqStart, t);
+    osc.frequency.linearRampToValueAtTime(freqEnd, t + durationSec);
+    const g = _ac.createGain();
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + durationSec);
+    osc.connect(g);
+    g.connect(_masterGain);
+    osc.start(t);
+    osc.stop(t + durationSec + 0.01);
+  }
+
+  // ---- Sound events ----
+
+  // Cue strikes the cue ball. power 0..1.
+  function sndCueStrike(power) {
+    if (!_initAudio()) return;
+    _resumeAudio();
+    const t = _now() + 0.01;
+    const p = Math.max(0.2, power);
+    // Sharp click: noise burst with high-freq bias + short tone
+    _noise(0.04, 800, 6000, 0.5 + p * 0.5, t);
+    // Thump component — mid-freq body of the impact
+    _noise(0.08, 200, 800, 0.3 + p * 0.4, t);
+    // Cue tip squeak — very short high tone
+    _toneSweep(4200, 2800, 0.025, 0.15 + p * 0.2, t, 'sawtooth');
+  }
+
+  // Ball-ball collision. speed = relative impact velocity (0..40ish).
+  function sndBallCollide(speed) {
+    if (!_initAudio()) return;
+    if (!_cooldown('ball', 30)) return;
+    const vol = Math.min(0.8, 0.15 + speed * 0.018);
+    const t = _now() + 0.005;
+    // Ivory clack — two short sine tones, slightly detuned (two balls)
+    _tone(2100 + Math.random() * 200, 0.05, vol, t);
+    _tone(2300 + Math.random() * 200, 0.04, vol * 0.8, t + 0.005);
+    // Mid body for heavier hits
+    if (speed > 8) _noise(0.06, 400, 1800, vol * 0.4, t);
+  }
+
+  // Ball hits cushion. speed = impact speed.
+  function sndCushion(speed) {
+    if (!_initAudio()) return;
+    if (!_cooldown('cushion', 40)) return;
+    const vol = Math.min(0.7, 0.1 + speed * 0.02);
+    const t = _now() + 0.005;
+    // Low muted thud
+    _noise(0.1, 120, 600, vol, t);
+    // Slight resonance of the rubber cushion
+    _toneSweep(320, 180, 0.08, vol * 0.35, t, 'sine');
+  }
+
+  // Ball drops into pocket (not the cue ball).
+  function sndPocket() {
+    if (!_initAudio()) return;
+    const t = _now() + 0.01;
+    // Short rolling rumble as ball tumbles into pocket
+    _noise(0.12, 200, 900, 0.4, t);
+    // Drop thud at the end — satisfying low impact
+    _noise(0.18, 60, 300, 0.55, t + 0.10);
+    // High click as ball hits the bottom
+    _tone(1400, 0.04, 0.25, t + 0.10);
+    // Settling: very low fade out
+    _noise(0.3, 40, 200, 0.2, t + 0.22);
+  }
+
+  // Cue ball scratches — plop + dissonant sting.
+  function sndScratch() {
+    if (!_initAudio()) return;
+    const t = _now() + 0.01;
+    // Pocket drop
+    _noise(0.12, 200, 900, 0.38, t);
+    _noise(0.15, 60, 280, 0.5, t + 0.10);
+    // Dissonant sting — "oh no" feel
+    _tone(320, 0.3, 0.2, t + 0.12, 'triangle');
+    _tone(302, 0.3, 0.2, t + 0.14, 'triangle');
+  }
+
+  // Cloth drag — quiet rolling sound as balls decelerate. totalSpeed = sum of all ball speeds.
+  function sndCloth(totalSpeed) {
+    if (!_initAudio()) return;
+    if (!_cooldown('cloth', 80)) return;
+    if (totalSpeed < 3) return;
+    const vol = Math.min(0.12, totalSpeed * 0.002);
+    const t = _now();
+    _noise(0.1, 80, 400, vol, t);
+  }
+
+  // Win sting — short rising musical phrase.
+  function sndWin() {
+    if (!_initAudio()) return;
+    const t = _now() + 0.1;
+    // C major arpeggio: C5, E5, G5, C6
+    const notes = [523, 659, 784, 1047];
+    notes.forEach((f, i) => {
+      _tone(f, 0.22, 0.25, t + i * 0.12, 'sine');
+      _tone(f * 2, 0.12, 0.08, t + i * 0.12, 'sine');  // octave shimmer
+    });
+    // Final chord sustain
+    _tone(523, 0.6, 0.15, t + notes.length * 0.12, 'sine');
+    _tone(659, 0.6, 0.12, t + notes.length * 0.12, 'sine');
+    _tone(784, 0.6, 0.12, t + notes.length * 0.12, 'sine');
+  }
+
+  // Lose sting — falling minor phrase.
+  function sndLose() {
+    if (!_initAudio()) return;
+    const t = _now() + 0.1;
+    // A minor descent: A4, F4, E4, A3
+    const notes = [440, 349, 330, 220];
+    notes.forEach((f, i) => {
+      _tone(f, 0.28, 0.2, t + i * 0.14, 'triangle');
+    });
+    // Low sustain note
+    _tone(220, 0.7, 0.18, t + notes.length * 0.14, 'sine');
+  }
+
+  // Break shot — heavy version of cue strike.
+  function sndBreak(power) {
+    if (!_initAudio()) return;
+    _resumeAudio();
+    const t = _now() + 0.01;
+    const p = Math.max(0.5, power);
+    _noise(0.06, 600, 8000, 0.7, t);
+    _noise(0.12, 150, 700, 0.6, t);
+    _toneSweep(5000, 2000, 0.04, 0.3, t, 'sawtooth');
+  }
 
   // ---------- Layout & projection -----------------------------------------
   //
@@ -1953,6 +2183,8 @@
 
   function onPointerDown(e) {
     if (e.cancelable) e.preventDefault();
+    _initAudio();
+    _resumeAudio();
     const p = getEventPoint(e);
 
     // Screen routing
