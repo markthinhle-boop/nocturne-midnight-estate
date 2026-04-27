@@ -1510,6 +1510,18 @@ const ROOM_PARALLAX = {
     setTimeout(_initPinch, 500);
   }
 
+  // Reset Y position on room entry — ballroom defaults to bottom so body is visible
+  NocturneEngine.on('roomEntered', function({ roomId }) {
+    if (roomId === 'ballroom') {
+      const cfg = _getConfig();
+      _targetY = cfg.y;
+      _curY    = cfg.y;
+    } else {
+      _targetY = 0;
+      _curY    = 0;
+    }
+  });
+
   requestAnimationFrame(_tick);
 })();
 window.ROOM_DESCRIPTIONS = ROOM_DESCRIPTIONS;
