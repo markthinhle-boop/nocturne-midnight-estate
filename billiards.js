@@ -271,7 +271,7 @@
       mode: mode,                 // 'solo' | 'vs'
       balls: makeRack(),
       // Shot input
-      aimX: PLAY_X1 - 100,
+      aimX: PLAY_X0 + PLAY_W * 0.28,   // aims toward rack at top of portrait
       aimY: TABLE_H / 2,
       power: 0.5,                 // 0..1
       spinX: 0,                   // -1..1  (side english)
@@ -306,7 +306,7 @@
     };
 
     // Place cue ball at "head spot"
-    state.balls[0].x = PLAY_X0 + PLAY_W * 0.25;
+    state.balls[0].x = PLAY_X0 + PLAY_W * 0.75;  // bottom of portrait table
     state.balls[0].y = TABLE_H / 2;
 
     setTimeout(() => say(mode === 'vs' ? 'preMatch' : null), 100);
@@ -317,7 +317,7 @@
     // Cue
     balls.push({ id: 0, n: 0, x: 0, y: 0, vx: 0, vy: 0, spinX: 0, spinY: 0, inPlay: true, pocketed: false });
     // Rack triangle at foot spot
-    const foot = { x: PLAY_X0 + PLAY_W * 0.72, y: TABLE_H / 2 };
+    const foot = { x: PLAY_X0 + PLAY_W * 0.28, y: TABLE_H / 2 };  // top of portrait table
     // Standard 8-ball rack: apex, mixed rows, 8 in middle of 3rd row.
     const order = [
       [1],
@@ -590,7 +590,7 @@
     if (cueScratched) {
       cueBall.inPlay = true;
       cueBall.pocketed = false;
-      cueBall.x = PLAY_X0 + PLAY_W * 0.25;
+      cueBall.x = PLAY_X0 + PLAY_W * 0.75;
       cueBall.y = TABLE_H / 2;
     }
 
@@ -2144,6 +2144,7 @@
   // ---------- Input -------------------------------------------------------
   let powerDragging = false, spinDragging = false;
   let pullingBack = false;
+  let draggingHandle = false;    // dragging the butt of the cue stick to rotate aim
   let pullStartCueX = 0, pullStartCueY = 0;
   const PULL_GRAB_RADIUS = 70;
   const PULL_MIN_FIRE = 25;
@@ -2273,12 +2274,10 @@
       }
     }
 
-    // Otherwise: tap-to-aim
-    const tp = screenToTable(p.x, p.y);
-    if (tp.x >= 0) {
-      state.aimX = tp.x;
-      state.aimY = tp.y;
-    }
+    // Otherwise: drag the cue handle to rotate aim.
+    // Any touch on the table that isn't a cue-ball grab starts handle drag mode.
+    // Moving the pointer rotates the cue around the cue ball.
+    draggingHandle = true;
   }
 
   function onPointerMove(e) {
@@ -2306,11 +2305,22 @@
       state.power = Math.min(1, dist / PULL_MAX);
       return;
     }
-    if (state.gamePhase === 'aiming' && state.turn === 'player' && !state.ballInHand && !state.showCallPocket) {
-      const tp = screenToTable(p.x, p.y);
-      if (tp.x >= 0) {
-        state.aimX = tp.x;
-        state.aimY = tp.y;
+    if (draggingHandle && state.gamePhase === 'aiming' && state.turn === 'player' && !state.ballInHand && !state.showCallPocket) {
+      // Pointer position in table space — cue aims AWAY from pointer (handle drag).
+      // Direction: from current pointer → through cue ball → sets aim on the other side.
+      const cue = state.balls[0];
+      if (cue && cue.inPlay) {
+        const tp = screenToTable(p.x, p.y);
+        if (tp.x >= 0) {
+          const dx = cue.x - tp.x;
+          const dy = cue.y - tp.y;
+          const d = Math.hypot(dx, dy);
+          if (d > 1) {
+            // Aim extends from cue ball in the direction AWAY from the handle
+            state.aimX = cue.x + (dx / d) * 300;
+            state.aimY = cue.y + (dy / d) * 300;
+          }
+        }
       }
     }
   }
@@ -2318,6 +2328,7 @@
   function onPointerUp() {
     powerDragging = false;
     spinDragging = false;
+    draggingHandle = false;
     if (pullingBack) {
       const pulled = state.pullBack || 0;
       pullingBack = false;
@@ -2470,7 +2481,7 @@
     ctx = null;
     state = null;
     screenState = 'modeSelect';
-    powerDragging = spinDragging = pullingBack = false;
+    powerDragging = spinDragging = pullingBack = draggingHandle = false;
     window.removeEventListener('resize', fitCanvas);
     window.removeEventListener('orientationchange', fitCanvas);
   }
