@@ -1282,7 +1282,7 @@ window._preloadAssets = _preloadAssets;
 const ROOM_PARALLAX = {
   'foyer':                 { y: 0 },
   'study':                 { y: 20 },
-  'ballroom':              { y: 999 },
+  'ballroom':              { y: 150 },
   'library':               { y: 20 },
   'gallery':               { y: 15 },
   'antechamber':           { y: 15 },
