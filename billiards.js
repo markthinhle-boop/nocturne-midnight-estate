@@ -262,12 +262,9 @@
 
   // ---------- Game state ---------------------------------------------------
   let state = null;
-  let canvas = null;
-  let ctx = null;
-  let modal = null;
   let scaleFactor = 1;
-  let rafId = null;
   let shotStartTime = 0;
+  // canvas, ctx, modal, rafId declared in v3 rendering section
 
   function newGame(mode) {
     state = {
@@ -277,7 +274,6 @@
       aimX: PLAY_X1 - 100,
       aimY: TABLE_H / 2,
       power: 0.5,                 // 0..1
-      pullBack: 0,                // visual stick pull-back distance (table units), 0 when not pulling
       spinX: 0,                   // -1..1  (side english)
       spinY: 0,                   // -1..1  (top/back)
       // Turn / rules
@@ -636,6 +632,8 @@
     return true;
   }
 
+  let endGameHook = null;  // optional callback: (winner, reason) => void
+
   function endGame(winner, reason) {
     state.gamePhase = 'gameover';
     state.winner = winner;
@@ -644,6 +642,7 @@
       if (winner === 'player') say(reason.includes('Early') || reason.includes('Wrong') || reason.includes('scratch') ? 'alistairLostEight' : 'playerWonEight');
       else say(reason.includes('Eight ball sunk') ? 'alistairWonEight' : 'playerLostEight');
     }
+    if (endGameHook) endGameHook(winner, reason);
   }
 
   // ---------- Adaptive AI --------------------------------------------------
@@ -786,355 +785,1405 @@
     const line = pickLine(cat);
     if (!line) return;
     state.dialogue = line;
-    state.dialogueTimer = 260;
-    render();
+    state.dialogueTimer = 320;
   }
+  // ============================================================================
+  //  POOL v3 — 2.5D portrait rendering + input + screens
+  // ============================================================================
 
-  // ---------- Rendering ----------------------------------------------------
-  function render() {
-    if (!ctx) return;
+  // ---------- Layout & projection -----------------------------------------
+  //
+  // The table internal coordinate system is unchanged from the working v1:
+  //   tx ∈ [0, TABLE_W]  (long axis)
+  //   ty ∈ [0, TABLE_H]  (short axis)
+  //
+  // On portrait orientation, we rotate the view 90° so the long axis runs vertically:
+  //   tx → screen_y (low tx = far/top of screen, high tx = near/bottom)
+  //   ty → screen_x (low ty = left, high ty = right)
+  //
+  // 2.5D effect: gentle vertical foreshortening — the far end (top of screen) is
+  // rendered slightly narrower than the near end. Implemented by computing a
+  // per-row scale factor: rows near the top compress horizontally by ~12%.
+  //
+  // No camera, no perspective math — just a tilt-effect via lerp scaling.
+
+  const TILT_FAR_SCALE = 0.86;  // far end is 86% as wide as near end
+  // const TILT_FAR_SCALE = 1.0;  // disable tilt for pure top-down
+
+  const view = {
+    portrait: true,
+    boardX: 0, boardY: 0,
+    boardW: 0, boardH: 0,         // outer playable rectangle on screen
+    pxPerUnit: 1,                 // base scale (top of table = pxPerUnit * TILT_FAR_SCALE)
+    isReady: false
+  };
+
+  // Compute layout based on canvas size. Called every frame.
+  function computeView() {
     const W = canvas.width;
     const H = canvas.height;
-    ctx.clearRect(0, 0, W, H);
+    view.portrait = H > W;
 
-    // Compute scale to fit TABLE_W x TABLE_H in canvas
-    const sx = W / TABLE_W;
-    const sy = H / TABLE_H;
-    scaleFactor = Math.min(sx, sy);
-    const ox = (W - TABLE_W * scaleFactor) / 2;
-    const oy = (H - TABLE_H * scaleFactor) / 2;
+    // Reserve top space for top bar + dialogue, bottom for HUD.
+    const topReserve = 84;
+    const bottomReserve = 110;
+
+    if (view.portrait) {
+      // Long axis (TABLE_W=800) runs vertically. Short axis (TABLE_H=400) runs horizontally.
+      // We need to fit (TABLE_W vertically) and (TABLE_H * TILT_FAR_SCALE horizontally at the top, full at the bottom).
+      const availW = W - 24;
+      const availH = H - topReserve - bottomReserve;
+      // Bounded by both axes:
+      const sByW = availW / TABLE_H;            // px per table-unit if width is the limiter
+      const sByH = availH / TABLE_W;            // px per table-unit if height is the limiter
+      view.pxPerUnit = Math.min(sByW, sByH);
+      view.boardW = TABLE_H * view.pxPerUnit;   // short axis on screen = horizontal
+      view.boardH = TABLE_W * view.pxPerUnit;   // long axis on screen = vertical
+      view.boardX = (W - view.boardW) / 2;
+      view.boardY = topReserve + (availH - view.boardH) / 2;
+    } else {
+      // Landscape: long axis horizontal, short axis vertical (default orientation)
+      const availW = W - 24;
+      const availH = H - topReserve - bottomReserve;
+      const sByW = availW / TABLE_W;
+      const sByH = availH / TABLE_H;
+      view.pxPerUnit = Math.min(sByW, sByH);
+      view.boardW = TABLE_W * view.pxPerUnit;
+      view.boardH = TABLE_H * view.pxPerUnit;
+      view.boardX = (W - view.boardW) / 2;
+      view.boardY = topReserve + (availH - view.boardH) / 2;
+    }
+    view.isReady = true;
+  }
+
+  // Apply tilt: a row at fraction f from the far edge (0 at far, 1 at near)
+  // gets horizontal scale = TILT_FAR_SCALE + (1 - TILT_FAR_SCALE) * f.
+  function tiltScaleAt(fAxisFromFar) {
+    return TILT_FAR_SCALE + (1 - TILT_FAR_SCALE) * fAxisFromFar;
+  }
+
+  // Project a table-space point (tx, ty) → screen (x, y).
+  // In portrait: tx is vertical (small=top=far), ty is horizontal.
+  // In landscape: tx is horizontal (small=left), ty is vertical.
+  function tableToScreen(tx, ty) {
+    if (view.portrait) {
+      // Vertical position from tx: 0 → top (far), TABLE_W → bottom (near)
+      const fFromFar = tx / TABLE_W;          // 0..1, 0 = far, 1 = near
+      const screenY = view.boardY + fFromFar * view.boardH;
+      // Horizontal width compresses with distance:
+      const tilt = tiltScaleAt(fFromFar);
+      const halfBoardW = view.boardW / 2;
+      const cx = view.boardX + halfBoardW;    // center column on screen
+      // ty=0 → left rail (cx - halfBoardW * tilt)
+      // ty=TABLE_H → right rail (cx + halfBoardW * tilt)
+      const offset = (ty / TABLE_H - 0.5) * 2;  // -1..1
+      const screenX = cx + offset * halfBoardW * tilt;
+      return { x: screenX, y: screenY, tilt };
+    }
+    // Landscape: simple linear scaling.
+    return {
+      x: view.boardX + tx * view.pxPerUnit,
+      y: view.boardY + ty * view.pxPerUnit,
+      tilt: 1
+    };
+  }
+
+  // Inverse: screen → table coordinates (for input).
+  function screenToTable(sx, sy) {
+    if (view.portrait) {
+      const fFromFar = (sy - view.boardY) / view.boardH;
+      if (fFromFar < -0.05 || fFromFar > 1.05) return { x: -1, y: -1 };
+      const tx = fFromFar * TABLE_W;
+      const tilt = tiltScaleAt(Math.max(0, Math.min(1, fFromFar)));
+      const halfBoardW = view.boardW / 2;
+      const cx = view.boardX + halfBoardW;
+      const offset = (sx - cx) / (halfBoardW * tilt);  // -1..1 if on table
+      const ty = (offset / 2 + 0.5) * TABLE_H;
+      return { x: tx, y: ty };
+    }
+    return {
+      x: (sx - view.boardX) / view.pxPerUnit,
+      y: (sy - view.boardY) / view.pxPerUnit
+    };
+  }
+
+  // Effective px-per-unit at a given table position (for ball size, etc).
+  function unitScaleAt(tx, ty) {
+    if (view.portrait) {
+      const fFromFar = tx / TABLE_W;
+      // X-axis scale shrinks with distance, Y-axis is constant. Average for round shapes.
+      const tilt = tiltScaleAt(fFromFar);
+      return view.pxPerUnit * (1 + tilt) / 2;
+    }
+    return view.pxPerUnit;
+  }
+  // ---------- Rendering ----------------------------------------------------
+
+  function render() {
+    if (!ctx) return;
+    const W = canvas.width, H = canvas.height;
+    computeView();
+
+    // Background
+    const bg = ctx.createRadialGradient(W/2, H/2, 40, W/2, H/2, Math.max(W, H));
+    bg.addColorStop(0, '#1a0e07');
+    bg.addColorStop(1, '#050201');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, W, H);
+
+    drawTable();
+    drawBalls();
+    drawAimAndStick();
+
+    drawTopBar();
+    drawDialogueBubble();
+    drawHUD();
+    drawCallPocketOverlay();
+    drawGameOverOverlay();
+    drawScreenOverlay();
+  }
+
+  // ---------- Table -------------------------------------------------------
+  function drawTable() {
+    // Outer table frame: walnut. Use 4 trapezoidal segments around the playfield.
+    // Compute corners of:
+    //   outer rect: (0,0) (TABLE_W,0) (TABLE_W,TABLE_H) (0,TABLE_H)  — projected
+    //   playfield rect: (RAIL,RAIL) (TABLE_W-RAIL,RAIL) etc.
+    const oc = [
+      tableToScreen(0, 0),
+      tableToScreen(TABLE_W, 0),
+      tableToScreen(TABLE_W, TABLE_H),
+      tableToScreen(0, TABLE_H)
+    ];
+    const pc = [
+      tableToScreen(PLAY_X0, PLAY_Y0),
+      tableToScreen(PLAY_X1, PLAY_Y0),
+      tableToScreen(PLAY_X1, PLAY_Y1),
+      tableToScreen(PLAY_X0, PLAY_Y1)
+    ];
+
+    // Drop shadow under the table
+    ctx.save();
+    ctx.fillStyle = 'rgba(0,0,0,0.55)';
+    ctx.beginPath();
+    ctx.moveTo(oc[0].x - 12, oc[0].y - 6);
+    ctx.lineTo(oc[1].x + 12, oc[1].y - 6);
+    ctx.lineTo(oc[2].x + 18, oc[2].y + 14);
+    ctx.lineTo(oc[3].x - 18, oc[3].y + 14);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+
+    // Walnut frame (outer trapezoid - inner trapezoid via even-odd)
+    ctx.save();
+    const frameGrad = ctx.createLinearGradient(0, oc[0].y, 0, oc[2].y);
+    frameGrad.addColorStop(0, '#2a1405');
+    frameGrad.addColorStop(0.5, '#4a220c');
+    frameGrad.addColorStop(1, '#3a1a08');
+    ctx.fillStyle = frameGrad;
+    ctx.beginPath();
+    ctx.moveTo(oc[0].x, oc[0].y);
+    ctx.lineTo(oc[1].x, oc[1].y);
+    ctx.lineTo(oc[2].x, oc[2].y);
+    ctx.lineTo(oc[3].x, oc[3].y);
+    ctx.closePath();
+    ctx.moveTo(pc[0].x, pc[0].y);
+    ctx.lineTo(pc[3].x, pc[3].y);
+    ctx.lineTo(pc[2].x, pc[2].y);
+    ctx.lineTo(pc[1].x, pc[1].y);
+    ctx.closePath();
+    ctx.fill('evenodd');
+
+    // Brass inner-rail trim
+    ctx.strokeStyle = 'rgba(210,170,90,0.7)';
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.moveTo(pc[0].x, pc[0].y);
+    ctx.lineTo(pc[1].x, pc[1].y);
+    ctx.lineTo(pc[2].x, pc[2].y);
+    ctx.lineTo(pc[3].x, pc[3].y);
+    ctx.closePath();
+    ctx.stroke();
+    ctx.restore();
+
+    // Felt — clip to playfield trapezoid
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(pc[0].x, pc[0].y);
+    ctx.lineTo(pc[1].x, pc[1].y);
+    ctx.lineTo(pc[2].x, pc[2].y);
+    ctx.lineTo(pc[3].x, pc[3].y);
+    ctx.closePath();
+    ctx.clip();
+
+    const minX = Math.min(pc[0].x, pc[3].x) - 4;
+    const maxX = Math.max(pc[1].x, pc[2].x) + 4;
+    const minY = pc[0].y - 2;
+    const maxY = pc[2].y + 2;
+
+    // Base felt
+    ctx.fillStyle = '#6b1a0c';
+    ctx.fillRect(minX, minY, maxX - minX, maxY - minY);
+
+    // Lamp glow at center
+    const center = tableToScreen(TABLE_W/2, TABLE_H/2);
+    const glow = ctx.createRadialGradient(
+      center.x, center.y, 30,
+      center.x, center.y, Math.max(maxX - minX, maxY - minY) * 0.55
+    );
+    glow.addColorStop(0,   'rgba(255, 200, 130, 0.30)');
+    glow.addColorStop(0.5, 'rgba(180, 100,  50, 0.10)');
+    glow.addColorStop(1,   'rgba(20, 8, 4, 0.5)');
+    ctx.fillStyle = glow;
+    ctx.fillRect(minX, minY, maxX - minX, maxY - minY);
+
+    // Felt grain — very subtle horizontal lines
+    ctx.strokeStyle = 'rgba(0,0,0,0.05)';
+    ctx.lineWidth = 0.5;
+    for (let i = 0; i < 30; i++) {
+      const ty = (i + 0.5) * (TABLE_H / 30);
+      const a = tableToScreen(0, ty);
+      const b = tableToScreen(TABLE_W, ty);
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    // Pockets — drawn AFTER felt so they're visible
+    drawPockets();
+  }
+
+  function drawPockets() {
+    const pocketRadius = 28;  // table units — outer mouth
+    for (const p of POCKETS) {
+      const c = tableToScreen(p.x, p.y);
+      const u = unitScaleAt(p.x, p.y);
+      const r = pocketRadius * u;
+
+      ctx.save();
+      // Brass bezel ring
+      ctx.fillStyle = '#2a1806';
+      ctx.beginPath();
+      ctx.ellipse(c.x, c.y, r * 1.15, r * 1.15, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(210,170,90,0.6)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      // Pocket interior — black well
+      const wellGrad = ctx.createRadialGradient(c.x, c.y - r * 0.2, 1, c.x, c.y, r);
+      wellGrad.addColorStop(0, '#0a0402');
+      wellGrad.addColorStop(1, '#000');
+      ctx.fillStyle = wellGrad;
+      ctx.beginPath();
+      ctx.ellipse(c.x, c.y, r, r, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  // ---------- Balls -------------------------------------------------------
+  // Balls rendered larger than physics radius for visibility.
+  const BALL_VISUAL_MULT = 1.7;  // visual radius = BALL_R × this
+
+  function drawBalls() {
+    if (!state) return;
+    // Sort balls by tx (depth) — far balls drawn first, near balls last (so they overlap correctly).
+    const list = state.balls.filter(b => b.inPlay).slice();
+    if (view.portrait) list.sort((a, b) => a.x - b.x);
+    else list.sort((a, b) => a.y - b.y);
+
+    // Shadows in a separate pass first (so no ball's shadow lands on another ball).
+    for (const b of list) drawBallShadow(b);
+    for (const b of list) drawBall3D(b);
+  }
+
+  function drawBallShadow(b) {
+    const c = tableToScreen(b.x, b.y);
+    const u = unitScaleAt(b.x, b.y);
+    const r = BALL_R * BALL_VISUAL_MULT * u;
+    ctx.save();
+    ctx.fillStyle = 'rgba(0,0,0,0.42)';
+    ctx.beginPath();
+    ctx.ellipse(c.x + r * 0.12, c.y + r * 0.18, r * 1.05, r * 0.7, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawBall3D(b) {
+    const c = tableToScreen(b.x, b.y);
+    const u = unitScaleAt(b.x, b.y);
+    const r = BALL_R * BALL_VISUAL_MULT * u;
+    const color = BALL_COLORS[b.n];
 
     ctx.save();
-    ctx.translate(ox, oy);
-    ctx.scale(scaleFactor, scaleFactor);
-
-    // Felt
-    const grad = ctx.createRadialGradient(TABLE_W/2, TABLE_H/2, 40, TABLE_W/2, TABLE_H/2, TABLE_W/1.2);
-    grad.addColorStop(0, '#7c2a1a');
-    grad.addColorStop(1, '#4a1808');
+    // Base sphere — radial gradient highlight upper-left, shadow lower-right
+    const grad = ctx.createRadialGradient(
+      c.x - r * 0.35, c.y - r * 0.4, r * 0.1,
+      c.x, c.y, r
+    );
+    grad.addColorStop(0,   _lighten(color, 0.55));
+    grad.addColorStop(0.4, color);
+    grad.addColorStop(1,   _darken(color, 0.6));
     ctx.fillStyle = grad;
-    ctx.fillRect(PLAY_X0, PLAY_Y0, PLAY_W, PLAY_H);
+    ctx.beginPath();
+    ctx.arc(c.x, c.y, r, 0, Math.PI * 2);
+    ctx.fill();
 
-    // Rails
-    ctx.fillStyle = '#2a1206';
-    ctx.fillRect(0, 0, TABLE_W, RAIL);
-    ctx.fillRect(0, TABLE_H - RAIL, TABLE_W, RAIL);
-    ctx.fillRect(0, 0, RAIL, TABLE_H);
-    ctx.fillRect(TABLE_W - RAIL, 0, RAIL, TABLE_H);
+    // Stripe band (9-15)
+    if (b.n >= 9 && b.n <= 15) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(c.x, c.y, r, 0, Math.PI * 2);
+      ctx.clip();
+      const bg = ctx.createRadialGradient(
+        c.x - r * 0.35, c.y - r * 0.4, r * 0.1,
+        c.x, c.y, r
+      );
+      bg.addColorStop(0, '#ffffff');
+      bg.addColorStop(0.6, '#e8dcc3');
+      bg.addColorStop(1, '#9e8a62');
+      ctx.fillStyle = bg;
+      ctx.fillRect(c.x - r, c.y - r * 0.42, r * 2, r * 0.84);
+      ctx.restore();
+    }
 
-    // Pockets
+    // Number badge
+    if (b.n !== 0) {
+      ctx.fillStyle = '#f8f1dc';
+      ctx.beginPath();
+      ctx.arc(c.x, c.y, r * 0.42, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(0,0,0,0.25)';
+      ctx.lineWidth = 0.8;
+      ctx.stroke();
+      ctx.fillStyle = '#111';
+      ctx.font = 'bold ' + Math.floor(r * 0.7) + 'px Georgia, serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(String(b.n), c.x, c.y + 0.5);
+    }
+
+    // Specular highlight
+    const spec = ctx.createRadialGradient(
+      c.x - r * 0.4, c.y - r * 0.45, 0,
+      c.x - r * 0.4, c.y - r * 0.45, r * 0.55
+    );
+    spec.addColorStop(0,   'rgba(255,255,255,0.85)');
+    spec.addColorStop(0.4, 'rgba(255,255,255,0.2)');
+    spec.addColorStop(1,   'rgba(255,255,255,0)');
+    ctx.fillStyle = spec;
+    ctx.beginPath();
+    ctx.arc(c.x, c.y, r, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Rim
+    ctx.strokeStyle = 'rgba(0,0,0,0.4)';
+    ctx.lineWidth = 0.8;
+    ctx.beginPath();
+    ctx.arc(c.x, c.y, r - 0.3, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+
+    b._screen = { x: c.x, y: c.y, r };
+  }
+
+  function _lighten(hex, amt) {
+    const m = hex.match(/^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i);
+    if (!m) return hex;
+    const r = parseInt(m[1], 16), g = parseInt(m[2], 16), bl = parseInt(m[3], 16);
+    const lr = Math.min(255, Math.round(r + (255 - r) * amt));
+    const lg = Math.min(255, Math.round(g + (255 - g) * amt));
+    const lb = Math.min(255, Math.round(bl + (255 - bl) * amt));
+    return `rgb(${lr},${lg},${lb})`;
+  }
+  function _darken(hex, amt) {
+    const m = hex.match(/^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i);
+    if (!m) return hex;
+    const r = parseInt(m[1], 16), g = parseInt(m[2], 16), bl = parseInt(m[3], 16);
+    const lr = Math.round(r * (1 - amt));
+    const lg = Math.round(g * (1 - amt));
+    const lb = Math.round(bl * (1 - amt));
+    return `rgb(${lr},${lg},${lb})`;
+  }
+
+  // ---------- Cue stick & aim line ----------------------------------------
+  function drawAimAndStick() {
+    if (!state || state.gamePhase !== 'aiming') return;
+    if (state.turn !== 'player' || state.ballInHand) return;
+    if (state.showCallPocket) return;
+    const cue = state.balls[0];
+    if (!cue.inPlay) return;
+
+    const cs = tableToScreen(cue.x, cue.y);
+    const u = unitScaleAt(cue.x, cue.y);
+
+    // Aim direction: from cue ball toward (state.aimX, state.aimY)
+    const dx = state.aimX - cue.x;
+    const dy = state.aimY - cue.y;
+    const d = Math.hypot(dx, dy) || 1;
+    const ux = dx / d, uy = dy / d;
+
+    // Projected aim line endpoint — extend ~600 table units
+    const aimEnd = tableToScreen(cue.x + ux * 600, cue.y + uy * 600);
+
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+    ctx.setLineDash([5, 7]);
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.moveTo(cs.x, cs.y);
+    ctx.lineTo(aimEnd.x, aimEnd.y);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+
+    // Cue stick rendered behind cue ball, in screen-space.
+    // Direction in screen: from cue point AWAY from aim end.
+    const sdx = cs.x - aimEnd.x;
+    const sdy = cs.y - aimEnd.y;
+    const sd = Math.hypot(sdx, sdy) || 1;
+    const sux = sdx / sd, suy = sdy / sd;
+
+    // Pull-back offset (visual)
+    const pullBack = (state.pullBack || 0) * u;
+    const ballR = BALL_R * BALL_VISUAL_MULT * u;
+    const tipGap = ballR + 4 + pullBack;
+
+    const tipX = cs.x + sux * tipGap;
+    const tipY = cs.y + suy * tipGap;
+
+    const stickLen = 160 * u;
+    const ferruleLen = 8 * u;
+    const wrapLen = 30 * u;
+    const buttLen = 24 * u;
+
+    function pt(distFromTip) {
+      return { x: tipX + sux * distFromTip, y: tipY + suy * distFromTip };
+    }
+
+    // Shadow
+    const tail = pt(stickLen);
+    ctx.save();
+    ctx.strokeStyle = 'rgba(0,0,0,0.4)';
+    ctx.lineWidth = 5 * u;
+    ctx.lineCap = 'butt';
+    ctx.beginPath();
+    ctx.moveTo(tipX + 2, tipY + 3);
+    ctx.lineTo(tail.x + 2, tail.y + 3);
+    ctx.stroke();
+    ctx.restore();
+
+    // Ferrule
+    const ferruleEnd = pt(ferruleLen);
+    ctx.strokeStyle = '#f5ecd7';
+    ctx.lineWidth = 3.6 * u;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(tipX, tipY);
+    ctx.lineTo(ferruleEnd.x, ferruleEnd.y);
+    ctx.stroke();
+
+    // Maple shaft
+    const shaftEnd = pt(stickLen - wrapLen - buttLen);
+    ctx.strokeStyle = '#d4a868';
+    ctx.lineWidth = 3.8 * u;
+    ctx.beginPath();
+    ctx.moveTo(ferruleEnd.x, ferruleEnd.y);
+    ctx.lineTo(shaftEnd.x, shaftEnd.y);
+    ctx.stroke();
+
+    // Specular along shaft top
+    ctx.strokeStyle = 'rgba(255,235,180,0.45)';
+    ctx.lineWidth = 0.8 * u;
+    ctx.beginPath();
+    // Perpendicular offset in screen space — rotate (sux, suy) 90°
+    const px_off = -suy * 1.2 * u;
+    const py_off = sux * 1.2 * u;
+    ctx.moveTo(ferruleEnd.x + px_off, ferruleEnd.y + py_off);
+    ctx.lineTo(shaftEnd.x + px_off, shaftEnd.y + py_off);
+    ctx.stroke();
+
+    // Leather wrap
+    const wrapEnd = pt(stickLen - buttLen);
+    ctx.strokeStyle = '#3a1f10';
+    ctx.lineWidth = 4.2 * u;
+    ctx.beginPath();
+    ctx.moveTo(shaftEnd.x, shaftEnd.y);
+    ctx.lineTo(wrapEnd.x, wrapEnd.y);
+    ctx.stroke();
+
+    // Wrap stitching
+    ctx.strokeStyle = 'rgba(150,110,60,0.5)';
+    ctx.lineWidth = 0.6 * u;
+    for (let s = 0; s < 6; s++) {
+      const sp = pt(stickLen - buttLen - wrapLen + (s + 0.5) * (wrapLen / 6));
+      ctx.beginPath();
+      ctx.moveTo(sp.x - suy * 2.5 * u, sp.y + sux * 2.5 * u);
+      ctx.lineTo(sp.x + suy * 2.5 * u, sp.y - sux * 2.5 * u);
+      ctx.stroke();
+    }
+
+    // Butt
+    const buttEnd = pt(stickLen);
+    ctx.strokeStyle = '#1a0e06';
+    ctx.lineWidth = 4.6 * u;
+    ctx.beginPath();
+    ctx.moveTo(wrapEnd.x, wrapEnd.y);
+    ctx.lineTo(buttEnd.x, buttEnd.y);
+    ctx.stroke();
+
+    // Brass ring
+    ctx.fillStyle = '#d9a679';
+    ctx.beginPath();
+    ctx.arc(wrapEnd.x, wrapEnd.y, 2.2 * u, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  // ---------- Top bar, dialogue, HUD --------------------------------------
+
+  function drawTopBar() {
+    if (!state) return;
+    const W = canvas.width;
+    ctx.save();
+    ctx.fillStyle = 'rgba(20,12,8,0.88)';
+    ctx.fillRect(0, 0, W, 32);
+
+    if (state.mode === 'vs' && match) {
+      ctx.fillStyle = '#e8dcc3';
+      ctx.font = 'italic 11px Georgia, serif';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      const turnLabel = state.turn === 'player'
+        ? 'YOUR TURN'
+        : (state.gamePhase === 'simulating' ? 'ALISTAIR SHOOTING…' : 'ALISTAIR THINKING…');
+      ctx.fillText('Bo' + match.format + '  ·  ' + turnLabel, 10, 16);
+      ctx.textAlign = 'center';
+      ctx.font = 'bold 16px Georgia, serif';
+      ctx.fillStyle = '#f5ecd7';
+      ctx.fillText(match.playerFrames + '  —  ' + match.alistairFrames, W / 2, 17);
+      ctx.font = '11px Georgia, serif';
+      ctx.textAlign = 'right';
+      ctx.fillStyle = '#c9b98a';
+      const grp = state.openTable
+        ? 'OPEN'
+        : (state.playerGroup || '').toUpperCase() + ' vs ' + (state.alistairGroup || '').toUpperCase();
+      ctx.fillText(grp, W - 10, 16);
+    } else {
+      ctx.fillStyle = '#e8dcc3';
+      ctx.font = 'italic 12px Georgia, serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('SOLO PRACTICE', W / 2, 16);
+    }
+    ctx.restore();
+  }
+
+  function drawDialogueBubble() {
+    if (!state || state.mode !== 'vs') return;
+    if (!state.dialogue || state.dialogueTimer <= 0) return;
+    const W = canvas.width;
+    const boxY = 38;
+    const boxH = 44;
+    ctx.save();
+    ctx.fillStyle = 'rgba(20,12,8,0.92)';
+    ctx.strokeStyle = 'rgba(210,170,110,0.6)';
+    ctx.lineWidth = 1;
+    roundRect(ctx, 8, boxY, W - 16, boxH, 6);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = '#ebdab3';
+    ctx.font = 'italic bold 10px Georgia, serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText('ALISTAIR', 16, boxY + 4);
+    ctx.fillStyle = '#e8dcc3';
+    ctx.font = '12px Georgia, serif';
+    const lines = wrapText(state.dialogue, W - 32);
+    for (let i = 0; i < lines.length && i < 2; i++) {
+      ctx.fillText(lines[i], 16, boxY + 18 + i * 14);
+    }
+    ctx.restore();
+    state.dialogueTimer--;
+  }
+
+  // HUD: SHOOT button (bottom-left), power slider (right edge), spin ball (bottom-right)
+  const hud = {};
+
+  function drawHUD() {
+    if (!state) return;
+    if (state.gamePhase !== 'aiming' || state.turn !== 'player') return;
+    if (state.ballInHand || state.showCallPocket) return;
+    const W = canvas.width;
+    const H = canvas.height;
+
+    // SHOOT button — bottom-left
+    const btnW = Math.min(160, W * 0.38);
+    const btnH = 52;
+    const btnX = 14;
+    const btnY = H - btnH - 16;
+    ctx.save();
+    ctx.fillStyle = '#7c2a1a';
+    roundRect(ctx, btnX, btnY, btnW, btnH, 8);
+    ctx.fill();
+    ctx.strokeStyle = '#d9a679';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.fillStyle = '#f5ecd7';
+    ctx.font = 'bold 18px Georgia, serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('SHOOT', btnX + btnW / 2, btnY + btnH / 2);
+    ctx.restore();
+    hud.shoot = { x: btnX, y: btnY, w: btnW, h: btnH };
+
+    // Power slider — right edge
+    const pw = 28;
+    const ph = Math.min(220, H * 0.4);
+    const px = W - pw - 14;
+    const py = H - ph - 16;
+    ctx.save();
+    ctx.fillStyle = 'rgba(0,0,0,0.55)';
+    roundRect(ctx, px, py, pw, ph, 5);
+    ctx.fill();
+    const fillH = ph * (state.power || 0);
+    const pg = ctx.createLinearGradient(0, py + ph, 0, py);
+    pg.addColorStop(0, '#f7c948');
+    pg.addColorStop(1, '#c0392b');
+    ctx.fillStyle = pg;
+    ctx.fillRect(px, py + ph - fillH, pw, fillH);
+    ctx.strokeStyle = '#8a6b2e';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(px, py, pw, ph);
+    ctx.fillStyle = '#e8dcc3';
+    ctx.font = '9px Georgia, serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillText('POWER', px + pw / 2, py - 4);
+    ctx.restore();
+    hud.power = { x: px, y: py, w: pw, h: ph };
+
+    // Spin ball — small circle in middle-bottom showing where the cue tip will strike.
+    const sr = 26;
+    const scx = btnX + btnW + 18 + sr;
+    const scy = btnY + btnH / 2;
+    if (scx + sr < px - 8) {
+      ctx.save();
+      ctx.fillStyle = '#f8f1dc';
+      ctx.beginPath();
+      ctx.arc(scx, scy, sr, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#3a1f10';
+      ctx.lineWidth = 1.4;
+      ctx.stroke();
+      // Spin dot
+      const dotX = scx + (state.spinX || 0) * (sr - 5);
+      const dotY = scy - (state.spinY || 0) * (sr - 5);
+      ctx.fillStyle = '#7c2a1a';
+      ctx.beginPath();
+      ctx.arc(dotX, dotY, 4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#c9b98a';
+      ctx.font = '9px Georgia, serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('SPIN', scx, scy + sr + 12);
+      ctx.restore();
+      hud.spin = { x: scx - sr, y: scy - sr, w: sr * 2, h: sr * 2, cx: scx, cy: scy, r: sr };
+    } else {
+      hud.spin = null;
+    }
+  }
+
+  function drawCallPocketOverlay() {
+    if (!state || !state.showCallPocket) return;
+    const W = canvas.width, H = canvas.height;
+    ctx.save();
+    ctx.fillStyle = 'rgba(10,5,2,0.65)';
+    ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#f7c948';
+    ctx.font = 'bold 14px Georgia, serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('TAP A POCKET FOR YOUR 8-BALL SHOT', W / 2, 60);
     for (const p of POCKETS) {
-      ctx.fillStyle = '#000';
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, POCKET_R, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    // Balls (shadows first)
-    for (const b of state.balls) {
-      if (!b.inPlay) continue;
-      ctx.fillStyle = 'rgba(0,0,0,0.35)';
-      ctx.beginPath();
-      ctx.arc(b.x + 2, b.y + 3, BALL_R, 0, Math.PI * 2);
-      ctx.fill();
-    }
-    for (const b of state.balls) {
-      if (!b.inPlay) continue;
-      drawBall(b);
-    }
-
-    // Aim line (only during aiming, player turn)
-    if (state.gamePhase === 'aiming' && state.turn === 'player' && state.mode !== 'demo') {
-      const cue = state.balls[0];
-      if (cue.inPlay) {
-        // Aim line — dashed, projects from cue ball toward aim point
-        ctx.strokeStyle = 'rgba(255,255,255,0.55)';
-        ctx.setLineDash([4, 6]);
-        ctx.lineWidth = 1.4;
-        ctx.beginPath();
-        ctx.moveTo(cue.x, cue.y);
-        ctx.lineTo(state.aimX, state.aimY);
-        ctx.stroke();
-        ctx.setLineDash([]);
-
-        // Cue stick — elegant maple/leather/tip rendering
-        const dx = state.aimX - cue.x;
-        const dy = state.aimY - cue.y;
-        const d = Math.hypot(dx, dy) || 1;
-        const ux = dx / d, uy = dy / d;
-
-        // Pull-back: when player is dragging, stick pulls back from cue ball.
-        // pullBack is a separate visual offset from "back" (which is power-driven).
-        const pullDist = state.pullBack || 0;        // current drag pull-back in table units
-        const back = BALL_R + 4 + pullDist;          // gap between cue ball tip and stick tip
-        const len = 160;                              // stick length
-        const ferruleLen = 8;                         // white ferrule below tip
-        const wrapLen = 30;                           // leather wrap section
-        const buttLen = 24;                           // black butt cap
-
-        // Stick is rendered in 4 segments along the line BEHIND the cue ball:
-        //   tip (white ferrule) → maple shaft → leather wrap → black butt
-        // We render BACK along (-ux, -uy) direction.
-        const tipX = cue.x - ux * back;
-        const tipY = cue.y - uy * back;
-
-        // Position helper: distance from tip along stick
-        function stickPt(distFromTip) {
-          return { x: tipX - ux * distFromTip, y: tipY - uy * distFromTip };
-        }
-
-        // Shadow under stick
-        ctx.save();
-        ctx.strokeStyle = 'rgba(0,0,0,0.35)';
-        ctx.lineWidth = 5;
-        ctx.lineCap = 'butt';
-        ctx.beginPath();
-        ctx.moveTo(tipX + 1.5, tipY + 2.5);
-        const tail = stickPt(len);
-        ctx.lineTo(tail.x + 1.5, tail.y + 2.5);
-        ctx.stroke();
-        ctx.restore();
-
-        // Tip (white ferrule, very short)
-        const ferruleEnd = stickPt(ferruleLen);
-        ctx.strokeStyle = '#f5ecd7';
-        ctx.lineWidth = 3.6;
-        ctx.lineCap = 'round';
-        ctx.beginPath();
-        ctx.moveTo(tipX, tipY);
-        ctx.lineTo(ferruleEnd.x, ferruleEnd.y);
-        ctx.stroke();
-
-        // Maple shaft — light wood with subtle gradient
-        const shaftEnd = stickPt(len - wrapLen - buttLen);
-        const shaftGrad = ctx.createLinearGradient(ferruleEnd.x, ferruleEnd.y - 3, ferruleEnd.x, ferruleEnd.y + 3);
-        shaftGrad.addColorStop(0, '#e8c890');
-        shaftGrad.addColorStop(0.5, '#d4a868');
-        shaftGrad.addColorStop(1, '#9a7438');
-        ctx.strokeStyle = shaftGrad;
-        ctx.lineWidth = 3.8;
-        ctx.beginPath();
-        ctx.moveTo(ferruleEnd.x, ferruleEnd.y);
-        ctx.lineTo(shaftEnd.x, shaftEnd.y);
-        ctx.stroke();
-
-        // Leather wrap — darker, slightly thicker
-        const wrapEnd = stickPt(len - buttLen);
-        ctx.strokeStyle = '#3a1f10';
-        ctx.lineWidth = 4.2;
-        ctx.beginPath();
-        ctx.moveTo(shaftEnd.x, shaftEnd.y);
-        ctx.lineTo(wrapEnd.x, wrapEnd.y);
-        ctx.stroke();
-        // Wrap stitching detail (cross-hatch lines)
-        ctx.strokeStyle = 'rgba(150,110,60,0.5)';
-        ctx.lineWidth = 0.6;
-        for (let s = 0; s < 6; s++) {
-          const sp = stickPt(len - buttLen - wrapLen + (s + 0.5) * (wrapLen / 6));
-          ctx.beginPath();
-          ctx.moveTo(sp.x - uy * 2.5, sp.y + ux * 2.5);
-          ctx.lineTo(sp.x + uy * 2.5, sp.y - ux * 2.5);
-          ctx.stroke();
-        }
-
-        // Butt cap — black with brass ring
-        const buttEnd = stickPt(len);
-        ctx.strokeStyle = '#1a0e06';
-        ctx.lineWidth = 4.6;
-        ctx.beginPath();
-        ctx.moveTo(wrapEnd.x, wrapEnd.y);
-        ctx.lineTo(buttEnd.x, buttEnd.y);
-        ctx.stroke();
-        // Brass ring at wrap/butt junction
-        ctx.fillStyle = '#d9a679';
-        ctx.beginPath();
-        ctx.arc(wrapEnd.x, wrapEnd.y, 2.2, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Highlight along the top of the shaft (specular)
-        ctx.strokeStyle = 'rgba(255,235,180,0.4)';
-        ctx.lineWidth = 0.8;
-        ctx.beginPath();
-        ctx.moveTo(ferruleEnd.x - uy * 1, ferruleEnd.y + ux * 1);
-        ctx.lineTo(shaftEnd.x - uy * 1, shaftEnd.y + ux * 1);
-        ctx.stroke();
-      }
-    }
-
-    // Called pocket marker
-    if (state.calledPocket != null) {
-      const p = POCKETS[state.calledPocket];
+      const c = tableToScreen(p.x, p.y);
+      const u = unitScaleAt(p.x, p.y);
       ctx.strokeStyle = '#f7c948';
       ctx.lineWidth = 3;
       ctx.beginPath();
-      ctx.arc(p.x, p.y, POCKET_R + 6, 0, Math.PI * 2);
+      ctx.arc(c.x, c.y, 30 * u, 0, Math.PI * 2);
       ctx.stroke();
     }
-
-    ctx.restore();
-
-    // ---------- Overlay UI (in screen space) -------------------------------
-    drawOverlay();
-  }
-
-  function drawBall(b) {
-    const c = BALL_COLORS[b.n];
-    ctx.save();
-    // Base color
-    ctx.fillStyle = c;
-    ctx.beginPath();
-    ctx.arc(b.x, b.y, BALL_R, 0, Math.PI * 2);
-    ctx.fill();
-    if (b.n >= 9 && b.n <= 15) {
-      // Stripe: white band top and bottom
-      ctx.fillStyle = '#f5ecd7';
-      ctx.beginPath();
-      ctx.arc(b.x, b.y, BALL_R, Math.PI * 0.85, Math.PI * 0.15, true);
-      ctx.arc(b.x, b.y, BALL_R, Math.PI * 1.15, Math.PI * 1.85, false);
-      ctx.closePath();
-      // Simpler: draw two caps
-      ctx.beginPath();
-      ctx.arc(b.x, b.y, BALL_R, 0, Math.PI * 2);
-      ctx.clip();
-      ctx.fillStyle = '#f5ecd7';
-      ctx.fillRect(b.x - BALL_R, b.y - BALL_R, BALL_R * 2, BALL_R * 0.45);
-      ctx.fillRect(b.x - BALL_R, b.y + BALL_R * 0.55, BALL_R * 2, BALL_R * 0.45);
-    }
-    // Number circle
-    if (b.n !== 0) {
-      ctx.fillStyle = '#f5ecd7';
-      ctx.beginPath();
-      ctx.arc(b.x, b.y, BALL_R * 0.45, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = '#111';
-      ctx.font = 'bold 9px Georgia, serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(String(b.n), b.x, b.y + 1);
-    }
-    // Highlight
-    ctx.fillStyle = 'rgba(255,255,255,0.25)';
-    ctx.beginPath();
-    ctx.arc(b.x - BALL_R * 0.35, b.y - BALL_R * 0.35, BALL_R * 0.35, 0, Math.PI * 2);
-    ctx.fill();
     ctx.restore();
   }
 
-  function drawOverlay() {
-    // Dialogue bubble (vs mode)
-    if (state.mode === 'vs' && state.dialogue && state.dialogueTimer > 0) {
-      const W = canvas.width;
-      const text = state.dialogue;
-      ctx.save();
-      ctx.font = '13px Georgia, serif';
-      ctx.textAlign = 'left';
-      ctx.textBaseline = 'top';
-      const maxW = Math.min(W - 24, 380);
-      const lines = wrapText(text, maxW - 20);
-      const boxH = 12 + lines.length * 17;
-      const boxW = maxW;
-      const bx = 12;
-      const by = 12;
-      ctx.fillStyle = 'rgba(20,12,8,0.82)';
-      ctx.strokeStyle = 'rgba(210,170,110,0.55)';
-      ctx.lineWidth = 1;
-      roundRect(ctx, bx, by, boxW, boxH, 6);
-      ctx.fill();
-      ctx.stroke();
-      ctx.fillStyle = '#ebdab3';
-      ctx.font = 'italic bold 11px Georgia, serif';
-      ctx.fillText('ALISTAIR', bx + 10, by + 4);
-      ctx.fillStyle = '#e8dcc3';
-      ctx.font = '13px Georgia, serif';
-      for (let i = 0; i < lines.length; i++) {
-        ctx.fillText(lines[i], bx + 10, by + 20 + i * 17);
-      }
-      ctx.restore();
-      state.dialogueTimer--;
-    }
-
-    // Turn indicator + groups
-    const W = canvas.width;
-    const H = canvas.height;
+  function drawGameOverOverlay() {
+    if (!state || state.gamePhase !== 'gameover') return;
+    const W = canvas.width, H = canvas.height;
     ctx.save();
+    ctx.fillStyle = 'rgba(10,5,2,0.85)';
+    ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#ebdab3';
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 22px Georgia, serif';
+    let title;
+    if (state.mode === 'vs') {
+      title = state.winner === 'player' ? 'YOU WIN THE FRAME' : 'ALISTAIR WINS THE FRAME';
+    } else {
+      title = 'RACK COMPLETE';
+    }
+    ctx.fillText(title, W / 2, H / 2 - 30);
+    ctx.font = 'italic 13px Georgia, serif';
+    ctx.fillStyle = '#c9b98a';
+    if (state.loseReason) ctx.fillText(state.loseReason, W / 2, H / 2);
+    ctx.fillStyle = '#f7c948';
     ctx.font = '12px Georgia, serif';
-    ctx.textBaseline = 'bottom';
-    ctx.fillStyle = 'rgba(20,12,8,0.78)';
-    ctx.fillRect(0, H - 28, W, 28);
+    ctx.fillText('Tap to continue', W / 2, H / 2 + 32);
+    ctx.restore();
+  }
+
+  // ---------- Screens (mode select, format select, interstitial, match end) ----
+  let screenState = 'modeSelect';   // 'modeSelect' | 'formatSelect' | 'game' | 'interstitial' | 'matchEnd'
+  const screens = {};
+
+  function drawScreenOverlay() {
+    if (screenState === 'modeSelect') drawModeSelect();
+    else if (screenState === 'formatSelect') drawFormatSelect();
+    else if (screenState === 'interstitial') drawInterstitial();
+    else if (screenState === 'matchEnd') drawMatchEnd();
+  }
+
+  function _screenBg() {
+    const W = canvas.width, H = canvas.height;
+    const g = ctx.createRadialGradient(W/2, H/2, 40, W/2, H/2, Math.max(W, H));
+    g.addColorStop(0, '#2a1206');
+    g.addColorStop(1, '#0a0503');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  function _stackButtons(startY, btns) {
+    const W = canvas.width, H = canvas.height;
+    const cw = Math.min(300, W - 36);
+    const cx = W / 2 - cw / 2;
+    const bh = 70, gap = 10;
+    const total = btns.length * bh + (btns.length - 1) * gap;
+    const avail = H - 50 - startY;
+    let y = avail > total ? startY + (avail - total) / 2 : startY;
+    const out = {};
+    for (const b of btns) {
+      ctx.fillStyle = b.primary ? '#4a1808' : '#2a1206';
+      roundRect(ctx, cx, y, cw, bh, 8);
+      ctx.fill();
+      ctx.strokeStyle = b.primary ? '#d9a679' : '#8a6b2e';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.fillStyle = '#f5ecd7';
+      ctx.font = 'bold 15px Georgia, serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'alphabetic';
+      ctx.fillText(b.title, W / 2, y + 28);
+      if (b.subtitle) {
+        ctx.fillStyle = '#c9b98a';
+        ctx.font = 'italic 11px Georgia, serif';
+        ctx.fillText(b.subtitle, W / 2, y + 50);
+      }
+      out[b.key] = { x: cx, y, w: cw, h: bh };
+      y += bh + gap;
+    }
+    return out;
+  }
+
+  function drawModeSelect() {
+    _screenBg();
+    const W = canvas.width, H = canvas.height;
+    ctx.fillStyle = '#ebdab3';
+    ctx.textAlign = 'center';
+    ctx.font = 'italic bold 22px Georgia, serif';
+    const tY = Math.max(56, H * 0.10);
+    ctx.fillText('THE BILLIARD TABLE', W / 2, tY);
+    ctx.font = 'italic 12px Georgia, serif';
+    ctx.fillStyle = '#c9b98a';
+    ctx.fillText('The felt is honest. Most things in this house are not.', W / 2, tY + 22);
+    screens.mode = _stackButtons(tY + 42, [
+      { key: 'solo', title: 'SOLO PRACTICE', subtitle: 'Rack. Break. Play at your own pace.', primary: true },
+      { key: 'vs',   title: 'CHALLENGE ALISTAIR', subtitle: 'Loser owes a truthful answer.', primary: true },
+      { key: 'exit', title: 'LEAVE THE TABLE', subtitle: null, primary: false }
+    ]);
+  }
+
+  function drawFormatSelect() {
+    _screenBg();
+    const W = canvas.width, H = canvas.height;
+    ctx.fillStyle = '#ebdab3';
+    ctx.textAlign = 'center';
+    ctx.font = 'italic bold 20px Georgia, serif';
+    const tY = Math.max(54, H * 0.10);
+    ctx.fillText('CHOOSE YOUR STAKES', W / 2, tY);
+    ctx.font = 'italic 12px Georgia, serif';
+    ctx.fillStyle = '#c9b98a';
+    ctx.fillText("Alistair will remember what you taught him.", W / 2, tY + 22);
+    screens.format = _stackButtons(tY + 42, [
+      { key: 'bo3', title: 'BEST OF 3', subtitle: 'First to 2. Quick.', primary: true },
+      { key: 'bo5', title: 'BEST OF 5', subtitle: 'First to 3. The proper match.', primary: true },
+      { key: 'bo7', title: 'BEST OF 7', subtitle: 'First to 4. Test of endurance.', primary: true },
+      { key: 'back', title: '← BACK', subtitle: null, primary: false }
+    ]);
+  }
+
+  function drawInterstitial() {
+    _screenBg();
+    const W = canvas.width, H = canvas.height;
+    ctx.fillStyle = '#ebdab3';
+    ctx.textAlign = 'center';
+    ctx.font = 'italic bold 18px Georgia, serif';
+    const tY = Math.max(50, H * 0.08);
+    ctx.fillText('BETWEEN FRAMES', W / 2, tY);
+    ctx.font = 'bold 38px Georgia, serif';
+    ctx.fillStyle = '#f5ecd7';
+    ctx.fillText(match.playerFrames + '  —  ' + match.alistairFrames, W / 2, tY + 56);
+    ctx.font = 'italic 11px Georgia, serif';
+    ctx.fillStyle = '#c9b98a';
+    ctx.fillText('YOU         ALISTAIR', W / 2, tY + 76);
+
+    const notesTop = tY + 110;
+    ctx.font = 'italic bold 13px Georgia, serif';
+    ctx.fillStyle = '#d9a679';
+    ctx.fillText("ALISTAIR'S NOTES ON YOU", W / 2, notesTop);
+    ctx.font = '12px Georgia, serif';
     ctx.fillStyle = '#e8dcc3';
     ctx.textAlign = 'left';
-    const turnLabel = state.mode === 'vs'
-      ? (state.turn === 'player' ? 'YOUR TURN' : 'ALISTAIR')
-      : 'PRACTICE';
-    ctx.fillText(turnLabel, 10, H - 9);
-    if (!state.openTable) {
-      const pg = state.playerGroup ? state.playerGroup.toUpperCase() : '';
-      const ag = state.alistairGroup ? state.alistairGroup.toUpperCase() : '';
-      ctx.textAlign = 'center';
-      ctx.fillText(`You: ${pg}   |   Alistair: ${ag}`, W / 2, H - 9);
-    } else {
-      ctx.textAlign = 'center';
-      ctx.fillText('OPEN TABLE', W / 2, H - 9);
+    const notes = match.interstitialNotes || generateNotes();
+    match.interstitialNotes = notes;
+    let ny = notesTop + 22;
+    for (const n of notes.slice(0, 6)) {
+      const lines = wrapText(n, W - 40);
+      for (const l of lines) { ctx.fillText(l, 20, ny); ny += 16; }
+      ny += 4;
     }
-    if (state.ballInHand && state.turn === 'player') {
-      ctx.textAlign = 'right';
-      ctx.fillStyle = '#f7c948';
-      ctx.fillText('BALL IN HAND — tap to place cue ball', W - 10, H - 9);
-    }
-    ctx.restore();
 
-    // Call pocket prompt
-    if (state.showCallPocket) {
-      ctx.save();
-      ctx.fillStyle = 'rgba(20,12,8,0.85)';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = '#f7c948';
-      ctx.font = 'bold 16px Georgia, serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('TAP A POCKET TO CALL YOUR EIGHT-BALL SHOT', canvas.width / 2, canvas.height / 2);
-      // Highlight pockets
-      ctx.translate((canvas.width - TABLE_W * scaleFactor) / 2, (canvas.height - TABLE_H * scaleFactor) / 2);
-      ctx.scale(scaleFactor, scaleFactor);
-      for (const p of POCKETS) {
-        ctx.strokeStyle = '#f7c948';
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, POCKET_R + 4, 0, Math.PI * 2);
-        ctx.stroke();
+    const cw = Math.min(240, W - 40);
+    const ch = 48;
+    const cxb = W / 2 - cw / 2;
+    const cyb = H - ch - 18;
+    ctx.fillStyle = '#4a1808';
+    roundRect(ctx, cxb, cyb, cw, ch, 6);
+    ctx.fill();
+    ctx.strokeStyle = '#d9a679';
+    ctx.stroke();
+    ctx.fillStyle = '#f5ecd7';
+    ctx.font = 'bold 14px Georgia, serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('RACK THE NEXT FRAME', W / 2, cyb + ch / 2);
+    screens.interstitial = { continue: { x: cxb, y: cyb, w: cw, h: ch } };
+  }
+
+  function drawMatchEnd() {
+    _screenBg();
+    const W = canvas.width, H = canvas.height;
+    const playerWon = match.playerFrames > match.alistairFrames;
+    ctx.fillStyle = playerWon ? '#f7c948' : '#ebdab3';
+    ctx.textAlign = 'center';
+    ctx.font = 'italic bold 24px Georgia, serif';
+    const tY = Math.max(60, H * 0.10);
+    ctx.fillText(playerWon ? 'YOU WIN THE MATCH' : 'ALISTAIR WINS', W / 2, tY);
+    ctx.font = 'bold 38px Georgia, serif';
+    ctx.fillStyle = '#f5ecd7';
+    ctx.fillText(match.playerFrames + '  —  ' + match.alistairFrames, W / 2, tY + 54);
+
+    const notesTop = tY + 100;
+    ctx.fillStyle = '#d9a679';
+    ctx.font = 'italic bold 12px Georgia, serif';
+    ctx.textAlign = 'left';
+    ctx.fillText("ALISTAIR'S READ", 24, notesTop);
+    ctx.fillStyle = '#e8dcc3';
+    ctx.font = 'italic 12px Georgia, serif';
+    let ny = notesTop + 22;
+    const notes = generateNotes().slice(0, 4);
+    for (const n of notes) {
+      const lines = wrapText(n, W - 48);
+      for (const l of lines) { ctx.fillText(l, 24, ny); ny += 16; }
+      ny += 4;
+    }
+
+    const bw = Math.min(150, (W - 56) / 2);
+    const bh = 44;
+    const gap = 14;
+    const bx0 = W / 2 - (bw * 2 + gap) / 2;
+    const by = H - bh - 18;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#4a1808';
+    roundRect(ctx, bx0, by, bw, bh, 6);
+    ctx.fill();
+    ctx.strokeStyle = '#d9a679';
+    ctx.stroke();
+    ctx.fillStyle = '#f5ecd7';
+    ctx.font = 'bold 13px Georgia, serif';
+    ctx.fillText('REMATCH', bx0 + bw / 2, by + bh / 2);
+    const bx1 = bx0 + bw + gap;
+    ctx.fillStyle = '#2a1206';
+    roundRect(ctx, bx1, by, bw, bh, 6);
+    ctx.fill();
+    ctx.strokeStyle = '#8a6b2e';
+    ctx.stroke();
+    ctx.fillStyle = '#c9b98a';
+    ctx.fillText('MAIN MENU', bx1 + bw / 2, by + bh / 2);
+    screens.matchEnd = {
+      rematch: { x: bx0, y: by, w: bw, h: bh },
+      menu:    { x: bx1, y: by, w: bw, h: bh }
+    };
+  }
+
+  // ---------- Match state, voice zones, dossier ---------------------------
+  const STORAGE_KEY = 'nocturne_alistair_dossier_v1';
+  let match = null;
+
+  function loadDossier() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return newDossier();
+      return Object.assign(newDossier(), JSON.parse(raw));
+    } catch (e) { return newDossier(); }
+  }
+
+  function saveDossier(d) {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); } catch (e) {}
+  }
+
+  function newDossier() {
+    return {
+      matchesPlayed: 0, matchesWon: 0, matchesLost: 0,
+      framesPlayed: 0, framesWon: 0, framesLost: 0,
+      shotsAttempted: 0, shotsMade: 0,
+      ballsLeftStreak: 0,         // tracks # in groups for missed shots
+      breakAttempts: 0, breakBalls: 0,    // balls sunk on break
+      cutShots: 0, cutMisses: 0,
+      banks: 0, bankMisses: 0,
+      scratches: 0,
+      tendsToOverhitWeak: 0,       // 0..1 inferred
+      eightBallChokes: 0,          // misses on 8 in match-deciding frames
+      lifetimeNote: null
+    };
+  }
+
+  function newMatch(format) {
+    const toWin = Math.ceil(format / 2);
+    match = {
+      format: format,
+      toWin: toWin,
+      playerFrames: 0,
+      alistairFrames: 0,
+      composure: 0.85,
+      momentum: 0,
+      tilt: 0,
+      confidence: 0.6,
+      dossier: loadDossier(),
+      interstitialNotes: null,
+      framesLog: []
+    };
+    match.dossier.matchesPlayed++;
+    saveDossier(match.dossier);
+  }
+
+  function startNextFrame() {
+    match.interstitialNotes = null;
+    newGame('vs');
+  }
+
+  function voiceZone() {
+    if (!match) return 'neutral';
+    if (match.tilt > 0.6) return 'tilted';
+    if (match.confidence > 0.7) return 'confident';
+    if (match.confidence < 0.3) return 'losing';
+    return 'tense';
+  }
+
+  function sayAdaptive(category) {
+    // Pick from category but adjust selection based on voice zone if needed
+    say(category);
+  }
+
+  // Update psych on shot result. Called after resolveShot.
+  function updatePsych(shooter, outcome) {
+    if (!match) return;
+    if (outcome.wasFoul) {
+      if (shooter === 'player') {
+        match.momentum = Math.max(-1, match.momentum - 0.2);
+        match.confidence = Math.max(0, match.confidence - 0.1);
+      } else {
+        match.momentum = Math.min(1, match.momentum + 0.2);
+        match.composure = Math.min(1, match.composure + 0.05);
       }
-      ctx.restore();
     }
-
-    // Game over
-    if (state.gamePhase === 'gameover') {
-      ctx.save();
-      ctx.fillStyle = 'rgba(10,6,4,0.88)';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = '#ebdab3';
-      ctx.textAlign = 'center';
-      ctx.font = 'bold 22px Georgia, serif';
-      const title = state.mode === 'vs'
-        ? (state.winner === 'player' ? 'YOU WIN' : 'ALISTAIR WINS')
-        : 'RACK COMPLETE';
-      ctx.fillText(title, canvas.width / 2, canvas.height / 2 - 20);
-      ctx.font = 'italic 13px Georgia, serif';
-      ctx.fillStyle = '#c9b98a';
-      ctx.fillText(state.loseReason || '', canvas.width / 2, canvas.height / 2 + 6);
-      ctx.fillStyle = '#f7c948';
-      ctx.font = '12px Georgia, serif';
-      ctx.fillText('Tap to play again  ·  Long-press to exit', canvas.width / 2, canvas.height / 2 + 34);
-      ctx.restore();
+    if (outcome.sunkOwn) {
+      if (shooter === 'player') {
+        match.momentum = Math.min(1, match.momentum + 0.15);
+        match.confidence = Math.min(1, match.confidence + 0.08);
+        match.tilt = Math.max(0, match.tilt - 0.05);
+      } else {
+        match.composure = Math.min(1, match.composure + 0.08);
+      }
+    }
+    if (outcome.frameWon) {
+      if (shooter === 'player') {
+        match.confidence = Math.min(1, match.confidence + 0.2);
+        match.composure = Math.min(1, match.composure + 0.1);
+      } else {
+        match.confidence = Math.max(0, match.confidence - 0.15);
+        match.composure = Math.max(0, match.composure - 0.05);
+        match.tilt = Math.min(1, match.tilt + 0.15);
+      }
     }
   }
 
-  function roundRect(ctx, x, y, w, h, r) {
-    ctx.beginPath();
-    ctx.moveTo(x + r, y);
-    ctx.arcTo(x + w, y, x + w, y + h, r);
-    ctx.arcTo(x + w, y + h, x, y + h, r);
-    ctx.arcTo(x, y + h, x, y, r);
-    ctx.arcTo(x, y, x + w, y, r);
-    ctx.closePath();
+  // Update dossier on a shot result
+  function updateDossierOnShot(shooter, info) {
+    if (!match || shooter !== 'player') return;
+    const d = match.dossier;
+    d.shotsAttempted++;
+    if (info.sunkOwn) d.shotsMade++;
+    if (info.wasFoul && info.foulType === 'scratch') d.scratches++;
+    if (info.wasBreak) {
+      d.breakAttempts++;
+      d.breakBalls += info.breakBallsSunk || 0;
+    }
+    saveDossier(d);
+  }
+
+  function generateNotes() {
+    if (!match) return [];
+    const d = match.dossier;
+    const notes = [];
+
+    if (d.shotsAttempted < 6 || match.framesLog.length === 0) {
+      notes.push('"I am still observing. Take your time."');
+      return notes;
+    }
+
+    const accuracy = d.shotsMade / Math.max(1, d.shotsAttempted);
+    if (accuracy > 0.6) notes.push('"You make most of your shots. I noticed."');
+    else if (accuracy < 0.35) notes.push('"You miss more than you sink. The pattern is clear."');
+
+    if (d.scratches > d.framesPlayed * 0.5 && d.framesPlayed >= 2) {
+      notes.push('"You scratch often. The cue ball does not always do what you tell it."');
+    }
+
+    if (d.breakAttempts >= 2) {
+      const avgBreak = d.breakBalls / d.breakAttempts;
+      if (avgBreak >= 1.5) notes.push('"Your break is solid. You start games well."');
+      else if (avgBreak < 0.5) notes.push('"Your break is soft. You leave the table cluttered."');
+    }
+
+    if (match.tilt > 0.5) {
+      notes.push('"You are tilted right now. I can see it in your shot selection."');
+    }
+    if (match.momentum < -0.3) {
+      notes.push('"You have lost your rhythm. It happens. Recover when you are ready."');
+    }
+    if (match.confidence > 0.75) {
+      notes.push('"You are playing well today. I am paying attention."');
+    }
+
+    if (d.matchesPlayed >= 3) {
+      const winRate = d.matchesWon / d.matchesPlayed;
+      if (winRate > 0.6) notes.push('"You have won ' + d.matchesWon + ' of our ' + d.matchesPlayed + ' matches. I am revising my approach."');
+      else if (winRate < 0.3) notes.push('"You have lost ' + d.matchesLost + ' of ' + d.matchesPlayed + '. You keep coming back. I respect that."');
+    }
+
+    if (notes.length === 0) {
+      notes.push('"You are an interesting player to read. I am still learning."');
+    }
+    return notes;
+  }
+
+  // ---------- Frame end → match logic -------------------------------------
+  // Hook into the existing endGame so when a frame ends in vs mode we update
+  // match state and route to interstitial / match-end.
+  // We patch by wrapping endGame.
+  // Wire endGame hook (defined in keep block) to handle match progression.
+  endGameHook = function(winner, reason) {
+    if (!state || state.mode !== 'vs' || !match) return;
+    match.dossier.framesPlayed++;
+    if (winner === 'player') match.dossier.framesWon++;
+    else match.dossier.framesLost++;
+    saveDossier(match.dossier);
+
+    if (winner === 'player') match.playerFrames++;
+    else match.alistairFrames++;
+
+    updatePsych(winner, { frameWon: true });
+
+    if (match.playerFrames >= match.toWin) {
+      match.dossier.matchesWon++;
+      saveDossier(match.dossier);
+      setTimeout(() => { screenState = 'matchEnd'; }, 1500);
+      return;
+    }
+    if (match.alistairFrames >= match.toWin) {
+      match.dossier.matchesLost++;
+      saveDossier(match.dossier);
+      setTimeout(() => { screenState = 'matchEnd'; }, 1500);
+      return;
+    }
+    setTimeout(() => { screenState = 'interstitial'; }, 1500);
+  };
+
+  // ---------- Input -------------------------------------------------------
+  let powerDragging = false, spinDragging = false;
+  let pullingBack = false;
+  let pullStartCueX = 0, pullStartCueY = 0;
+  const PULL_GRAB_RADIUS = 70;
+  const PULL_MIN_FIRE = 25;
+  const PULL_MAX = 220;
+
+  function getEventPoint(e) {
+    const rect = canvas.getBoundingClientRect();
+    let cx, cy;
+    if (e.touches && e.touches.length) { cx = e.touches[0].clientX; cy = e.touches[0].clientY; }
+    else if (e.changedTouches && e.changedTouches.length) { cx = e.changedTouches[0].clientX; cy = e.changedTouches[0].clientY; }
+    else { cx = e.clientX; cy = e.clientY; }
+    return {
+      x: (cx - rect.left) * (canvas.width / rect.width),
+      y: (cy - rect.top) * (canvas.height / rect.height)
+    };
+  }
+
+  function hitRect(x, y, r) { return r && x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h; }
+
+  function onPointerDown(e) {
+    if (e.cancelable) e.preventDefault();
+    const p = getEventPoint(e);
+
+    // Screen routing
+    if (screenState === 'modeSelect') {
+      const r = screens.mode || {};
+      if (hitRect(p.x, p.y, r.solo)) { newGame('solo'); screenState = 'game'; return; }
+      if (hitRect(p.x, p.y, r.vs))   { screenState = 'formatSelect'; return; }
+      if (hitRect(p.x, p.y, r.exit)) { closeBilliards(); return; }
+      return;
+    }
+    if (screenState === 'formatSelect') {
+      const r = screens.format || {};
+      if (hitRect(p.x, p.y, r.bo3)) { newMatch(3); newGame('vs'); screenState = 'game'; return; }
+      if (hitRect(p.x, p.y, r.bo5)) { newMatch(5); newGame('vs'); screenState = 'game'; return; }
+      if (hitRect(p.x, p.y, r.bo7)) { newMatch(7); newGame('vs'); screenState = 'game'; return; }
+      if (hitRect(p.x, p.y, r.back)) { screenState = 'modeSelect'; return; }
+      return;
+    }
+    if (screenState === 'interstitial') {
+      const r = screens.interstitial || {};
+      if (hitRect(p.x, p.y, r.continue)) { startNextFrame(); screenState = 'game'; }
+      return;
+    }
+    if (screenState === 'matchEnd') {
+      const r = screens.matchEnd || {};
+      if (hitRect(p.x, p.y, r.rematch)) { newMatch(match.format); newGame('vs'); screenState = 'game'; return; }
+      if (hitRect(p.x, p.y, r.menu))    { match = null; state = null; screenState = 'modeSelect'; return; }
+      return;
+    }
+
+    if (!state) return;
+
+    if (state.gamePhase === 'gameover') {
+      // Solo mode → just rack again. Vs mode → endGame already handled match transition.
+      if (state.mode === 'solo') newGame('solo');
+      return;
+    }
+
+    if (state.gamePhase !== 'aiming' || state.turn !== 'player') return;
+
+    // Call pocket
+    if (state.showCallPocket) {
+      const tp = screenToTable(p.x, p.y);
+      let nearest = -1, nd = 99999;
+      for (let i = 0; i < POCKETS.length; i++) {
+        const d = Math.hypot(tp.x - POCKETS[i].x, tp.y - POCKETS[i].y);
+        if (d < nd) { nd = d; nearest = i; }
+      }
+      if (nd < 80) {
+        state.calledPocket = nearest;
+        state.showCallPocket = false;
+        setTimeout(takeShot, 200);
+      }
+      return;
+    }
+
+    // SHOOT button
+    if (hitRect(p.x, p.y, hud.shoot)) { takeShot(); return; }
+
+    // Power slider
+    if (hitRect(p.x, p.y, hud.power)) { powerDragging = true; updatePowerFromY(p.y); return; }
+
+    // Spin ball
+    if (hud.spin && hitRect(p.x, p.y, hud.spin)) {
+      spinDragging = true;
+      updateSpin(p.x, p.y, hud.spin.cx, hud.spin.cy);
+      return;
+    }
+
+    // Ball-in-hand placement
+    if (state.ballInHand) {
+      const tp = screenToTable(p.x, p.y);
+      if (tp.x > PLAY_X0 + BALL_R && tp.x < PLAY_X1 - BALL_R &&
+          tp.y > PLAY_Y0 + BALL_R && tp.y < PLAY_Y1 - BALL_R) {
+        let ok = true;
+        for (const b of state.balls) {
+          if (!b.inPlay || b.n === 0) continue;
+          if (Math.hypot(tp.x - b.x, tp.y - b.y) < BALL_R * 2 + 1) { ok = false; break; }
+        }
+        if (ok) {
+          state.balls[0].x = tp.x;
+          state.balls[0].y = tp.y;
+          state.ballInHand = false;
+        }
+      }
+      return;
+    }
+
+    // Pull-back from cue ball?
+    const cue = state.balls[0];
+    if (cue && cue.inPlay) {
+      const tp = screenToTable(p.x, p.y);
+      const d = Math.hypot(tp.x - cue.x, tp.y - cue.y);
+      if (d < PULL_GRAB_RADIUS) {
+        pullingBack = true;
+        pullStartCueX = cue.x;
+        pullStartCueY = cue.y;
+        state.pullBack = 0;
+        if (d > 1) {
+          state.aimX = cue.x - (tp.x - cue.x) * 5;
+          state.aimY = cue.y - (tp.y - cue.y) * 5;
+        }
+        return;
+      }
+    }
+
+    // Otherwise: tap-to-aim
+    const tp = screenToTable(p.x, p.y);
+    if (tp.x >= 0) {
+      state.aimX = tp.x;
+      state.aimY = tp.y;
+    }
+  }
+
+  function onPointerMove(e) {
+    if (!state) return;
+    if (e.cancelable) e.preventDefault();
+    const p = getEventPoint(e);
+
+    if (powerDragging) { updatePowerFromY(p.y); return; }
+    if (spinDragging && hud.spin) {
+      updateSpin(p.x, p.y, hud.spin.cx, hud.spin.cy);
+      return;
+    }
+    if (pullingBack) {
+      const tp = screenToTable(p.x, p.y);
+      const dx = tp.x - pullStartCueX;
+      const dy = tp.y - pullStartCueY;
+      const dist = Math.hypot(dx, dy);
+      if (dist > 0.5) {
+        const ux = -dx / dist;
+        const uy = -dy / dist;
+        state.aimX = pullStartCueX + ux * 300;
+        state.aimY = pullStartCueY + uy * 300;
+      }
+      state.pullBack = Math.min(dist, PULL_MAX);
+      state.power = Math.min(1, dist / PULL_MAX);
+      return;
+    }
+    if (state.gamePhase === 'aiming' && state.turn === 'player' && !state.ballInHand && !state.showCallPocket) {
+      const tp = screenToTable(p.x, p.y);
+      if (tp.x >= 0) {
+        state.aimX = tp.x;
+        state.aimY = tp.y;
+      }
+    }
+  }
+
+  function onPointerUp() {
+    powerDragging = false;
+    spinDragging = false;
+    if (pullingBack) {
+      const pulled = state.pullBack || 0;
+      pullingBack = false;
+      if (pulled >= PULL_MIN_FIRE) {
+        animateCueStrike(() => { state.pullBack = 0; takeShot(); });
+      } else {
+        state.pullBack = 0;
+      }
+    }
+  }
+
+  function animateCueStrike(onComplete) {
+    if (!state) { onComplete && onComplete(); return; }
+    const start = state.pullBack || 0;
+    const t0 = performance.now();
+    const dur = 140;
+    function frame() {
+      const t = Math.min(1, (performance.now() - t0) / dur);
+      const eased = t * t * t;
+      state.pullBack = start * (1 - eased);
+      if (t < 1) requestAnimationFrame(frame);
+      else onComplete && onComplete();
+    }
+    frame();
+  }
+
+  function updatePowerFromY(y) {
+    if (!hud.power) return;
+    const pb = hud.power;
+    const t = Math.max(0, Math.min(1, (pb.y + pb.h - y) / pb.h));
+    state.power = t;
+  }
+
+  function updateSpin(x, y, cx, cy) {
+    const dx = x - cx;
+    const dy = y - cy;
+    const r = (hud.spin && hud.spin.r) || 26;
+    const sx = Math.max(-1, Math.min(1, dx / (r - 5)));
+    const sy = Math.max(-1, Math.min(1, -dy / (r - 5)));
+    state.spinX = sx;
+    state.spinY = sy;
+  }
+
+  // ---------- Loop --------------------------------------------------------
+  function loop() {
+    if (!canvas) return;
+    if (screenState === 'modeSelect' || screenState === 'formatSelect') {
+      computeView();
+      drawScreenOverlay();
+    } else if (screenState === 'interstitial' || screenState === 'matchEnd') {
+      drawScreenOverlay();
+    } else if (state) {
+      if (state.gamePhase === 'simulating') step();
+      // Trigger Alistair's move if it's their turn and aiming phase
+      if (state.mode === 'vs' && state.turn === 'alistair' && state.gamePhase === 'aiming') {
+        if (!state._alistairScheduled) {
+          state._alistairScheduled = true;
+          setTimeout(() => {
+            state._alistairScheduled = false;
+            if (state && state.turn === 'alistair' && state.gamePhase === 'aiming') alistairMove();
+          }, 1200 + Math.random() * 600);
+        }
+      }
+      render();
+    } else {
+      // No state, no screen — default to mode select
+      screenState = 'modeSelect';
+    }
+    rafId = requestAnimationFrame(loop);
+  }
+
+  // ---------- Helpers shared with rendering -------------------------------
+  function roundRect(c, x, y, w, h, r) {
+    c.beginPath();
+    c.moveTo(x + r, y);
+    c.arcTo(x + w, y, x + w, y + h, r);
+    c.arcTo(x + w, y + h, x, y + h, r);
+    c.arcTo(x, y + h, x, y, r);
+    c.arcTo(x, y, x + w, y, r);
+    c.closePath();
   }
 
   function wrapText(text, maxW) {
@@ -1143,516 +2192,59 @@
     let cur = '';
     for (const w of words) {
       const test = cur ? cur + ' ' + w : w;
-      if (ctx.measureText(test).width > maxW && cur) {
-        lines.push(cur);
-        cur = w;
-      } else {
-        cur = test;
-      }
+      if (ctx.measureText(test).width > maxW && cur) { lines.push(cur); cur = w; }
+      else cur = test;
     }
     if (cur) lines.push(cur);
     return lines;
   }
 
-  // ---------- Input --------------------------------------------------------
-  function canvasToTable(x, y) {
-    const W = canvas.width;
-    const H = canvas.height;
-    const sx = W / TABLE_W;
-    const sy = H / TABLE_H;
-    const s = Math.min(sx, sy);
-    const ox = (W - TABLE_W * s) / 2;
-    const oy = (H - TABLE_H * s) / 2;
-    return { x: (x - ox) / s, y: (y - oy) / s };
-  }
+  // ---------- Open / Close / Module bootstrap -----------------------------
+  let canvas = null, ctx = null, modal = null, rafId = null;
 
-  // Cue strike animation — thrust the stick forward, then fire.
-  // Plays the visual loaded-shot animation: pullBack → 0 over ~140ms, then callback.
-  function animateCueStrike(onComplete) {
-    if (!state) { onComplete && onComplete(); return; }
-    const start = state.pullBack || 0;
-    const duration = 140;  // ms
-    const t0 = performance.now();
-    function frame() {
-      const now = performance.now();
-      const t = Math.min(1, (now - t0) / duration);
-      // Ease-in cubic — slow start, fast strike
-      const eased = t * t * t;
-      state.pullBack = start * (1 - eased);
-      render();
-      if (t < 1) requestAnimationFrame(frame);
-      else onComplete && onComplete();
-    }
-    frame();
-  }
-
-  let powerDragging = false;
-  let spinDragging = false;
-  let pressTimer = null;
-
-  // Drag-pull-back state — used for the "draw the bowstring" cue control.
-  // When the player presses near the cue ball, we enter pullingBack mode:
-  //   - direction of pull (from cue ball outward) sets aim (cue will travel OPPOSITE)
-  //   - distance of pull sets power
-  //   - release fires the shot
-  let pullingBack = false;
-  let pullStartCueX = 0, pullStartCueY = 0;  // cue ball position at start
-  const PULL_GRAB_RADIUS = 70;  // table units — must press within this of cue ball
-  const PULL_MIN_FIRE = 25;      // table units — minimum pull to actually fire on release
-  const PULL_MAX = 220;          // table units — pull distance that maps to power=1.0
-
-  function bindInput() {
-    const pointerDown = (e) => {
-      if (!state) return;
-      const rect = canvas.getBoundingClientRect();
-      const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
-      const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
-      const pt = canvasToTable(x, y);
-
-      // Game over → restart
-      if (state.gamePhase === 'gameover') {
-        newGame(state.mode);
-        render();
-        return;
-      }
-
-      // Call pocket
-      if (state.showCallPocket) {
-        let nearest = -1, nd = 999;
-        for (let i = 0; i < POCKETS.length; i++) {
-          const d = Math.hypot(pt.x - POCKETS[i].x, pt.y - POCKETS[i].y);
-          if (d < nd) { nd = d; nearest = i; }
-        }
-        if (nd < POCKET_R + 30) {
-          state.calledPocket = nearest;
-          state.showCallPocket = false;
-          render();
-          setTimeout(takeShot, 150);
-        }
-        return;
-      }
-
-      // Ball in hand placement
-      if (state.ballInHand && state.turn === 'player' && state.gamePhase === 'aiming') {
-        if (pt.x > PLAY_X0 + BALL_R && pt.x < PLAY_X1 - BALL_R &&
-            pt.y > PLAY_Y0 + BALL_R && pt.y < PLAY_Y1 - BALL_R) {
-          // Check not overlapping another ball
-          let ok = true;
-          for (const b of state.balls) {
-            if (!b.inPlay || b.n === 0) continue;
-            if (Math.hypot(pt.x - b.x, pt.y - b.y) < BALL_R * 2 + 1) { ok = false; break; }
-          }
-          if (ok) {
-            const cue = state.balls[0];
-            cue.x = pt.x;
-            cue.y = pt.y;
-            state.ballInHand = false;
-            render();
-            return;
-          }
-        }
-      }
-
-      if (state.gamePhase !== 'aiming' || state.turn !== 'player') return;
-
-      // Power slider region (right edge)
-      if (x > canvas.width - 60) {
-        powerDragging = true;
-        updatePowerFromY(y);
-        return;
-      }
-      // Spin region (bottom-right ball overlay)
-      const spinCx = canvas.width - 90;
-      const spinCy = canvas.height - 90;
-      if (Math.hypot(x - spinCx, y - spinCy) < 32) {
-        spinDragging = true;
-        updateSpin(x, y, spinCx, spinCy);
-        return;
-      }
-
-      // Check: did the player press NEAR the cue ball? If so, start drag-pull-back.
-      const cueBall = state.balls[0];
-      if (cueBall && cueBall.inPlay) {
-        const distToCue = Math.hypot(pt.x - cueBall.x, pt.y - cueBall.y);
-        if (distToCue < PULL_GRAB_RADIUS) {
-          pullingBack = true;
-          pullStartCueX = cueBall.x;
-          pullStartCueY = cueBall.y;
-          state.pullBack = 0;
-          // Set initial aim: cue will travel OPPOSITE to where the player pressed.
-          // i.e., player pressed behind the cue ball relative to target → cue goes toward target.
-          if (distToCue > 1) {
-            state.aimX = cueBall.x - (pt.x - cueBall.x) * 5;  // mirror & extend
-            state.aimY = cueBall.y - (pt.y - cueBall.y) * 5;
-          }
-          render();
-          return;
-        }
-      }
-
-      // Otherwise: tap-to-aim (existing behavior)
-      state.aimX = pt.x;
-      state.aimY = pt.y;
-      render();
-    };
-
-    const pointerMove = (e) => {
-      if (!state) return;
-      const rect = canvas.getBoundingClientRect();
-      const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
-      const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
-      if (powerDragging) { updatePowerFromY(y); return; }
-      if (spinDragging) {
-        updateSpin(x, y, canvas.width - 90, canvas.height - 90);
-        return;
-      }
-      // Pull-back drag — finger pulled away from cue ball
-      if (pullingBack) {
-        const pt = canvasToTable(x, y);
-        const dx = pt.x - pullStartCueX;
-        const dy = pt.y - pullStartCueY;
-        const pullDist = Math.hypot(dx, dy);
-        if (pullDist > 0.5) {
-          // Aim direction: mirror across cue ball.
-          // Whatever side of the cue ball the finger is on, the shot goes the OTHER side.
-          // We extend the aim point far away so direction is stable even at small pull distances.
-          const ux = -dx / pullDist;  // unit vector pointing AWAY from finger (toward shot direction)
-          const uy = -dy / pullDist;
-          state.aimX = pullStartCueX + ux * 300;
-          state.aimY = pullStartCueY + uy * 300;
-        }
-        // Pull-back visual offset = clamped pull distance
-        state.pullBack = Math.min(pullDist, PULL_MAX);
-        // Power = how far we've pulled, 0..1
-        state.power = Math.min(1, pullDist / PULL_MAX);
-        render();
-        return;
-      }
-      if (state.gamePhase === 'aiming' && state.turn === 'player' && !state.ballInHand && !state.showCallPocket) {
-        const pt = canvasToTable(x, y);
-        state.aimX = pt.x;
-        state.aimY = pt.y;
-        render();
-      }
-    };
-
-    const pointerUp = () => {
-      powerDragging = false;
-      spinDragging = false;
-      // Pull-back release — fire if pulled past minimum, else cancel
-      if (pullingBack) {
-        const pulled = state.pullBack || 0;
-        pullingBack = false;
-        if (pulled >= PULL_MIN_FIRE) {
-          // Animate the cue stick snapping forward into the cue ball, then take shot.
-          animateCueStrike(() => {
-            state.pullBack = 0;
-            takeShot();
-          });
-        } else {
-          // Cancel — pulled too short, just reset visual
-          state.pullBack = 0;
-          render();
-        }
-      }
-    };
-
-    canvas.addEventListener('mousedown', pointerDown);
-    canvas.addEventListener('mousemove', pointerMove);
-    canvas.addEventListener('mouseup', pointerUp);
-    canvas.addEventListener('touchstart', (e) => { e.preventDefault(); pointerDown(e); }, { passive: false });
-    canvas.addEventListener('touchmove', (e) => { e.preventDefault(); pointerMove(e); }, { passive: false });
-    canvas.addEventListener('touchend', pointerUp);
-  }
-
-  function updatePowerFromY(y) {
-    const top = 40;
-    const bot = canvas.height - 50;
-    const t = Math.max(0, Math.min(1, (bot - y) / (bot - top)));
-    state.power = t;
-    render();
-  }
-
-  function updateSpin(x, y, cx, cy) {
-    const dx = (x - cx) / 28;
-    const dy = (y - cy) / 28;
-    const d = Math.hypot(dx, dy);
-    const clamped = d > 1 ? 1 / d : 1;
-    state.spinX = dx * clamped;
-    state.spinY = dy * clamped;
-    render();
-  }
-
-  // ---------- HUD controls drawing (power bar, spin, shoot) ---------------
-  function drawHUD() {
-    if (!state || state.gamePhase !== 'aiming' || state.turn !== 'player') return;
-    ctx.save();
-    // Power bar
-    const bx = canvas.width - 50;
-    const by = 40;
-    const bw = 22;
-    const bh = canvas.height - 100;
-    ctx.fillStyle = 'rgba(0,0,0,0.55)';
-    ctx.fillRect(bx, by, bw, bh);
-    const fillH = bh * state.power;
-    const pg = ctx.createLinearGradient(bx, by + bh - fillH, bx, by + bh);
-    pg.addColorStop(0, '#f7c948');
-    pg.addColorStop(1, '#c0392b');
-    ctx.fillStyle = pg;
-    ctx.fillRect(bx, by + bh - fillH, bw, fillH);
-    ctx.strokeStyle = '#8a6b2e';
-    ctx.strokeRect(bx, by, bw, bh);
-    ctx.fillStyle = '#e8dcc3';
-    ctx.font = '10px Georgia, serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('POWER', bx + bw / 2, by - 6);
-
-    // Spin ball
-    const cx = canvas.width - 90;
-    const cy = canvas.height - 90;
-    ctx.fillStyle = 'rgba(0,0,0,0.55)';
-    ctx.beginPath();
-    ctx.arc(cx, cy, 32, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = '#8a6b2e';
-    ctx.stroke();
-    ctx.fillStyle = '#f5ecd7';
-    ctx.beginPath();
-    ctx.arc(cx, cy, 28, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#c0392b';
-    ctx.beginPath();
-    ctx.arc(cx + state.spinX * 20, cy + state.spinY * 20, 5, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#e8dcc3';
-    ctx.font = '10px Georgia, serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('SPIN', cx, cy - 40);
-
-    // Shoot button
-    const shootW = 100, shootH = 40;
-    const sx = 20;
-    const sy = canvas.height - 70;
-    ctx.fillStyle = '#7c2a1a';
-    roundRect(ctx, sx, sy, shootW, shootH, 6);
-    ctx.fill();
-    ctx.strokeStyle = '#d9a679';
-    ctx.stroke();
-    ctx.fillStyle = '#f5ecd7';
-    ctx.font = 'bold 14px Georgia, serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('SHOOT', sx + shootW / 2, sy + shootH / 2);
-
-    state._shootBtn = { x: sx, y: sy, w: shootW, h: shootH };
-    ctx.restore();
-  }
-
-  // Extend input to detect shoot button and mode buttons
-  const origBind = bindInput;
-  bindInput = function () {
-    origBind();
-    canvas.addEventListener('mousedown', onHudTap);
-    canvas.addEventListener('touchstart', onHudTap, { passive: false });
-  };
-
-  function onHudTap(e) {
-    if (!state) return;
-    const rect = canvas.getBoundingClientRect();
-    const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
-    const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
-    // Shoot button
-    const sb = state._shootBtn;
-    if (sb && x >= sb.x && x <= sb.x + sb.w && y >= sb.y && y <= sb.y + sb.h) {
-      if (state.gamePhase === 'aiming' && state.turn === 'player' && !state.ballInHand) {
-        takeShot();
-      }
-    }
-  }
-
-  // ---------- Main loop ----------------------------------------------------
-  function loop() {
-    if (!state) return;
-    if (state.gamePhase === 'simulating') {
-      step();
-    }
-    render();
-    drawHUD();
-    rafId = requestAnimationFrame(loop);
-  }
-
-  // ---------- Mode select screen ------------------------------------------
-  function drawModeSelect() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    // Background
-    const g = ctx.createRadialGradient(canvas.width/2, canvas.height/2, 40, canvas.width/2, canvas.height/2, canvas.width);
-    g.addColorStop(0, '#2a1206');
-    g.addColorStop(1, '#0a0503');
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    ctx.fillStyle = '#ebdab3';
-    ctx.textAlign = 'center';
-    ctx.font = 'italic bold 22px Georgia, serif';
-    ctx.fillText('THE BILLIARD TABLE', canvas.width / 2, 52);
-    ctx.font = 'italic 13px Georgia, serif';
-    ctx.fillStyle = '#c9b98a';
-    ctx.fillText('The felt is honest. Most things in this house are not.', canvas.width / 2, 78);
-
-    const W = canvas.width;
-    const H = canvas.height;
-    const cw = Math.min(280, W - 60);
-    const cx = W / 2 - cw / 2;
-    const btnH = 72;
-    const smallH = 44;
-    const gap = 10;
-
-    // Stack 3 buttons centered vertically in available space below the subtitle (~90px)
-    const totalStack = btnH + gap + btnH + gap + smallH;
-    const stackTop = 90 + Math.max(0, (H - 90 - totalStack - 20) / 2);
-    const soloY = stackTop;
-    const vsY = soloY + btnH + gap;
-    const exitY = vsY + btnH + gap;
-
-    // Solo button
-    ctx.fillStyle = '#4a1808';
-    roundRect(ctx, cx, soloY, cw, btnH, 8);
-    ctx.fill();
-    ctx.strokeStyle = '#d9a679';
-    ctx.lineWidth = 1;
-    ctx.stroke();
-    ctx.fillStyle = '#f5ecd7';
-    ctx.font = 'bold 15px Georgia, serif';
-    ctx.textBaseline = 'alphabetic';
-    ctx.fillText('SOLO PRACTICE', W / 2, soloY + 28);
-    ctx.fillStyle = '#c9b98a';
-    ctx.font = 'italic 11px Georgia, serif';
-    ctx.fillText('Rack. Break. Play at your own pace.', W / 2, soloY + 50);
-
-    // Vs Alistair
-    ctx.fillStyle = '#4a1808';
-    roundRect(ctx, cx, vsY, cw, btnH, 8);
-    ctx.fill();
-    ctx.strokeStyle = '#d9a679';
-    ctx.stroke();
-    ctx.fillStyle = '#f5ecd7';
-    ctx.font = 'bold 15px Georgia, serif';
-    ctx.fillText('CHALLENGE ALISTAIR', W / 2, vsY + 28);
-    ctx.fillStyle = '#c9b98a';
-    ctx.font = 'italic 11px Georgia, serif';
-    ctx.fillText('A game, then. Loser owes a truthful answer.', W / 2, vsY + 50);
-
-    // Exit
-    ctx.fillStyle = 'rgba(0,0,0,0)';
-    ctx.strokeStyle = '#8a6b2e';
-    roundRect(ctx, cx, exitY, cw, smallH, 6);
-    ctx.stroke();
-    ctx.fillStyle = '#c9b98a';
-    ctx.font = '12px Georgia, serif';
-    ctx.fillText('LEAVE THE TABLE', W / 2, exitY + 28);
-
-    modeSelectRegions = {
-      solo: { x: cx, y: soloY, w: cw, h: btnH },
-      vs:   { x: cx, y: vsY,   w: cw, h: btnH },
-      exit: { x: cx, y: exitY, w: cw, h: smallH }
-    };
-  }
-
-  let modeSelectRegions = null;
-  let modeSelectActive = false;
-
-  function hitRegion(x, y, r) {
-    return r && x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h;
-  }
-
-  function onModeSelectTap(e) {
-    if (!modeSelectActive) return;
-    const rect = canvas.getBoundingClientRect();
-    const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
-    const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
-    if (hitRegion(x, y, modeSelectRegions.solo)) {
-      modeSelectActive = false;
-      newGame('solo');
-      loop();
-      return;
-    }
-    if (hitRegion(x, y, modeSelectRegions.vs)) {
-      modeSelectActive = false;
-      newGame('vs');
-      loop();
-      return;
-    }
-    if (hitRegion(x, y, modeSelectRegions.exit)) {
-      closeBilliards();
-    }
-  }
-
-  // ---------- Public: open / close ----------------------------------------
   function openBilliards() {
     if (modal) return;
     modal = document.createElement('div');
-    modal.id = 'nocturne-billiards';
-    modal.style.cssText = [
-      'position:fixed',
-      'inset:0',
-      'z-index:9999',
-      'background:rgba(5,3,2,0.96)',
-      'display:flex',
-      'align-items:center',
-      'justify-content:center',
-      'flex-direction:column'
-    ].join(';');
+    modal.style.cssText = 'position:fixed;inset:0;z-index:9999;background:radial-gradient(ellipse at center,#1a0e07 0%,#0a0503 50%,#000 100%);overflow:hidden;touch-action:none;';
 
-    // Close button
     const close = document.createElement('button');
     close.textContent = '× CLOSE';
-    close.style.cssText = [
-      'position:absolute',
-      'top:12px',
-      'right:12px',
-      'background:rgba(40,20,10,0.8)',
-      'color:#ebdab3',
-      'border:1px solid #8a6b2e',
-      'padding:6px 12px',
-      'font-family:Georgia, serif',
-      'font-size:12px',
-      'cursor:pointer',
-      'z-index:2'
-    ].join(';');
+    close.style.cssText = 'position:absolute;top:8px;right:8px;background:rgba(40,20,10,0.85);color:#ebdab3;border:1px solid #8a6b2e;padding:6px 12px;font-family:Georgia,serif;font-size:12px;cursor:pointer;z-index:2;border-radius:4px;';
     close.addEventListener('click', closeBilliards);
+    close.addEventListener('touchend', (e) => { e.preventDefault(); closeBilliards(); });
 
     canvas = document.createElement('canvas');
-    canvas.style.cssText = 'display:block;max-width:100vw;max-height:100vh;touch-action:none';
+    canvas.style.cssText = 'display:block;width:100%;height:100%;touch-action:none;';
     modal.appendChild(canvas);
     modal.appendChild(close);
     document.body.appendChild(modal);
 
-    fitCanvas();
     ctx = canvas.getContext('2d');
+    fitCanvas();
     window.addEventListener('resize', fitCanvas);
+    window.addEventListener('orientationchange', fitCanvas);
 
-    // Mode select
-    modeSelectActive = true;
-    drawModeSelect();
-    canvas.addEventListener('mousedown', onModeSelectTap);
-    canvas.addEventListener('touchstart', (e) => { e.preventDefault(); onModeSelectTap(e); }, { passive: false });
+    screenState = 'modeSelect';
+    state = null;
+    match = null;
 
-    // Main input
-    bindInput();
+    canvas.addEventListener('mousedown', onPointerDown);
+    canvas.addEventListener('mousemove', onPointerMove);
+    canvas.addEventListener('mouseup', onPointerUp);
+    canvas.addEventListener('touchstart', onPointerDown, { passive: false });
+    canvas.addEventListener('touchmove', onPointerMove, { passive: false });
+    canvas.addEventListener('touchend', onPointerUp);
+    canvas.addEventListener('touchcancel', onPointerUp);
+
+    loop();
   }
 
   function fitCanvas() {
     if (!canvas) return;
-    const maxW = Math.min(window.innerWidth - 16, 900);
-    const maxH = Math.min(window.innerHeight - 16, 500);
-    // Keep aspect close to 2:1
-    let w = maxW;
-    let h = w / 2;
-    if (h > maxH) { h = maxH; w = h * 2; }
-    canvas.width = Math.floor(w);
-    canvas.height = Math.floor(h);
-    if (modeSelectActive) drawModeSelect();
-    else if (state) render();
+    const w = Math.floor(window.innerWidth);
+    const h = Math.floor(window.innerHeight);
+    canvas.width = w;
+    canvas.height = h;
   }
 
   function closeBilliards() {
@@ -1663,12 +2255,12 @@
     canvas = null;
     ctx = null;
     state = null;
-    modeSelectActive = false;
+    screenState = 'modeSelect';
+    powerDragging = spinDragging = pullingBack = false;
     window.removeEventListener('resize', fitCanvas);
+    window.removeEventListener('orientationchange', fitCanvas);
   }
 
-  // Expose
   window.openBilliards = openBilliards;
   window.closeBilliards = closeBilliards;
-
 })();
