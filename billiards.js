@@ -3256,6 +3256,7 @@
     lagState.alistairShot = false;
     lagState.winner = null;
     lagState.resultTimer = 0;
+    lagState.gameMode = 'vs';  // always vs — lag only fires for VS matches
     // Player cue ball at left half, alistair at right half of head string
     // Lag balls start in the baulk area (near end)
     lagState.playerBall  = { x: LAG_HEAD_X, y: PLAY_Y0 + PLAY_H * 0.38, vx: 0, vy: 0, stopped: false, finalDist: null };
@@ -3436,8 +3437,7 @@
       ctx.fillText(won ? 'You break.' : 'Alistair breaks.', W/2, H/2 + 12);
       ctx.fillStyle = '#8a6b2e'; ctx.font = '11px Georgia, serif';
       ctx.fillText('Tap to continue', W/2, H/2 + 40);
-      if (lagState.resultTimer <= 0) {
-        // Auto-advance
+      if (lagState.resultTimer <= 0 && lagState.active) {
         finishLag();
       }
     }
@@ -3447,14 +3447,17 @@
     if (!lagState.active) return;
     lagState.active = false;
     const playerBreaks = lagState.winner === 'player';
-    // Start actual game
-    newGame(state ? state.mode : 'vs');
+    // Start the actual game
+    state = null;  // clear any stale state
+    newGame('vs');
+    screenState = 'game';
     if (!playerBreaks) {
-      // Alistair breaks
       state.turn = 'alistair';
-      setTimeout(alistairMove, 1000);
+      state._alistairScheduled = false;
+      setTimeout(() => {
+        if (state && state.turn === 'alistair' && state.gamePhase === 'aiming') alistairMove();
+      }, 1200);
     }
-    // else player breaks — state.turn is already 'player'
   }
 
 
@@ -4296,7 +4299,9 @@
     if (lagState.active) {
       stepLag();
       drawLag();
-    } else if (screenState === 'modeSelect' || screenState === 'formatSelect') {
+    } else if (screenState === 'modeSelect' || screenState === 'formatSelect' ||
+               screenState === 'soloHub' || screenState === 'tutorialMenu' ||
+               screenState === 'tutorialReader' || screenState === 'tutorialDrills') {
       computeView();
       drawScreenOverlay();
     } else if (screenState === 'interstitial' || screenState === 'matchEnd') {
