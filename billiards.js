@@ -1503,9 +1503,9 @@
     const H = canvas.height;
     const cw = Math.min(280, W - 60);
     const cx = W / 2 - cw / 2;
-    const btnH = 60;
-    const smallH = 40;
-    const gap = 12;
+    const btnH = 72;
+    const smallH = 44;
+    const gap = 10;
 
     // Stack 3 buttons centered vertically in available space below the subtitle (~90px)
     const totalStack = btnH + gap + btnH + gap + smallH;
@@ -1524,10 +1524,10 @@
     ctx.fillStyle = '#f5ecd7';
     ctx.font = 'bold 15px Georgia, serif';
     ctx.textBaseline = 'alphabetic';
-    ctx.fillText('SOLO PRACTICE', W / 2, soloY + 26);
+    ctx.fillText('SOLO PRACTICE', W / 2, soloY + 28);
     ctx.fillStyle = '#c9b98a';
     ctx.font = 'italic 11px Georgia, serif';
-    ctx.fillText('Rack. Break. Play at your own pace.', W / 2, soloY + 46);
+    ctx.fillText('Rack. Break. Play at your own pace.', W / 2, soloY + 50);
 
     // Vs Alistair
     ctx.fillStyle = '#4a1808';
@@ -1537,10 +1537,10 @@
     ctx.stroke();
     ctx.fillStyle = '#f5ecd7';
     ctx.font = 'bold 15px Georgia, serif';
-    ctx.fillText('CHALLENGE ALISTAIR', W / 2, vsY + 26);
+    ctx.fillText('CHALLENGE ALISTAIR', W / 2, vsY + 28);
     ctx.fillStyle = '#c9b98a';
     ctx.font = 'italic 11px Georgia, serif';
-    ctx.fillText('A game, then. Loser owes a truthful answer.', W / 2, vsY + 46);
+    ctx.fillText('A game, then. Loser owes a truthful answer.', W / 2, vsY + 50);
 
     // Exit
     ctx.fillStyle = 'rgba(0,0,0,0)';
@@ -1549,7 +1549,7 @@
     ctx.stroke();
     ctx.fillStyle = '#c9b98a';
     ctx.font = '12px Georgia, serif';
-    ctx.fillText('LEAVE THE TABLE', W / 2, exitY + 26);
+    ctx.fillText('LEAVE THE TABLE', W / 2, exitY + 28);
 
     modeSelectRegions = {
       solo: { x: cx, y: soloY, w: cw, h: btnH },
