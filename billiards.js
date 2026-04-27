@@ -1499,51 +1499,62 @@
     ctx.fillStyle = '#c9b98a';
     ctx.fillText('The felt is honest. Most things in this house are not.', canvas.width / 2, 78);
 
-    const cw = Math.min(280, canvas.width - 60);
-    const cx = canvas.width / 2 - cw / 2;
-    const soloY = 120;
-    const vsY = 200;
+    const W = canvas.width;
+    const H = canvas.height;
+    const cw = Math.min(280, W - 60);
+    const cx = W / 2 - cw / 2;
+    const btnH = 60;
+    const smallH = 40;
+    const gap = 12;
+
+    // Stack 3 buttons centered vertically in available space below the subtitle (~90px)
+    const totalStack = btnH + gap + btnH + gap + smallH;
+    const stackTop = 90 + Math.max(0, (H - 90 - totalStack - 20) / 2);
+    const soloY = stackTop;
+    const vsY = soloY + btnH + gap;
+    const exitY = vsY + btnH + gap;
 
     // Solo button
     ctx.fillStyle = '#4a1808';
-    roundRect(ctx, cx, soloY, cw, 60, 8);
+    roundRect(ctx, cx, soloY, cw, btnH, 8);
     ctx.fill();
     ctx.strokeStyle = '#d9a679';
     ctx.lineWidth = 1;
     ctx.stroke();
     ctx.fillStyle = '#f5ecd7';
     ctx.font = 'bold 15px Georgia, serif';
-    ctx.fillText('SOLO PRACTICE', canvas.width / 2, soloY + 24);
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillText('SOLO PRACTICE', W / 2, soloY + 26);
     ctx.fillStyle = '#c9b98a';
     ctx.font = 'italic 11px Georgia, serif';
-    ctx.fillText('Rack. Break. Play at your own pace.', canvas.width / 2, soloY + 44);
+    ctx.fillText('Rack. Break. Play at your own pace.', W / 2, soloY + 46);
 
     // Vs Alistair
     ctx.fillStyle = '#4a1808';
-    roundRect(ctx, cx, vsY, cw, 60, 8);
+    roundRect(ctx, cx, vsY, cw, btnH, 8);
     ctx.fill();
     ctx.strokeStyle = '#d9a679';
     ctx.stroke();
     ctx.fillStyle = '#f5ecd7';
     ctx.font = 'bold 15px Georgia, serif';
-    ctx.fillText('CHALLENGE ALISTAIR', canvas.width / 2, vsY + 24);
+    ctx.fillText('CHALLENGE ALISTAIR', W / 2, vsY + 26);
     ctx.fillStyle = '#c9b98a';
     ctx.font = 'italic 11px Georgia, serif';
-    ctx.fillText('A game, then. Loser owes a truthful answer.', canvas.width / 2, vsY + 44);
+    ctx.fillText('A game, then. Loser owes a truthful answer.', W / 2, vsY + 46);
 
     // Exit
-    ctx.fillStyle = 'transparent';
+    ctx.fillStyle = 'rgba(0,0,0,0)';
     ctx.strokeStyle = '#8a6b2e';
-    roundRect(ctx, cx, vsY + 80, cw, 40, 6);
+    roundRect(ctx, cx, exitY, cw, smallH, 6);
     ctx.stroke();
     ctx.fillStyle = '#c9b98a';
     ctx.font = '12px Georgia, serif';
-    ctx.fillText('LEAVE THE TABLE', canvas.width / 2, vsY + 106);
+    ctx.fillText('LEAVE THE TABLE', W / 2, exitY + 26);
 
     modeSelectRegions = {
-      solo: { x: cx, y: soloY, w: cw, h: 60 },
-      vs:   { x: cx, y: vsY,   w: cw, h: 60 },
-      exit: { x: cx, y: vsY + 80, w: cw, h: 40 }
+      solo: { x: cx, y: soloY, w: cw, h: btnH },
+      vs:   { x: cx, y: vsY,   w: cw, h: btnH },
+      exit: { x: cx, y: exitY, w: cw, h: smallH }
     };
   }
 
