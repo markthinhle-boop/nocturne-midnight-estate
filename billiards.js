@@ -277,6 +277,7 @@
       aimX: PLAY_X1 - 100,
       aimY: TABLE_H / 2,
       power: 0.5,                 // 0..1
+      pullBack: 0,                // visual stick pull-back distance (table units), 0 when not pulling
       spinX: 0,                   // -1..1  (side english)
       spinY: 0,                   // -1..1  (top/back)
       // Turn / rules
@@ -846,6 +847,7 @@
     if (state.gamePhase === 'aiming' && state.turn === 'player' && state.mode !== 'demo') {
       const cue = state.balls[0];
       if (cue.inPlay) {
+        // Aim line — dashed, projects from cue ball toward aim point
         ctx.strokeStyle = 'rgba(255,255,255,0.55)';
         ctx.setLineDash([4, 6]);
         ctx.lineWidth = 1.4;
@@ -854,18 +856,107 @@
         ctx.lineTo(state.aimX, state.aimY);
         ctx.stroke();
         ctx.setLineDash([]);
-        // Cue stick
+
+        // Cue stick — elegant maple/leather/tip rendering
         const dx = state.aimX - cue.x;
         const dy = state.aimY - cue.y;
         const d = Math.hypot(dx, dy) || 1;
         const ux = dx / d, uy = dy / d;
-        const back = 18 + (1 - state.power) * 30;
-        const len = 140;
-        ctx.strokeStyle = '#d9a679';
-        ctx.lineWidth = 3;
+
+        // Pull-back: when player is dragging, stick pulls back from cue ball.
+        // pullBack is a separate visual offset from "back" (which is power-driven).
+        const pullDist = state.pullBack || 0;        // current drag pull-back in table units
+        const back = BALL_R + 4 + pullDist;          // gap between cue ball tip and stick tip
+        const len = 160;                              // stick length
+        const ferruleLen = 8;                         // white ferrule below tip
+        const wrapLen = 30;                           // leather wrap section
+        const buttLen = 24;                           // black butt cap
+
+        // Stick is rendered in 4 segments along the line BEHIND the cue ball:
+        //   tip (white ferrule) → maple shaft → leather wrap → black butt
+        // We render BACK along (-ux, -uy) direction.
+        const tipX = cue.x - ux * back;
+        const tipY = cue.y - uy * back;
+
+        // Position helper: distance from tip along stick
+        function stickPt(distFromTip) {
+          return { x: tipX - ux * distFromTip, y: tipY - uy * distFromTip };
+        }
+
+        // Shadow under stick
+        ctx.save();
+        ctx.strokeStyle = 'rgba(0,0,0,0.35)';
+        ctx.lineWidth = 5;
+        ctx.lineCap = 'butt';
         ctx.beginPath();
-        ctx.moveTo(cue.x - ux * back, cue.y - uy * back);
-        ctx.lineTo(cue.x - ux * (back + len), cue.y - uy * (back + len));
+        ctx.moveTo(tipX + 1.5, tipY + 2.5);
+        const tail = stickPt(len);
+        ctx.lineTo(tail.x + 1.5, tail.y + 2.5);
+        ctx.stroke();
+        ctx.restore();
+
+        // Tip (white ferrule, very short)
+        const ferruleEnd = stickPt(ferruleLen);
+        ctx.strokeStyle = '#f5ecd7';
+        ctx.lineWidth = 3.6;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(tipX, tipY);
+        ctx.lineTo(ferruleEnd.x, ferruleEnd.y);
+        ctx.stroke();
+
+        // Maple shaft — light wood with subtle gradient
+        const shaftEnd = stickPt(len - wrapLen - buttLen);
+        const shaftGrad = ctx.createLinearGradient(ferruleEnd.x, ferruleEnd.y - 3, ferruleEnd.x, ferruleEnd.y + 3);
+        shaftGrad.addColorStop(0, '#e8c890');
+        shaftGrad.addColorStop(0.5, '#d4a868');
+        shaftGrad.addColorStop(1, '#9a7438');
+        ctx.strokeStyle = shaftGrad;
+        ctx.lineWidth = 3.8;
+        ctx.beginPath();
+        ctx.moveTo(ferruleEnd.x, ferruleEnd.y);
+        ctx.lineTo(shaftEnd.x, shaftEnd.y);
+        ctx.stroke();
+
+        // Leather wrap — darker, slightly thicker
+        const wrapEnd = stickPt(len - buttLen);
+        ctx.strokeStyle = '#3a1f10';
+        ctx.lineWidth = 4.2;
+        ctx.beginPath();
+        ctx.moveTo(shaftEnd.x, shaftEnd.y);
+        ctx.lineTo(wrapEnd.x, wrapEnd.y);
+        ctx.stroke();
+        // Wrap stitching detail (cross-hatch lines)
+        ctx.strokeStyle = 'rgba(150,110,60,0.5)';
+        ctx.lineWidth = 0.6;
+        for (let s = 0; s < 6; s++) {
+          const sp = stickPt(len - buttLen - wrapLen + (s + 0.5) * (wrapLen / 6));
+          ctx.beginPath();
+          ctx.moveTo(sp.x - uy * 2.5, sp.y + ux * 2.5);
+          ctx.lineTo(sp.x + uy * 2.5, sp.y - ux * 2.5);
+          ctx.stroke();
+        }
+
+        // Butt cap — black with brass ring
+        const buttEnd = stickPt(len);
+        ctx.strokeStyle = '#1a0e06';
+        ctx.lineWidth = 4.6;
+        ctx.beginPath();
+        ctx.moveTo(wrapEnd.x, wrapEnd.y);
+        ctx.lineTo(buttEnd.x, buttEnd.y);
+        ctx.stroke();
+        // Brass ring at wrap/butt junction
+        ctx.fillStyle = '#d9a679';
+        ctx.beginPath();
+        ctx.arc(wrapEnd.x, wrapEnd.y, 2.2, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Highlight along the top of the shaft (specular)
+        ctx.strokeStyle = 'rgba(255,235,180,0.4)';
+        ctx.lineWidth = 0.8;
+        ctx.beginPath();
+        ctx.moveTo(ferruleEnd.x - uy * 1, ferruleEnd.y + ux * 1);
+        ctx.lineTo(shaftEnd.x - uy * 1, shaftEnd.y + ux * 1);
         ctx.stroke();
       }
     }
@@ -1075,9 +1166,40 @@
     return { x: (x - ox) / s, y: (y - oy) / s };
   }
 
+  // Cue strike animation — thrust the stick forward, then fire.
+  // Plays the visual loaded-shot animation: pullBack → 0 over ~140ms, then callback.
+  function animateCueStrike(onComplete) {
+    if (!state) { onComplete && onComplete(); return; }
+    const start = state.pullBack || 0;
+    const duration = 140;  // ms
+    const t0 = performance.now();
+    function frame() {
+      const now = performance.now();
+      const t = Math.min(1, (now - t0) / duration);
+      // Ease-in cubic — slow start, fast strike
+      const eased = t * t * t;
+      state.pullBack = start * (1 - eased);
+      render();
+      if (t < 1) requestAnimationFrame(frame);
+      else onComplete && onComplete();
+    }
+    frame();
+  }
+
   let powerDragging = false;
   let spinDragging = false;
   let pressTimer = null;
+
+  // Drag-pull-back state — used for the "draw the bowstring" cue control.
+  // When the player presses near the cue ball, we enter pullingBack mode:
+  //   - direction of pull (from cue ball outward) sets aim (cue will travel OPPOSITE)
+  //   - distance of pull sets power
+  //   - release fires the shot
+  let pullingBack = false;
+  let pullStartCueX = 0, pullStartCueY = 0;  // cue ball position at start
+  const PULL_GRAB_RADIUS = 70;  // table units — must press within this of cue ball
+  const PULL_MIN_FIRE = 25;      // table units — minimum pull to actually fire on release
+  const PULL_MAX = 220;          // table units — pull distance that maps to power=1.0
 
   function bindInput() {
     const pointerDown = (e) => {
@@ -1148,7 +1270,27 @@
         return;
       }
 
-      // Otherwise: aim
+      // Check: did the player press NEAR the cue ball? If so, start drag-pull-back.
+      const cueBall = state.balls[0];
+      if (cueBall && cueBall.inPlay) {
+        const distToCue = Math.hypot(pt.x - cueBall.x, pt.y - cueBall.y);
+        if (distToCue < PULL_GRAB_RADIUS) {
+          pullingBack = true;
+          pullStartCueX = cueBall.x;
+          pullStartCueY = cueBall.y;
+          state.pullBack = 0;
+          // Set initial aim: cue will travel OPPOSITE to where the player pressed.
+          // i.e., player pressed behind the cue ball relative to target → cue goes toward target.
+          if (distToCue > 1) {
+            state.aimX = cueBall.x - (pt.x - cueBall.x) * 5;  // mirror & extend
+            state.aimY = cueBall.y - (pt.y - cueBall.y) * 5;
+          }
+          render();
+          return;
+        }
+      }
+
+      // Otherwise: tap-to-aim (existing behavior)
       state.aimX = pt.x;
       state.aimY = pt.y;
       render();
@@ -1164,6 +1306,28 @@
         updateSpin(x, y, canvas.width - 90, canvas.height - 90);
         return;
       }
+      // Pull-back drag — finger pulled away from cue ball
+      if (pullingBack) {
+        const pt = canvasToTable(x, y);
+        const dx = pt.x - pullStartCueX;
+        const dy = pt.y - pullStartCueY;
+        const pullDist = Math.hypot(dx, dy);
+        if (pullDist > 0.5) {
+          // Aim direction: mirror across cue ball.
+          // Whatever side of the cue ball the finger is on, the shot goes the OTHER side.
+          // We extend the aim point far away so direction is stable even at small pull distances.
+          const ux = -dx / pullDist;  // unit vector pointing AWAY from finger (toward shot direction)
+          const uy = -dy / pullDist;
+          state.aimX = pullStartCueX + ux * 300;
+          state.aimY = pullStartCueY + uy * 300;
+        }
+        // Pull-back visual offset = clamped pull distance
+        state.pullBack = Math.min(pullDist, PULL_MAX);
+        // Power = how far we've pulled, 0..1
+        state.power = Math.min(1, pullDist / PULL_MAX);
+        render();
+        return;
+      }
       if (state.gamePhase === 'aiming' && state.turn === 'player' && !state.ballInHand && !state.showCallPocket) {
         const pt = canvasToTable(x, y);
         state.aimX = pt.x;
@@ -1175,6 +1339,22 @@
     const pointerUp = () => {
       powerDragging = false;
       spinDragging = false;
+      // Pull-back release — fire if pulled past minimum, else cancel
+      if (pullingBack) {
+        const pulled = state.pullBack || 0;
+        pullingBack = false;
+        if (pulled >= PULL_MIN_FIRE) {
+          // Animate the cue stick snapping forward into the cue ball, then take shot.
+          animateCueStrike(() => {
+            state.pullBack = 0;
+            takeShot();
+          });
+        } else {
+          // Cancel — pulled too short, just reset visual
+          state.pullBack = 0;
+          render();
+        }
+      }
     };
 
     canvas.addEventListener('mousedown', pointerDown);
