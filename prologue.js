@@ -155,7 +155,11 @@ const PROLOGUE_PATCHES = {
       'Q5b': {
         question: 'Show me the constellations.',
         type: 'choice',
-        show_condition: { requires_flag_absent: 'telescope_duel_played' },
+        // Only when player hasn't duelled yet AND it's not raining
+        show_condition: {
+          requires_flag_absent: 'telescope_duel_played',
+          requires_runtime: () => !window._terraceRaining,
+        },
         response: 'Something shifts — small, quick. "You are serious." Not a question. She turns toward the telescope. "Then come."',
         on_select: { launch_minigame: 'vivienne-telescope' },
       },

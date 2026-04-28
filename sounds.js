@@ -974,17 +974,12 @@ const NocturneSound = (() => {
       if (hourWindow === 'deep_night') dropAmbientDeepNight();
 
       // Terrace — 1 in 3 chance of rain; disables telescope hotspot if raining
+      // Terrace rain audio — ambient.js owns the rain decision
+      // Follow window._terraceRaining set by ambient.js
       if (isTerrace) {
-        const isRaining = Math.random() < 0.333;
-        window._terraceRaining = isRaining;
-        if (isRaining) {
-          setTimeout(() => { if (_outdoorActive) startRain(0.55); }, 1200);
-          // Delay so _buildHotspots has time to render the element first
-          setTimeout(() => {
-            NocturneEngine.emit('hotspotsUpdated', { disabled: ['terrace-telescope-obj'] });
-          }, 300);
-        }
-        // If not raining — hotspot renders normally, no action needed
+        setTimeout(() => {
+          if (window._terraceRaining && _outdoorActive) startRain(0.55);
+        }, 400);
       }
     });
 

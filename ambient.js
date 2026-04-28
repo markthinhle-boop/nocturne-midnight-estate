@@ -35,8 +35,9 @@ function initAmbient() {
   _checkRain();
 
   NocturneEngine.on('roomEntered', ({ roomId }) => {
+    // Reset rain decision when entering any room (re-rolls on terrace entry)
+    if (!RAIN_ROOMS.includes(roomId)) window._terraceRaining = undefined;
     _applyRoomAmbient(roomId);
-    _checkRain();
   });
 
   NocturneEngine.on('roomDiscovered', ({ roomId }) => {
@@ -109,10 +110,25 @@ function _applyRoomAmbient(roomId) {
   const candleClass = CANDLE_ROOMS[roomId];
   if (candleClass) bg.classList.add(candleClass);
 
-  // Rain
-  const shouldRain = RAIN_ROOMS.includes(roomId) && _isAfterSevenThirty();
-  if (shouldRain && !_rainActive) _startRain();
-  else if (!shouldRain && _rainActive) _stopRain();
+  // Rain — 1 in 3 chance on terrace entry, persisted per visit
+  if (RAIN_ROOMS.includes(roomId)) {
+    const isRaining = Math.random() < 0.333;
+    window._terraceRaining = isRaining;
+    if (isRaining) {
+      _startRain();
+      // Remove telescope hotspot — 300ms delay so _buildHotspots renders first
+      setTimeout(() => {
+        const hs = document.getElementById('hs-terrace-telescope-obj');
+        if (hs) hs.remove();
+      }, 300);
+    } else {
+      window._terraceRaining = false;
+      _stopRain();
+    }
+  } else {
+    window._terraceRaining = false;
+    if (_rainActive) _stopRain();
+  }
 }
 
 // ── RAIN ───────────────────────────────────────────────────
@@ -153,9 +169,22 @@ function _stopRain() {
 
 function _checkRain() {
   const roomId = gameState.currentRoom;
-  const shouldRain = RAIN_ROOMS.includes(roomId) && _isAfterSevenThirty();
-  if (shouldRain && !_rainActive) _startRain();
-  else if (!shouldRain && _rainActive) _stopRain();
+  if (RAIN_ROOMS.includes(roomId)) {
+    // Only roll once per room visit — if already decided, honour it
+    if (window._terraceRaining === true) {
+      if (!_rainActive) _startRain();
+    } else if (window._terraceRaining === false) {
+      if (_rainActive) _stopRain();
+    } else {
+      // First time — roll
+      const isRaining = Math.random() < 0.333;
+      window._terraceRaining = isRaining;
+      if (isRaining) _startRain(); else _stopRain();
+    }
+  } else {
+    window._terraceRaining = undefined;
+    if (_rainActive) _stopRain();
+  }
 }
 
 function _isAfterSevenThirty() {
