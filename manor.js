@@ -552,12 +552,7 @@ function _onHotspotTap(objectId, tapX, tapY) {
 
   // telescope: launch Vivienne minigame if not raining
   if (objectId === 'terrace-telescope-obj') {
-    if (window._terraceRaining) {
-      if (typeof showToast === 'function') {
-        showToast('The rain has taken the sky. Return when it clears — Vivienne will be here.');
-      }
-      return;
-    }
+    if (window._terraceRaining) return; // hotspot removed on rain — belt and suspenders
     _launchTelescopeMinigame();
     return;
   }
@@ -599,14 +594,9 @@ NocturneEngine.on('hotspotsUpdated', ({ disabled = [] }) => {
   const telescopeHs = document.getElementById('hs-terrace-telescope-obj');
   if (!telescopeHs) return;
   if (disabled.includes('terrace-telescope-obj')) {
-    telescopeHs.style.opacity = '0';
-    telescopeHs.style.pointerEvents = 'none';
-    telescopeHs.dataset.rainDisabled = 'true';
-  } else {
-    telescopeHs.style.opacity = '';
-    telescopeHs.style.pointerEvents = '';
-    delete telescopeHs.dataset.rainDisabled;
+    telescopeHs.remove();
   }
+  // If not disabled, hotspot was built correctly — nothing to do
 });
 
 function _buildCharDots() {

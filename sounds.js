@@ -979,11 +979,12 @@ const NocturneSound = (() => {
         window._terraceRaining = isRaining;
         if (isRaining) {
           setTimeout(() => { if (_outdoorActive) startRain(0.55); }, 1200);
-          NocturneEngine.emit('hotspotsUpdated', { disabled: ['terrace-telescope-obj'] });
-        } else {
-          window._terraceRaining = false;
-          NocturneEngine.emit('hotspotsUpdated', { disabled: [] });
+          // Delay so _buildHotspots has time to render the element first
+          setTimeout(() => {
+            NocturneEngine.emit('hotspotsUpdated', { disabled: ['terrace-telescope-obj'] });
+          }, 300);
         }
+        // If not raining — hotspot renders normally, no action needed
       }
     });
 
