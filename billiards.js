@@ -1432,15 +1432,12 @@
   // ============================================================================
 
   // ---------- Audio engine ------------------------------------------------
-  // All sounds synthesized via Web Audio API. No external files.
-  // Mobile-compatible: AudioContext created on first user gesture (pointer down).
+  // Clean, professional snooker sounds. Phenolic resin balls on slate.
+  // Design principle: ONE sound per event, fast attack, fast decay, no mud.
 
-  let _ac = null;          // AudioContext
-  let _masterGain = null;  // master gain node
-  let _audioReady = false;
-
-  // Cooldown timestamps to prevent sound spam from physics loop
+  let _ac = null, _masterGain = null, _compressor = null, _audioReady = false;
   const _lastSoundAt = {};
+
   function _cooldown(key, ms) {
     const now = performance.now();
     if (_lastSoundAt[key] && now - _lastSoundAt[key] < ms) return false;
@@ -1454,9 +1451,17 @@
       const AC = window.AudioContext || window.webkitAudioContext;
       if (!AC) return false;
       _ac = new AC();
+      // Master compressor — keeps everything clean, prevents clipping on break
+      _compressor = _ac.createDynamicsCompressor();
+      _compressor.threshold.value = -18;
+      _compressor.knee.value = 6;
+      _compressor.ratio.value = 4;
+      _compressor.attack.value = 0.003;
+      _compressor.release.value = 0.15;
       _masterGain = _ac.createGain();
-      _masterGain.gain.value = 0.7;
-      _masterGain.connect(_ac.destination);
+      _masterGain.gain.value = 0.65;
+      _masterGain.connect(_compressor);
+      _compressor.connect(_ac.destination);
       _audioReady = true;
       return true;
     } catch (e) { return false; }
@@ -1466,186 +1471,127 @@
     if (_ac && _ac.state === 'suspended') _ac.resume();
   }
 
-  // Core synthesis helpers
   function _now() { return _ac.currentTime; }
 
-  // Gain envelope: attack/decay/sustain/release
-  function _envelope(gainNode, t, a, d, s, r, peak) {
-    gainNode.gain.setValueAtTime(0.0001, t);
-    gainNode.gain.linearRampToValueAtTime(peak, t + a);
-    gainNode.gain.linearRampToValueAtTime(s * peak, t + a + d);
-    gainNode.gain.setValueAtTime(s * peak, t + a + d);
-    gainNode.gain.linearRampToValueAtTime(0.0001, t + a + d + r);
+  // Core primitive: one-shot percussive click/impact.
+  // Models an impulse excitation into a resonant body.
+  // freq = resonant frequency, decay = how fast it rings down, vol = peak volume.
+  function _click(freq, decay, vol, t) {
+    if (!_ac) return;
+    const osc = _ac.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(freq * 1.8, t);          // start sharp, ring down
+    osc.frequency.exponentialRampToValueAtTime(freq, t + decay * 0.15);
+    const g = _ac.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(vol, t + 0.001);       // instant attack
+    g.gain.exponentialRampToValueAtTime(0.0001, t + decay);
+    osc.connect(g); g.connect(_masterGain);
+    osc.start(t); osc.stop(t + decay + 0.01);
   }
 
-  // Filtered noise burst (cushion, scratch, cloth)
-  function _noise(durationSec, freqLo, freqHi, vol, t) {
+  // Noise burst: thud/rumble. Short, filtered, fast decay.
+  function _thud(freqCenter, bw, decay, vol, t) {
     if (!_ac) return;
-    const bufSize = Math.ceil(_ac.sampleRate * durationSec);
-    const buf = _ac.createBuffer(1, bufSize, _ac.sampleRate);
-    const data = buf.getChannelData(0);
-    for (let i = 0; i < bufSize; i++) data[i] = (Math.random() * 2 - 1);
+    const sr = _ac.sampleRate;
+    const len = Math.ceil(sr * decay);
+    const buf = _ac.createBuffer(1, len, sr);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
     const src = _ac.createBufferSource();
     src.buffer = buf;
-    const bpf = _ac.createBiquadFilter();
-    bpf.type = 'bandpass';
-    bpf.frequency.value = (freqLo + freqHi) / 2;
-    bpf.Q.value = (freqLo + freqHi) / (2 * (freqHi - freqLo));
+    const lpf = _ac.createBiquadFilter();
+    lpf.type = 'bandpass';
+    lpf.frequency.value = freqCenter;
+    lpf.Q.value = freqCenter / (bw || freqCenter);
     const g = _ac.createGain();
     g.gain.setValueAtTime(vol, t);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + durationSec);
-    src.connect(bpf);
-    bpf.connect(g);
-    g.connect(_masterGain);
-    src.start(t);
-    src.stop(t + durationSec);
-  }
-
-  function _tone(freq, durationSec, vol, t, type) {
-    if (!_ac) return;
-    const osc = _ac.createOscillator();
-    osc.type = type || 'sine';
-    osc.frequency.value = freq;
-    const g = _ac.createGain();
-    g.gain.setValueAtTime(vol, t);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + durationSec);
-    osc.connect(g);
-    g.connect(_masterGain);
-    osc.start(t);
-    osc.stop(t + durationSec + 0.01);
-  }
-
-  function _toneSweep(freqStart, freqEnd, durationSec, vol, t, type) {
-    if (!_ac) return;
-    const osc = _ac.createOscillator();
-    osc.type = type || 'sine';
-    osc.frequency.setValueAtTime(freqStart, t);
-    osc.frequency.linearRampToValueAtTime(freqEnd, t + durationSec);
-    const g = _ac.createGain();
-    g.gain.setValueAtTime(vol, t);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + durationSec);
-    osc.connect(g);
-    g.connect(_masterGain);
-    osc.start(t);
-    osc.stop(t + durationSec + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + decay);
+    src.connect(lpf); lpf.connect(g); g.connect(_masterGain);
+    src.start(t); src.stop(t + decay);
   }
 
   // ---- Sound events ----
 
-  // Cue strikes the cue ball. power 0..1.
+  // Cue tip strikes cue ball — clean leather-on-phenolic "tack"
   function sndCueStrike(power) {
     if (!_initAudio()) return;
     _resumeAudio();
-    const t = _now() + 0.02;
-    const p = Math.max(0.2, power);
-    // Sharp click: noise burst with high-freq bias + short tone
-    _noise(0.04, 800, 6000, 0.5 + p * 0.5, t);
-    // Thump component — mid-freq body of the impact
-    _noise(0.08, 200, 800, 0.3 + p * 0.4, t);
-    // Cue tip squeak — very short high tone
-    _toneSweep(4200, 2800, 0.025, 0.15 + p * 0.2, t, 'sawtooth');
+    const t = _now() + 0.015;
+    const p = Math.max(0.15, power);
+    // Primary click — cue tip impact
+    _click(1800, 0.04 + p * 0.02, 0.4 + p * 0.35, t);
+    // Low body — cue shaft thump, scales with power
+    _thud(280, 200, 0.06 + p * 0.04, 0.2 + p * 0.25, t);
   }
 
-  // Ball-ball collision. speed = relative impact velocity (0..40ish).
+  // Ball-ball collision — phenolic resin "clack", clean, single hit
   function sndBallCollide(speed) {
     if (!_initAudio()) return;
-    if (!_cooldown('ball', 55)) return;
-    const vol = Math.min(0.8, 0.15 + speed * 0.018);
-    const t = _now() + 0.02;
-    // Ivory clack — two short sine tones, slightly detuned (two balls)
-    _tone(2100 + Math.random() * 200, 0.05, vol, t);
-    _tone(2300 + Math.random() * 200, 0.04, vol * 0.8, t + 0.005);
-    // Mid body for heavier hits
-    if (speed > 8) _noise(0.06, 400, 1800, vol * 0.4, t);
+    if (!_cooldown('ball', 60)) return;
+    const vol = Math.min(0.75, 0.12 + speed * 0.022);
+    const t = _now() + 0.015;
+    // Phenolic resin snooker balls resonate around 2400-2800 Hz
+    // Single dominant frequency — no detuning, no secondary tone, just the clack
+    _click(2500 + Math.random() * 300, 0.035, vol, t);
   }
 
-  // Ball hits cushion. speed = impact speed.
+  // Ball hits cushion — muted rubber thud, no sustain
   function sndCushion(speed) {
     if (!_initAudio()) return;
-    if (!_cooldown('cushion', 65)) return;
-    const vol = Math.min(0.7, 0.1 + speed * 0.02);
-    const t = _now() + 0.02;
-    // Low muted thud
-    _noise(0.1, 120, 600, vol, t);
-    // Slight resonance of the rubber cushion
-    _toneSweep(320, 180, 0.08, vol * 0.35, t, 'sine');
+    if (!_cooldown('cushion', 70)) return;
+    const vol = Math.min(0.55, 0.08 + speed * 0.018);
+    const t = _now() + 0.015;
+    // K-66 rubber: low frequency thud, very short
+    _thud(220, 180, 0.07, vol, t);
   }
 
-  // Ball drops into pocket (not the cue ball).
+  // Ball drops into pocket — hollow rumble then settle
   function sndPocket() {
     if (!_initAudio()) return;
-    const t = _now() + 0.02;
-    // Short rolling rumble as ball tumbles into pocket
-    _noise(0.12, 200, 900, 0.4, t);
-    // Drop thud at the end — satisfying low impact
-    _noise(0.18, 60, 300, 0.55, t + 0.10);
-    // High click as ball hits the bottom
-    _tone(1400, 0.04, 0.25, t + 0.10);
-    // Settling: very low fade out
-    _noise(0.3, 40, 200, 0.2, t + 0.22);
+    const t = _now() + 0.015;
+    _thud(400, 300, 0.08, 0.35, t);           // roll into pocket
+    _click(180, 0.25, 0.45, t + 0.07);        // drop impact — low resonant thud
+    _thud(120, 100, 0.3, 0.2, t + 0.14);      // settle
   }
 
-  // Cue ball scratches — plop + dissonant sting.
+  // Cue ball scratch — same as pocket but with a flat wrong-note
   function sndScratch() {
     if (!_initAudio()) return;
-    const t = _now() + 0.02;
-    // Pocket drop
-    _noise(0.12, 200, 900, 0.38, t);
-    _noise(0.15, 60, 280, 0.5, t + 0.10);
-    // Dissonant sting — "oh no" feel
-    _tone(320, 0.3, 0.2, t + 0.12, 'triangle');
-    _tone(302, 0.3, 0.2, t + 0.14, 'triangle');
+    const t = _now() + 0.015;
+    _thud(400, 300, 0.08, 0.35, t);
+    _click(180, 0.25, 0.4, t + 0.07);
+    // Short dissonant note — "mistake" signal
+    _click(290, 0.4, 0.15, t + 0.18);
   }
 
-  // Cloth drag — quiet rolling sound as balls decelerate. totalSpeed = sum of all ball speeds.
-  function sndCloth(totalSpeed) {
-    if (!_initAudio()) return;
-    if (!_cooldown('cloth', 120)) return;
-    if (totalSpeed < 5) return;
-    const vol = Math.min(0.12, totalSpeed * 0.002);
-    const t = _now();
-    _noise(0.1, 80, 400, vol, t);
-  }
-
-  // Win sting — short rising musical phrase.
-  function sndWin() {
-    if (!_initAudio()) return;
-    const t = _now() + 0.1;
-    // C major arpeggio: C5, E5, G5, C6
-    const notes = [523, 659, 784, 1047];
-    notes.forEach((f, i) => {
-      _tone(f, 0.22, 0.25, t + i * 0.12, 'sine');
-      _tone(f * 2, 0.12, 0.08, t + i * 0.12, 'sine');  // octave shimmer
-    });
-    // Final chord sustain
-    _tone(523, 0.6, 0.15, t + notes.length * 0.12, 'sine');
-    _tone(659, 0.6, 0.12, t + notes.length * 0.12, 'sine');
-    _tone(784, 0.6, 0.12, t + notes.length * 0.12, 'sine');
-  }
-
-  // Lose sting — falling minor phrase.
-  function sndLose() {
-    if (!_initAudio()) return;
-    const t = _now() + 0.1;
-    // A minor descent: A4, F4, E4, A3
-    const notes = [440, 349, 330, 220];
-    notes.forEach((f, i) => {
-      _tone(f, 0.28, 0.2, t + i * 0.14, 'triangle');
-    });
-    // Low sustain note
-    _tone(220, 0.7, 0.18, t + notes.length * 0.14, 'sine');
-  }
-
-  // Break shot — heavy version of cue strike.
+  // Break shot — cue strike + immediate cascade handled by ball-ball collisions
   function sndBreak(power) {
     if (!_initAudio()) return;
     _resumeAudio();
-    const t = _now() + 0.02;
+    const t = _now() + 0.015;
     const p = Math.max(0.5, power);
-    _noise(0.06, 600, 8000, 0.7, t);
-    _noise(0.12, 150, 700, 0.6, t);
-    _toneSweep(5000, 2000, 0.04, 0.3, t, 'sawtooth');
+    // Heavier cue impact for the break
+    _click(1600, 0.055, 0.55 + p * 0.3, t);
+    _thud(320, 250, 0.09, 0.35 + p * 0.2, t);
   }
+
+  // Win sting — simple rising 3-note phrase
+  function sndWin() {
+    if (!_initAudio()) return;
+    const t = _now() + 0.08;
+    [523, 659, 784].forEach((f, i) => _click(f, 0.4, 0.22, t + i * 0.13));
+  }
+
+  // Lose sting — falling minor phrase
+  function sndLose() {
+    if (!_initAudio()) return;
+    const t = _now() + 0.08;
+    [440, 370, 330].forEach((f, i) => _click(f, 0.4, 0.18, t + i * 0.15));
+  }
+
+  // Cloth roll — suppress entirely, too distracting
+  function sndCloth(_totalSpeed) {}
 
   // ---------- Layout & projection -----------------------------------------
   //
