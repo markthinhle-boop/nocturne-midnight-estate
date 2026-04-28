@@ -98,25 +98,12 @@ function initAmbient() {
 
 // ── ROOM AMBIENT ───────────────────────────────────────────
 function _applyRoomAmbient(roomId) {
-  // Apply candle flicker to room bg
-  const roomEl = document.getElementById(`room-${roomId}`);
-  if (!roomEl) return;
-  const bg = roomEl.querySelector('.room-bg');
-  if (!bg) return;
-
-  // Remove all candle classes
-  bg.classList.remove('candle-room', 'candle-room-2', 'candle-room-3');
-
-  const candleClass = CANDLE_ROOMS[roomId];
-  if (candleClass) bg.classList.add(candleClass);
-
-  // Rain — 1 in 3 chance on terrace entry, persisted per visit
+  // Rain — always resolve BEFORE any early returns so it stops when leaving terrace
   if (RAIN_ROOMS.includes(roomId)) {
     const isRaining = Math.random() < 0.333;
     window._terraceRaining = isRaining;
     if (isRaining) {
       _startRain();
-      // Remove telescope hotspot — 300ms delay so _buildHotspots renders first
       setTimeout(() => {
         const hs = document.getElementById('hs-terrace-telescope-obj');
         if (hs) hs.remove();
@@ -129,6 +116,16 @@ function _applyRoomAmbient(roomId) {
     window._terraceRaining = false;
     if (_rainActive) _stopRain();
   }
+
+  // Apply candle flicker to room bg
+  const roomEl = document.getElementById(`room-${roomId}`);
+  if (!roomEl) return;
+  const bg = roomEl.querySelector('.room-bg');
+  if (!bg) return;
+
+  bg.classList.remove('candle-room', 'candle-room-2', 'candle-room-3');
+  const candleClass = CANDLE_ROOMS[roomId];
+  if (candleClass) bg.classList.add(candleClass);
 }
 
 // ── RAIN ───────────────────────────────────────────────────
