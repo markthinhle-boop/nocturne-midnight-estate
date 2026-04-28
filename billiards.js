@@ -475,7 +475,7 @@
 
   // ---------- Shot / physics ----------------------------------------------
   function takeShot() {
-    if (state.gamePhase !== 'aiming') return;
+    if (!state || state.gamePhase !== 'aiming') return;
     const cue = state.balls[0];
     if (!cue.inPlay) return;
     state._cueTouchedCushion = 0;
@@ -1282,7 +1282,7 @@
     else if (best.type === 'bank') say('bank');
     else if (Math.random() < 0.15) say('contemplative');
 
-    setTimeout(() => takeShot(), 700 + Math.random() * 500);
+    setTimeout(() => { if (state) takeShot(); }, 700 + Math.random() * 500);
   }
 
   function countGroup(who) {
@@ -3478,7 +3478,8 @@
       state.turn = 'alistair';
       state._alistairScheduled = false;
       setTimeout(() => {
-        if (state && state.turn === 'alistair' && state.gamePhase === 'aiming') alistairMove();
+        if (!state) return;
+        if (state.turn === 'alistair' && state.gamePhase === 'aiming') alistairMove();
       }, 1200);
     }
   }
@@ -4349,8 +4350,9 @@
         if (!state._alistairScheduled) {
           state._alistairScheduled = true;
           setTimeout(() => {
+            if (!state) return;
             state._alistairScheduled = false;
-            if (state && state.turn === 'alistair' && state.gamePhase === 'aiming') alistairMove();
+            if (state.turn === 'alistair' && state.gamePhase === 'aiming') alistairMove();
           }, 1200 + Math.random() * 600);
         }
       }
