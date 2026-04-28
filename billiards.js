@@ -2421,9 +2421,9 @@
     }
 
     // Spin ball — to the right of the shoot/safe stack, vertically centered between them
-    const sr = 26;
-    const scx = btnX + btnW + 18 + sr;
-    const scy = shootY + btnH + 3;  // vertically between the two buttons
+    const sr = 24;
+    const scx = btnX + btnW / 2;           // centered under the buttons
+    const scy = safeY2 + btnH + sr + 10;   // below the SAFETY button
     if (scx + sr < px - 8) {
       ctx.save();
       ctx.fillStyle = '#f8f1dc';
