@@ -446,40 +446,6 @@ function initRooms() {
     renderCurrentRoom();
     updateCharacterDots(roomId);
 
-    // ── TERRACE RAIN — 1-in-3 chance, post-paywall only ─────────────
-    // Pre-paywall (prologueActive) the terrace is staged warm for Vivienne's
-    // scene; rain is post-paywall investigation atmosphere.
-    if (roomId === 'terrace') {
-      if (gameState.prologueActive) {
-        window._terraceRaining = false;
-      } else {
-        window._terraceRaining = Math.random() < (1 / 3);
-      }
-
-      const telescopeHs = document.getElementById('hs-terrace-telescope-obj');
-
-      if (window._terraceRaining) {
-        if (telescopeHs) telescopeHs.remove();
-      } else if (!telescopeHs) {
-        // Restore hotspot if a prior rainy visit removed it
-        const obj = (typeof ROOM_OBJECTS !== 'undefined') && ROOM_OBJECTS['terrace-telescope-obj'];
-        const layer = document.getElementById('hotspots-terrace');
-        if (obj && layer) {
-          const hs = document.createElement('div');
-          hs.className = 'hotspot';
-          hs.id = 'hs-terrace-telescope-obj';
-          hs.style.cssText = `left:${obj.hotspot.left}%;top:${obj.hotspot.top}%;width:${obj.hotspot.width}%;height:${obj.hotspot.height}%;`;
-          hs.addEventListener('click', e => {
-            e.stopPropagation();
-            const r = hs.getBoundingClientRect();
-            _onHotspotTap('terrace-telescope-obj', r.left + r.width / 2, r.top);
-          });
-          layer.appendChild(hs);
-        }
-      }
-    }
-    // ── END TERRACE RAIN ─────────────────────────────────────────────
-
     // Entering any Compact room — kill any Estate conversation panel state
     if (roomId.startsWith('c')) {
       const panel = document.getElementById('conversation-panel');
@@ -586,7 +552,7 @@ function _onHotspotTap(objectId, tapX, tapY) {
 
   // telescope: launch Vivienne minigame if not raining
   if (objectId === 'terrace-telescope-obj') {
-    if (window._terraceRaining) return; // hotspot removed on rain — belt and suspenders
+    if (window._terraceRaining) return; // raining — silent no-op
     _launchTelescopeMinigame();
     return;
   }
@@ -623,14 +589,12 @@ function _launchTelescopeMinigame() {
   document.body.appendChild(overlay);
 }
 
-// Listen for rain-based hotspot updates
+// Rain hotspot removal — ambient.js calls remove() directly, this is belt-and-suspenders
 NocturneEngine.on('hotspotsUpdated', ({ disabled = [] }) => {
-  const telescopeHs = document.getElementById('hs-terrace-telescope-obj');
-  if (!telescopeHs) return;
   if (disabled.includes('terrace-telescope-obj')) {
-    telescopeHs.remove();
+    const hs = document.getElementById('hs-terrace-telescope-obj');
+    if (hs) hs.remove();
   }
-  // If not disabled, hotspot was built correctly — nothing to do
 });
 
 function _buildCharDots() {

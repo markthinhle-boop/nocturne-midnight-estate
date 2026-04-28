@@ -973,13 +973,15 @@ const NocturneSound = (() => {
       playAmbient(roomId);
       if (hourWindow === 'deep_night') dropAmbientDeepNight();
 
-      // Terrace — 1 in 3 chance of rain; disables telescope hotspot if raining
-      // Terrace rain audio — ambient.js owns the rain decision
-      // Follow window._terraceRaining set by ambient.js
+      // Rain audio — ambient.js owns the visual/decision, sounds.js mirrors it
       if (isTerrace) {
+        // Start rain audio if ambient decided it's raining
         setTimeout(() => {
           if (window._terraceRaining && _outdoorActive) startRain(0.55);
         }, 400);
+      } else {
+        // Left terrace — stop rain audio if playing
+        if (_rainActive) stopRain();
       }
     });
 
