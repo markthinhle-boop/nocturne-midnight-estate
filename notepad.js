@@ -224,6 +224,9 @@ function injectPencilIcon() {
   const existing = document.getElementById('np-pencil-btn');
   if (existing) existing.remove();
 
+  // Gate: hide until antechamber unlocked (matches HUD icon gating)
+  if (!window.gameState || !window.gameState.antechamberGateOpen) return;
+
   const resp   = document.getElementById('char-response');
   const charId = window._activeCharId;
   if (!resp || !charId) return;
