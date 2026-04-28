@@ -561,7 +561,8 @@ function _onHotspotTap(objectId, tapX, tapY) {
 }
 
 function _launchTelescopeMinigame() {
-  // Create fullscreen overlay, load minigame HTML into iframe
+  // Triple guard — never launch if raining
+  if (window._terraceRaining) return;
   let overlay = document.getElementById('telescope-minigame-overlay');
   if (overlay) { overlay.style.display = 'flex'; return; }
 
@@ -574,7 +575,7 @@ function _launchTelescopeMinigame() {
   ].join(';');
 
   const iframe = document.createElement('iframe');
-  iframe.src = `${typeof ASSET_BASE !== 'undefined' ? ASSET_BASE : './'}vivienne-constellation-game.html`;
+  iframe.src = './vivienne-constellation-game.html';
   iframe.style.cssText = 'width:100%;height:100%;border:none;';
   iframe.allow = 'autoplay';
 
