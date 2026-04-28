@@ -3307,10 +3307,17 @@
         b.stopped = true;
         b.finalDist = 9999;  // over
       }
-      // Stopped
-      if (Math.abs(b.vx) < 0.15 && b.x > PLAY_X0 + PLAY_W * 0.3) {
+      // Stopped — any ball slow enough counts, wherever it is
+      if (Math.abs(b.vx) < 0.12) {
         b.stopped = true;
-        b.finalDist = NEAR - b.x;  // distance from near rail — smaller = better
+        // finalDist = distance from near rail (baulk line where they started)
+        // Smaller = closer to near rail = better lag
+        // If ball is past baulk (overshot on return), disqualify
+        if (b.x > NEAR) {
+          b.finalDist = 9999;
+        } else {
+          b.finalDist = NEAR - b.x;
+        }
       }
     }
 
