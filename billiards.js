@@ -430,7 +430,7 @@
     // In portrait: reds cluster near top (far end, small tx)
     const apexX = PLAY_X0 + PLAY_W * 0.28;
     const apexY = TABLE_H / 2;
-    const sp = BALL_R * 2 + 0.6;  // spacing: just touching + tiny gap to prevent initial overlap
+    const sp = BALL_R * 2 + 2.0;  // spacing: small gap prevents overlap cascade on break
     // Triangle rows (portrait: rows go along tx axis = vertically toward far end)
     // Row 0 (apex): 1 ball, Row 1: 2 balls, ..., Row 4: 5 balls
     let id = 1;
@@ -495,7 +495,7 @@
     const dy = state.aimY - cue.y;
     const d = Math.hypot(dx, dy) || 1;
     const power = state.power;
-    const speed = 4 + power * 22;      // base speed (units/frame)
+    const speed = 4 + power * 26;      // base speed (units/frame) — higher for better break spread
     const ux = dx / d, uy = dy / d;    // unit vector in shot direction
     cue.vx = ux * speed;
     cue.vy = uy * speed;
@@ -1536,7 +1536,7 @@
   function sndCueStrike(power) {
     if (!_initAudio()) return;
     _resumeAudio();
-    const t = _now() + 0.01;
+    const t = _now() + 0.02;
     const p = Math.max(0.2, power);
     // Sharp click: noise burst with high-freq bias + short tone
     _noise(0.04, 800, 6000, 0.5 + p * 0.5, t);
@@ -1549,9 +1549,9 @@
   // Ball-ball collision. speed = relative impact velocity (0..40ish).
   function sndBallCollide(speed) {
     if (!_initAudio()) return;
-    if (!_cooldown('ball', 30)) return;
+    if (!_cooldown('ball', 55)) return;
     const vol = Math.min(0.8, 0.15 + speed * 0.018);
-    const t = _now() + 0.005;
+    const t = _now() + 0.02;
     // Ivory clack — two short sine tones, slightly detuned (two balls)
     _tone(2100 + Math.random() * 200, 0.05, vol, t);
     _tone(2300 + Math.random() * 200, 0.04, vol * 0.8, t + 0.005);
@@ -1562,9 +1562,9 @@
   // Ball hits cushion. speed = impact speed.
   function sndCushion(speed) {
     if (!_initAudio()) return;
-    if (!_cooldown('cushion', 40)) return;
+    if (!_cooldown('cushion', 65)) return;
     const vol = Math.min(0.7, 0.1 + speed * 0.02);
-    const t = _now() + 0.005;
+    const t = _now() + 0.02;
     // Low muted thud
     _noise(0.1, 120, 600, vol, t);
     // Slight resonance of the rubber cushion
@@ -1574,7 +1574,7 @@
   // Ball drops into pocket (not the cue ball).
   function sndPocket() {
     if (!_initAudio()) return;
-    const t = _now() + 0.01;
+    const t = _now() + 0.02;
     // Short rolling rumble as ball tumbles into pocket
     _noise(0.12, 200, 900, 0.4, t);
     // Drop thud at the end — satisfying low impact
@@ -1588,7 +1588,7 @@
   // Cue ball scratches — plop + dissonant sting.
   function sndScratch() {
     if (!_initAudio()) return;
-    const t = _now() + 0.01;
+    const t = _now() + 0.02;
     // Pocket drop
     _noise(0.12, 200, 900, 0.38, t);
     _noise(0.15, 60, 280, 0.5, t + 0.10);
@@ -1600,8 +1600,8 @@
   // Cloth drag — quiet rolling sound as balls decelerate. totalSpeed = sum of all ball speeds.
   function sndCloth(totalSpeed) {
     if (!_initAudio()) return;
-    if (!_cooldown('cloth', 80)) return;
-    if (totalSpeed < 3) return;
+    if (!_cooldown('cloth', 120)) return;
+    if (totalSpeed < 5) return;
     const vol = Math.min(0.12, totalSpeed * 0.002);
     const t = _now();
     _noise(0.1, 80, 400, vol, t);
@@ -1640,7 +1640,7 @@
   function sndBreak(power) {
     if (!_initAudio()) return;
     _resumeAudio();
-    const t = _now() + 0.01;
+    const t = _now() + 0.02;
     const p = Math.max(0.5, power);
     _noise(0.06, 600, 8000, 0.7, t);
     _noise(0.12, 150, 700, 0.6, t);
@@ -2368,45 +2368,37 @@
     const W = canvas.width;
     const H = canvas.height;
 
-    // SHOOT button — bottom-left
-    const btnW = Math.min(140, W * 0.33);
-    const btnH = 52;
-    const btnX = 14;
-    const btnY = H - btnH - 16;
+    // SHOOT + SAFE stacked vertically, bottom-left
+    const btnW = Math.min(130, W * 0.30);
+    const btnH = 46;
+    const btnX = 12;
+    const shootY = H - btnH * 2 - 14 - 6;
+    const safeY2 = shootY + btnH + 6;
+
+    // SHOOT
     ctx.save();
     ctx.fillStyle = '#7c2a1a';
-    roundRect(ctx, btnX, btnY, btnW, btnH, 8);
-    ctx.fill();
-    ctx.strokeStyle = '#d9a679';
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-    ctx.fillStyle = '#f5ecd7';
-    ctx.font = 'bold 17px Georgia, serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('SHOOT', btnX + btnW / 2, btnY + btnH / 2);
+    roundRect(ctx, btnX, shootY, btnW, btnH, 7); ctx.fill();
+    ctx.strokeStyle = '#d9a679'; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.fillStyle = '#f5ecd7'; ctx.font = 'bold 16px Georgia, serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('SHOOT', btnX + btnW / 2, shootY + btnH / 2);
     ctx.restore();
-    hud.shoot = { x: btnX, y: btnY, w: btnW, h: btnH };
+    hud.shoot = { x: btnX, y: shootY, w: btnW, h: btnH };
 
-    // SAFE button — next to SHOOT (declare intentional safety before shooting)
-    const safeW = Math.min(100, W * 0.22);
-    const safeX = btnX + btnW + 8;
-    const safeH = btnH;
-    const safeY = btnY;
+    // SAFE
     ctx.save();
     ctx.fillStyle = state.intentionalSafety ? '#1a4a1a' : '#2a2a18';
-    roundRect(ctx, safeX, safeY, safeW, safeH, 8);
-    ctx.fill();
+    roundRect(ctx, btnX, safeY2, btnW, btnH, 7); ctx.fill();
     ctx.strokeStyle = state.intentionalSafety ? '#6adc6a' : '#8a8a4a';
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
+    ctx.lineWidth = 1.5; ctx.stroke();
     ctx.fillStyle = state.intentionalSafety ? '#6adc6a' : '#c9b98a';
     ctx.font = 'bold 13px Georgia, serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(state.intentionalSafety ? '✓ SAFE' : 'SAFETY', safeX + safeW / 2, safeY + safeH / 2);
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(state.intentionalSafety ? '✓ SAFE' : 'SAFETY', btnX + btnW / 2, safeY2 + btnH / 2);
     ctx.restore();
-    hud.safe = { x: safeX, y: safeY, w: safeW, h: safeH };
+    hud.safe = { x: btnX, y: safeY2, w: btnW, h: btnH };
+    const btnY = safeY2;  // reference for spin placement
 
     // Power slider — right edge
     const pw = 28;
@@ -2487,10 +2479,10 @@
       }
     }
 
-    // Spin ball — small circle in middle-bottom showing where the cue tip will strike.
+    // Spin ball — to the right of the shoot/safe stack, vertically centered between them
     const sr = 26;
     const scx = btnX + btnW + 18 + sr;
-    const scy = btnY + btnH / 2;
+    const scy = shootY + btnH + 3;  // vertically between the two buttons
     if (scx + sr < px - 8) {
       ctx.save();
       ctx.fillStyle = '#f8f1dc';
