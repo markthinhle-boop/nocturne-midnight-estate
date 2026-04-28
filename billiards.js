@@ -1326,6 +1326,89 @@
     return Math.hypot(px - bx, py - by) < BALL_R * 2 + 2;
   }
 
+  function _positionScore(cue, ball, pocket, candidates) {
+    if (!candidates || candidates.length <= 1) return 0;
+    const ghost = ghostBall(ball, pocket);
+    // Estimate cue ball deflection direction after contact (rough 90deg from shot line)
+    const bToP = { x: pocket.x - ball.x, y: pocket.y - ball.y };
+    const bLen = Math.hypot(bToP.x, bToP.y) || 1;
+    const perpX = -bToP.y / bLen, perpY = bToP.x / bLen;
+    const estX = ball.x + perpX * 80, estY = ball.y + perpY * 80;
+    let minDist = 9999;
+    for (const c of candidates) {
+      if (c === ball) continue;
+      minDist = Math.min(minDist, Math.hypot(estX - c.x, estY - c.y));
+    }
+    return Math.max(0, 300 - minDist);
+  }
+
+  function _findBankShot(cue, candidates, aiSkill) {
+    let best = null;
+    for (const ball of candidates) {
+      for (let pi = 0; pi < POCKETS.length; pi++) {
+        const p = POCKETS[pi];
+        const banks = _computeBankPoints(cue, ball, p);
+        for (const bank of banks) {
+          if (!bank) continue;
+          const score = -Math.hypot(bank.railX - cue.x, bank.railY - cue.y) * 0.4
+                      - Math.hypot(bank.railX - bank.ghostX, bank.railY - bank.ghostY) * 0.5
+                      + aiSkill * 50;
+          if (!best || score > best.score) {
+            best = { ball, pocket: p, pi, score, type: 'bank', ...bank };
+          }
+        }
+      }
+    }
+    return best;
+  }
+
+  function _computeBankPoints(cue, ball, pocket) {
+    const ghost = ghostBall(ball, pocket);
+    const banks = [];
+    const rails = [
+      { axis: 'x', val: PLAY_X0 + BALL_R },
+      { axis: 'x', val: PLAY_X1 - BALL_R },
+      { axis: 'y', val: PLAY_Y0 + BALL_R },
+      { axis: 'y', val: PLAY_Y1 - BALL_R }
+    ];
+    for (const rail of rails) {
+      if (rail.axis === 'x') {
+        const mirrorX = 2 * rail.val - ghost.x;
+        const t = (rail.val - cue.x) / ((mirrorX - cue.x) || 0.0001);
+        if (t <= 0 || t >= 1) continue;
+        const railY = cue.y + t * (ghost.y - cue.y);
+        if (railY < PLAY_Y0 || railY > PLAY_Y1) continue;
+        banks.push({ railX: rail.val, railY, ghostX: ghost.x, ghostY: ghost.y });
+      } else {
+        const mirrorY = 2 * rail.val - ghost.y;
+        const t = (rail.val - cue.y) / ((mirrorY - cue.y) || 0.0001);
+        if (t <= 0 || t >= 1) continue;
+        const railX = cue.x + t * (ghost.x - cue.x);
+        if (railX < PLAY_X0 || railX > PLAY_X1) continue;
+        banks.push({ railX, railY: rail.val, ghostX: ghost.x, ghostY: ghost.y });
+      }
+    }
+    return banks;
+  }
+
+  function _alistairSafety(cue, candidates) {
+    if (candidates.length > 0) {
+      const target = candidates[Math.floor(Math.random() * candidates.length)];
+      state.aimX = target.x;
+      state.aimY = target.y;
+      state.power = 0.2 + Math.random() * 0.15;
+      state.spinX = 0;
+      state.spinY = -0.4;
+      state.intentionalSafety = true;
+      say('safety');
+    } else {
+      state.aimX = PLAY_X0 + PLAY_W * 0.2;
+      state.aimY = TABLE_H / 2;
+      state.power = 0.2;
+    }
+    setTimeout(() => takeShot(), 700 + Math.random() * 400);
+  }
+
 
   function pointToSegment(px, py, x1, y1, x2, y2) {
     const A = px - x1, B = py - y1, C = x2 - x1, D = y2 - y1;
