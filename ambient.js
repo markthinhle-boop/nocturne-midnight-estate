@@ -21,8 +21,10 @@ const CANDLE_ROOMS = {
 };
 
 // ── RAIN ROOMS ─────────────────────────────────────────────
-// After 7:30PM real clock on terrace + archive-path
-const RAIN_ROOMS = ['terrace'];  // archive-path + lectern are indoors
+// 1-in-3 probability rolled fresh on each terrace entry.
+// window._terraceRaining is the single source of truth — set here,
+// read by manor.js for telescope hotspot gating.
+const RAIN_ROOMS = ['terrace'];
 let _rainActive = false;
 let _rainDrops = [];
 
@@ -155,13 +157,21 @@ function _buildRainOverlay() {
 function _startRain() {
   _rainActive = true;
   const overlay = document.getElementById('rain-overlay');
-  if (overlay) overlay.classList.add('active');
+  if (overlay) {
+    overlay.classList.add('active');
+    overlay.style.display = 'block';
+    overlay.style.opacity = '1';
+  }
 }
 
 function _stopRain() {
   _rainActive = false;
   const overlay = document.getElementById('rain-overlay');
-  if (overlay) overlay.classList.remove('active');
+  if (overlay) {
+    overlay.classList.remove('active');
+    overlay.style.display = 'none';
+    overlay.style.opacity = '0';
+  }
 }
 
 function _checkRain() {
