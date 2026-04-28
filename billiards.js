@@ -2375,10 +2375,10 @@
       const remaining = Math.max(0, state.shotClockLimit - elapsed);
       const secs = Math.ceil(remaining / 1000);
       const fraction = remaining / state.shotClockLimit;
-      const clockX = btnX + btnW + 14;
-      const clockY = btnY;
       const clockW = 52;
       const clockH = btnH;
+      const clockX = btnX + btnW + 14 + 52 + 14;  // right of spin ball
+      const clockY = btnY;
 
       // Background
       ctx.save();
@@ -2424,9 +2424,8 @@
 
     // Spin ball — to the right of the shoot/safe stack, vertically centered between them
     const sr = 22;
-    const clockRight = btnX + btnW + 14 + 52;  // right edge of shot clock
-    const scx = clockRight + 10 + sr;           // just right of the clock
-    const scy = shootY + btnH + 3;              // vertically centered
+    const scx = btnX + btnW + 14 + sr;   // where clock used to be
+    const scy = safeY2 + btnH / 2;        // vertically centered with clock
     if (scx + sr < px - 8) {
       ctx.save();
       ctx.fillStyle = '#f8f1dc';
