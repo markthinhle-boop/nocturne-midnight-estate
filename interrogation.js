@@ -2266,6 +2266,60 @@ const INTERROGATION_DATA = {
       },
     },
 
+    backstory_extra: {
+      'telescope': {
+        label:            'The telescope on the terrace',
+        unlock_condition: {
+          // Shows BEFORE player has used the telescope — advertisement
+          // Disappears once telescope_duel_played is set
+          requires_flag_absent: 'telescope_duel_played',
+        },
+        questions: {
+          'VT1': {
+            text:     '"The brass telescope on the terrace."',
+            type:     'narrative_statement',
+            cost:     0,
+            response_composed: '"That telescope." She says it with a slightly different register — not the investigation voice. "I borrowed it from Thomas." A pause. "If you have not been out to the terrace yet — go. When it is clear." She looks at you. "I will be there. I am usually there." Another pause. "I have been learning the constellations. I know eleven now." She smooths her apron. "I could teach you. If you wanted." She says it as if it is not a significant offer. "It is easier than it looks. And the sky over this estate is very good."',
+            response_strained:  '"That telescope." A pause. "I am usually on the terrace when the sky is clear. If you have not been out there — go."',
+            grants_node: 'vivienne_telescope_mentioned',
+          },
+          'VT2': {
+            text:     '"You know the constellations."',
+            type:     'focused_follow_up',
+            cost:     0,
+            unlock_condition: { requires_node: 'vivienne_telescope_mentioned', requires_flag: 'telescope_duel_played' },
+            response_composed: '"Some of them." She considers this. "Cassiopeia. The Plough. Cygnus." A pause. "The sky here is almost the same as Paris. Almost." She looks at you. "Two point six degrees further north. You would not notice unless someone told you." Another pause. "I notice these things now." She smooths her apron. "I could not have told you what a constellation was four months ago. Now I can find eleven of them." She looks at you with something that is not quite pride and not quite challenge. "That surprises people."',
+            response_strained:  '"Some of them." A pause. "The sky here is almost the same as Paris. Almost."',
+            grants_node: 'vivienne_knows_constellations',
+          },
+          'VT3': {
+            text:     '"You beat me at the telescope."',
+            type:     'focused_follow_up',
+            cost:     0,
+            // Only shows if player lost to her in the minigame
+            unlock_condition: {
+              requires_node: 'vivienne_telescope_mentioned',
+              requires_flag: 'telescope_player_lost',
+            },
+            response_composed: '"Yes." She says it simply. A pause. "I did." She does not smooth her apron. She looks at you directly. "You owe me something." She lets it sit. "I have not decided what yet." Another pause. "I will decide after this is finished." She looks at the wall. "Some debts are better collected when the situation is less complicated."',
+            grants_node: 'vivienne_debt_acknowledged',
+          },
+          'VT4': {
+            text:     '"You said I still owe you one."',
+            type:     'focused_follow_up',
+            cost:     0,
+            // Only shows if player beat her at Maître
+            unlock_condition: {
+              requires_node: 'vivienne_telescope_mentioned',
+              requires_flag: 'telescope_maitre_win',
+            },
+            response_composed: '"I did say that." She is quiet for a moment — a different kind of quiet from the investigation quiet. "You beat me at Maître." A pause. "Nobody beats me at Maître." She looks at you. "The debt stands. You have not asked for anything yet." Another pause. "What you are doing right now —" she gestures at the room, the investigation, all of it, "— counts as something that matters." She smooths her apron. "Ask me something that matters. I will tell you."',
+            grants_node: 'vivienne_maitre_debt_active',
+          },
+        },
+      },
+    },
+
     contamination: {
     'northcott': '"Northcott." She says the name differently from all the other names she has said this evening. A pause. "He left his post twice." She says it the way she says things when she is deciding how much to give. "Once at seven-fifteen. Once at seven fifty-five." She smooths her apron. "The second time he came to find me specifically." Another pause. "He said he needed to tell someone what he had seen. He chose me." She does not say whether that was coordination or trust. "I am the person he tells things to."',
       'hatch':     '"Thomas knows things he won\'t say." She says it without frustration. "He has been here thirty years and he keeps everything in his head and he releases it very slowly." A pause. "He was very still after I spoke to him tonight. That means he understood something." Another pause. "When Thomas understands something he needs time before he can say it. Go back to him."',

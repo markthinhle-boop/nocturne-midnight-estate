@@ -152,6 +152,13 @@ const PROLOGUE_PATCHES = {
       'Q3': { question: 'You know the Estate well?',       type: 'choice', response: 'For a moment the warmth is set down somewhere out of sight, like a glass on a railing. The look that replaces it is calm and considering. "I know what the Estate tells me. The Estate is generous, if one is patient." Then the warmth is picked back up, lightly. "Houses are not unlike men in this regard. The ones worth knowing reveal themselves slowly, and never to anyone in a hurry."' },
       'Q4': { question: 'Why are you out here alone?',     type: 'choice', response: '"I am not alone. You are here." A fact, observed. "Before that — the Foyer was full of men explaining the Rite to each other in voices designed to be overheard. The drawing room was full of women pretending not to listen." A pause. "The terrace was empty. I have a rule about empty terraces on warm evenings. I keep them company. They are grateful."' },
       'Q5': { question: 'What do you do here?',            type: 'choice', response: 'A pause longer than the question expects. "Tonight? I am decorating a terrace. The terrace was previously undecorated. I am told it is an improvement." Her eyes do not move from yours. "On other evenings I do other things. The Estate is good at finding occupations for those who are willing to be — useful. I have, on the whole, been willing."' },
+      'Q5b': {
+        question: 'Show me the constellations.',
+        type: 'choice',
+        show_condition: { requires_flag_absent: 'telescope_duel_played' },
+        response: 'Something shifts — small, quick. "You are serious." Not a question. She turns toward the telescope. "Then come."',
+        on_select: { launch_minigame: 'vivienne-telescope' },
+      },
       'Q6': { question: 'I should let you enjoy the evening.', type: 'choice', response: '"Should you." Not quite a question. The gardens go unattended. "Eight o\'clock — the Rite. After eight o\'clock — well." A breath. "Houses tell more after eight o\'clock. So do their guests. So, occasionally, do I." Her head inclines, the smallest fraction. "Bonne soirée, Mr. Grey. The terrace is here when you find your way back to it. I generally am too."' },
     },
   },

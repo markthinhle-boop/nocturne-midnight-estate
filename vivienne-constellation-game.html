@@ -1,0 +1,2910 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Nocturne — The Terrace Telescope</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=Cinzel:wght@400;500;600&display=swap');
+
+  :root {
+    --ink: #06070b;
+    --parchment: #e8dfc8;
+    --gold: #c9a84c;
+    --gold-bright: #e8c66a;
+    --gold-dim: #7a6230;
+    --gold-faint: rgba(201,168,76,0.18);
+    --ivory: #f0e9d6;
+    --rouge: #8b1a2e;
+    --rouge-soft: #c14a5a;
+    --sky-deep: #050609;
+    --sky-mid: #0a1020;
+    --sky-rim: #14182e;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    background: var(--ink); color: var(--ivory);
+    font-family: 'Cormorant Garamond', serif;
+    height: 100vh; overflow: hidden;
+    user-select: none; -webkit-tap-highlight-color: transparent;
+    touch-action: none;
+  }
+
+  /* ── HOTSPOT ── */
+  #hotspot-screen {
+    position: fixed; inset: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: center;
+    background: radial-gradient(ellipse 60% 80% at 50% 60%, #14101a 0%, #06060a 70%);
+    cursor: pointer; transition: opacity 0.8s;
+  }
+  #hotspot-screen.gone { opacity: 0; pointer-events: none; }
+  .terrace-bg { position: absolute; inset: 0; background: radial-gradient(ellipse 100% 50% at 50% 80%, #1a0e08 0%, transparent 60%), linear-gradient(to bottom, #050609 0%, #08101e 50%, #0c0c14 100%); }
+  .terrace-bg::before { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 30%; background: linear-gradient(to top, #050403 0%, #0a0806 60%, transparent 100%); }
+  .hotspot-content { position: relative; z-index: 2; text-align: center; max-width: 480px; padding: 40px; }
+  .hotspot-mark { font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 0.4em; color: var(--gold); margin-bottom: 12px; opacity: 0.85; }
+  .hotspot-title { font-family: 'Cormorant Garamond', serif; font-size: 36px; font-style: italic; font-weight: 300; color: var(--ivory); margin-bottom: 6px; }
+  .hotspot-sub { font-size: 14px; color: var(--parchment); opacity: 0.6; font-style: italic; margin-bottom: 28px; }
+  .hotspot-target { width: 140px; height: 140px; margin: 0 auto 24px; position: relative; cursor: pointer; }
+  .hotspot-pulse { position: absolute; inset: 0; border-radius: 50%; border: 1px solid var(--gold); animation: pulse 2.5s infinite ease-out; opacity: 0; }
+  .hotspot-pulse.p2 { animation-delay: 0.8s; }
+  .hotspot-pulse.p3 { animation-delay: 1.6s; }
+  @keyframes pulse { 0%{transform:scale(0.6);opacity:0.8;} 100%{transform:scale(1.6);opacity:0;} }
+  .hotspot-glow { position: absolute; inset: 25%; border-radius: 50%; background: radial-gradient(circle, rgba(201,168,76,0.25) 0%, transparent 70%); animation: glow-pulse 3s infinite ease-in-out; }
+  @keyframes glow-pulse { 0%,100%{opacity:0.5;} 50%{opacity:1;} }
+  .hotspot-icon { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: var(--gold); filter: drop-shadow(0 0 10px rgba(201,168,76,0.5)); }
+  .hotspot-icon svg { width: 64px; height: 64px; fill: var(--gold); }
+  .hotspot-cta { font-family: 'Cinzel', serif; font-size: 10px; letter-spacing: 0.35em; color: var(--gold-bright); text-transform: uppercase; margin-top: 20px; animation: cta-pulse 2.5s infinite ease-in-out; }
+  @keyframes cta-pulse { 0%,100%{opacity:0.6;} 50%{opacity:1;} }
+  .hotspot-context { font-style: italic; color: var(--parchment); opacity: 0.7; font-size: 13px; line-height: 1.7; margin-top: 16px; max-width: 360px; margin-left: auto; margin-right: auto; }
+
+  /* ── SCENE ── */
+  #scene { position: fixed; inset: 0; background: linear-gradient(to bottom, var(--sky-deep) 0%, #08101e 35%, var(--sky-mid) 60%, var(--sky-rim) 78%, #0c0a14 100%); transition: filter 1.2s; }
+  #scene.duel-mode { filter: brightness(0.90) contrast(1.12) saturate(1.08); }
+
+  #railing { position: fixed; bottom: 0; left: 0; right: 0; height: 6%; background: linear-gradient(to bottom, #0c0a08 0%, #050403 100%); z-index: 10; }
+  #railing::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: #1a1510; }
+
+  /* ── TELESCOPE ── */
+
+    /* ── CANVAS ── */
+  #stars { position: fixed; inset: 0; z-index: 2; cursor: crosshair; touch-action: none; }
+
+  .phantom-click {
+    position: fixed; width: 28px; height: 28px;
+    border-radius: 50%; border: 2px solid rgba(201,168,76,0.8);
+    pointer-events: none; z-index: 25;
+    transform: translate(-50%, -50%);
+    animation: phantom-tap 0.6s ease-out forwards;
+  }
+  @keyframes phantom-tap {
+    0%  { transform: translate(-50%,-50%) scale(0.3); opacity: 0; }
+    30% { transform: translate(-50%,-50%) scale(1.2); opacity: 1; }
+    100%{ transform: translate(-50%,-50%) scale(1.8); opacity: 0; }
+  }
+
+  /* ── DUEL VIGNETTE ── */
+  #duel-vignette { position: fixed; inset: 0; z-index: 3; pointer-events: none; background: radial-gradient(ellipse 55% 55% at 50% 42%, transparent 0%, rgba(0,0,0,0.55) 100%); opacity: 0; transition: opacity 1s; }
+  #duel-vignette.active { opacity: 1; }
+
+  /* ── WRONG FLASH ── */
+  #wrong-flash { position: fixed; inset: 0; z-index: 15; background: rgba(139,26,46,0.12); pointer-events: none; opacity: 0; }
+  #wrong-flash.show { animation: wrong-anim 0.5s ease-out forwards; }
+  @keyframes wrong-anim { 0%{opacity:1;} 100%{opacity:0;} }
+
+  /* ── HUD ── */
+  #hud-top { position: fixed; top: 0; left: 0; right: 0; z-index: 20; display: flex; justify-content: space-between; align-items: flex-start; padding: clamp(12px,2vh,18px) clamp(12px,3vw,24px); pointer-events: none; }
+  .game-mark { font-family: 'Cinzel', serif; font-size: clamp(7px,1.2vw,9px); letter-spacing: 0.35em; color: var(--gold); opacity: 0.75; margin-bottom: 5px; }
+  .game-sub { font-size: clamp(9px,1.5vw,11px); color: var(--parchment); opacity: 0.45; font-style: italic; margin-bottom: 8px; }
+  .phase-label { font-family: 'Cinzel', serif; font-size: clamp(8px,1.4vw,10px); letter-spacing: 0.3em; color: var(--gold-bright); text-transform: uppercase; margin-bottom: 4px; }
+  .phase-label.duel-phase { color: var(--rouge-soft); animation: rouge-flicker 3s infinite ease-in-out; }
+  @keyframes rouge-flicker { 0%,100%{color:var(--rouge-soft);} 50%{color:#d56474;} }
+  .target-name { font-family: 'Cormorant Garamond', serif; font-size: clamp(16px,3.5vw,22px); font-style: italic; font-weight: 300; color: var(--ivory); line-height: 1.1; min-height: 24px; }
+  .target-sub { font-size: clamp(10px,1.8vw,12px); color: var(--parchment); opacity: 0.55; font-style: italic; margin-top: 2px; }
+  .hud-right { text-align: right; pointer-events: auto; }
+  .score-row { display: flex; gap: clamp(10px,2vw,18px); align-items: flex-start; justify-content: flex-end; }
+  .score-block { text-align: right; }
+  .score-label { font-family: 'Cinzel', serif; font-size: clamp(6px,1.1vw,8px); letter-spacing: 0.25em; color: var(--gold-dim); margin-bottom: 2px; }
+  .score-num { font-family: 'Cormorant Garamond', serif; font-size: clamp(18px,3.5vw,24px); font-weight: 300; color: var(--gold); line-height: 1; }
+  .score-num.small { font-size: clamp(13px,2.5vw,16px); }
+  .top-buttons { display: flex; gap: 8px; margin-top: 8px; justify-content: flex-end; }
+  .top-btn { font-family: 'Cinzel', serif; font-size: clamp(7px,1.2vw,8px); letter-spacing: 0.25em; color: var(--gold-dim); background: transparent; border: 1px solid var(--gold-faint); padding: clamp(5px,1vh,6px) clamp(8px,2vw,12px); cursor: pointer; transition: all 0.25s; text-transform: uppercase; }
+  .top-btn:hover, .top-btn:active { color: var(--gold); border-color: var(--gold-dim); }
+  .mood-indicator { font-family: 'Cinzel', serif; font-size: 7px; letter-spacing: 0.25em; color: var(--gold-dim); margin-bottom: 4px; text-align: right; opacity: 0.5; height: 12px; }
+  .wins-counter { font-family: 'Cormorant Garamond', serif; font-size: 13px; color: var(--rouge-soft); font-style: italic; margin-top: 6px; opacity: 0.85; }
+
+  /* ── SESSION PROGRESS ── */
+  #session-progress {
+    position: fixed; bottom: 15.5%; left: 50%; transform: translateX(-50%);
+    z-index: 19; display: flex; gap: 6px; pointer-events: none;
+    opacity: 0; transition: opacity 0.5s;
+  }
+  #session-progress.show { opacity: 1; }
+  .sp-dot {
+    width: 5px; height: 5px; border-radius: 50%;
+    background: rgba(201,168,76,0.2);
+    border: 1px solid rgba(201,168,76,0.35);
+    transition: all 0.4s;
+  }
+  .sp-dot.filled { background: var(--gold); border-color: var(--gold); box-shadow: 0 0 6px rgba(201,168,76,0.5); }
+
+  /* ── DUEL TARGET HUD ── */
+  #duel-target-hud { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%) translateY(-130px); z-index: 21; text-align: center; pointer-events: none; opacity: 0; transition: opacity 0.5s; }
+  #duel-target-hud.show { opacity: 1; }
+  .duel-target-label { font-family: 'Cinzel', serif; font-size: clamp(8px,1.3vw,9px); letter-spacing: 0.35em; color: var(--rouge-soft); margin-bottom: 6px; }
+  .duel-target-star { font-family: 'Cormorant Garamond', serif; font-size: clamp(24px,5vw,36px); font-style: italic; font-weight: 300; color: var(--ivory); text-shadow: 0 0 20px rgba(201,168,76,0.3); }
+  .duel-target-sub { font-size: clamp(10px,1.8vw,12px); color: var(--parchment); font-style: italic; margin-top: 4px; opacity: 0.6; }
+
+  /* ── TIMER BAR ── */
+  #duel-timer-bar { position: fixed; top: 0; left: 0; right: 0; height: 2px; z-index: 22; background: rgba(139,26,46,0.2); pointer-events: none; opacity: 0; transition: opacity 0.4s; }
+  #duel-timer-bar.active { opacity: 1; }
+  #duel-timer-fill { height: 100%; background: linear-gradient(to right, var(--rouge), var(--rouge-soft), var(--gold-bright)); width: 100%; transition: width 0.06s linear; }
+
+  /* ── FRAME PIPS ── */
+  .frame-row { position: fixed; top: clamp(70px,10vh,90px); left: 50%; transform: translateX(-50%); display: flex; gap: clamp(8px,2vw,14px); z-index: 19; opacity: 0; transition: opacity 0.5s; }
+  .frame-row.show { opacity: 1; }
+  .frame-pip { width: clamp(60px,12vw,80px); padding: 8px 6px; border: 1px solid var(--gold-faint); background: rgba(8,8,12,0.7); text-align: center; font-family: 'Cinzel', serif; color: var(--gold-dim); }
+  .frame-pip .pip-num { font-size: clamp(9px,1.6vw,11px); letter-spacing: 0.2em; margin-bottom: 2px; }
+  .frame-pip .pip-type { font-size: clamp(6px,1.1vw,8px); letter-spacing: 0.15em; opacity: 0.7; }
+  .frame-pip.won { border-color: var(--gold); background: rgba(50,40,18,0.85); color: var(--gold-bright); }
+  .frame-pip.lost { border-color: var(--rouge); background: rgba(50,18,22,0.85); color: var(--rouge-soft); }
+  .frame-pip.current { border-color: var(--ivory); animation: pip-pulse 1.5s infinite ease-in-out; }
+  @keyframes pip-pulse { 0%,100%{box-shadow:0 0 0 rgba(240,233,214,0);} 50%{box-shadow:0 0 12px rgba(240,233,214,0.4);} }
+
+  /* ── ROUND CARD ── */
+  #round-card { position: fixed; bottom: clamp(16%,18%,20%); left: 50%; transform: translateX(-50%) translateY(0); z-index: 18; background: rgba(8,10,14,0.92); border: 1px solid var(--gold-faint); padding: clamp(10px,2vh,14px) clamp(16px,3vw,24px); text-align: center; max-width: min(520px, 90vw); width: calc(100% - 32px); transition: opacity 0.4s, transform 0.4s, border-color 0.4s; }
+  #round-card.hidden { opacity: 0; transform: translateX(-50%) translateY(8px); pointer-events: none; }
+  #round-card.duel-card { border-color: var(--rouge-soft); background: rgba(20,8,12,0.92); }
+  .card-prompt { font-size: clamp(12px,2.5vw,14px); color: var(--ivory); font-style: italic; line-height: 1.5; }
+  .card-prompt strong { font-style: normal; color: var(--gold-bright); font-weight: 500; }
+
+  /* ── SPEECH BUBBLE ── (repositioned to come FROM vivienne) */
+  #speech {
+    position: fixed;
+    bottom: clamp(20%,22%,25%);
+    left: clamp(12px,3vw,24px);
+    width: clamp(200px, 32vw, 260px);
+    background: rgba(8,8,10,0.94);
+    border: 1px solid var(--gold-dim);
+    padding: clamp(10px,2vh,14px) clamp(12px,2vw,16px);
+    z-index: 25;
+    opacity: 0; transform: translateY(8px);
+    transition: opacity 0.45s, transform 0.45s, border-color 0.4s;
+    pointer-events: none;
+  }
+  #speech.visible { opacity: 1; transform: translateY(0); }
+  #speech.flirt { border-color: var(--rouge-soft); background: rgba(20,8,12,0.95); }
+  #speech.tender { border-color: var(--rouge); background: rgba(28,8,14,0.96); }
+  /* No tail — top left position reads cleanly without it */
+  #speech::after { display: none; }
+  .speech-name { font-family: 'Cinzel', serif; font-size: clamp(7px,1.2vw,8px); letter-spacing: 0.3em; color: var(--gold); margin-bottom: 6px; }
+  #speech.flirt .speech-name { color: var(--rouge-soft); }
+  #speech.tender .speech-name { color: #e08090; }
+  .speech-text { font-size: clamp(12px,2.2vw,14px); line-height: 1.5; color: var(--ivory); font-style: italic; font-weight: 300; }
+
+  /* ── HINT COUNTDOWN ── */
+  #hint-countdown { position: fixed; bottom: clamp(20%,22%,25%); left: clamp(12px,3vw,24px); z-index: 26; width: clamp(200px,32vw,260px); height: 2px; background: rgba(201,168,76,0.1); pointer-events: none; opacity: 0; transition: opacity 0.3s; margin-bottom: -3px; }
+  #hint-countdown.show { opacity: 1; }
+  #hint-fill { height: 100%; background: var(--gold-dim); width: 0%; transition: width 0.1s linear; }
+
+  /* ── FLASH ── */
+  .flash { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); font-family: 'Cinzel', serif; font-size: clamp(14px,3vw,18px); letter-spacing: 0.35em; color: var(--gold-bright); z-index: 30; pointer-events: none; opacity: 0; text-shadow: 0 0 20px var(--gold); }
+  .flash.show { animation: flash-anim 1.4s ease-out forwards; }
+  .flash.victory { color: var(--rouge-soft); font-size: clamp(16px,4vw,22px); text-shadow: 0 0 30px var(--rouge); }
+  .flash.discovery { color: var(--gold-bright); font-size: clamp(12px,2.5vw,16px); }
+  @keyframes flash-anim { 0%{opacity:0;transform:translate(-50%,-50%) scale(0.85);} 25%{opacity:1;transform:translate(-50%,-50%) scale(1);} 100%{opacity:0;transform:translate(-50%,-50%) scale(1.05);} }
+
+  /* ── DISCOVERY BANNER ── */
+  #discovery-banner { position: fixed; top: 38%; left: 50%; transform: translate(-50%,0); z-index: 35; pointer-events: none; background: rgba(8,8,12,0.94); border: 1px solid var(--gold); padding: 16px 24px; box-shadow: 0 0 40px rgba(201,168,76,0.3); opacity: 0; transition: opacity 0.6s, transform 0.6s; text-align: center; max-width: min(360px,88vw); }
+  #discovery-banner.show { opacity: 1; transform: translate(-50%,-10px); }
+  .discovery-mark { font-family: 'Cinzel', serif; font-size: clamp(8px,1.4vw,9px); letter-spacing: 0.4em; color: var(--gold-bright); margin-bottom: 8px; }
+  .discovery-title { font-family: 'Cormorant Garamond', serif; font-size: clamp(14px,3vw,18px); font-style: italic; font-weight: 300; color: var(--ivory); }
+
+  /* ── COMPASS ── */
+  .compass-marker { position: fixed; font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 0.2em; color: var(--gold-dim); opacity: 0.5; z-index: 5; pointer-events: none; }
+  .compass-n { top: clamp(70px,10vh,80px); left: 50%; transform: translateX(-50%); }
+  .compass-s { bottom: 16%; left: 50%; transform: translateX(-50%); }
+  .compass-e { top: 50%; right: 20px; transform: translateY(-50%); }
+  .compass-w { top: 50%; left: 20px; transform: translateY(-50%); }
+  .observer-info { position: fixed; bottom: 4%; left: clamp(12px,3vw,24px); z-index: 5; pointer-events: none; font-family: 'Cinzel', serif; font-size: clamp(6px,1.1vw,8px); letter-spacing: 0.18em; color: var(--gold-dim); opacity: 0.45; line-height: 1.6; }
+
+  /* ── DIFFICULTY SELECTOR ── */
+  #difficulty-selector {
+    position: fixed; inset: 0; z-index: 48;
+    display: none; align-items: center; justify-content: center;
+    background: rgba(0,0,0,0.7); padding: 16px;
+  }
+  #difficulty-selector.show { display: flex; }
+  .diff-card {
+    max-width: min(480px,94vw);
+    background: rgba(8,6,10,0.97);
+    border: 1px solid var(--gold-dim);
+    padding: clamp(24px,5vh,36px) clamp(20px,5vw,36px);
+    text-align: center;
+  }
+  .diff-mark {
+    font-family: 'Cinzel', serif; font-size: 9px;
+    letter-spacing: 0.4em; color: var(--gold);
+    margin-bottom: 8px;
+  }
+  .diff-question {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(17px,3.5vw,22px);
+    font-style: italic; font-weight: 300;
+    color: var(--ivory); line-height: 1.5;
+    margin-bottom: 24px;
+  }
+  .diff-options {
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .diff-btn {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(9px,1.6vw,10px);
+    letter-spacing: 0.25em;
+    background: transparent;
+    border: 1px solid var(--gold-faint);
+    color: var(--gold-dim);
+    padding: clamp(12px,2.5vh,15px) 20px;
+    cursor: pointer;
+    transition: all 0.25s;
+    text-align: left;
+    display: flex; justify-content: space-between; align-items: center;
+    min-height: 52px;
+    text-transform: uppercase;
+  }
+  .diff-btn:hover, .diff-btn:active {
+    border-color: var(--gold);
+    color: var(--gold);
+    background: rgba(201,168,76,0.06);
+  }
+  .diff-btn.locked {
+    opacity: 0.35; cursor: default;
+    border-color: rgba(201,168,76,0.08);
+  }
+  .diff-btn.locked:hover { border-color: rgba(201,168,76,0.08); color: var(--gold-dim); background: transparent; }
+  .diff-btn-name { font-size: clamp(11px,2vw,13px); color: inherit; }
+  .diff-btn-desc {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(10px,1.8vw,12px);
+    font-style: italic;
+    color: var(--parchment);
+    opacity: 0.7;
+    text-transform: none;
+    letter-spacing: 0;
+    margin-left: 12px;
+    text-align: right;
+  }
+  .diff-btn.maitre-btn { border-color: var(--rouge-soft); color: var(--rouge-soft); }
+  .diff-btn.maitre-btn:hover, .diff-btn.maitre-btn:active {
+    background: rgba(139,26,46,0.1);
+    color: #d56474;
+    border-color: var(--rouge-soft);
+  }
+  .diff-lock-note {
+    font-family: 'Cinzel', serif; font-size: 8px;
+    letter-spacing: 0.2em; color: var(--rouge-soft);
+    margin-top: 14px; opacity: 0.7;
+    display: none;
+  }
+  .diff-lock-note.show { display: block; }
+
+  /* ── DIFFICULTY BADGE in HUD ── */
+  .diff-badge {
+    font-family: 'Cinzel', serif; font-size: 7px;
+    letter-spacing: 0.25em; color: var(--gold-dim);
+    margin-bottom: 3px; opacity: 0.6;
+  }
+  .diff-badge.maitre { color: var(--rouge-soft); opacity: 0.8; }
+
+  /* ── MEMORY MULTIPLE CHOICE ── */
+  #memory-options {
+    position: fixed;
+    bottom: clamp(22%,26%,30%);
+    left: 50%; transform: translateX(-50%);
+    z-index: 18;
+    width: min(480px, 90vw);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: auto;
+  }
+  #memory-options.hidden { display: none !important; }
+  .mc-btn {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(16px,3vw,20px);
+    font-style: italic;
+    color: var(--ivory);
+    background: rgba(8,10,14,0.92);
+    border: 1px solid rgba(201,168,76,0.3);
+    padding: clamp(13px,2.5vh,17px) 20px;
+    cursor: pointer;
+    transition: all 0.25s;
+    text-align: center;
+    min-height: 54px;
+    letter-spacing: 0.02em;
+  }
+  .mc-btn:hover, .mc-btn:active {
+    border-color: var(--gold);
+    background: rgba(20,18,12,0.95);
+    color: var(--gold-bright);
+    box-shadow: 0 0 12px rgba(201,168,76,0.15);
+  }
+  .mc-btn.correct {
+    border-color: var(--gold);
+    background: rgba(50,40,18,0.9);
+    color: var(--gold-bright);
+  }
+  .mc-btn.wrong {
+    border-color: var(--rouge);
+    background: rgba(50,18,18,0.85);
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  /* ── FRAME CALLOUT ── */
+  #frame-callout {
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 40;
+    text-align: center;
+    pointer-events: none;
+    opacity: 0;
+  }
+  #frame-callout.show {
+    animation: callout-anim 1.8s ease-out forwards;
+  }
+  @keyframes callout-anim {
+    0%   { opacity: 0; transform: translate(-50%,-50%) scale(0.85); }
+    20%  { opacity: 1; transform: translate(-50%,-50%) scale(1); }
+    70%  { opacity: 1; transform: translate(-50%,-50%) scale(1); }
+    100% { opacity: 0; transform: translate(-50%,-50%) scale(1.04); }
+  }
+  .callout-type {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(28px,6vw,48px);
+    letter-spacing: 0.2em;
+    color: var(--ivory);
+    text-shadow: 0 0 30px rgba(201,168,76,0.4);
+    margin-bottom: 6px;
+  }
+  .callout-sub {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(13px,2.5vw,16px);
+    font-style: italic;
+    color: var(--gold);
+    letter-spacing: 0.1em;
+    opacity: 0.85;
+  }
+
+  /* ── INSTRUCTIONS ── */
+  #instructions { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; background: rgba(4,4,6,0.92); padding: 16px; }
+  .intro-card { max-width: min(480px,96vw); text-align: center; border: 1px solid var(--gold-dim); background: rgba(8,8,12,0.96); padding: clamp(24px,5vh,40px) clamp(20px,5vw,38px); }
+  .intro-mark { font-family: 'Cinzel', serif; font-size: clamp(8px,1.4vw,9px); letter-spacing: 0.4em; color: var(--gold); margin-bottom: 6px; }
+  .intro-title { font-family: 'Cormorant Garamond', serif; font-size: clamp(22px,5vw,28px); font-style: italic; font-weight: 300; color: var(--ivory); margin-bottom: 20px; }
+  .intro-body { font-size: clamp(12px,2.2vw,14px); line-height: 1.7; color: var(--parchment); margin-bottom: 10px; font-weight: 300; }
+  .intro-modes { text-align: left; margin: 14px 0; padding: 12px 16px; background: rgba(20,18,12,0.5); border-left: 2px solid var(--gold-dim); }
+  .intro-mode-row { font-size: clamp(11px,2vw,13px); line-height: 1.55; margin-bottom: 6px; color: var(--parchment); }
+  .intro-mode-row:last-child { margin-bottom: 0; }
+  .intro-mode-row strong { color: var(--gold-bright); font-family: 'Cinzel', serif; font-size: clamp(7px,1.2vw,9px); letter-spacing: 0.2em; text-transform: uppercase; display: inline-block; width: 70px; }
+  .intro-meta { font-family: 'Cinzel', serif; font-size: clamp(7px,1.2vw,9px); letter-spacing: 0.25em; color: var(--gold-dim); margin: 16px 0 4px; }
+  .start-btn { font-family: 'Cinzel', serif; font-size: clamp(9px,1.6vw,10px); letter-spacing: 0.35em; color: var(--gold); background: transparent; border: 1px solid var(--gold-dim); padding: clamp(10px,2vh,13px) clamp(24px,5vw,32px); cursor: pointer; transition: all 0.3s; margin-top: 14px; min-height: 44px; }
+  .start-btn:hover, .start-btn:active { background: rgba(201,168,76,0.08); border-color: var(--gold); box-shadow: 0 0 16px rgba(201,168,76,0.18); }
+
+  /* ── GALLERY ── */
+  #gallery { position: fixed; inset: 0; z-index: 60; background: rgba(2,2,4,0.96); display: none; align-items: flex-start; justify-content: center; overflow-y: auto; padding: 40px 16px; -webkit-overflow-scrolling: touch; }
+  #gallery.show { display: flex; }
+  .gallery-inner { max-width: 800px; width: 100%; padding: 20px; }
+  .gallery-head { text-align: center; margin-bottom: 24px; border-bottom: 1px solid var(--gold-dim); padding-bottom: 18px; }
+  .gallery-mark { font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 0.4em; color: var(--gold); margin-bottom: 6px; }
+  .gallery-title { font-family: 'Cormorant Garamond', serif; font-size: 28px; font-style: italic; font-weight: 300; color: var(--ivory); margin-bottom: 8px; }
+  .gallery-progress { font-size: 13px; color: var(--parchment); opacity: 0.7; font-style: italic; }
+  .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(200px,45vw), 1fr)); gap: 12px; }
+  .const-card { border: 1px solid var(--gold-faint); background: rgba(12,12,18,0.7); padding: 14px; transition: all 0.3s; }
+  .const-card.locked { opacity: 0.35; }
+  .const-card.unlocked:hover { border-color: var(--gold-dim); background: rgba(20,18,12,0.7); }
+  .const-name { font-family: 'Cinzel', serif; font-size: clamp(9px,1.8vw,11px); letter-spacing: 0.25em; color: var(--gold); margin-bottom: 4px; }
+  .const-sub { font-size: clamp(10px,2vw,13px); font-style: italic; color: var(--parchment); margin-bottom: 8px; opacity: 0.8; }
+  .const-fact { font-size: clamp(10px,2vw,12px); line-height: 1.55; color: var(--ivory); opacity: 0.85; }
+  .const-fact.locked-text { color: var(--gold-dim); font-style: italic; }
+  .discoveries-section { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--gold-faint); }
+  .discoveries-head { font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 0.35em; color: var(--gold); margin-bottom: 12px; text-align: center; }
+  .discovery-item { border: 1px solid var(--gold-faint); background: rgba(12,12,18,0.7); padding: 12px; margin-bottom: 8px; display: flex; gap: 12px; align-items: center; }
+  .discovery-item.locked { opacity: 0.35; }
+  .discovery-icon { width: 32px; height: 32px; flex-shrink: 0; border: 1px solid var(--gold-dim); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'Cinzel', serif; font-size: 9px; color: var(--gold); }
+  .discovery-info { flex: 1; }
+  .discovery-name { font-family: 'Cinzel', serif; font-size: clamp(8px,1.5vw,10px); letter-spacing: 0.2em; color: var(--gold-bright); margin-bottom: 3px; }
+  .discovery-desc { font-size: clamp(10px,1.8vw,12px); font-style: italic; color: var(--ivory); opacity: 0.85; }
+  .discovery-item.locked .discovery-name { color: var(--gold-dim); }
+  .gallery-close { position: absolute; top: 16px; right: 16px; font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 0.3em; color: var(--gold); background: transparent; border: 1px solid var(--gold-dim); padding: 8px 14px; cursor: pointer; z-index: 61; min-height: 44px; }
+
+  /* ── DUEL INTRO ── */
+  #duel-intro { position: fixed; inset: 0; z-index: 45; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0); transition: background 1.2s; pointer-events: none; }
+  #duel-intro.show { display: flex; background: rgba(0,0,0,0.45); pointer-events: auto; }
+  .duel-intro-card { text-align: center; max-width: min(520px,90vw); padding: clamp(28px,5vh,40px) clamp(24px,6vw,50px); background: rgba(8,4,8,0.95); border: 1px solid var(--rouge-soft); box-shadow: 0 0 60px rgba(139,26,46,0.25); opacity: 0; transform: translateY(20px); transition: opacity 0.8s, transform 0.8s; }
+  #duel-intro.show .duel-intro-card { opacity: 1; transform: translateY(0); }
+  .duel-intro-mark { font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 0.4em; color: var(--rouge-soft); margin-bottom: 10px; }
+  .duel-intro-text { font-family: 'Cormorant Garamond', serif; font-size: clamp(16px,3.5vw,20px); font-style: italic; font-weight: 300; color: var(--ivory); line-height: 1.6; margin-bottom: 20px; }
+  .duel-intro-text em { color: var(--gold-bright); font-style: italic; }
+  .duel-intro-buttons { display: flex; gap: 12px; justify-content: center; margin-top: 18px; flex-wrap: wrap; }
+  .duel-btn { font-family: 'Cinzel', serif; font-size: clamp(9px,1.6vw,10px); letter-spacing: 0.3em; padding: clamp(10px,2vh,12px) clamp(20px,4vw,28px); cursor: pointer; border: 1px solid; background: transparent; transition: all 0.25s; text-transform: uppercase; min-height: 44px; }
+  .duel-btn.accept { color: var(--rouge-soft); border-color: var(--rouge-soft); }
+  .duel-btn.accept:hover, .duel-btn.accept:active { background: rgba(139,26,46,0.15); box-shadow: 0 0 20px rgba(139,26,46,0.3); color: #e08090; }
+  .duel-btn.decline { color: var(--gold-dim); border-color: var(--gold-faint); }
+  .duel-btn.decline:hover, .duel-btn.decline:active { color: var(--gold); border-color: var(--gold-dim); }
+
+  /* ── FINAL ── */
+  #final-screen { position: fixed; inset: 0; z-index: 70; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0.85); padding: 16px; }
+  #final-screen.show { display: flex; }
+  .final-card { text-align: center; max-width: min(520px,92vw); padding: clamp(30px,5vh,50px) clamp(24px,6vw,60px); background: rgba(8,4,8,0.97); border: 1px solid var(--rouge-soft); box-shadow: 0 0 80px rgba(139,26,46,0.3); }
+  .final-card.deep { border-color: var(--rouge); box-shadow: 0 0 100px rgba(139,26,46,0.5); }
+  .final-mark { font-family: 'Cinzel', serif; font-size: clamp(8px,1.5vw,10px); letter-spacing: 0.4em; color: var(--rouge-soft); margin-bottom: 14px; }
+  .final-title { font-family: 'Cormorant Garamond', serif; font-size: clamp(28px,6vw,38px); font-style: italic; font-weight: 300; color: var(--ivory); margin-bottom: 20px; }
+  .final-whisper { font-size: clamp(13px,2.5vw,16px); font-style: italic; color: var(--parchment); line-height: 1.7; margin-bottom: 28px; border-left: 2px solid var(--rouge-soft); padding: 0 16px; text-align: left; }
+  .final-whisper.right { border-left: none; border-right: 2px solid var(--gold); text-align: right; }
+  .final-whisper.deep { border-left: 2px solid var(--rouge); color: var(--ivory); font-size: clamp(14px,2.8vw,17px); }
+  .final-buttons { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .final-btn { font-family: 'Cinzel', serif; font-size: clamp(9px,1.6vw,10px); letter-spacing: 0.3em; padding: clamp(10px,2vh,12px) clamp(20px,4vw,28px); cursor: pointer; border: 1px solid var(--gold-dim); background: transparent; color: var(--gold); transition: all 0.25s; text-transform: uppercase; min-height: 44px; }
+  .final-btn:hover, .final-btn:active { background: rgba(201,168,76,0.08); border-color: var(--gold); }
+</style>
+</head>
+<body>
+
+<!-- HOTSPOT -->
+<div id="hotspot-screen">
+  <div class="terrace-bg"></div>
+  <div class="hotspot-content">
+    <div class="hotspot-mark">The Terrace</div>
+    <div class="hotspot-title">The Telescope</div>
+    <div class="hotspot-sub">Brass. Recently used. Vivienne is here.</div>
+    <div class="hotspot-target" id="hotspot-launch">
+      <div class="hotspot-pulse"></div><div class="hotspot-pulse p2"></div><div class="hotspot-pulse p3"></div>
+      <div class="hotspot-glow"></div>
+      <div class="hotspot-icon">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+          <g stroke="currentColor" stroke-width="1.8" fill="none">
+            <line x1="14" y1="50" x2="50" y2="14"/>
+            <rect x="42" y="6" width="16" height="14" rx="1" transform="rotate(45 50 13)"/>
+            <line x1="20" y1="44" x2="14" y2="50"/>
+            <line x1="44" y1="20" x2="50" y2="14"/>
+            <line x1="32" y1="32" x2="32" y2="56"/>
+            <line x1="26" y1="56" x2="38" y2="56"/>
+          </g>
+        </svg>
+      </div>
+    </div>
+    <div class="hotspot-cta">Click to Approach</div>
+    <p class="hotspot-context">She is at the telescope. She has not noticed you yet.</p>
+  </div>
+</div>
+
+<div id="scene"></div>
+<div id="railing"></div>
+
+</div>
+
+
+<canvas id="stars"></canvas>
+<div id="duel-vignette"></div>
+<div id="wrong-flash"></div>
+
+<div class="compass-marker compass-n">N</div>
+<div class="compass-marker compass-s">S</div>
+<div class="compass-marker compass-e">E</div>
+<div class="compass-marker compass-w">W</div>
+<div class="observer-info">The Estate · 51.5°N</div>
+
+<!-- HUD -->
+<div id="hud-top">
+  <div class="hud-left">
+    <div class="game-mark">Nocturne — Le Télescope</div>
+    <div class="game-sub">a Vivienne diversion</div>
+    <div class="phase-label" id="phase-label">Lesson</div>
+    <div class="target-name" id="target-name">—</div>
+    <div class="target-sub" id="target-sub"></div>
+  </div>
+  <div class="hud-right">
+    <div class="mood-indicator" id="mood-indicator"></div>
+    <div class="score-row">
+      <div class="score-block"><div class="score-label">Streak</div><div class="score-num small" id="streak">×1</div></div>
+      <div class="score-block"><div class="score-label">Score</div><div class="score-num" id="total-score">0</div></div>
+    </div>
+    <div class="diff-badge" id="diff-badge"></div>
+    <div class="wins-counter" id="wins-counter" style="display:none;"></div>
+    <div class="top-buttons">
+      <button class="top-btn" id="gallery-btn">Gallery</button>
+      <button class="top-btn" id="duel-now-btn" style="display:none;">Duel ●</button>
+    </div>
+  </div>
+</div>
+
+<!-- Session progress dots -->
+<div id="session-progress"></div>
+
+<div class="frame-row" id="frame-row">
+  <div class="frame-pip" id="frame-1"><div class="pip-num">I</div></div>
+  <div class="frame-pip" id="frame-2"><div class="pip-num">II</div></div>
+  <div class="frame-pip" id="frame-3"><div class="pip-num">III</div></div>
+  <div class="frame-pip" id="frame-4"><div class="pip-num">IV</div></div>
+  <div class="frame-pip" id="frame-5"><div class="pip-num">V</div></div>
+</div>
+
+<div id="duel-target-hud">
+  <div class="duel-target-label">Find this star</div>
+  <div class="duel-target-star" id="duel-target-star-name">—</div>
+  <div class="duel-target-sub" id="duel-target-hint"></div>
+</div>
+
+<div id="duel-timer-bar"><div id="duel-timer-fill"></div></div>
+
+<div id="memory-options" class="hidden"></div>
+
+<div id="frame-callout">
+  <div class="callout-type" id="callout-type">—</div>
+  <div class="callout-sub" id="callout-sub">—</div>
+</div>
+
+<div id="round-card" class="hidden"><div class="card-prompt" id="round-prompt"></div></div>
+
+<div id="speech">
+  <div class="speech-name">Vivienne</div>
+  <div class="speech-text" id="speech-text"></div>
+</div>
+<div id="hint-countdown"><div id="hint-fill"></div></div>
+
+<div class="flash" id="flash"></div>
+<div id="discovery-banner">
+  <div class="discovery-mark" id="disc-mark">A Discovery</div>
+  <div class="discovery-title" id="disc-title">—</div>
+</div>
+
+<!-- DIFFICULTY SELECTOR -->
+<div id="difficulty-selector">
+  <div class="diff-card">
+    <div class="diff-mark">— Before We Begin —</div>
+    <div class="diff-question" id="diff-question">How well do you know the sky, monsieur?</div>
+    <div class="diff-options">
+      <button class="diff-btn" id="diff-eleve" onclick="selectDifficulty('eleve')">
+        <span class="diff-btn-name">Élève</span>
+        <span class="diff-btn-desc">She is patient. Slow.</span>
+      </button>
+      <button class="diff-btn" id="diff-savant" onclick="selectDifficulty('savant')">
+        <span class="diff-btn-name">Savant</span>
+        <span class="diff-btn-desc">She plays seriously.</span>
+      </button>
+      <button class="diff-btn" id="diff-astronome" onclick="selectDifficulty('astronome')">
+        <span class="diff-btn-name">Astronome</span>
+        <span class="diff-btn-desc">She does not hesitate.</span>
+      </button>
+      <button class="diff-btn maitre-btn" id="diff-maitre" onclick="selectDifficulty('maitre')">
+        <span class="diff-btn-name">Maître</span>
+        <span class="diff-btn-desc">She has never lost.</span>
+      </button>
+    </div>
+    <div class="diff-lock-note" id="diff-lock-note">Maître unlocks after five duel wins.</div>
+  </div>
+</div>
+
+<div id="duel-intro">
+  <div class="duel-intro-card">
+    <div class="duel-intro-mark">She straightens. She turns to you.</div>
+    <div class="duel-intro-text" id="duel-intro-text"></div>
+    <div class="duel-intro-buttons">
+      <button class="duel-btn decline" id="duel-decline">Not yet</button>
+      <button class="duel-btn accept" id="duel-accept">Accept</button>
+    </div>
+  </div>
+</div>
+
+<div id="final-screen">
+  <div class="final-card" id="final-card">
+    <div class="final-mark" id="final-mark">—</div>
+    <div class="final-title" id="final-title">—</div>
+    <div class="final-whisper" id="final-whisper">—</div>
+    <div class="final-buttons">
+      <button class="final-btn" id="final-replay">Play Again</button>
+      <button class="final-btn" id="final-leave">Leave Terrace</button>
+    </div>
+  </div>
+</div>
+
+<div id="gallery">
+  <button class="gallery-close" id="close-gallery">Close</button>
+  <div class="gallery-inner">
+    <div class="gallery-head">
+      <div class="gallery-mark">The Estate Sky</div>
+      <div class="gallery-title">Vivienne's Notes</div>
+      <div class="gallery-progress" id="gallery-progress">— / —</div>
+    </div>
+    <div class="gallery-grid" id="gallery-grid"></div>
+    <div class="discoveries-section">
+      <div class="discoveries-head">— Discoveries —</div>
+      <div id="discoveries-list"></div>
+    </div>
+  </div>
+</div>
+
+<div id="instructions">
+  <div class="intro-card">
+    <div class="intro-mark">The Terrace</div>
+    <div class="intro-title">Vivienne's Telescope</div>
+    <p class="intro-body">She has the brass telescope from the groundskeeper's cottage. She teaches you the constellations she learned in Paris — the real ones, in their real positions. The sky here sits 2.6 degrees further north. She notices.</p>
+    <div class="intro-modes">
+      <div class="intro-mode-row"><strong>Lesson</strong>She teaches. Stars are labelled.</div>
+      <div class="intro-mode-row"><strong>Duel</strong>No labels. Noise stars added. Find it first.</div>
+      <div class="intro-mode-row"><strong>Hint</strong>Hesitate 3 seconds — she speaks once.</div>
+    </div>
+    <div class="intro-meta">The Estate</div>
+    <p class="intro-body" style="font-size:clamp(10px,1.8vw,12px);opacity:0.7;margin-bottom:0;">Real stars. Real positions. Real magnitudes.</p>
+    <button class="start-btn" id="begin-btn">Begin</button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════════
+// WEB AUDIO — procedural SFX engine
+// ═══════════════════════════════════════════════════════════════════════════
+
+let AC = null;
+
+function haptic(pattern) {
+  if (!navigator.vibrate) return;
+  navigator.vibrate(pattern);
+}
+
+function getAC() {
+  if (!AC) {
+    try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+  }
+  return AC;
+}
+
+function resumeAC() {
+  const ac = getAC();
+  if (ac && ac.state === 'suspended') ac.resume().catch(() => {});
+}
+
+// Call resumeAC inside every sfx — guarantees AC is running before node creation
+function sfxPlay(fn) {
+  resumeAC();
+  const ac = getAC();
+  if (!ac) return;
+  // Slight delay so resume() completes before nodes fire
+  if (ac.state === 'suspended') {
+    ac.resume().then(fn).catch(() => {});
+  } else {
+    fn(ac);
+  }
+}
+
+// Correct star tap — warm D+A chime
+function sfxCorrect() {
+  resumeAC();
+  const ac = getAC(); if (!ac || ac.state === 'suspended') return;
+  const notes = [
+    { f: 783.99, delay: 0,    vol: 0.22, decay: 0.55 },
+    { f: 987.77, delay: 0.07, vol: 0.18, decay: 0.65 },
+    { f: 1318.5, delay: 0.14, vol: 0.14, decay: 0.85 },
+  ];
+  notes.forEach(({ f, delay, vol, decay }) => {
+    const osc = ac.createOscillator();
+    const osc2 = ac.createOscillator();
+    const gain = ac.createGain();
+    const gain2 = ac.createGain();
+    osc.connect(gain); gain.connect(ac.destination);
+    osc2.connect(gain2); gain2.connect(ac.destination);
+    osc.type = 'sine'; osc.frequency.value = f;
+    osc2.type = 'sine'; osc2.frequency.value = f * 2.005;
+    const t = ac.currentTime + delay;
+    gain.gain.setValueAtTime(0, t);
+    gain.gain.linearRampToValueAtTime(vol, t + 0.008);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + decay);
+    gain2.gain.setValueAtTime(0, t);
+    gain2.gain.linearRampToValueAtTime(vol * 0.18, t + 0.008);
+    gain2.gain.exponentialRampToValueAtTime(0.001, t + decay * 0.7);
+    osc.start(t); osc.stop(t + decay);
+    osc2.start(t); osc2.stop(t + decay);
+  });
+}
+
+
+// Wrong tap — low dull thud
+function sfxWrong() {
+  resumeAC();
+  const ac = getAC(); if (!ac || ac.state === 'suspended') return;
+  const buf = ac.createBuffer(1, ac.sampleRate * 0.15, ac.sampleRate);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < data.length; i++) {
+    data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / data.length, 3);
+  }
+  const src = ac.createBufferSource();
+  const filter = ac.createBiquadFilter();
+  filter.type = 'lowpass'; filter.frequency.value = 180;
+  const gain = ac.createGain();
+  gain.gain.setValueAtTime(0.25, ac.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.15);
+  src.buffer = buf;
+  src.connect(filter); filter.connect(gain); gain.connect(ac.destination);
+  src.start(); src.stop(ac.currentTime + 0.15);
+}
+
+// Discovery unlock — ascending arpeggio with reverb tail
+function sfxDiscovery() {
+  resumeAC();
+  const ac = getAC(); if (!ac || ac.state === 'suspended') return;
+  const freqs = [261.63, 329.63, 392.00, 523.25, 659.25]; // C E G C E
+  freqs.forEach((f, i) => {
+    const osc = ac.createOscillator();
+    const gain = ac.createGain();
+    osc.connect(gain); gain.connect(ac.destination);
+    osc.type = 'sine'; osc.frequency.value = f;
+    const t = ac.currentTime + i * 0.12;
+    gain.gain.setValueAtTime(0, t);
+    gain.gain.linearRampToValueAtTime(0.14, t + 0.03);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 1.2);
+    osc.start(t); osc.stop(t + 1.2);
+  });
+}
+
+// Duel round won — D minor resolution to F major
+function sfxDuelWin() {
+  resumeAC();
+  const ac = getAC(); if (!ac || ac.state === 'suspended') return;
+  const chord = [174.61, 220.00, 261.63, 349.23]; // F3 A3 C4 F4
+  chord.forEach((f, i) => {
+    const osc = ac.createOscillator();
+    const gain = ac.createGain();
+    osc.connect(gain); gain.connect(ac.destination);
+    osc.type = i === 0 ? 'triangle' : 'sine';
+    osc.frequency.value = f;
+    const t = ac.currentTime + i * 0.04;
+    gain.gain.setValueAtTime(0, t);
+    gain.gain.linearRampToValueAtTime(0.12, t + 0.05);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 1.8);
+    osc.start(t); osc.stop(t + 1.8);
+  });
+}
+
+// Duel round lost — descending two-note
+function sfxDuelLoss() {
+  resumeAC();
+  const ac = getAC(); if (!ac || ac.state === 'suspended') return;
+  [[220, 0], [174.61, 0.18]].forEach(([f, delay]) => {
+    const osc = ac.createOscillator();
+    const gain = ac.createGain();
+    osc.connect(gain); gain.connect(ac.destination);
+    osc.type = 'sine'; osc.frequency.value = f;
+    const t = ac.currentTime + delay;
+    gain.gain.setValueAtTime(0, t);
+    gain.gain.linearRampToValueAtTime(0.14, t + 0.04);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.8);
+    osc.start(t); osc.stop(t + 0.8);
+  });
+}
+
+// Hint fires — soft breath tone
+function sfxHint() {
+  resumeAC();
+  const ac = getAC(); if (!ac || ac.state === 'suspended') return;
+  const osc = ac.createOscillator();
+  const gain = ac.createGain();
+  const filter = ac.createBiquadFilter();
+  filter.type = 'bandpass'; filter.frequency.value = 600; filter.Q.value = 0.5;
+  osc.connect(filter); filter.connect(gain); gain.connect(ac.destination);
+  osc.type = 'sine'; osc.frequency.value = 440;
+  gain.gain.setValueAtTime(0, ac.currentTime);
+  gain.gain.linearRampToValueAtTime(0.06, ac.currentTime + 0.3);
+  gain.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 1.2);
+  osc.start(); osc.stop(ac.currentTime + 1.2);
+}
+
+// Timer critical pulse
+function sfxTick() {
+  resumeAC();
+  const ac = getAC(); if (!ac || ac.state === 'suspended') return;
+  const osc = ac.createOscillator();
+  const gain = ac.createGain();
+  osc.connect(gain); gain.connect(ac.destination);
+  osc.type = 'sine'; osc.frequency.value = 880;
+  gain.gain.setValueAtTime(0.08, ac.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.06);
+  osc.start(); osc.stop(ac.currentTime + 0.06);
+}
+
+// Star found in duel — crystalline ping
+function sfxDuelCorrect() {
+  resumeAC();
+  const ac = getAC(); if (!ac || ac.state === 'suspended') return;
+  const osc = ac.createOscillator();
+  const gain = ac.createGain();
+  osc.connect(gain); gain.connect(ac.destination);
+  osc.type = 'sine'; osc.frequency.value = 1047; // C6
+  gain.gain.setValueAtTime(0.2, ac.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.7);
+  osc.start(); osc.stop(ac.currentTime + 0.7);
+  // Harmonic
+  const osc2 = ac.createOscillator();
+  const g2 = ac.createGain();
+  osc2.connect(g2); g2.connect(ac.destination);
+  osc2.type = 'sine'; osc2.frequency.value = 1568; // G6
+  g2.gain.setValueAtTime(0.1, ac.currentTime);
+  g2.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.5);
+  osc2.start(); osc2.stop(ac.currentTime + 0.5);
+}
+
+// Memory correct — warm low chord
+function sfxMemoryCorrect() {
+  resumeAC();
+  const ac = getAC(); if (!ac || ac.state === 'suspended') return;
+  [261.63, 329.63, 392].forEach((f, i) => {
+    const osc = ac.createOscillator();
+    const gain = ac.createGain();
+    osc.connect(gain); gain.connect(ac.destination);
+    osc.type = 'sine'; osc.frequency.value = f;
+    gain.gain.setValueAtTime(0, ac.currentTime);
+    gain.gain.linearRampToValueAtTime(0.12, ac.currentTime + 0.05);
+    gain.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 1.4);
+    osc.start(); osc.stop(ac.currentTime + 1.4);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// VIVIENNE ANIMATION ENGINE
+// ═══════════════════════════════════════════════════════════════════════════
+
+const VivAnim = { init(){}, setState(){}, stopSpeaking(){}, pulseCorrect(){}, shakeHead(){}, animateMouth(){} };
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SKY DATA
+// ═══════════════════════════════════════════════════════════════════════════
+
+const SKY = {
+  polaris: { u: 0.0071, v: -0.3477, name: 'Polaris', mag: 1.97 },
+  alcor:   { u: -0.3419, v: -0.4955, name: 'Alcor', mag: 3.99 },
+  constellations: [
+    { id:'cassiopeia', name:'Cassiopeia', sub:'The Queen — high in the north',
+      stars:[{u:0.1798,v:-0.1238,name:'Caph',mag:2.27},{u:0.2249,v:-0.1286,name:'Schedar',mag:2.24},{u:0.2123,v:-0.1705,name:'Gamma Cas',mag:2.47},{u:0.2379,v:-0.1931,name:'Ruchbah',mag:2.68},{u:0.2286,v:-0.2383,name:'Segin',mag:3.38}],
+      lines:[[0,1],[1,2],[2,3],[3,4]], cu:0.2167, cv:-0.1709,
+      fact:"A great W in the sky — five bright stars forming a queen on her throne.",
+      vivFact:"Cinq étoiles. The Queen who would not stop boasting, so the gods set her in the heavens upside down half the year.",
+      difficulty:2, brightest:'Schedar',
+      introOrder:[1,2,3,4,0],
+      hints:["The brightest in the W — it stands out","Look toward the north-east, quite high","The second star from the left"] },
+    { id:'cygnus', name:'Cygnus', sub:'The Swan — Northern Cross',
+      stars:[{u:-0.0610,v:0.0504,name:'Deneb',mag:1.25},{u:-0.0987,v:0.0892,name:'Sadr',mag:2.23},{u:-0.2207,v:0.1730,name:'Albireo',mag:3.18},{u:-0.1469,v:0.0323,name:'Delta Cyg',mag:2.87},{u:-0.0646,v:0.1508,name:'Gienah',mag:2.48}],
+      lines:[[0,1],[1,2],[3,1],[1,4]], cu:-0.1184, cv:0.0991,
+      fact:"The Swan flies south down the Milky Way. Often called the Northern Cross.",
+      vivFact:"Le Cygne. Strange — the bright one is the tail. Most things lead from the head.",
+      difficulty:2, brightest:'Deneb',
+      introOrder:[1,0,2,3,4],
+      hints:["The brightest — the tail of the swan","Look nearly overhead, slightly west","The top of the cross figure"] },
+    { id:'lyra', name:'Lyra', sub:'The Harp — Vega, blue-white',
+      stars:[{u:-0.2757,v:0.0378,name:'Vega',mag:0.03},{u:-0.2777,v:0.0947,name:'Sheliak',mag:3.52},{u:-0.2646,v:0.1080,name:'Sulafat',mag:3.25},{u:-0.2554,v:0.0687,name:'Zeta Lyr',mag:4.36},{u:-0.2600,v:0.0371,name:'Epsilon Lyr',mag:3.90}],
+      lines:[[0,1],[0,2],[1,2],[1,3],[2,4],[3,4]], cu:-0.2667, cv:0.0693,
+      fact:"Vega is the brightest northern summer star, the first star ever photographed — Harvard, 1850.",
+      vivFact:"La Lyre. She learned this one first, in Paris. Vega is impossible to miss.",
+      difficulty:2, brightest:'Vega',
+      introOrder:[1,2,0,4,3],
+      hints:["The very brightest star visible — it dominates","Blue-white, unmistakable","Look west, burning bright"] },
+    { id:'pegasus', name:'Pegasus', sub:'The Winged Horse — autumn signpost',
+      stars:[{u:0.2051,v:0.1767,name:'Scheat',mag:2.42},{u:0.2416,v:0.2956,name:'Markab',mag:2.49},{u:0.4006,v:0.2366,name:'Algenib',mag:2.83},{u:0.3263,v:0.1159,name:'Alpheratz',mag:2.07},{u:0.0568,v:0.3786,name:'Enif',mag:2.39}],
+      lines:[[0,1],[0,3],[1,2],[2,3],[0,4]], cu:0.2461, cv:0.2407,
+      fact:"The Great Square of Pegasus — the most reliable autumn signpost in the British sky.",
+      vivFact:"Pégase. Four stars in a window. In autumn it floats overhead like a lit lantern.",
+      difficulty:1, brightest:'Alpheratz',
+      introOrder:[0,1,2,3,4],
+      hints:["The brightest corner of the great square","Look south-east, high up","Shared with Andromeda"] },
+    { id:'andromeda', name:'Andromeda', sub:'The Chained Lady',
+      stars:[{u:0.3263,v:0.1159,name:'Alpheratz',mag:2.07},{u:0.3947,v:-0.0101,name:'Mirach',mag:2.05},{u:0.4155,v:-0.1358,name:'Almach',mag:2.10},{u:0.3737,v:0.0666,name:'Delta And',mag:3.27}],
+      lines:[[0,3],[3,1],[1,2]], cu:0.3776, cv:0.0092,
+      fact:"She holds the only galaxy you can see with the naked eye from England.",
+      vivFact:"Andromède. Punished because her mother was vain. The mothers always cause the trouble.",
+      difficulty:2, brightest:'Mirach',
+      introOrder:[1,3,0,2],
+      hints:["The brightest in the chain — a warm orange tint","Middle of three bright stars","Look north-east"] },
+    { id:'perseus', name:'Perseus', sub:'The Hero — east of Cassiopeia',
+      stars:[{u:0.4047,v:-0.3033,name:'Mirfak',mag:1.79},{u:0.4898,v:-0.2434,name:'Algol',mag:2.12},{u:0.6283,v:-0.3172,name:'Atik',mag:2.91},{u:0.5298,v:-0.3475,name:'Menkib',mag:4.04},{u:0.4351,v:-0.3362,name:'Gorgonea',mag:2.85}],
+      lines:[[0,4],[4,1],[1,2],[0,3]], cu:0.4975, cv:-0.3095,
+      fact:"Algol — the Demon Star — winks every three days. Two stars eclipsing each other.",
+      vivFact:"Persée. Algol is the eye of the Gorgon's head, the one that winks. C'est macabre.",
+      difficulty:2, brightest:'Mirfak',
+      introOrder:[0,4,1,2,3],
+      hints:["The brightest — anchors the figure","Below Cassiopeia, north-east","Look for the central bright star"] },
+    { id:'ursa_major', name:'Ursa Major', sub:'The Plough',
+      stars:[{u:-0.4177,v:-0.4710,name:'Alkaid',mag:1.85},{u:-0.3420,v:-0.4978,name:'Mizar',mag:2.04},{u:-0.3114,v:-0.5404,name:'Alioth',mag:1.77},{u:-0.2658,v:-0.5887,name:'Megrez',mag:3.31},{u:-0.2729,v:-0.6457,name:'Phecda',mag:2.41},{u:-0.1439,v:-0.6196,name:'Dubhe',mag:1.79},{u:-0.1758,v:-0.6796,name:'Merak',mag:2.37}],
+      lines:[[0,1],[1,2],[2,3],[3,4],[3,5],[4,6],[5,6]], cu:-0.2757, cv:-0.5775,
+      fact:"Seven stars, never sets in Britain. Dubhe and Merak point to Polaris.",
+      vivFact:"La Grande Ourse. Sailors trust her more than maps.",
+      difficulty:2, brightest:'Alioth',
+      introOrder:[3,2,1,0,4,6,5],
+      hints:["The brightest — third along the handle","Look north, low in the sky","In the handle of the Plough"] },
+    { id:'draco', name:'Draco', sub:'The Dragon — coiled around Polaris',
+      stars:[{u:-0.2612,v:-0.0977,name:'Eltanin',mag:2.23},{u:-0.2835,v:-0.1298,name:'Rastaban',mag:2.79},{u:-0.2305,v:-0.1380,name:'Grumium',mag:3.73},{u:-0.3076,v:-0.3142,name:'Edasich',mag:3.29},{u:-0.2526,v:-0.4158,name:'Thuban',mag:3.65},{u:-0.1228,v:-0.5269,name:'Giausar',mag:3.84}],
+      lines:[[0,1],[1,2],[2,3],[3,4],[4,5]], cu:-0.2430, cv:-0.2704,
+      fact:"Thuban was the North Star four thousand years ago, when the pyramids were built.",
+      vivFact:"Le Dragon. He coils around the pole. Even the sky moves on.",
+      difficulty:3, brightest:'Eltanin',
+      introOrder:[1,2,3,4,5,0],
+      hints:["The brightest in the dragon's head","Between the Plough and Cepheus","A pair of stars marks the head — the brighter one"] },
+    { id:'cepheus', name:'Cepheus', sub:'The King — beside Cassiopeia',
+      stars:[{u:-0.0026,v:-0.0971,name:'Alderamin',mag:2.45},{u:0.0056,v:-0.1680,name:'Alfirk',mag:3.23},{u:0.0648,v:-0.2508,name:'Errai',mag:3.21},{u:0.0775,v:-0.0700,name:'Iota Cep',mag:3.50},{u:0.0572,v:-0.0637,name:'Zeta Cep',mag:3.35}],
+      lines:[[0,1],[0,4],[1,2],[2,3],[3,4]], cu:0.0405, cv:-0.1299,
+      fact:"Cassiopeia's husband, Andromeda's father. A house-shape next to his queen.",
+      vivFact:"Céphée. Lesser stars than his wife. The gods placed him beside her in dimmer fire.",
+      difficulty:2, brightest:'Alderamin',
+      introOrder:[0,1,2,3,4],
+      hints:["The brightest — base of the house shape","Near the pole, beside Cassiopeia","Look north, near the zenith"] },
+    { id:'aquila', name:'Aquila', sub:'The Eagle — Altair',
+      stars:[{u:-0.2247,v:0.3660,name:'Altair',mag:0.77},{u:-0.2319,v:0.3460,name:'Tarazed',mag:2.72},{u:-0.2185,v:0.3935,name:'Alshain',mag:3.71},{u:-0.3208,v:0.2850,name:'Deneb el Okab',mag:3.36},{u:-0.3041,v:0.4098,name:'Tseen Foo',mag:3.43}],
+      lines:[[0,1],[1,3],[0,2],[0,4]], cu:-0.2600, cv:0.3601,
+      fact:"Altair, with Vega and Deneb, forms the Summer Triangle.",
+      vivFact:"L'Aigle. Altair is the eagle's eye. With Vega and Deneb it makes a triangle. By winter it will be gone.",
+      difficulty:2, brightest:'Altair',
+      introOrder:[0,1,3,2,4],
+      hints:["Very bright — flanked by two dimmer companions","Look south, below Cygnus","The eagle's eye"] }
+  ]
+};
+
+const BG_STARS = [{"u":0.0071,"v":-0.3477,"mag":1.97},{"u":-0.8303,"v":-0.378,"mag":-0.05},{"u":-0.6929,"v":-0.3093,"mag":2.35},{"u":-0.5027,"v":-0.0614,"mag":2.78},{"u":-0.4389,"v":-0.1074,"mag":3.48},{"u":-0.644,"v":-0.1722,"mag":2.22},{"u":-0.2858,"v":0.0979,"mag":4.34},{"u":-0.1095,"v":0.1072,"mag":4.22},{"u":-0.1887,"v":0.114,"mag":3.79},{"u":-0.2612,"v":0.4647,"mag":3.36},{"u":0.1961,"v":0.3514,"mag":2.94},{"u":0.3367,"v":-0.1368,"mag":4.34},{"u":0.2464,"v":-0.2048,"mag":3.4},{"u":0.5331,"v":-0.0633,"mag":3.0},{"u":0.5829,"v":-0.0135,"mag":2.0},{"u":0.4493,"v":-0.5248,"mag":0.08},{"u":0.4284,"v":-0.6238,"mag":2.65},{"u":0.4168,"v":0.2441,"mag":4.04},{"u":-0.1022,"v":0.3281,"mag":3.77},{"u":-0.2136,"v":0.2743,"mag":3.51},{"u":-0.2345,"v":0.2014,"mag":4.44},{"u":0.0972,"v":-0.001,"mag":3.77},{"u":-0.1795,"v":-0.3461,"mag":4.36},{"u":-0.1184,"v":-0.3329,"mag":4.95},{"u":0.2878,"v":-0.456,"mag":4.04},{"u":-0.0986,"v":0.0892,"mag":3.21},{"u":0.1956,"v":0.2135,"mag":3.97}];
+
+const NOISE_STARS = {"cassiopeia":[{"u":0.3557,"v":-0.0539,"mag":4.74},{"u":0.3618,"v":-0.0619,"mag":5.5},{"u":0.2784,"v":-0.1584,"mag":5.52},{"u":0.0527,"v":-0.2373,"mag":5.21},{"u":0.1248,"v":-0.1405,"mag":5.79},{"u":0.2829,"v":-0.067,"mag":4.87},{"u":0.2222,"v":-0.2352,"mag":5.11},{"u":0.1642,"v":-0.0926,"mag":3.96},{"u":0.3687,"v":-0.0192,"mag":3.79},{"u":0.073,"v":-0.3213,"mag":4.83},{"u":0.368,"v":-0.1002,"mag":6.17},{"u":0.3424,"v":-0.3323,"mag":5.27},{"u":0.2548,"v":-0.2362,"mag":5.64},{"u":0.1657,"v":-0.3341,"mag":4.13},{"u":0.1281,"v":-0.1902,"mag":4.96},{"u":0.37,"v":-0.2486,"mag":5.05},{"u":0.2231,"v":-0.2266,"mag":5.87},{"u":0.1696,"v":-0.1372,"mag":5.46},{"u":0.1997,"v":-0.2539,"mag":6.0},{"u":0.1718,"v":-0.2272,"mag":4.24}],"cygnus":[{"u":-0.1355,"v":0.3117,"mag":5.18},{"u":-0.0573,"v":0.412,"mag":4.65},{"u":-0.0305,"v":0.1259,"mag":5.85},{"u":-0.1891,"v":0.1367,"mag":6.19},{"u":-0.4252,"v":0.0423,"mag":4.52},{"u":-0.1619,"v":-0.135,"mag":4.95},{"u":-0.1769,"v":0.0276,"mag":5.27},{"u":0.1573,"v":0.0168,"mag":5.35},{"u":0.0104,"v":0.3668,"mag":5.01},{"u":-0.2594,"v":-0.0691,"mag":5.8},{"u":-0.3732,"v":0.0347,"mag":4.5},{"u":-0.1493,"v":0.1606,"mag":5.99},{"u":-0.0485,"v":-0.025,"mag":4.38},{"u":-0.0374,"v":0.071,"mag":4.62},{"u":-0.1011,"v":-0.1599,"mag":3.98},{"u":-0.2436,"v":0.0586,"mag":5.22},{"u":-0.0705,"v":0.295,"mag":4.84},{"u":-0.2387,"v":0.3936,"mag":5.24},{"u":-0.2126,"v":0.0887,"mag":5.07}],"lyra":[{"u":-0.3564,"v":0.0377,"mag":4.21},{"u":-0.2331,"v":0.0823,"mag":3.83},{"u":-0.3264,"v":0.064,"mag":5.42},{"u":-0.2881,"v":-0.0574,"mag":4.91},{"u":-0.3402,"v":0.0819,"mag":4.16},{"u":-0.3124,"v":0.1288,"mag":4.59},{"u":-0.3247,"v":-0.0142,"mag":4.23},{"u":-0.254,"v":0.0306,"mag":5.41},{"u":-0.2354,"v":0.1072,"mag":5.99},{"u":-0.1599,"v":0.124,"mag":4.67},{"u":-0.3184,"v":-0.004,"mag":3.59},{"u":-0.2655,"v":0.0141,"mag":5.32},{"u":-0.1805,"v":-0.029,"mag":4.5},{"u":-0.3698,"v":0.1541,"mag":4.98},{"u":-0.3033,"v":-0.0357,"mag":5.63},{"u":-0.3164,"v":0.0735,"mag":4.6},{"u":-0.2699,"v":0.0342,"mag":4.59},{"u":-0.3979,"v":0.0886,"mag":4.6},{"u":-0.3915,"v":0.0632,"mag":3.57}],"pegasus":[{"u":-0.2932,"v":0.6133,"mag":5.48},{"u":0.4231,"v":0.2858,"mag":5.46},{"u":0.1323,"v":0.4976,"mag":5.03},{"u":0.2256,"v":0.4492,"mag":5.28},{"u":0.0685,"v":0.1665,"mag":5.36},{"u":0.4679,"v":0.4843,"mag":3.74},{"u":0.1635,"v":0.6101,"mag":5.01},{"u":0.2355,"v":0.0179,"mag":4.86},{"u":-0.0381,"v":0.671,"mag":5.36},{"u":0.708,"v":0.3933,"mag":4.57},{"u":0.1411,"v":0.422,"mag":4.77},{"u":-0.2449,"v":0.4286,"mag":4.69},{"u":0.7332,"v":0.0655,"mag":3.54},{"u":0.3516,"v":0.1332,"mag":5.1},{"u":0.0812,"v":0.2912,"mag":5.37}],"andromeda":[{"u":0.2383,"v":-0.0702,"mag":3.81},{"u":0.4275,"v":0.2041,"mag":4.28},{"u":0.5749,"v":-0.1667,"mag":4.76},{"u":0.4589,"v":-0.0658,"mag":5.06},{"u":0.3336,"v":0.4246,"mag":4.37},{"u":0.4976,"v":-0.1385,"mag":5.28},{"u":0.2345,"v":0.4051,"mag":4.54},{"u":0.4591,"v":0.2274,"mag":6.14},{"u":0.3123,"v":0.3622,"mag":6.17},{"u":-0.089,"v":-0.0988,"mag":4.47},{"u":0.5895,"v":0.4491,"mag":4.68},{"u":0.0164,"v":0.1667,"mag":5.53},{"u":0.1225,"v":-0.0091,"mag":4.93},{"u":0.3516,"v":-0.0888,"mag":5.42},{"u":0.2012,"v":0.2134,"mag":5.67},{"u":0.4821,"v":0.1023,"mag":5.31},{"u":0.2634,"v":-0.1342,"mag":4.9}],"perseus":[{"u":0.5771,"v":-0.0791,"mag":6.07},{"u":0.2638,"v":-0.5379,"mag":4.4},{"u":0.1698,"v":-0.3242,"mag":5.69},{"u":0.3486,"v":-0.3625,"mag":5.14},{"u":0.4957,"v":-0.4612,"mag":5.19},{"u":0.3371,"v":-0.4367,"mag":5.65},{"u":0.125,"v":-0.3357,"mag":5.75},{"u":0.394,"v":-0.47,"mag":5.55},{"u":0.547,"v":-0.4428,"mag":4.48},{"u":0.2186,"v":-0.544,"mag":6.01},{"u":0.1895,"v":-0.4681,"mag":5.18},{"u":0.5709,"v":0.0604,"mag":5.29},{"u":0.1067,"v":-0.4569,"mag":3.63},{"u":0.2249,"v":-0.2479,"mag":5.04},{"u":0.5057,"v":-0.5571,"mag":6.02},{"u":0.1267,"v":-0.1256,"mag":4.77},{"u":0.659,"v":-0.501,"mag":5.93},{"u":0.3124,"v":-0.2012,"mag":5.45},{"u":0.4412,"v":-0.1834,"mag":5.78},{"u":0.2891,"v":-0.4198,"mag":5.22}],"ursa_major":[{"u":-0.4364,"v":-0.7418,"mag":3.79},{"u":-0.3096,"v":-0.3302,"mag":4.74},{"u":-0.2271,"v":-0.1668,"mag":4.61},{"u":-0.566,"v":-0.387,"mag":4.85},{"u":-0.3576,"v":-0.501,"mag":5.78},{"u":-0.2379,"v":-0.3754,"mag":4.55},{"u":-0.4854,"v":-0.2286,"mag":4.78},{"u":-0.4377,"v":-0.5438,"mag":4.55},{"u":-0.5563,"v":-0.3571,"mag":4.14},{"u":-0.0705,"v":-0.3427,"mag":3.88},{"u":-0.2154,"v":-0.3321,"mag":5.14},{"u":-0.2778,"v":-0.4321,"mag":4.04},{"u":-0.0129,"v":-0.5777,"mag":5.83},{"u":-0.0886,"v":-0.6388,"mag":3.65},{"u":0.0069,"v":-0.2905,"mag":4.87},{"u":-0.3891,"v":-0.3214,"mag":5.12},{"u":-0.1423,"v":-0.4832,"mag":5.44}],"draco":[{"u":-0.2597,"v":0.1544,"mag":6.14},{"u":-0.0443,"v":0.0598,"mag":6.08},{"u":-0.0788,"v":-0.5665,"mag":5.01},{"u":-0.3586,"v":-0.4565,"mag":4.52},{"u":-0.6886,"v":-0.0256,"mag":5.12},{"u":0.1357,"v":-0.5774,"mag":4.8},{"u":-0.3924,"v":0.0354,"mag":4.97},{"u":-0.5071,"v":0.1674,"mag":5.33},{"u":-0.4567,"v":0.0057,"mag":5.51},{"u":0.1607,"v":-0.649,"mag":4.82},{"u":-0.2185,"v":0.1798,"mag":4.91},{"u":-0.4169,"v":-0.2117,"mag":5.19},{"u":-0.2166,"v":0.3568,"mag":5.44},{"u":-0.516,"v":0.3546,"mag":5.67},{"u":0.0009,"v":0.3634,"mag":5.5},{"u":-0.1673,"v":-0.7556,"mag":5.51},{"u":-0.4812,"v":-0.3341,"mag":5.83},{"u":-0.1234,"v":0.2112,"mag":5.29},{"u":-0.3412,"v":0.2891,"mag":5.44},{"u":-0.2912,"v":-0.1834,"mag":5.61}],"cepheus":[{"u":-0.2618,"v":-0.3404,"mag":5.0},{"u":-0.0656,"v":-0.0031,"mag":4.72},{"u":0.128,"v":-0.1042,"mag":6.1},{"u":-0.1539,"v":-0.3586,"mag":3.51},{"u":-0.0062,"v":0.0832,"mag":6.14},{"u":0.0353,"v":0.2029,"mag":3.57},{"u":-0.2067,"v":-0.1171,"mag":4.76},{"u":0.175,"v":-0.4627,"mag":3.75},{"u":-0.1458,"v":-0.2011,"mag":5.55},{"u":0.0708,"v":-0.3162,"mag":5.01},{"u":-0.1321,"v":-0.2372,"mag":4.6},{"u":0.1418,"v":-0.1558,"mag":5.56},{"u":0.0314,"v":-0.0312,"mag":5.44},{"u":0.1497,"v":0.0342,"mag":5.3},{"u":0.1982,"v":-0.0971,"mag":5.96},{"u":0.171,"v":-0.0673,"mag":5.85},{"u":-0.2261,"v":-0.2986,"mag":4.7},{"u":0.0593,"v":-0.012,"mag":4.74},{"u":0.331,"v":-0.0157,"mag":5.9}],"aquila":[{"u":-0.3933,"v":0.4137,"mag":5.18},{"u":-0.282,"v":0.5164,"mag":5.52},{"u":-0.1089,"v":0.2341,"mag":4.54},{"u":-0.2356,"v":0.5432,"mag":5.5},{"u":-0.0589,"v":0.3865,"mag":5.48},{"u":-0.253,"v":0.2754,"mag":5.25},{"u":-0.3039,"v":0.6054,"mag":5.88},{"u":-0.1188,"v":0.3323,"mag":5.05},{"u":-0.195,"v":0.4103,"mag":5.34},{"u":-0.3279,"v":0.2492,"mag":4.56},{"u":-0.1746,"v":0.4129,"mag":4.27},{"u":-0.118,"v":0.1989,"mag":4.37},{"u":-0.3191,"v":0.3745,"mag":5.56},{"u":-0.3983,"v":0.3614,"mag":3.77},{"u":-0.1869,"v":0.4389,"mag":5.32},{"u":-0.087,"v":0.3918,"mag":5.71},{"u":-0.2796,"v":0.409,"mag":4.88}]};
+
+const DISCOVERIES = {
+  polaris_pointer: { name:'The Pointer', desc:'Dubhe and Merak — two stars that point straight to Polaris.', icon:'↗' },
+  summer_triangle: { name:'Summer Triangle', desc:'Vega, Deneb, Altair — the asterism that crosses three constellations.', icon:'△' },
+  mizar_alcor:     { name:'Mizar & Alcor', desc:'The naked-eye double. Roman recruits had to see both to be conscripted.', icon:'••' }
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// VIVIENNE DIALOGUE
+// ═══════════════════════════════════════════════════════════════════════════
+
+const VIV = {
+  lessonOpen: [
+    "Oh — monsieur. You came up here too. Well. Good.",
+    "Tell me you can keep a secret. I am not supposed to have this telescope.",
+    "Vous voyez ça? The brass one. Lovely lens. Hatch will not notice for hours.",
+    "I was hoping someone would come up. I am bored alone."
+  ],
+  encouraging: [
+    "Doucement. Take your time.",
+    "It is harder than it looks. Most people give up.",
+    "Don't worry. The sky has been there four billion years. It can wait.",
+    "You are doing fine. Better than most."
+  ],
+  lessonMid: [
+    "You are quicker than the last person I tried this with.",
+    "Bien. You learn fast.",
+    "Most men pretend to know the stars. You actually look. C'est rare.",
+    "Careful — you are going to be too good at this."
+  ],
+  sharpened: [
+    "Mm. You are not who I expected.",
+    "I am taking you seriously now, monsieur.",
+    "This is unfair. You know what you are doing.",
+    "I have stopped underestimating you. Be warned."
+  ],
+  readyHint: [
+    "Trois étoiles. You know enough now.",
+    "You are getting too good. Perhaps we should make this interesting.",
+    "If you wanted to play me, monsieur, you could. I would not say no.",
+    "You see that little glowing button? That is me, suggesting something."
+  ],
+  correct: ["Bien sûr.","Ah — perfect.","Voilà.","Très bien.","Exactement.","Mm. Good eye.","Vous avez raison."],
+  wrong: ["Non, non. Look again.","That is not it.","No — but a reasonable guess.","Pas du tout.","You confuse it with another."],
+
+  // Star intro facts — shown during intro phase for each star
+  starIntro: {
+    'Caph':         "Caph. The westernmost point of Cassiopeia's W. A white star, fifty-four light years away.",
+    'Schedar':      "Schedar. The brightest in Cassiopeia. An orange giant — two hundred and twenty million years old.",
+    'Gamma Cas':    "Gamma Cassiopeiae. The central star of the W. It spins so fast it throws off a disc of gas.",
+    'Ruchbah':      "Ruchbah. The knee, in Arabic. A possible eclipsing binary — it may dim slightly every two years.",
+    'Segin':        "Segin. The faintest of the five. A hot blue-white star, four hundred light years distant.",
+    'Deneb':        "Deneb. The tail of the Swan. One of the most luminous stars known — the light you see left before Rome fell.",
+    'Sadr':         "Sadr. The heart of Cygnus, where the cross intersects. A yellow supergiant.",
+    'Albireo':      "Albireo. The head of the Swan. Through a telescope — a gold star and a blue star, orbiting each other.",
+    'Delta Cyg':    "Delta Cygni. The wing tip. A binary system — two stars too close to separate with the naked eye.",
+    'Gienah':       "Gienah. The other wing. Further from us than it looks — two hundred and twenty light years.",
+    'Vega':         "Vega. The brightest star in the summer sky. The very first star ever photographed — Harvard, 1850.",
+    'Sheliak':      "Sheliak. An eclipsing binary — two stars orbiting so close they distort each other into egg shapes.",
+    'Sulafat':      "Sulafat. The tortoise, in Arabic. The lyre's lower string.",
+    'Zeta Lyr':     "Zeta Lyrae. Just visible to the naked eye. A wide double — its companion is magnitude four.",
+    'Epsilon Lyr':  "Epsilon Lyrae. The Double Double. Each of its two stars is itself a binary. Four stars total.",
+    'Scheat':       "Scheat. The shoulder of Pegasus. A red giant — variable, it brightens and dims over years.",
+    'Markab':       "Markab. The saddle of Pegasus. A blue-white star two hundred and forty light years away.",
+    'Algenib':      "Algenib. The side of Pegasus. Rotating rapidly — it completes a turn every one and a half days.",
+    'Alpheratz':    "Alpheratz. Shared between Pegasus and Andromeda. The brightest corner of the Great Square.",
+    'Enif':         "Enif. The nose of Pegasus — it marks the horse's muzzle. An orange supergiant.",
+    'Mirach':       "Mirach. The brightest in Andromeda. A red giant, and a useful guide to the Andromeda Galaxy.",
+    'Almach':       "Almach. A double star — gold and blue-green, one of the most beautiful pairs in the sky.",
+    'Delta And':    "Delta Andromedae. A binary system, two hundred light years away.",
+    'Mirfak':       "Mirfak. The brightest in Perseus. A yellow supergiant five thousand times more luminous than the sun.",
+    'Algol':        "Algol. The Demon Star. Every two days and twenty-one hours it winks — a closer star eclipses it.",
+    'Atik':         "Atik. The shoulder of Perseus. A hot blue-white giant.",
+    'Menkib':       "Menkib. Faint but real. A massive star — it will end as a supernova.",
+    'Gorgonea':     "Gorgonea Tertia. One of the Gorgon's eyes. Perseus carried the head in a sack.",
+    'Alkaid':       "Alkaid. The end of the Plough's handle. One of the furthest stars in the figure — a hundred light years.",
+    'Mizar':        "Mizar. Look beside it — Alcor, its companion, is twelve arcminutes away. Romans tested soldiers' eyes on this pair.",
+    'Alioth':       "Alioth. The brightest in Ursa Major. A peculiar star — its magnetic field rotates separately from the star itself.",
+    'Megrez':       "Megrez. The faintest of the seven. Where the handle meets the bowl.",
+    'Phecda':       "Phecda. The thigh of the bear. A white star eighty-four light years distant.",
+    'Dubhe':        "Dubhe. The pointer. Draw a line through Dubhe and Merak — it leads straight to Polaris.",
+    'Merak':        "Merak. The other pointer. With Dubhe, it has guided navigators to north for three thousand years.",
+    'Eltanin':      "Eltanin. The dragon's eye. The brightest star in Draco — an orange giant three hundred light years away.",
+    'Rastaban':     "Rastaban. The dragon's head. A giant star, two hundred and sixty light years distant.",
+    'Grumium':      "Grumium. The dragon's jaw. A binary system — its companion takes six thousand years to orbit.",
+    'Edasich':      "Edasich. One of the first stars found to have a planet. Iota Draconis b — a giant world.",
+    'Thuban':       "Thuban. Once the pole star — four thousand years ago, the pyramids were aligned to it.",
+    'Giausar':      "Giausar. The dragon's tail. A double star at the tip of Draco's long body.",
+    'Alderamin':    "Alderamin. The brightest in Cepheus. In five thousand years it will become the pole star.",
+    'Alfirk':       "Alfirk. A beta Cephei variable — it pulses in brightness every four and a half hours.",
+    'Errai':        "Errai. Gamma Cephei. A star with a planet — and in three thousand years, our next pole star after Alderamin.",
+    'Iota Cep':     "Iota Cephei. An orange giant at the base of the house shape.",
+    'Zeta Cep':     "Zeta Cephei. A yellow supergiant — eight hundred times more luminous than our sun.",
+    'Altair':       "Altair. Spinning so fast it bulges at the equator. Sixteen light years away — one of our nearest bright neighbours.",
+    'Tarazed':      "Tarazed. The plundering eagle, in Persian. An orange giant flanking Altair.",
+    'Alshain':      "Alshain. The falcon, in Arabic. Altair's other companion — a subgiant star forty-five light years away.",
+    'Deneb el Okab':"Deneb el Okab. The tail of the eagle. A white star in the lower wing.",
+    'Tseen Foo':    "Tseen Foo. From Chinese astronomy — part of the Heavenly Drumstick asterism.",
+  },
+
+  // Star-specific — fires for notable named stars only
+  starReact: {
+    'Vega':    "Vega. The brightest star in the summer sky. The first star ever photographed — Harvard, 1850.",
+    'Algol':   "Algol. The one that winks. Every three days — two stars passing in front of each other. The Arabians called it the Demon's head.",
+    'Deneb':   "Deneb. The light reaching your eye left before Rome fell. It is that far away.",
+    'Altair':  "Altair. Spinning so fast it is not round — it bulges at the equator. We cannot see that. But it is true.",
+    'Dubhe':   "Dubhe and Merak — the two pointers. Follow them north and you find Polaris. Sailors have known this for three thousand years.",
+    'Mizar':   "Mizar. Look closely beside it — there is Alcor. Twelve arcminutes apart. The Romans used it to test their soldiers' eyes.",
+    'Mirfak':  "Mirfak. Five thousand times more luminous than the sun. It does not look it from here.",
+    'Schedar': "Schedar. The brightest in the queen's throne. An orange giant — it has been burning for two hundred million years."
+  },
+
+  // Between-round bridge — one word, only if cooldown allows
+  bridge: ["Next.","Bon. Another.","Good. Keep going.","Mm.","One more."],
+
+  // Streak ×4 acknowledgment — fires once then locks until reset
+  streak4: [
+    "You are on a run, monsieur.",
+    "Four. I am paying attention now.",
+    "Mm. You have found your rhythm."
+  ],
+  idle: [
+    "The cold does not bother me. In Lyon we had colder.",
+    "Do not tell Hatch about the telescope.",
+    "Stargazing is for people who do not want to look at people.",
+    "She learned the sky in Paris. She remembers most of it.",
+    "These positions are exact. The sky is honest about where it is.",
+    "Astronomy is what scholars call astrology after they stopped believing in it.",
+    "The sky here is almost the same as Paris. Almost.",
+  ],
+  duelHints: {
+    brightness: ["The brightest one. Look for the light.","It stands out — magnitude matters here.","Trust your eye for brightness first."],
+    position:   ["Think about where it sits in the figure.","Remember the shape from the lesson.","Its position in the constellation."],
+    general:    ["You know this one. Think.","Three seconds — you have seen it before.","Don't think too long. Look."]
+  },
+  duelInvite: [
+    `Bon. You think you know the sky now?<br><br>Five frames. Three different challenges. First to win three takes the duel.<br><br>No labels. No hints unless you hesitate.<br><br>Win — I owe you something. Lose — you owe me. <em>Comprends?</em>`
+  ],
+  duelAccept: ["Oh. Good.","I was hoping you would.","Bien. Stand here. Eyes up.","Don't blink, monsieur. I won't."],
+  duelDecline: ["Mm. Coward. C'est okay — keep practising.","Pity. I was looking forward to that.","When you are ready, the button is still there."],
+  frameOpen: ["Find it before I do.","Quickly now — no thinking.","I am already looking.","Ready? I am.","One star. Find it."],
+  frameOpenMaitre: [
+    "I already know which one it is.",
+    "Don't think. There is no time.",
+    "At this level, I do not wait.",
+    "Vite. I am already looking.",
+  ],
+  duelHerWin: ["Trop lent, monsieur.","Mm. That was mine.","I told you I could play.","Did you blink?","C'était facile.","You're cute when you're losing."],
+  duelHisWin: ["Oh — !","You are faster than I thought.","Hmm. Beginner's luck.","Damn.","Très rapide.","Vous m'impressionnez.","Cheating. You are cheating somehow."],
+  duelBanter: ["Closer than I thought.","We are well-matched, monsieur.","I am enjoying this. Are you?","Monsieur — focus. You are being charming. It will not save you."],
+  duelMatchPointHis: ["One more and you win. Don't choke.","Match point, vous. I am genuinely worried.","If you take this — I owe you. Remember that."],
+  duelMatchPointHer: ["One more and you owe me, monsieur.","Match point. I am savouring this.","Last frame. If you lose — I will be very pleased."],
+  wrongTap: ["Non — that is not it.","Wrong star. Keep looking.","Non. Think about the brightness.","Pas celui-là."],
+  flirtWin1: [
+    "She steps closer. <em>Alors. I owe you.</em><br><br>She doesn't say what. Just smiles. Wink.",
+    "Her hand brushes yours on the railing.<br><br><em>Je vous dois quelque chose, monsieur.</em>",
+    "<em>You won.</em> She holds your gaze too long. <em>Je vous dois. Je n'oublie pas.</em>",
+    "She closes the telescope cap. Slow. Deliberate.<br><br><em>I owe you, monsieur. I always pay.</em> Wink.",
+    "<em>Vous êtes dangereux.</em><br><br><em>I owe you a debt now.</em>"
+  ],
+  flirtWin3: [
+    "She doesn't smile this time. Just looks at you.<br><br><em>You are too good at this. It is unnerving.</em><br><br>Her fingers tap the railing — once, twice, stop.",
+    "<em>Three.</em> She says it quietly. <em>Three times now. I am not used to losing three.</em>",
+    "Her hand finds yours on the brass. She doesn't move it.<br><br><em>This is the third time, monsieur. I notice these things.</em>"
+  ],
+  flirtWin5: [
+    "<em>Monsieur — I cannot beat you.</em><br><br>She laughs once, short. <em>I should be embarrassed. I am... I do not know what I am.</em>",
+    "<em>Five.</em> Her voice is different. Lower.<br><br><em>I have stopped pretending I am not impressed.</em>",
+    "She doesn't say anything for a long moment.<br><br><em>Find me later. Not for this. For something else.</em>"
+  ],
+  flirtWin10: [
+    "She's quiet for a long time.<br><br>Then, softly: <em>Alright. You earned this.</em><br><br>She doesn't elaborate. She just looks at you — the way someone looks when they've decided something.<br><br><em>I owe you more than I've said. I will find a way to repay it properly.</em><br><br><em>Don't forget that I told you that.</em>"
+  ],
+
+  // Maître easter egg — fires specifically on a Maître win
+  flirtWinMaitre: [
+    "She looks at the telescope, then back at you.<br><br><em>Maître.</em> A pause. <em>Nobody beats me at Maître.</em><br><br>She is quiet for a moment — not uncomfortable. Considering.<br><br><em>I still owe you one. Find me later. And when you do — ask me something that matters.</em>"
+  ],
+  flirtLoss: [
+    "<em>Vous me devez quelque chose, monsieur.</em><br><br><em>I will collect when I want it.</em> Wink.",
+    "<em>You owe me.</em> She holds out her hand, then closes it, laughing. <em>Pas maintenant. Bientôt.</em>",
+    "She pretends to write in the air. <em>One debt. I keep accounts.</em>",
+    "<em>You owe me a secret. Make it a good one.</em>",
+    "She taps your chest. <em>Là. That is where the debt lives now.</em>",
+    "<em>You lost. I am pleased.</em><br><br><em>Find me later. Bring something interesting.</em>",
+    "<em>Owe me. Quietly.</em><br><br>She winks. <em>Especially not anyone in a mask.</em>"
+  ],
+  discoveryPolaris: ["<em>Voilà.</em> Her finger follows the line. <em>Dubhe and Merak — the two pointers. They never lie. Sailors have trusted them for three thousand years.</em>"],
+  discoveryTriangle: ["<em>You see it?</em> Her voice softens. <em>Vega, Deneb, Altair. Three constellations, one triangle. The Summer Triangle. By winter — gone.</em>"],
+  discoveryAlcor: ["<em>Oh.</em> She looks at you, surprised. <em>You saw Alcor. Most people miss it.</em><br><br><em>Mizar and Alcor — twelve arcminutes apart. Roman soldiers had to see both to pass conscription.</em><br><br><em>You have good eyes, monsieur.</em>"]
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════════════════
+
+let canvas, ctx, W, H, tFrame = 0;
+let bursts = [], shootingStars = [];
+let camera = { cx:0, cy:0, scale:1, tcx:0, tcy:0, tscale:1 };
+
+let phase = 'lesson', gameActive = false;
+let currentMode = null, currentConst = null;
+let placedStars = [], connectedLines = [], drawingPath = [];
+let memoryShowing = false, memoryGhostLines = [];
+let targetStarIndex = null, duelNoiseStars = [];
+
+let totalScore = 0, bestScore = 0, streak = 1;
+let learned = {}, constellationsLearnedCount = 0, totalDuelWins = 0;
+let sessionLessons = 0; // track rounds in current session
+
+let perfStats = { recentResults: [] };
+let vivMood = 'neutral';
+
+let discoveries = { polaris_pointer:false, summer_triangle:false, mizar_alcor:false };
+let polarisLineTimer = 0, triangleTimer = 0;
+let discoveryAnim = null; // { stars: [{px,py}], lines: [{ax,ay,bx,by}], progress: 0, done: false }
+
+let duelFrame = 0, duelHis = 0, duelHer = 0;
+let duelHerSched = null;
+let duelFrameTypes = ['recognize','identify','recognize','identify','memory'];
+let duelTimerStart = 0, duelTimerDur = 9000;
+let duelRoundActive = false, duelRoundResolved = false;
+let duelTimerInt = null;
+let hintFired = false, hintTimer = null, hintFillInt = null, hintElapsed = 0;
+
+let tickTimer = null;
+let speechTimer = null, idleTimer = null, idleIdx = 0;
+let hoverStar = null;
+let lastSpokeAt = 0;          // timestamp of last speakViv call
+
+// ── VIVIENNE DIFFICULTY ENGINE ──────────────────────────────────────────────
+let vivDifficulty = 'savant';  // 'eleve' | 'savant' | 'astronome' | 'maitre'
+
+const VIV_LEVELS = {
+  eleve:     { mean: 4.8,  std: 0.9,   mistake: 0.30, label: 'Élève',      labelEN: 'Apprentice' },
+  savant:    { mean: 2.8,  std: 0.5,   mistake: 0.12, label: 'Savant',     labelEN: 'Scholar' },
+  astronome: { mean: 1.7,  std: 0.28,  mistake: 0.03, label: 'Astronome',  labelEN: 'Astronomer' },
+  maitre:    { mean: 1.0,  std: 0.12,  mistake: 0.00, label: 'Maître',     labelEN: 'Grandmaster' },
+};
+
+// Gaussian random (Box-Muller)
+function gaussRand(mean, std) {
+  const u = 1 - Math.random();
+  const v = Math.random();
+  const z = Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+  return Math.max(0.7, mean + z * std);
+}
+
+// Compute star difficulty 0..1 from real sky data
+function starDifficulty(starIdx, constellation, noiseStars) {
+  const star = constellation.stars[starIdx];
+  const allStars = constellation.stars;
+
+  // Factor 1: magnitude contrast vs nearest noise star
+  let minNoiseDist = 999, nearestNoiseMag = 5.0;
+  noiseStars.forEach(n => {
+    const d = Math.hypot(star.u - n.u, star.v - n.v);
+    if (d < minNoiseDist) { minNoiseDist = d; nearestNoiseMag = n.mag; }
+  });
+  const magContrast = nearestNoiseMag - star.mag;
+  const contrastScore = Math.max(0, 1 - magContrast / 3.0);
+
+  // Factor 2: similarity to other constellation stars
+  const magDiffs = allStars.filter((_,i) => i !== starIdx).map(s => Math.abs(star.mag - s.mag));
+  const minMagDiff = Math.min(...magDiffs);
+  const similarityScore = Math.max(0, 1 - minMagDiff / 1.5);
+
+  // Factor 3: crowding from nearby noise
+  const nearbyNoise = noiseStars.filter(n => Math.hypot(star.u-n.u, star.v-n.v) < 0.08).length;
+  const crowdScore = Math.min(1.0, nearbyNoise / 4.0);
+
+  return 0.4 * contrastScore + 0.35 * similarityScore + 0.25 * crowdScore;
+}
+
+// Player pace tracking — last 5 tap times in ms
+const playerTapTimes = [];
+let lastTapTime = 0;
+
+function recordPlayerTap() {
+  const now = Date.now();
+  if (lastTapTime > 0 && duelRoundActive) {
+    const elapsed = now - duelTimerStart;
+    if (elapsed > 0 && elapsed < 10000) {
+      playerTapTimes.push(elapsed);
+      if (playerTapTimes.length > 5) playerTapTimes.shift();
+    }
+  }
+  lastTapTime = now;
+}
+
+function playerSpeedFactor() {
+  // Returns 0.85-1.0 — she tightens if player is fast
+  if (playerTapTimes.length < 3) return 1.0;
+  const avgTap = playerTapTimes.reduce((a,b) => a+b, 0) / playerTapTimes.length;
+  // If player averages under 2s, she speeds up by up to 15%
+  const factor = Math.max(0.85, Math.min(1.0, avgTap / 2000));
+  return factor;
+}
+
+// Compute Vivienne's reaction time — real difficulty model with perfect knowledge
+function vivReactionTime(starIdx, constellation, noiseStars) {
+  const level = VIV_LEVELS[vivDifficulty];
+  const diff = starDifficulty(starIdx, constellation, noiseStars || []);
+  const star = constellation.stars[starIdx];
+
+  // PERFECT KNOWLEDGE at Maître: bright stars (mag < 1.5) she fires at exactly 700ms
+  // No distribution — no exploitable mean, no fumbles
+  if (vivDifficulty === 'maitre' && star.mag < 1.5) {
+    // Jitter mask ±40ms so player can't clock her
+    return 700 + (Math.random() * 80 - 40);
+  }
+
+  // Astronome: bright stars near-perfect (750-900ms, tiny std)
+  if (vivDifficulty === 'astronome' && star.mag < 1.5) {
+    return gaussRand(820, 60) + (Math.random() * 50 - 25);
+  }
+
+  // All other cases: Gaussian scaled by star difficulty + player adaptation
+  const speedFactor = playerSpeedFactor();
+  const adjustedMean = level.mean * (1 + diff * 0.4) * speedFactor;
+  const rt = gaussRand(adjustedMean, level.std);
+
+  // Jitter mask ±50ms — prevents clockable patterns
+  const jitter = Math.random() * 100 - 50;
+  return Math.max(700, rt * 1000 + jitter);
+}
+
+// Should Vivienne make a mistake on this round?
+// Maître: never mistakes bright stars, tiny chance on hard stars
+// Others: standard mistake rate
+function vivMakeMistake(starIdx, constellation, noiseStars) {
+  const level = VIV_LEVELS[vivDifficulty];
+  const diff = starDifficulty(starIdx, constellation, noiseStars || []);
+  const star = constellation.stars[starIdx];
+
+  if (vivDifficulty === 'maitre') {
+    // Perfect on bright stars — tiny fumble chance only on very hard stars
+    if (star.mag < 1.5) return false;
+    return diff > 0.7 && Math.random() < 0.02; // 2% on genuinely hard stars only
+  }
+  if (vivDifficulty === 'astronome') {
+    // Almost never mistakes bright stars
+    if (star.mag < 2.0) return Math.random() < 0.01;
+    return Math.random() < level.mistake;
+  }
+  return Math.random() < level.mistake;
+}
+let ripples = [];              // wrong-tap ripple animations
+let memoryAnchor = null;       // currently selected star for memory drawing
+let streakAcknowledged = false; // reset when streak resets
+let consecutiveWrong = 0;     // wrong taps on current lesson round
+
+// ── LESSON ARC STATE ──────────────────────────────────────────────────────────
+let lessonPhase = 'intro';    // 'intro' | 'test' | 'memory'
+let lessonTestQueue = [];     // sorted star indices by difficulty (hardest last)
+let lessonTestIdx = 0;        // current test index 0,1,2
+let introStarIdx = 0;         // current star being introduced
+let introTimer = null;        // intro animation timer
+let labelFadeProgress = 0;    // 0=fully labelled, 1=fully faded
+let labelFadeActive = false;
+
+// Touch tap radius — larger on mobile
+const TAP_RADIUS = Math.min(window.innerWidth, window.innerHeight) < 600 ? 44 : 32;
+
+// ═══════════════════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════════════════
+
+function init() {
+  canvas = document.getElementById('stars');
+  ctx = canvas.getContext('2d');
+  resize(); window.addEventListener('resize', resize);
+  VivAnim.init();
+  loadProgress(); updateScoreDisplay();
+
+  document.getElementById('hotspot-launch').addEventListener('click', launchFromHotspot);
+  document.getElementById('hotspot-screen').addEventListener('click', launchFromHotspot);
+  document.getElementById('begin-btn').addEventListener('click', startGame);
+  document.getElementById('gallery-btn').addEventListener('click', showGallery);
+  document.getElementById('close-gallery').addEventListener('click', hideGallery);
+  document.getElementById('duel-accept').addEventListener('click', acceptDuel);
+  document.getElementById('duel-decline').addEventListener('click', declineDuel);
+  document.getElementById('final-replay').addEventListener('click', resetForReplay);
+  document.getElementById('final-leave').addEventListener('click', leaveTerrace);
+
+  // Pointer/touch events — unified for mobile + desktop
+  canvas.addEventListener('pointerdown', onPointerDown, { passive: false });
+  canvas.addEventListener('pointermove', onPointerMove, { passive: false });
+  document.addEventListener('pointerdown', resumeAC, { once: true });
+
+  setInterval(() => { if (Math.random() < 0.4) spawnShootingStar(); }, 5500);
+  camera.scale = camera.tscale = computeFullSkyScale();
+  requestAnimationFrame(loop);
+}
+
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+function computeFullSkyScale() { return Math.min(W, H * 0.85) / 1.7; }
+
+function uvToPx(u, v) {
+  const py0 = H * 0.42;
+  return { px: (u - camera.cx) * camera.scale + W/2, py: (v - camera.cy) * camera.scale + py0 };
+}
+
+function setCameraTarget(tcx, tcy, tscale, animate) {
+  camera.tcx = tcx; camera.tcy = tcy; camera.tscale = tscale;
+  if (!animate) { camera.cx = tcx; camera.cy = tcy; camera.scale = tscale; }
+}
+function updateCamera() {
+  const k = 0.08;
+  camera.cx += (camera.tcx - camera.cx) * k;
+  camera.cy += (camera.tcy - camera.cy) * k;
+  camera.scale += (camera.tscale - camera.scale) * k;
+}
+
+function loadProgress() {
+  if (window.__nt) {
+    const s = window.__nt;
+    bestScore = s.bestScore || 0;
+    learned = s.learned || {};
+    totalDuelWins = s.wins || 0;
+    discoveries = s.discoveries || { polaris_pointer:false, summer_triangle:false, mizar_alcor:false };
+    constellationsLearnedCount = Object.keys(learned).length;
+  }
+}
+function saveProgress() {
+  window.__nt = { bestScore, learned, wins: totalDuelWins, discoveries };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// LAUNCH
+// ═══════════════════════════════════════════════════════════════════════════
+
+function launchFromHotspot() {
+  document.getElementById('hotspot-screen').classList.add('gone');
+}
+
+function startGame() {
+  document.getElementById('instructions').style.display = 'none';
+  gameActive = true; phase = 'lesson';
+  document.getElementById('phase-label').textContent = 'Lesson';
+  if (constellationsLearnedCount >= 3) 
+  if (totalDuelWins > 0) {
+    const wc = document.getElementById('wins-counter');
+    wc.style.display = 'block';
+    wc.textContent = `${totalDuelWins} ${totalDuelWins===1?'duel':'duels'} won`;
+  }
+  buildSessionDots();
+  document.getElementById('session-progress').classList.add('show');
+  // Duel skip always available
+  const duelNowBtn = document.getElementById('duel-now-btn');
+  if (duelNowBtn) {
+    duelNowBtn.style.display = 'inline-block';
+    duelNowBtn.addEventListener('click', () => {
+      // Pick 3 random constellations as "learned" so duel has a pool
+      if (constellationsLearnedCount < 3) {
+        SKY.constellations.slice(0, 3).forEach(c => { learned[c.id] = true; });
+        constellationsLearnedCount = Object.keys(learned).length;
+      }
+      triggerDuelIntro();
+    });
+  }
+  speakViv(pick(VIV.lessonOpen), false);
+  setTimeout(nextLessonRound, 1600);
+  scheduleIdle();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SESSION PROGRESS DOTS
+// ═══════════════════════════════════════════════════════════════════════════
+
+function buildSessionDots() {
+  const wrap = document.getElementById('session-progress');
+  wrap.innerHTML = '';
+  // 3 lesson dots before duel
+  for (let i = 0; i < 3; i++) {
+    const d = document.createElement('div');
+    d.className = 'sp-dot' + (i < constellationsLearnedCount ? ' filled' : '');
+    d.id = 'sp-dot-' + i;
+    wrap.appendChild(d);
+  }
+}
+
+function updateSessionDot() {
+  sessionLessons++;
+  const dotIdx = Math.min(sessionLessons - 1, 2);
+  const dot = document.getElementById('sp-dot-' + dotIdx);
+  if (dot) dot.classList.add('filled');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// LESSON
+// ═══════════════════════════════════════════════════════════════════════════
+
+function nextLessonRound() {
+  if (phase !== 'lesson') return;
+  if (constellationsLearnedCount > 0 && canSpeak(6000)) {
+    setTimeout(() => { if (canSpeak(0)) speakViv(pick(VIV.bridge), false); }, 400);
+  }
+  resetState();
+  currentConst = pickConst();
+  placedStars = currentConst.stars.map((s,i) => ({ ...s, found:false, pulse:Math.random()*Math.PI*2, idx:i }));
+  zoomTo(currentConst);
+
+  const isNew = !learned[currentConst.id];
+  if (isNew) {
+    // Full intro arc for new constellations
+    startIntroPhase();
+  } else {
+    // Already learned — go straight to test (revisit)
+    buildTestQueue();
+    startTestPhase();
+  }
+}
+
+// ── INTRO PHASE — telescope points to each star, names it ─────────────────────
+function startIntroPhase() {
+  lessonPhase = 'intro';
+  memoryAnchor = null;
+  introStarIdx = 0;
+  labelFadeActive = false;
+  labelFadeProgress = 0;
+  connectedLines = []; // lines draw progressively
+  setHud('Lesson · Introduction', currentConst.name, currentConst.sub, false);
+  hideCard();
+  speakViv(`${currentConst.name}. ${currentConst.sub}. Watch.`, false);
+  setTimeout(advanceIntroStar, 2000);
+}
+
+function advanceIntroStar() {
+  if (phase !== 'lesson' || lessonPhase !== 'intro') return;
+  clearTimeout(introTimer);
+
+  // Use introOrder if available — walks the shape for natural line drawing
+  const order = currentConst.introOrder || placedStars.map((_,i) => i);
+
+  if (introStarIdx >= order.length) {
+    // All stars introduced — short pause then start tests
+    setTimeout(() => {
+      buildTestQueue();
+      startTestPhase();
+    }, 1000);
+    return;
+  }
+
+  const realIdx = order[introStarIdx]; // actual star index
+  const star = placedStars[realIdx];
+
+  // Mark as "currently introducing" — renders with pulse ring
+  placedStars.forEach(s => { s.introducing = false; });
+  star.introducing = true;
+
+  // Mark this star as introduced
+  star.introduced = true;
+
+  // Draw all constellation lines connecting this star to any already-introduced star
+  currentConst.lines.forEach(([a, b]) => {
+    const aIntroduced = placedStars[a] && placedStars[a].introduced;
+    const bIntroduced = placedStars[b] && placedStars[b].introduced;
+    if ((a === realIdx && bIntroduced) || (b === realIdx && aIntroduced)) {
+      const alreadyDrawn = connectedLines.some(l =>
+        (l.a === Math.min(a,b) && l.b === Math.max(a,b))
+      );
+      if (!alreadyDrawn) {
+        connectedLines.push({ a, b, correct: true, intro: true });
+      }
+    }
+  });
+
+  // Speak star fact
+  const fact = VIV.starIntro[star.name] || `${star.name}. Magnitude ${star.mag.toFixed(1)}.`;
+  speakViv(fact, false);
+
+  introStarIdx++;
+  introTimer = setTimeout(advanceIntroStar, 4000);
+}
+
+// ── TEST PHASE ────────────────────────────────────────────────────────────────
+function buildTestQueue() {
+  // Sort stars by difficulty — easiest first (brightest), hardest last
+  const noise = NOISE_STARS[currentConst.id] || [];
+  const indexed = currentConst.stars.map((s, i) => ({
+    idx: i,
+    diff: starDifficulty(i, currentConst, noise)
+  }));
+  indexed.sort((a, b) => a.diff - b.diff);
+  // Pick 3: easiest, middle, hardest
+  const n = indexed.length;
+  lessonTestQueue = [
+    indexed[0].idx,
+    indexed[Math.floor(n / 2)].idx,
+    indexed[n - 1].idx
+  ];
+  // Remove duplicates
+  lessonTestQueue = [...new Set(lessonTestQueue)];
+  // Pad to 3 if needed
+  while (lessonTestQueue.length < 3) {
+    const missing = currentConst.stars.map((_,i)=>i).find(i => !lessonTestQueue.includes(i));
+    if (missing !== undefined) lessonTestQueue.push(missing);
+    else break;
+  }
+  lessonTestIdx = 0;
+}
+
+function startTestPhase() {
+  lessonPhase = 'test';
+  consecutiveWrong = 0;
+  placedStars.forEach(s => { s.introducing = false; s.found = false; });
+  connectedLines = [];
+  labelFadeProgress = 0;
+  labelFadeActive = false; // Labels stay visible while she sets the first test
+  runNextTest();
+  // 3 seconds to study the labelled sky, then fade over ~2 seconds
+  setTimeout(() => { labelFadeActive = true; }, 3000);
+}
+
+function runNextTest() {
+  if (lessonTestIdx >= lessonTestQueue.length) {
+    // All 3 tests passed — memory round
+    labelFadeActive = false;
+    startMemoryRound();
+    return;
+  }
+  targetStarIndex = lessonTestQueue[lessonTestIdx];
+  const target = placedStars[targetStarIndex];
+  consecutiveWrong = 0;
+
+  // Brief re-exposure between tests — labels flash back visible, then fade
+  labelFadeProgress = 0;
+  labelFadeActive = false;
+  setTimeout(() => { labelFadeActive = true; }, 2000);
+
+  const testNum = lessonTestIdx + 1;
+  setHud(`Lesson · Test ${testNum}/3`, currentConst.name, currentConst.sub, false);
+  showCard(`Find <strong>${target.name}</strong>.`);
+
+  const testLines = [
+    `Find ${target.name}.`,
+    `Now — ${target.name}.`,
+    `Last one. ${target.name}.`
+  ];
+  speakViv(testLines[lessonTestIdx] || `Find ${target.name}.`, false);
+}
+
+function startMemoryRound() {
+  lessonPhase = 'memory';
+  placedStars.forEach(s => { s.found = false; });
+  connectedLines = connectedLines.filter(l => l.intro);
+  setHud('Lesson · Memory', currentConst.name, currentConst.sub, false);
+  showCard(`<em>Watch carefully.</em>`);
+  speakViv(`Remember this. Watch.`, false);
+  memoryShowing = true;
+  memoryGhostLines = currentConst.lines.map(([a,b]) => ({a,b}));
+  // Show constellation for 3 seconds, then show MC options
+  setTimeout(() => {
+    memoryShowing = false; memoryGhostLines = [];
+    // Zoom out to full sky so no spatial cue remains
+    zoomToFull();
+    placedStars = []; // hide stars
+    hideCard();
+    showMemoryMC();
+  }, 3500);
+}
+
+const SIMILAR_CONSTS = {
+  'cassiopeia': ['aquila', 'cepheus'],
+  'cygnus':     ['aquila', 'pegasus'],
+  'lyra':       ['cepheus', 'pegasus'],
+  'pegasus':    ['cepheus', 'aquila'],
+  'andromeda':  ['cassiopeia', 'aquila'],
+  'perseus':    ['cassiopeia', 'aquila'],
+  'ursa_major': ['lyra', 'pegasus'],
+  'draco':      ['cepheus', 'cassiopeia'],
+  'cepheus':    ['cassiopeia', 'draco'],
+  'aquila':     ['cassiopeia', 'cygnus'],
+};
+
+function showMemoryMC() {
+  // Pick 2 most shape-similar distractors
+  const similarIds = SIMILAR_CONSTS[currentConst.id] || [];
+  const distractors = similarIds
+    .map(id => SKY.constellations.find(c => c.id === id))
+    .filter(Boolean)
+    .slice(0, 2);
+  // Fallback if not enough
+  if (distractors.length < 2) {
+    const others = SKY.constellations.filter(c => c.id !== currentConst.id && !distractors.includes(c));
+    while (distractors.length < 2) distractors.push(others.shift());
+  }
+  const options = [currentConst, ...distractors].sort(() => Math.random() - 0.5);
+
+  const wrap = document.getElementById('memory-options');
+  wrap.innerHTML = '';
+  wrap.classList.remove('hidden');
+
+  // Build 3 canvas shape buttons side by side
+  const row = document.createElement('div');
+  row.style.cssText = 'display:flex;gap:10px;justify-content:center;';
+
+  options.forEach(opt => {
+    const container = document.createElement('div');
+    container.style.cssText = `
+      display:flex;flex-direction:column;align-items:center;gap:6px;
+      cursor:pointer;flex:1;max-width:120px;
+    `;
+
+    const cv = document.createElement('canvas');
+    const SIZE = 100;
+    cv.width = SIZE; cv.height = SIZE;
+    cv.style.cssText = `
+      border:1px solid rgba(201,168,76,0.2);
+      background:rgba(6,7,11,0.85);
+      border-radius:2px;
+      transition:border-color 0.25s;
+      width:100%;height:auto;
+    `;
+    drawShapeOnCanvas(cv, opt, SIZE);
+
+    container.addEventListener('click', () => onMemoryMC(opt.id, cv, container, row, options));
+    cv.addEventListener('mouseenter', () => { if (!row._answered) cv.style.borderColor='rgba(201,168,76,0.7)'; });
+    cv.addEventListener('mouseleave', () => { if (!row._answered) cv.style.borderColor='rgba(201,168,76,0.2)'; });
+
+    container.appendChild(cv);
+    row.appendChild(container);
+  });
+
+  wrap.appendChild(row);
+  showCard(`<em>Which shape is <strong>${currentConst.name}</strong>?</em>`);
+  speakViv(`Which one is ${currentConst.name}?`, false);
+}
+
+function drawShapeOnCanvas(cv, constellation, size) {
+  const ctx2 = cv.getContext('2d');
+  ctx2.clearRect(0, 0, size, size);
+
+  const stars = constellation.stars;
+  const us = stars.map(s => s.u);
+  const vs = stars.map(s => s.v);
+  const minU = Math.min(...us), maxU = Math.max(...us);
+  const minV = Math.min(...vs), maxV = Math.max(...vs);
+  const spanU = maxU - minU || 0.1;
+  const spanV = maxV - minV || 0.1;
+  const pad = size * 0.18;
+  const drawW = size - pad*2;
+  const drawH = size - pad*2;
+  // Keep aspect ratio
+  const scaleU = drawW / spanU;
+  const scaleV = drawH / spanV;
+  const sc = Math.min(scaleU, scaleV);
+  const offU = pad + (drawW - spanU * sc) / 2;
+  const offV = pad + (drawH - spanV * sc) / 2;
+
+  function toXY(u, v) {
+    return [offU + (u - minU) * sc, offV + (v - minV) * sc];
+  }
+
+  // Draw lines
+  ctx2.strokeStyle = 'rgba(201,168,76,0.45)';
+  ctx2.lineWidth = 1.2;
+  constellation.lines.forEach(([a,b]) => {
+    const [x1,y1] = toXY(stars[a].u, stars[a].v);
+    const [x2,y2] = toXY(stars[b].u, stars[b].v);
+    ctx2.beginPath(); ctx2.moveTo(x1,y1); ctx2.lineTo(x2,y2); ctx2.stroke();
+  });
+
+  // Draw stars
+  stars.forEach(s => {
+    const [x,y] = toXY(s.u, s.v);
+    const r = Math.max(2, 4.5 - s.mag * 0.6);
+    // Glow
+    const grd = ctx2.createRadialGradient(x,y,0,x,y,r*3);
+    grd.addColorStop(0,'rgba(200,215,255,0.5)');
+    grd.addColorStop(1,'transparent');
+    ctx2.beginPath(); ctx2.arc(x,y,r*3,0,Math.PI*2);
+    ctx2.fillStyle=grd; ctx2.fill();
+    // Core
+    ctx2.beginPath(); ctx2.arc(x,y,r,0,Math.PI*2);
+    ctx2.fillStyle='#e8efff'; ctx2.fill();
+  });
+}
+
+function onMemoryMC(id, cv, container, row, options) {
+  if (row._answered) return;
+  row._answered = true;
+
+  if (id === currentConst.id) {
+    cv.style.borderColor = 'rgba(201,168,76,0.9)';
+    cv.style.boxShadow = '0 0 12px rgba(201,168,76,0.4)';
+    sfxCorrect(); haptic(10); flash('Correct');
+    awardPoints(150, true); recordResult(true);
+    markLearned(currentConst.id); updateSessionDot();
+    speakViv(pick(VIV.correct) + ' ' + currentConst.vivFact, false);
+    if (constellationsLearnedCount === 3 && Math.random() < 0.7)
+      setTimeout(() => speakViv(pick(VIV.readyHint), true), 2200);
+    setTimeout(() => {
+      document.getElementById('memory-options').classList.add('hidden');
+      nextLessonRound();
+    }, 2400);
+  } else {
+    cv.style.borderColor = 'rgba(139,26,46,0.8)';
+    cv.style.opacity = '0.5';
+    // Highlight correct
+    row.querySelectorAll('canvas').forEach((c2, i) => {
+      if (options[i] && options[i].id === currentConst.id) {
+        c2.style.borderColor = 'rgba(201,168,76,0.9)';
+        c2.style.boxShadow = '0 0 12px rgba(201,168,76,0.4)';
+      }
+    });
+    sfxWrong(); flash('Not quite');
+    awardPoints(-20, false); recordResult(false);
+    speakViv(`Non — that one. ${currentConst.name}.`, false);
+    setTimeout(() => {
+      document.getElementById('memory-options').classList.add('hidden');
+      placedStars = currentConst.stars.map((s,i) => ({...s,found:false,pulse:Math.random()*Math.PI*2,idx:i}));
+      zoomTo(currentConst);
+      startMemoryRound();
+    }, 2800);
+  }
+}
+
+function lessonRecognize() {
+  targetStarIndex = Math.floor(Math.random() * placedStars.length);
+  setHud('Lesson', currentConst.name, currentConst.sub, false);
+  showCard(`Find <strong>${placedStars[targetStarIndex].name}</strong> in <strong>${currentConst.name}</strong>.`);
+  const intro = constellationsLearnedCount === 0
+    ? `D'accord — first one. ${currentConst.name}. Find ${placedStars[targetStarIndex].name}. It is the ${placedStars[targetStarIndex].name === currentConst.brightest ? 'brightest' : 'named'} star.`
+    : `${currentConst.name}. Find ${placedStars[targetStarIndex].name}.`;
+  speakViv(intro, false);
+}
+
+function lessonMemory() {
+  setHud('Lesson · Memory', currentConst.name, currentConst.sub, false);
+  showCard(`<em>Watch carefully. I show it once.</em>`);
+  speakViv(`I trace ${currentConst.name}. Watch.`, false);
+  memoryShowing = true;
+  memoryGhostLines = currentConst.lines.map(([a,b]) => ({a,b}));
+  setTimeout(() => {
+    memoryShowing = false; memoryGhostLines = [];
+    hideCard(); showCard(`Now redraw <strong>${currentConst.name}</strong>. Click stars in the order traced.`);
+  }, 5000);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// INPUT — pointer unified (mouse + touch)
+// ═══════════════════════════════════════════════════════════════════════════
+
+function onPointerMove(e) {
+  e.preventDefault();
+  if (!gameActive) return;
+  hoverStar = nearestStar(e.clientX, e.clientY, TAP_RADIUS);
+  if (currentConst && currentConst.id === 'ursa_major' && !discoveries.mizar_alcor) {
+    const ap = uvToPx(SKY.alcor.u, SKY.alcor.v);
+    if (Math.hypot(e.clientX - ap.px, e.clientY - ap.py) < TAP_RADIUS * 0.5) hoverStar = 'alcor';
+  }
+}
+
+function onPointerDown(e) {
+  e.preventDefault();
+  if (!gameActive) return;
+  resumeAC();
+
+  // Alcor discovery
+  if (currentConst && currentConst.id === 'ursa_major' && !discoveries.mizar_alcor) {
+    const ap = uvToPx(SKY.alcor.u, SKY.alcor.v);
+    if (Math.hypot(e.clientX - ap.px, e.clientY - ap.py) < TAP_RADIUS * 0.5) { unlockMizarAlcor(); return; }
+  }
+
+  const idx = nearestStar(e.clientX, e.clientY, TAP_RADIUS);
+  if (idx === null || idx === 'alcor') return;
+
+  if (phase === 'lesson') {
+    if (lessonPhase === 'test') lessonClick(idx);
+    // intro + memory — no star clicks needed
+  } else if (phase === 'duel' && duelRoundActive && !duelRoundResolved && currentMode === 'recognize') {
+    duelClick(idx);
+  }
+}
+
+function nearestStar(mx, my, max) {
+  let best = null, bestD = max;
+  placedStars.forEach((s, i) => {
+    if (s.found) return;
+    const p = uvToPx(s.u, s.v);
+    const d = Math.hypot(mx - p.px, my - p.py);
+    if (d < bestD) { bestD = d; best = i; }
+  });
+  return best;
+}
+
+// ── LESSON CLICK ─────────────────────────────────────────────────────────────
+
+function lessonClick(idx) {
+  if (lessonPhase === 'intro') return; // no clicking during intro
+
+  if (idx === targetStarIndex) {
+    placedStars[idx].found = true;
+    const p = uvToPx(placedStars[idx].u, placedStars[idx].v);
+    consecutiveWrong = 0;
+    burst(p); sfxCorrect(); haptic(10);
+    awardPoints(80, true); flash('Found');
+    VivAnim.setState('correct');
+    recordResult(true);
+
+    if (currentConst.id === 'ursa_major' && placedStars[idx].name === 'Dubhe' && !discoveries.polaris_pointer)
+      setTimeout(unlockPolaris, 800);
+
+    // Streak acknowledgment
+    if (streak >= 4 && !streakAcknowledged) {
+      streakAcknowledged = true;
+      setTimeout(() => { if (canSpeak(2000)) speakViv(pick(VIV.streak4), false); }, 1800);
+    }
+
+    lessonTestIdx++;
+
+    if (lessonTestIdx >= lessonTestQueue.length) {
+      // All tests passed — memory round
+      speakViv(pick(VIV.correct) + ' Now — from memory.', false);
+      setTimeout(() => {
+        labelFadeActive = false;
+        startMemoryRound();
+      }, 1400);
+    } else {
+      speakViv(pick(VIV.correct), false);
+      setTimeout(runNextTest, 1200);
+    }
+  } else {
+    awardPoints(-15, false);
+    sfxWrong();
+    speakViv(pickByMood(VIV.wrong), false);
+    VivAnim.setState('wrong');
+    const p = uvToPx(placedStars[idx].u, placedStars[idx].v);
+    burst(p, true); spawnRipple(p.px, p.py);
+    recordResult(false);
+    consecutiveWrong++;
+    if (consecutiveWrong >= 2) {
+      consecutiveWrong = 0;
+      setTimeout(() => {
+        placedStars.forEach(s => { s.found = false; });
+        speakViv(`Again. Find ${placedStars[targetStarIndex].name}.`, false);
+      }, 900);
+    }
+  }
+}
+
+
+function key(a,b) { return Math.min(a,b)+'_'+Math.max(a,b); }
+
+function markLearned(id) {
+  if (!learned[id]) { learned[id] = true; constellationsLearnedCount++; saveProgress(); checkTriangle(); }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// DUEL
+// ═══════════════════════════════════════════════════════════════════════════
+
+function triggerDuelIntro() {
+  
+  VivAnim.setState('lean-railing');
+  // Show difficulty selector first
+  showDifficultySelector();
+}
+
+function showDifficultySelector() {
+  const sel = document.getElementById('difficulty-selector');
+  const maitreBtn = document.getElementById('diff-maitre');
+  const lockNote = document.getElementById('diff-lock-note');
+  const maitreUnlocked = totalDuelWins >= 5;
+
+  // Lock/unlock Maître
+  if (maitreUnlocked) {
+    maitreBtn.classList.remove('locked');
+    lockNote.classList.remove('show');
+  } else {
+    maitreBtn.classList.add('locked');
+    lockNote.classList.add('show');
+    document.getElementById('diff-lock-note').textContent =
+      `Maître unlocks after five duel wins. (${totalDuelWins}/5)`;
+  }
+
+  // Vivienne's question varies by lesson performance
+  const qs = vivMood === 'sharpened'
+    ? "You learn fast. How hard do you want this?"
+    : vivMood === 'encouraging'
+    ? "Be honest with me — how well do you know the sky?"
+    : "How well do you know the sky, monsieur?";
+  document.getElementById('diff-question').textContent = qs;
+
+  sel.classList.add('show');
+}
+
+function selectDifficulty(level) {
+  const maitreBtn = document.getElementById('diff-maitre');
+  if (level === 'maitre' && maitreBtn.classList.contains('locked')) return;
+
+  vivDifficulty = level;
+  document.getElementById('difficulty-selector').classList.remove('show');
+
+  // Update HUD badge
+  const badge = document.getElementById('diff-badge');
+  badge.textContent = VIV_LEVELS[level].label;
+  badge.className = 'diff-badge' + (level === 'maitre' ? ' maitre' : '');
+
+  // Vivienne reacts to choice
+  const reactions = {
+    eleve:     "Bon. I will be gentle.",
+    savant:    "Bien. A fair fight.",
+    astronome: "You are confident. I respect that.",
+    maitre:    "Vous êtes sûr? I have not lost at this level."
+  };
+  speakViv(reactions[level], true);
+
+  // Continue to duel intro
+  setTimeout(() => {
+    document.getElementById('duel-intro-text').innerHTML = pick(VIV.duelInvite);
+    setTimeout(() => document.getElementById('duel-intro').classList.add('show'), 400);
+  }, 1400);
+}
+
+function declineDuel() {
+  document.getElementById('duel-intro').classList.remove('show');
+  VivAnim.setState('idle');
+  speakViv(pick(VIV.duelDecline), true);
+}
+
+function acceptDuel() {
+  document.getElementById('duel-intro').classList.remove('show');
+  document.getElementById('scene').classList.add('duel-mode');
+  document.getElementById('duel-vignette').classList.add('active');
+  VivAnim.setState('duel');
+  document.getElementById('phase-label').textContent = 'Duel · Best of Five';
+  document.getElementById('phase-label').classList.add('duel-phase');
+  document.getElementById('frame-row').classList.add('show');
+  document.getElementById('session-progress').classList.remove('show');
+  phase = 'duel'; duelFrame = 0; duelHis = 0; duelHer = 0;
+  // Set engine flag so interrogation unlocks telescope branch
+  if (window.parent && window.parent.NocturneEngine) {
+    window.parent.NocturneEngine.emit('flagSet', { flag: 'telescope_duel_played', value: true });
+  }
+  // Randomise frame order — 2 recognize, 2 identify, 1 memory, shuffled
+  duelFrameTypes = ['recognize','identify','recognize','identify','memory']
+    .sort(() => Math.random() - 0.5);
+  speakViv(pick(VIV.duelAccept), true);
+  setTimeout(startDuelRound, 1800);
+}
+
+function startDuelRound() {
+  if (duelHis === 3 || duelHer === 3) return finishDuel();
+  resetState();
+
+  const frameType = duelFrameTypes[duelFrame] || 'recognize';
+  currentMode = frameType;
+
+  const pool = SKY.constellations.filter(c => learned[c.id]);
+  const source = pool.length >= 3 ? pool : SKY.constellations.slice(0, 4);
+  const sorted = [...source].sort((a,b) => a.difficulty - b.difficulty);
+  let candidates;
+  if (duelFrame <= 1) candidates = sorted.slice(0, Math.ceil(sorted.length * 0.6));
+  else if (duelFrame >= 4) candidates = sorted.slice(Math.floor(sorted.length * 0.4));
+  else candidates = sorted;
+  if (!candidates.length) candidates = sorted;
+  currentConst = candidates[Math.floor(Math.random() * candidates.length)];
+
+  for (let i = 1; i <= 5; i++) { const el=document.getElementById('frame-'+i); if(el) el.classList.remove('current'); }
+  const pipEl = document.getElementById('frame-'+(duelFrame+1));
+  if (pipEl) pipEl.classList.add('current');
+
+  const typeLabel = frameType === 'recognize' ? 'Recognise' : frameType === 'identify' ? 'Identify' : 'Memory';
+  setHud(`Duel · ${VIV_LEVELS[vivDifficulty].label} · ${typeLabel}`, currentConst.name, currentConst.sub, true);
+
+  let openLine;
+  if (duelHis===2&&duelHer<2) openLine = pick(VIV.duelMatchPointHis);
+  else if (duelHer===2&&duelHis<2) openLine = pick(VIV.duelMatchPointHer);
+  else if (duelFrame > 0) openLine = pick(VIV.duelBanter);
+  else openLine = vivDifficulty === 'maitre' ? pick(VIV.frameOpenMaitre) : pick(VIV.frameOpen);
+
+  const calloutLabels = {
+    recognize: ['Recognise', 'Find the named star'],
+    identify:  ['Identify',  'Name that constellation'],
+    memory:    ['Memory',    'Remember the shape'],
+  };
+  const [cType, cSub] = calloutLabels[frameType] || ['—','—'];
+  showFrameCallout(cType, cSub);
+  setTimeout(() => {
+    if (frameType === 'recognize') startDuelRecognize(openLine);
+    else if (frameType === 'identify') startDuelIdentify(openLine);
+    else startDuelMemory(openLine);
+  }, 900);
+}
+
+function startDuelRecognize(openLine) {
+  placedStars = currentConst.stars.map((s,i) => ({...s,found:false,pulse:Math.random()*Math.PI*2,idx:i}));
+  duelNoiseStars = (NOISE_STARS[currentConst.id] || []).map(s => ({...s}));
+  targetStarIndex = Math.floor(Math.random() * placedStars.length);
+  const target = placedStars[targetStarIndex];
+
+  document.getElementById('duel-target-star-name').textContent = target.name;
+  document.getElementById('duel-target-hint').textContent =
+    (target.name === currentConst.brightest ? 'the brightest star in ' : 'in ') + currentConst.name;
+  document.getElementById('duel-target-hud').classList.add('show');
+
+  showCard(`<em>"${openLine}"</em>`);
+  speakViv(`${target.name}. ${currentConst.name}. Go.`, true);
+  zoomTo(currentConst);
+
+  setTimeout(() => {
+    duelRoundActive = true; duelRoundResolved = false;
+    hintFired = false; hintElapsed = 0;
+    document.getElementById('duel-timer-bar').classList.add('active');
+    duelTimerStart = Date.now();
+    const timers = { eleve: 12000, savant: 9000, astronome: 7500, maitre: 6000 };
+    duelTimerDur = timers[vivDifficulty] + Math.random() * 800;
+    runTimer(); scheduleHint(); scheduleVivResponse();
+  }, 1600);
+}
+
+function startDuelIdentify(openLine) {
+  const others = SKY.constellations.filter(c => c.id !== currentConst.id);
+  const distractors = others.sort(() => Math.random() - 0.5).slice(0, 3);
+  const options = [currentConst, ...distractors].sort(() => Math.random() - 0.5);
+  placedStars = []; zoomToFull();
+  // Show fact prominently in center, not at bottom card
+  document.getElementById('round-prompt').innerHTML = `<em>${currentConst.fact}</em>`;
+  const rc = document.getElementById('round-card');
+  rc.classList.remove('hidden');
+  rc.style.bottom = 'auto';
+  rc.style.top = '38%';
+  rc.style.transform = 'translateX(-50%)';
+  speakViv(currentConst.fact, true);
+  const wrap = document.getElementById('memory-options');
+  wrap.innerHTML = ''; wrap.classList.remove('hidden');
+  options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'mc-btn'; btn.textContent = opt.name;
+    btn.addEventListener('click', () => {
+      if (!duelRoundActive || duelRoundResolved) return;
+      duelRoundActive = false; duelRoundResolved = true;
+      clearTimeout(duelHerSched); clearInterval(duelTimerInt); clearHintTimers();
+      document.getElementById('duel-timer-bar').classList.remove('active');
+      wrap.classList.add('hidden');
+      if (opt.id === currentConst.id) { btn.classList.add('correct'); resolveDuel('his'); }
+      else { btn.classList.add('wrong'); resolveDuel('her'); }
+    });
+    wrap.appendChild(btn);
+  });
+  setTimeout(() => {
+    duelRoundActive = true; duelRoundResolved = false;
+    document.getElementById('duel-timer-bar').classList.add('active');
+    duelTimerStart = Date.now(); duelTimerDur = 10000;
+    runTimer();
+    duelHerSched = setTimeout(() => {
+      if (!duelRoundResolved) { wrap.classList.add('hidden'); resolveDuel('her'); }
+    }, 4000 + Math.random() * 2000);
+  }, 2000);
+}
+
+function startDuelMemory(openLine) {
+  placedStars = currentConst.stars.map((s,i) => ({...s,found:false,pulse:Math.random()*Math.PI*2,idx:i}));
+  zoomTo(currentConst);
+  memoryShowing = true;
+  memoryGhostLines = currentConst.lines.map(([a,b]) => ({a,b}));
+  showCard(`<em>"${openLine}"</em> — Watch carefully.`);
+  speakViv(`Remember this shape.`, true);
+  setTimeout(() => {
+    memoryShowing = false; memoryGhostLines = [];
+    placedStars = []; zoomToFull(); hideCard();
+    const similarIds = SIMILAR_CONSTS[currentConst.id] || [];
+    const distractors = similarIds.map(id => SKY.constellations.find(c => c.id === id)).filter(Boolean).slice(0,2);
+    while (distractors.length < 2) {
+      const fb = SKY.constellations.find(c => c.id !== currentConst.id && !distractors.includes(c));
+      if (fb) distractors.push(fb); else break;
+    }
+    const options = [currentConst, ...distractors].sort(() => Math.random() - 0.5);
+    const wrap = document.getElementById('memory-options');
+    wrap.innerHTML = ''; wrap.classList.remove('hidden');
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;gap:10px;justify-content:center;';
+    options.forEach(opt => {
+      const container = document.createElement('div');
+      container.style.cssText = 'display:flex;flex-direction:column;align-items:center;cursor:pointer;flex:1;max-width:120px;';
+      const cv = document.createElement('canvas');
+      cv.width=100; cv.height=100;
+      cv.style.cssText='border:1px solid rgba(201,168,76,0.2);background:rgba(6,7,11,0.85);border-radius:2px;width:100%;height:auto;';
+      drawShapeOnCanvas(cv, opt, 100);
+      container.addEventListener('click', () => {
+        if (!duelRoundActive || duelRoundResolved) return;
+        duelRoundActive = false; duelRoundResolved = true;
+        clearTimeout(duelHerSched); clearInterval(duelTimerInt); clearHintTimers();
+        document.getElementById('duel-timer-bar').classList.remove('active');
+        wrap.classList.add('hidden');
+        if (opt.id === currentConst.id) resolveDuel('his'); else resolveDuel('her');
+      });
+      container.appendChild(cv); row.appendChild(container);
+    });
+    wrap.appendChild(row);
+    showCard(`Which shape is <strong>${currentConst.name}</strong>?`);
+    speakViv(`Which one is ${currentConst.name}?`, true);
+    duelRoundActive = true; duelRoundResolved = false;
+    document.getElementById('duel-timer-bar').classList.add('active');
+    duelTimerStart = Date.now(); duelTimerDur = 10000;
+    runTimer();
+    duelHerSched = setTimeout(() => {
+      if (!duelRoundResolved) { wrap.classList.add('hidden'); resolveDuel('her'); }
+    }, 3500 + Math.random() * 2000);
+  }, 3500);
+}
+
+
+function runTimer() {
+  clearInterval(duelTimerInt);
+  duelTimerInt = setInterval(() => {
+    const e = Date.now() - duelTimerStart;
+    const r = Math.max(0, 1 - e / duelTimerDur);
+    const fillEl = document.getElementById('duel-timer-fill');
+    if (fillEl) fillEl.style.width = (r * 100) + '%';
+    if (r < 0.22) sfxTick();
+    if (r <= 0 && !duelRoundResolved) resolveDuel('timeout');
+  }, 60);
+}
+
+function scheduleHint() {
+  clearTimeout(hintTimer); clearInterval(hintFillInt);
+  const DELAY = 3000;
+  hintElapsed = 0;
+  const hc = document.getElementById('hint-countdown');
+  if (hc) hc.classList.add('show');
+  hintFillInt = setInterval(() => {
+    hintElapsed += 100;
+    const hf = document.getElementById('hint-fill');
+    if (hf) hf.style.width = Math.min(100,(hintElapsed/DELAY)*100)+'%';
+    if (hintElapsed >= DELAY && !hintFired) {
+      hintFired = true;
+      clearInterval(hintFillInt);
+      const hc2 = document.getElementById('hint-countdown');
+      if (hc2) hc2.classList.remove('show');
+      fireHint();
+    }
+  }, 100);
+}
+
+function fireHint() {
+  if (duelRoundResolved) return;
+  if (!targetStarIndex === null || !placedStars[targetStarIndex]) return;
+  const target = placedStars[targetStarIndex];
+  const isBrightest = target.name === currentConst.brightest;
+  const pool = isBrightest ? VIV.duelHints.brightness
+    : Math.random() < 0.5 ? VIV.duelHints.position : VIV.duelHints.general;
+  speakViv(pick(pool), true);
+  sfxHint();
+}
+
+function scheduleVivResponse() {
+  const rtMs = vivReactionTime(targetStarIndex, currentConst, duelNoiseStars);
+  const makeMistake = vivMakeMistake(targetStarIndex, currentConst, duelNoiseStars);
+  if (makeMistake) {
+    const wrongIdx = placedStars.findIndex((_,i) => i !== targetStarIndex);
+    setTimeout(() => {
+      if (duelRoundResolved) return;
+      const wp = uvToPx(placedStars[wrongIdx].u, placedStars[wrongIdx].v);
+      spawnPhantomWrong(wp.px, wp.py);
+    }, rtMs * 0.6);
+    duelHerSched = setTimeout(() => {
+      if (!duelRoundResolved && duelRoundActive) {
+        const p = uvToPx(placedStars[targetStarIndex].u, placedStars[targetStarIndex].v);
+        spawnPhantom(p.px, p.py);
+        setTimeout(() => resolveDuel('her'), 180);
+      }
+    }, rtMs * 1.3);
+  } else {
+    duelHerSched = setTimeout(() => {
+      if (!duelRoundResolved && duelRoundActive) {
+        const p = uvToPx(placedStars[targetStarIndex].u, placedStars[targetStarIndex].v);
+        spawnPhantom(p.px, p.py);
+        setTimeout(() => resolveDuel('her'), 180);
+      }
+    }, rtMs);
+  }
+}
+
+function duelClick(idx) {
+  recordPlayerTap();
+  if (idx === targetStarIndex) {
+    placedStars[idx].found = true;
+    const p = uvToPx(placedStars[idx].u, placedStars[idx].v);
+    burst(p); sfxDuelCorrect(); haptic(10);
+    clearTimeout(duelHerSched);
+    clearHintTimers();
+    resolveDuel('his');
+  } else {
+    sfxWrong();
+    awardPoints(-20, false);
+    const p = uvToPx(placedStars[idx].u, placedStars[idx].v);
+    spawnRipple(p.px, p.py);
+    const wf = document.getElementById('wrong-flash');
+    if (wf) { wf.classList.remove('show'); void wf.offsetWidth; wf.classList.add('show'); }
+    speakViv(pick(VIV.wrongTap), true);
+    if (!hintFired) { clearInterval(hintFillInt); hintElapsed = 0; scheduleHint(); }
+  }
+}
+
+function showFrameCallout(type, sub) {
+  const el = document.getElementById('frame-callout');
+  document.getElementById('callout-type').textContent = type;
+  document.getElementById('callout-sub').textContent = sub;
+  el.classList.remove('show');
+  void el.offsetWidth;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 1800);
+}
+
+function clearHintTimers() {
+  clearTimeout(hintTimer); clearInterval(hintFillInt);
+  const hc = document.getElementById('hint-countdown');
+  const hf = document.getElementById('hint-fill');
+  if (hc) hc.classList.remove('show');
+  if (hf) hf.style.width = '0%';
+}
+
+function resolveDuel(outcome) {
+  duelRoundActive = false; duelRoundResolved = true;
+  clearTimeout(duelHerSched); clearInterval(duelTimerInt); clearHintTimers();
+  document.getElementById('memory-options').classList.add('hidden');
+  const dtb = document.getElementById('duel-timer-bar');
+  const dtf = document.getElementById('duel-timer-fill');
+  if (dtb) dtb.classList.remove('active');
+  if (dtf) dtf.style.width = '100%';
+  document.getElementById('duel-target-hud').classList.remove('show');
+  hideCard();
+
+  const pip = document.getElementById('frame-'+(duelFrame+1));
+  pip.classList.remove('current');
+
+  if (outcome === 'his') {
+    duelHis++; pip.classList.add('won');
+    awardPoints(300, true); flash('Round Won');
+    sfxDuelWin();
+    speakViv(pick(VIV.duelHisWin), true); recordResult(true);
+  } else {
+    duelHer++; pip.classList.add('lost');
+    awardPoints(-50, false); flash('Round Lost');
+    sfxDuelLoss();
+    if (outcome === 'timeout' && targetStarIndex !== null) placedStars[targetStarIndex].found = true;
+    speakViv(pick(VIV.duelHerWin), true); recordResult(false);
+  }
+  duelFrame++; duelNoiseStars = [];
+  setTimeout(() => {
+    if (duelHis===3||duelHer===3||duelFrame>=5) finishDuel();
+    else startDuelRound();
+  }, 2800);
+}
+
+function finishDuel() {
+  phase = 'finished';
+  document.getElementById('duel-vignette').classList.remove('active');
+  document.getElementById('duel-target-hud').classList.remove('show');
+  hideCard(); zoomToFull();
+
+  const won = duelHis > duelHer;
+  if (won) totalDuelWins++;
+  saveProgress();
+  // Set interrogation flags
+  if (window.parent && window.parent.NocturneEngine) {
+    const eng = window.parent.NocturneEngine;
+    eng.emit('flagSet', { flag: 'telescope_duel_played', value: true });
+    if (won) {
+      eng.emit('flagSet', { flag: 'telescope_player_won', value: true });
+      if (vivDifficulty === 'maitre') {
+        eng.emit('flagSet', { flag: 'telescope_maitre_win', value: true });
+      }
+    } else {
+      eng.emit('flagSet', { flag: 'telescope_player_lost', value: true });
+    }
+  }
+
+  const fc = document.getElementById('final-card');
+  const mark = document.getElementById('final-mark');
+  const title = document.getElementById('final-title');
+  const whisper = document.getElementById('final-whisper');
+  fc.classList.remove('deep'); whisper.classList.remove('right','deep');
+
+  if (won) {
+    VivAnim.setState('lean-close');
+    // Maître easter egg — special beat fires instead of regular win flow
+    if (vivDifficulty === 'maitre' && VIV.flirtWinMaitre) {
+      mark.textContent = '— She looks at the telescope —';
+      title.textContent = 'Maître. Nobody Beats Her at Maître.';
+      whisper.innerHTML = pick(VIV.flirtWinMaitre);
+      flash('Victory','victory'); sfxDiscovery();
+      setTimeout(() => document.getElementById('final-screen').classList.add('show'), 1500);
+      return;
+    }
+    let pool, markT, titleT;
+    if (totalDuelWins >= 10) {
+      pool = VIV.flirtWin10; markT='— She turns away from the telescope —'; titleT='Ten Times';
+      fc.classList.add('deep'); whisper.classList.add('deep');
+    } else if (totalDuelWins >= 5) {
+      pool = VIV.flirtWin5; markT='— Her voice drops —'; titleT='You Have Won Five Times';
+    } else if (totalDuelWins >= 3) {
+      pool = VIV.flirtWin3; markT='— She stops smiling —'; titleT='Three. She Notices.';
+    } else {
+      pool = VIV.flirtWin1; markT='— She steps closer —'; titleT='You Won, Monsieur';
+    }
+    mark.textContent = markT; title.textContent = titleT;
+    whisper.innerHTML = pick(pool);
+    flash('Victory','victory');
+    sfxDiscovery();
+    speakViv(pick(pool).replace(/<[^>]*>/g,''), 'tender');
+  } else {
+    VivAnim.setState('idle');
+    mark.textContent = '— She holds your gaze —';
+    title.textContent = 'You Lost — But Pleasantly';
+    whisper.classList.add('right');
+    whisper.innerHTML = pick(VIV.flirtLoss);
+    speakViv(pick(VIV.flirtLoss).replace(/<[^>]*>/g,''), true);
+  }
+  setTimeout(() => document.getElementById('final-screen').classList.add('show'), 1500);
+}
+
+function resetForReplay() {
+  document.getElementById('final-screen').classList.remove('show');
+  VivAnim.setState('idle');
+  document.getElementById('scene').classList.remove('duel-mode');
+  document.getElementById('duel-vignette').classList.remove('active');
+  document.getElementById('phase-label').classList.remove('duel-phase');
+  document.getElementById('frame-row').classList.remove('show');
+  for (let i=1;i<=5;i++) {
+    const el = document.getElementById('frame-'+i);
+    if (!el) continue;
+    el.className='frame-pip';
+    el.innerHTML=`<div class="pip-num">${['I','II','III','IV','V'][i-1]}</div>`;
+  }
+  duelFrame=0;duelHis=0;duelHer=0;
+  phase='lesson'; sessionLessons=0;
+  document.getElementById('phase-label').textContent='Lesson';
+  buildSessionDots();
+  document.getElementById('session-progress').classList.add('show');
+  if (totalDuelWins>0) {
+    const wc=document.getElementById('wins-counter');
+    wc.style.display='block';
+    wc.textContent=`${totalDuelWins} ${totalDuelWins===1?'duel':'duels'} won`;
+  }
+  speakViv("Encore? Bon. I am happy to play again, monsieur.", true);
+  setTimeout(nextLessonRound, 1600);
+}
+
+function leaveTerrace() {
+  document.getElementById('final-screen').classList.remove('show');
+  document.getElementById('hotspot-screen').classList.remove('gone');
+  // Signal parent window (manor.js overlay) to close
+  if (window.parent && window.parent !== window) {
+    window.parent.postMessage('nocturne-telescope-close', '*');
+  }
+  VivAnim.setState('idle');
+  document.getElementById('scene').classList.remove('duel-mode');
+  document.getElementById('duel-vignette').classList.remove('active');
+  document.getElementById('session-progress').classList.remove('show');
+  phase='lesson'; gameActive=false;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// DISCOVERIES
+// ═══════════════════════════════════════════════════════════════════════════
+
+function buildDiscoveryAnim(starObjs, lineObjs) {
+  // starObjs: array of {u,v}, lineObjs: array of [starA, starB] u,v pairs
+  const stars = starObjs.map(s => uvToPx(s.u, s.v));
+  const lines = lineObjs.map(([a, b]) => {
+    const pa = uvToPx(a.u, a.v), pb = uvToPx(b.u, b.v);
+    return { ax: pa.px, ay: pa.py, bx: pb.px, by: pb.py };
+  });
+  discoveryAnim = { stars, lines, progress: 0, done: false };
+  setTimeout(() => { if (discoveryAnim) discoveryAnim.done = true; }, 4000);
+}
+
+
+function unlockPolaris() {
+  if (discoveries.polaris_pointer) return;
+  discoveries.polaris_pointer=true; saveProgress();
+  polarisLineTimer=5000;
+  showDiscovery('The Pointer to the Pole','Dubhe & Merak → Polaris');
+  sfxDiscovery();
+  // Canvas moment — animate Dubhe → Merak → Polaris
+  const um = SKY.constellations.find(c=>c.id==='ursa_major');
+  const dubhe = um.stars.find(s=>s.name==='Dubhe');
+  const merak = um.stars.find(s=>s.name==='Merak');
+  const pol = SKY.polaris;
+  buildDiscoveryAnim(
+    [dubhe, merak, pol],
+    [[dubhe, merak], [merak, pol]]
+  );
+  setTimeout(()=>speakViv(pick(VIV.discoveryPolaris),false),800);
+}
+function checkTriangle() {
+  if (discoveries.summer_triangle) return;
+  if (learned.lyra&&learned.cygnus&&learned.aquila) setTimeout(unlockTriangle,1200);
+}
+function unlockTriangle() {
+  if (discoveries.summer_triangle) return;
+  discoveries.summer_triangle=true; saveProgress();
+  triangleTimer=5500;
+  showDiscovery('The Summer Triangle','Vega · Deneb · Altair');
+  sfxDiscovery();
+  // Canvas moment — animate the triangle drawing itself
+  const lyra = SKY.constellations.find(c=>c.id==='lyra');
+  const cyg  = SKY.constellations.find(c=>c.id==='cygnus');
+  const aql  = SKY.constellations.find(c=>c.id==='aquila');
+  const vega   = lyra.stars.find(s=>s.name==='Vega');
+  const deneb  = cyg.stars.find(s=>s.name==='Deneb');
+  const altair = aql.stars.find(s=>s.name==='Altair');
+  buildDiscoveryAnim(
+    [vega, deneb, altair],
+    [[vega, deneb], [deneb, altair], [altair, vega]]
+  );
+  setTimeout(()=>speakViv(pick(VIV.discoveryTriangle),false),800);
+}
+function unlockMizarAlcor() {
+  if (discoveries.mizar_alcor) return;
+  discoveries.mizar_alcor=true; saveProgress();
+  showDiscovery("Mizar's Companion",'Alcor — twelve arcminutes away');
+  sfxDiscovery();
+  // Canvas moment — pulse both stars and draw the line between them
+  const um = SKY.constellations.find(c=>c.id==='ursa_major');
+  const mizar = um.stars.find(s=>s.name==='Mizar');
+  buildDiscoveryAnim(
+    [mizar, SKY.alcor],
+    [[mizar, SKY.alcor]]
+  );
+  setTimeout(()=>speakViv(pick(VIV.discoveryAlcor),false),800);
+}
+function showDiscovery(mark,title) {
+  document.getElementById('disc-mark').textContent=mark;
+  document.getElementById('disc-title').textContent=title;
+  const b=document.getElementById('discovery-banner');
+  b.classList.add('show'); setTimeout(()=>b.classList.remove('show'),4500);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ADAPTIVE
+// ═══════════════════════════════════════════════════════════════════════════
+
+function recordResult(ok) {
+  perfStats.recentResults.push(ok);
+  if (perfStats.recentResults.length>6) perfStats.recentResults.shift();
+  if (perfStats.recentResults.length<3) return;
+  const rate=perfStats.recentResults.filter(r=>r).length/perfStats.recentResults.length;
+  const prev=vivMood;
+  if (rate<0.4) vivMood='encouraging';
+  else if (rate>0.85&&perfStats.recentResults.length>=4) vivMood='sharpened';
+  else vivMood='neutral';
+  if (vivMood!==prev) {
+    const el=document.getElementById('mood-indicator');
+    if (vivMood==='encouraging') el.textContent='— she is being kind —';
+    else if (vivMood==='sharpened') el.textContent='— she is taking you seriously —';
+    else el.textContent='';
+  }
+}
+function pickByMood(neutral) {
+  if (vivMood==='encouraging'&&Math.random()<0.5) return pick(VIV.encouraging);
+  if (vivMood==='sharpened'&&Math.random()<0.5) return pick(VIV.sharpened);
+  return pick(neutral);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SCORING & UI
+// ═══════════════════════════════════════════════════════════════════════════
+
+function awardPoints(base, success) {
+  if (success) streak=Math.min(streak+1,8);
+  else { streak=1; streakAcknowledged=false; }
+  const pts=success?Math.round(base*(1+(streak-1)*0.2)):base;
+  totalScore=Math.max(0,totalScore+pts);
+  if (totalScore>bestScore) {bestScore=totalScore; saveProgress();}
+  updateScoreDisplay();
+}
+function updateScoreDisplay() {
+  document.getElementById('total-score').textContent=totalScore;
+  document.getElementById('streak').textContent='×'+streak;
+}
+function setHud(ph,name,sub,duel) {
+  document.getElementById('phase-label').textContent=ph;
+  document.getElementById('target-name').textContent=name;
+  document.getElementById('target-sub').textContent=sub||'';
+  const c=document.getElementById('round-card');
+  if(duel) c.classList.add('duel-card'); else c.classList.remove('duel-card');
+}
+function showCard(html) {
+  document.getElementById('round-prompt').innerHTML=html;
+  document.getElementById('round-card').classList.remove('hidden');
+}
+function hideCard() { document.getElementById('round-card').classList.add('hidden'); }
+function flash(text,v) {
+  const f=document.getElementById('flash');
+  f.textContent=text; f.className='flash'+(v?' '+v:'');
+  void f.offsetWidth; f.classList.add('show');
+}
+
+function speakViv(text, flirt, tender) {
+  clearTimeout(speechTimer); scheduleIdle();
+  lastSpokeAt = Date.now();
+  VivAnim.stopSpeaking();
+  const el=document.getElementById('speech');
+  const tx=document.getElementById('speech-text');
+  el.classList.remove('visible','flirt','tender');
+  const state = tender?'tender':flirt?'flirt-speaking':'speaking';
+  if(tender) el.classList.add('tender'); else if(flirt) el.classList.add('flirt');
+  VivAnim.setState(state);
+  setTimeout(()=>{
+    tx.innerHTML='"'+text+'"'; el.classList.add('visible');
+    const dur=Math.min(8000,Math.max(3500,text.length*60));
+    speechTimer=setTimeout(()=>{
+      el.classList.remove('visible');
+      VivAnim.stopSpeaking();
+    },dur);
+  },180);
+}
+
+function canSpeak(minMs) {
+  // Check if speech bubble is currently visible AND if enough time has passed
+  const el = document.getElementById('speech');
+  const busy = el && el.classList.contains('visible');
+  return !busy && (Date.now() - lastSpokeAt) > (minMs || 8000);
+}
+
+function scheduleIdle() {
+  clearTimeout(idleTimer);
+  idleTimer=setTimeout(()=>{
+    if(gameActive&&phase==='lesson') { speakViv(VIV.idle[idleIdx%VIV.idle.length],false); idleIdx++; }
+  },11000+Math.random()*4000);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// GALLERY
+// ═══════════════════════════════════════════════════════════════════════════
+
+function showGallery() {
+  const grid=document.getElementById('gallery-grid');
+  grid.innerHTML='';
+  const n=Object.keys(learned).length;
+  document.getElementById('gallery-progress').textContent=`${n} of ${SKY.constellations.length} discovered · ${totalDuelWins} duels won`;
+  SKY.constellations.forEach(c=>{
+    const card=document.createElement('div');
+    const u=!!learned[c.id];
+    card.className='const-card '+(u?'unlocked':'locked');
+    card.innerHTML=`<div class="const-name">${c.name}</div><div class="const-sub">${u?c.sub:'— not yet observed —'}</div><div class="const-fact ${u?'':'locked-text'}">${u?c.fact:'Vivienne has not yet shown you this one.'}</div>${u?`<div class="const-fact" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--gold-faint);font-style:italic;color:var(--parchment);">"${c.vivFact}"</div>`:''}`;
+    grid.appendChild(card);
+  });
+  const dList=document.getElementById('discoveries-list');
+  dList.innerHTML='';
+  Object.entries(DISCOVERIES).forEach(([id,info])=>{
+    const found=discoveries[id];
+    const item=document.createElement('div');
+    item.className='discovery-item '+(found?'':'locked');
+    item.innerHTML=`<div class="discovery-icon">${found?info.icon:'?'}</div><div class="discovery-info"><div class="discovery-name">${found?info.name:'— not yet found —'}</div><div class="discovery-desc">${found?info.desc:'Find it by observing closely.'}</div></div>`;
+    dList.appendChild(item);
+  });
+  document.getElementById('gallery').classList.add('show');
+}
+function hideGallery() { document.getElementById('gallery').classList.remove('show'); }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CAMERA
+// ═══════════════════════════════════════════════════════════════════════════
+
+function zoomTo(c) {
+  const us=c.stars.map(s=>s.u), vs=c.stars.map(s=>s.v);
+  const span=Math.max(Math.max(...us)-Math.min(...us), Math.max(...vs)-Math.min(...vs));
+  const fit=Math.min(W,H*0.7)*0.52;
+  setCameraTarget(c.cu, c.cv, fit/Math.max(span,0.05), true);
+}
+function zoomToFull() { setCameraTarget(0,0,computeFullSkyScale(),true); }
+function pickConst() {
+  const unl=SKY.constellations.filter(c=>!learned[c.id]);
+  if(unl.length>0&&Math.random()<0.7) return unl[Math.floor(Math.random()*unl.length)];
+  return SKY.constellations[Math.floor(Math.random()*SKY.constellations.length)];
+}
+function resetState() {
+  const rc = document.getElementById('round-card');
+  if (rc) { rc.style.top=''; rc.style.bottom=''; rc.style.transform='translateX(-50%) translateY(0)'; }
+  consecutiveWrong = 0;
+  memoryAnchor = null;
+  lessonPhase = 'intro';
+  lessonTestQueue = []; lessonTestIdx = 0;
+  introStarIdx = 0; labelFadeProgress = 0; labelFadeActive = false;
+  clearTimeout(introTimer); introTimer = null;
+  placedStars=[];connectedLines=[];drawingPath=[];
+  memoryShowing=false;memoryGhostLines=[];
+  targetStarIndex=null;duelNoiseStars=[];
+  hintFired=false;clearHintTimers();hideCard();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// EFFECTS
+// ═══════════════════════════════════════════════════════════════════════════
+
+function burst(p, red) {
+  for(let i=0;i<12;i++) {
+    const a=(Math.PI*2*i)/12+Math.random()*0.3, sp=Math.random()*2.5+0.6;
+    bursts.push({x:p.px,y:p.py,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,a:1,r:Math.random()*2+1,dec:Math.random()*0.025+0.018,red});
+  }
+}
+function spawnPhantom(x, y) {
+  const ph = document.createElement('div');
+  ph.className = 'phantom-click';
+  ph.style.left = x + 'px';
+  ph.style.top = y + 'px';
+  document.body.appendChild(ph);
+  setTimeout(() => ph.remove(), 700);
+}
+
+function spawnPhantomWrong(x, y) {
+  const ph = document.createElement('div');
+  ph.className = 'phantom-click';
+  ph.style.left = x + 'px';
+  ph.style.top = y + 'px';
+  ph.style.borderColor = 'rgba(139,26,46,0.7)';
+  document.body.appendChild(ph);
+  setTimeout(() => ph.remove(), 700);
+}
+
+function spawnShootingStar() {
+  shootingStars.push({x:Math.random()*W,y:Math.random()*H*0.4,vx:(Math.random()*4+4)*(Math.random()<0.5?1:-1),vy:Math.random()*2+1,len:Math.random()*80+50,a:1,dec:0.022});
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════════════════════════════════════════
+
+function spawnRipple(px, py) {
+  ripples.push({ px, py, r: 8, maxR: 48, alpha: 0.9, speed: 1.8 });
+}
+
+function drawRipples() {
+  ripples = ripples.filter(r => r.alpha > 0);
+  ripples.forEach(r => {
+    r.r = Math.min(r.r + r.speed, r.maxR);
+    r.alpha -= 0.035;
+    ctx.beginPath();
+    ctx.arc(r.px, r.py, r.r, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(180,80,80,${r.alpha})`;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    // Second inner ring slightly delayed
+    if (r.r > 16) {
+      ctx.beginPath();
+      ctx.arc(r.px, r.py, r.r * 0.55, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(180,80,80,${r.alpha * 0.5})`;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+  });
+}
+
+function magToR(mag) { return Math.max(1.2, 5.8-mag*1.05); }
+function magGlow(mag) { return { size:magToR(mag)*4.2, alpha:Math.max(0.15,0.6-mag*0.09) }; }
+
+function loop() {
+  ctx.clearRect(0,0,W,H);
+  tFrame+=0.016;
+  updateCamera();
+  drawBg();
+  drawAlcor();
+  drawShootingStars();
+  if(polarisLineTimer>0){drawPolarisLine();polarisLineTimer-=16;}
+  if(triangleTimer>0){drawSummerTriangle();triangleTimer-=16;}
+  if(gameActive) drawConst();
+  drawRipples();
+  drawDiscoveryAnim();
+  drawBursts();
+  requestAnimationFrame(loop);
+}
+
+function drawStar(px,py,mag,lit,hover,noise) {
+  const r=magToR(mag), g=magGlow(mag);
+  const df=noise?0.5:1;
+  const grd=ctx.createRadialGradient(px,py,0,px,py,g.size*df);
+  if(lit) grd.addColorStop(0,`rgba(232,198,106,${(g.alpha+0.1)*df})`);
+  else if(hover) grd.addColorStop(0,`rgba(232,198,106,${g.alpha*0.7*df})`);
+  else grd.addColorStop(0,`rgba(200,215,255,${g.alpha*0.55*df})`);
+  grd.addColorStop(1,'transparent');
+  ctx.beginPath();ctx.arc(px,py,g.size*df,0,Math.PI*2);ctx.fillStyle=grd;ctx.fill();
+  ctx.beginPath();ctx.arc(px,py,r*(noise?0.7:1),0,Math.PI*2);
+  if(lit) ctx.fillStyle='#f0d890';
+  else if(hover) ctx.fillStyle='#fff8d8';
+  else ctx.fillStyle=mag<1.5?'#fffaef':(mag<2.5?'#e8efff':(noise?'#8090b0':'#cbd5f0'));
+  ctx.fill();
+  if(mag<=1.5&&!noise) {
+    ctx.strokeStyle=lit?`rgba(232,198,106,0.7)`:`rgba(220,225,250,${0.4+0.2*Math.sin(tFrame*1.5)})`;
+    ctx.lineWidth=0.7;
+    const sp=r*3;
+    ctx.beginPath();ctx.moveTo(px-sp,py);ctx.lineTo(px+sp,py);ctx.moveTo(px,py-sp);ctx.lineTo(px,py+sp);ctx.stroke();
+  }
+}
+
+function drawBg() {
+  BG_STARS.forEach(s=>{
+    const p=uvToPx(s.u,s.v);
+    if(p.px<-50||p.px>W+50||p.py<-50||p.py>H+50) return;
+    drawStar(p.px,p.py,s.mag,false,false,false);
+  });
+  SKY.constellations.forEach(c=>{
+    if(currentConst&&c.id===currentConst.id) return;
+    c.stars.forEach(s=>{
+      const p=uvToPx(s.u,s.v);
+      if(p.px<-50||p.px>W+50||p.py<-50||p.py>H+50) return;
+      drawStar(p.px,p.py,s.mag,false,false,false);
+    });
+  });
+}
+
+function drawAlcor() {
+  const p=uvToPx(SKY.alcor.u,SKY.alcor.v);
+  drawStar(p.px,p.py,SKY.alcor.mag,false,false,false);
+  if(currentConst&&currentConst.id==='ursa_major'&&!discoveries.mizar_alcor) {
+    const pulse=0.5+0.5*Math.sin(tFrame*2);
+    ctx.beginPath();ctx.arc(p.px,p.py,8+pulse*2,0,Math.PI*2);
+    ctx.strokeStyle=`rgba(232,198,106,${0.15+pulse*0.1})`;ctx.lineWidth=0.8;ctx.stroke();
+  }
+}
+
+function drawPolarisLine() {
+  const um=SKY.constellations.find(c=>c.id==='ursa_major');
+  const dubhe=um.stars.find(s=>s.name==='Dubhe');
+  const merak=um.stars.find(s=>s.name==='Merak');
+  const pd=uvToPx(dubhe.u,dubhe.v),pm=uvToPx(merak.u,merak.v),pp=uvToPx(SKY.polaris.u,SKY.polaris.v);
+  const alpha=Math.min(1,polarisLineTimer/1000)*0.7;
+  ctx.beginPath();ctx.moveTo(pm.px,pm.py);ctx.lineTo(pd.px,pd.py);ctx.lineTo(pp.px,pp.py);
+  ctx.strokeStyle=`rgba(232,198,106,${alpha})`;ctx.lineWidth=1.4;
+  ctx.setLineDash([4,4]);ctx.stroke();ctx.setLineDash([]);
+  ctx.beginPath();ctx.arc(pp.px,pp.py,14+Math.sin(tFrame*4)*3,0,Math.PI*2);
+  ctx.strokeStyle=`rgba(232,198,106,${alpha})`;ctx.lineWidth=1.2;ctx.stroke();
+  ctx.fillStyle=`rgba(240,233,214,${alpha})`;ctx.font='11px Cinzel,serif';ctx.textAlign='center';
+  ctx.fillText('Polaris',pp.px,pp.py-16);
+}
+
+function drawSummerTriangle() {
+  const lyra=SKY.constellations.find(c=>c.id==='lyra');
+  const cyg=SKY.constellations.find(c=>c.id==='cygnus');
+  const aql=SKY.constellations.find(c=>c.id==='aquila');
+  const pv=uvToPx(lyra.stars.find(s=>s.name==='Vega').u,lyra.stars.find(s=>s.name==='Vega').v);
+  const pd=uvToPx(cyg.stars.find(s=>s.name==='Deneb').u,cyg.stars.find(s=>s.name==='Deneb').v);
+  const pa=uvToPx(aql.stars.find(s=>s.name==='Altair').u,aql.stars.find(s=>s.name==='Altair').v);
+  const alpha=Math.min(1,triangleTimer/1000)*0.6;
+  ctx.beginPath();ctx.moveTo(pv.px,pv.py);ctx.lineTo(pd.px,pd.py);ctx.lineTo(pa.px,pa.py);ctx.closePath();
+  ctx.strokeStyle=`rgba(232,198,106,${alpha})`;ctx.lineWidth=1.6;ctx.stroke();
+  [pv,pd,pa].forEach(p=>{
+    ctx.beginPath();ctx.arc(p.px,p.py,16+Math.sin(tFrame*3)*3,0,Math.PI*2);
+    ctx.strokeStyle=`rgba(232,198,106,${alpha*0.8})`;ctx.lineWidth=1.2;ctx.stroke();
+  });
+}
+
+function drawConst() {
+  if(!currentConst||!placedStars.length) return;
+  const isDuel=phase==='duel';
+
+  if(isDuel&&duelNoiseStars.length) {
+    duelNoiseStars.forEach(s=>{ const p=uvToPx(s.u,s.v); drawStar(p.px,p.py,s.mag,false,false,true); });
+  }
+
+  if(memoryShowing&&memoryGhostLines.length) {
+    memoryGhostLines.forEach(l=>{
+      const a=placedStars[l.a],b=placedStars[l.b];
+      const pa=uvToPx(a.u,a.v),pb=uvToPx(b.u,b.v);
+      ctx.beginPath();ctx.moveTo(pa.px,pa.py);ctx.lineTo(pb.px,pb.py);
+      ctx.strokeStyle='rgba(201,168,76,0.55)';ctx.lineWidth=1.4;ctx.stroke();
+    });
+  }
+
+  if(isDuel) {
+    currentConst.lines.forEach(([ai,bi])=>{
+      const a=placedStars[ai],b=placedStars[bi];
+      const pa=uvToPx(a.u,a.v),pb=uvToPx(b.u,b.v);
+      ctx.beginPath();ctx.moveTo(pa.px,pa.py);ctx.lineTo(pb.px,pb.py);
+      ctx.strokeStyle='rgba(201,168,76,0.18)';ctx.lineWidth=1.2;ctx.stroke();
+    });
+  }
+
+  connectedLines.forEach(l=>{
+    const a=placedStars[l.a],b=placedStars[l.b];
+    const pa=uvToPx(a.u,a.v),pb=uvToPx(b.u,b.v);
+    ctx.beginPath();ctx.moveTo(pa.px,pa.py);ctx.lineTo(pb.px,pb.py);
+    ctx.strokeStyle=l.correct?'rgba(201,168,76,0.55)':'rgba(180,80,80,0.4)';ctx.lineWidth=1.2;ctx.stroke();
+  });
+
+  placedStars.forEach((s,i)=>{
+    s.pulse+=0.04;
+    const p=uvToPx(s.u,s.v);
+    const isHover=(hoverStar===i&&!s.found);
+    const isLit=s.found||memoryShowing;
+    drawStar(p.px,p.py,s.mag,isLit,isHover,false);
+    // Labels only during intro — never during test
+    if(!isDuel && lessonPhase === 'intro') {
+      ctx.fillStyle=isLit?'rgba(232,222,200,0.85)':'rgba(200,210,230,0.55)';
+      ctx.font=`${isLit?11:10}px Cinzel,serif`;ctx.textAlign='center';
+      ctx.fillText(s.name,p.px,p.py-magToR(s.mag)-8);
+    }
+  });
+}
+
+function drawDiscoveryAnim() {
+  if (!discoveryAnim || discoveryAnim.done) return;
+  discoveryAnim.progress += 0.025;
+  const p = Math.min(discoveryAnim.progress, 1);
+
+  // Draw lines progressively
+  discoveryAnim.lines.forEach((l, i) => {
+    const lineStart = i / discoveryAnim.lines.length;
+    const lineEnd   = (i + 1) / discoveryAnim.lines.length;
+    const lineP = Math.max(0, Math.min(1, (p - lineStart) / (lineEnd - lineStart)));
+    if (lineP <= 0) return;
+    const ex = l.ax + (l.bx - l.ax) * lineP;
+    const ey = l.ay + (l.by - l.ay) * lineP;
+    ctx.beginPath(); ctx.moveTo(l.ax, l.ay); ctx.lineTo(ex, ey);
+    ctx.strokeStyle = `rgba(232,198,106,${0.7 * Math.min(p * 3, 1)})`;
+    ctx.lineWidth = 1.8; ctx.stroke();
+  });
+
+  // Pulse stars
+  const starAlpha = Math.min(p * 2, 1);
+  discoveryAnim.stars.forEach(s => {
+    const pulse = 0.5 + 0.5 * Math.sin(tFrame * 6);
+    ctx.beginPath();
+    ctx.arc(s.px, s.py, 12 + pulse * 6, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(232,198,106,${starAlpha * (0.4 + pulse * 0.3)})`;
+    ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(s.px, s.py, 5, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(240,215,120,${starAlpha})`;
+    ctx.fill();
+  });
+
+  if (p >= 1) discoveryAnim.done = true;
+}
+
+
+function drawBursts() {
+  bursts=bursts.filter(b=>b.a>0);
+  bursts.forEach(b=>{
+    b.x+=b.vx;b.y+=b.vy;b.vy+=0.04;b.a-=b.dec;
+    ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,Math.PI*2);
+    ctx.fillStyle=b.red?`rgba(180,80,80,${b.a})`:`rgba(232,198,106,${b.a})`;ctx.fill();
+  });
+}
+function drawShootingStars() {
+  shootingStars=shootingStars.filter(s=>s.a>0);
+  shootingStars.forEach(s=>{
+    const tx=s.x-s.vx*(s.len/6),ty=s.y-s.vy*(s.len/6);
+    const grd=ctx.createLinearGradient(tx,ty,s.x,s.y);
+    grd.addColorStop(0,'transparent');grd.addColorStop(1,`rgba(240,235,220,${s.a})`);
+    ctx.beginPath();ctx.moveTo(tx,ty);ctx.lineTo(s.x,s.y);ctx.strokeStyle=grd;ctx.lineWidth=1.4;ctx.stroke();
+    s.x+=s.vx;s.y+=s.vy;s.a-=s.dec;
+  });
+}
+
+function pick(arr) { return arr[Math.floor(Math.random()*arr.length)]; }
+
+window.addEventListener('load', init);
+</script>
+</body>
+</html>

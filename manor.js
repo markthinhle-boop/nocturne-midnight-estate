@@ -549,8 +549,63 @@ function _onHotspotTap(objectId, tapX, tapY) {
     NocturneEngine.emit('tunnelEntered', {});
     return;
   }
+
+  // telescope: launch Vivienne minigame if not raining
+  if (objectId === 'terrace-telescope-obj') {
+    if (window._terraceRaining) {
+      // Rain — hotspot should be disabled, but guard here too
+      return;
+    }
+    _launchTelescopeMinigame();
+    return;
+  }
+
   tapObject(objectId, tapX, tapY);
 }
+
+function _launchTelescopeMinigame() {
+  // Create fullscreen overlay, load minigame HTML into iframe
+  let overlay = document.getElementById('telescope-minigame-overlay');
+  if (overlay) { overlay.style.display = 'flex'; return; }
+
+  overlay = document.createElement('div');
+  overlay.id = 'telescope-minigame-overlay';
+  overlay.style.cssText = [
+    'position:fixed','inset:0','z-index:9000',
+    'background:#06070b','display:flex',
+    'align-items:center','justify-content:center',
+  ].join(';');
+
+  const iframe = document.createElement('iframe');
+  iframe.src = `${typeof ASSET_BASE !== 'undefined' ? ASSET_BASE : './'}vivienne-constellation-game.html`;
+  iframe.style.cssText = 'width:100%;height:100%;border:none;';
+  iframe.allow = 'autoplay';
+
+  // Close on message from iframe (when player taps Leave Terrace)
+  window.addEventListener('message', (e) => {
+    if (e.data === 'nocturne-telescope-close') {
+      overlay.style.display = 'none';
+    }
+  });
+
+  overlay.appendChild(iframe);
+  document.body.appendChild(overlay);
+}
+
+// Listen for rain-based hotspot updates
+NocturneEngine.on('hotspotsUpdated', ({ disabled = [] }) => {
+  const telescopeHs = document.getElementById('hs-terrace-telescope-obj');
+  if (!telescopeHs) return;
+  if (disabled.includes('terrace-telescope-obj')) {
+    telescopeHs.style.opacity = '0';
+    telescopeHs.style.pointerEvents = 'none';
+    telescopeHs.dataset.rainDisabled = 'true';
+  } else {
+    telescopeHs.style.opacity = '';
+    telescopeHs.style.pointerEvents = '';
+    delete telescopeHs.dataset.rainDisabled;
+  }
+});
 
 function _buildCharDots() {
   // Build per-room character zones — one zone per room, inside the room div

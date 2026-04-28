@@ -976,6 +976,26 @@ const NocturneSound = (() => {
       }
       playAmbient(roomId);
       if (hourWindow === 'deep_night') dropAmbientDeepNight();
+
+      // Terrace — 1 in 3 chance of rain; disables telescope hotspot if raining
+      if (isTerrace) {
+        const isRaining = Math.random() < 0.333;
+        window._terraceRaining = isRaining;
+        if (isRaining) {
+          // Rain overrides crickets — start heavier rain
+          setTimeout(() => startRain(0.55), 1200);
+          // Disable telescope hotspot
+          NocturneEngine.emit('hotspotsUpdated', {
+            disabled: ['terrace-telescope-obj'],
+            reason: 'raining',
+          });
+        } else {
+          window._terraceRaining = false;
+          NocturneEngine.emit('hotspotsUpdated', {
+            disabled: [],
+          });
+        }
+      }
     });
 
     // Tunnel — the signature moment

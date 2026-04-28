@@ -1644,6 +1644,18 @@ const ROOM_OBJECTS = {
     hotspot: { left: 1.9, top: 62.0, width: 4, height: 4 },
   },
 
+  "terrace-telescope-obj": {
+    room: "terrace",
+    tap_1: "A brass telescope on a tripod. Recently used. Still pointed at the sky.",
+    tap_2: "Vivienne is here.",
+    tap_3: "Vivienne is here.",
+    item_id: null, item_at_depth: null, is_essential: false, is_deception_item: false,
+    slow_drag: false, max_depth: 2,
+    hotspot: { left: 76, top: 52, width: 8, height: 18 },
+    launch_minigame: "vivienne-telescope",
+    rain_disabled: true,
+  },
+
   // ── BALLROOM ───────────────────────────────────────────────
   "ballroom-programme-obj": {
     room: "ballroom",
