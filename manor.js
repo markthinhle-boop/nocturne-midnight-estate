@@ -552,7 +552,6 @@ function _onHotspotTap(objectId, tapX, tapY) {
 
   // telescope: launch Vivienne minigame if not raining
   if (objectId === 'terrace-telescope-obj') {
-    if (window._terraceRaining) return; // raining — silent no-op
     _launchTelescopeMinigame();
     return;
   }
@@ -561,8 +560,6 @@ function _onHotspotTap(objectId, tapX, tapY) {
 }
 
 function _launchTelescopeMinigame() {
-  // Triple guard — never launch if raining
-  if (window._terraceRaining) return;
   let overlay = document.getElementById('telescope-minigame-overlay');
   if (overlay) { overlay.style.display = 'flex'; return; }
 
@@ -591,12 +588,6 @@ function _launchTelescopeMinigame() {
 }
 
 // Rain hotspot removal — ambient.js calls remove() directly, this is belt-and-suspenders
-NocturneEngine.on('hotspotsUpdated', ({ disabled = [] }) => {
-  if (disabled.includes('terrace-telescope-obj')) {
-    const hs = document.getElementById('hs-terrace-telescope-obj');
-    if (hs) hs.remove();
-  }
-});
 
 function _buildCharDots() {
   // Build per-room character zones — one zone per room, inside the room div
@@ -901,7 +892,6 @@ function _syncCharZones(roomId) {
   const zone = document.getElementById(`char-zone-${roomId}`);
   if (zone) zone.style.display = 'flex';
 }
-
 
 function _onCharTap(charId, roomId) {
   // PROLOGUE — Uninvited cannot fire pre-murder. He arrives with the body.
@@ -1604,5 +1594,4 @@ window.closeUninvitedEncounter = function(roomId) {
   const r = roomId || (window.gameState && gameState.currentRoom) || null;
   _closeUninvitedEncounter(r);
 };
-
 

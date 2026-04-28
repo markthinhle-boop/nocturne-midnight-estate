@@ -21,9 +21,7 @@ const CANDLE_ROOMS = {
 };
 
 // ── RAIN ROOMS ─────────────────────────────────────────────
-// 1-in-3 probability rolled fresh on each terrace entry.
-// window._terraceRaining is the single source of truth — set here,
-// read by manor.js for telescope hotspot gating.
+// After 7:30PM real clock on terrace
 const RAIN_ROOMS = ['terrace'];
 let _rainActive = false;
 let _rainDrops = [];
@@ -33,22 +31,12 @@ const _newlyDiscovered = new Set();
 
 // ── INIT ───────────────────────────────────────────────────
 function initAmbient() {
-  // Version marker — confirms this build is loaded
-  setTimeout(() => {
-    if (document.getElementById('ambient-version-tag')) return;
-    const tag = document.createElement('div');
-    tag.id = 'ambient-version-tag';
-    tag.textContent = 'rain-v3';
-    tag.style.cssText = 'position:fixed;bottom:4px;right:4px;z-index:99999;font:9px monospace;color:rgba(201,168,76,0.5);background:rgba(0,0,0,0.4);padding:2px 5px;pointer-events:none;border-radius:2px;';
-    document.body.appendChild(tag);
-  }, 500);
   _buildRainOverlay();
   _checkRain();
 
   NocturneEngine.on('roomEntered', ({ roomId }) => {
-    // Reset rain decision when entering any room (re-rolls on terrace entry)
-    if (!RAIN_ROOMS.includes(roomId)) window._terraceRaining = undefined;
     _applyRoomAmbient(roomId);
+    _checkRain();
   });
 
   NocturneEngine.on('roomDiscovered', ({ roomId }) => {
@@ -109,26 +97,6 @@ function initAmbient() {
 
 // ── ROOM AMBIENT ───────────────────────────────────────────
 function _applyRoomAmbient(roomId) {
-  // Rain — always resolve BEFORE any early returns so it stops when leaving terrace
-  if (RAIN_ROOMS.includes(roomId)) {
-    const isRaining = Math.random() < 0.333;
-    window._terraceRaining = isRaining;
-    console.log('[NOCTURNE] terrace rain roll:', isRaining ? 'RAINING' : 'clear');
-    if (isRaining) {
-      _startRain();
-      setTimeout(() => {
-        const hs = document.getElementById('hs-terrace-telescope-obj');
-        if (hs) hs.remove();
-      }, 300);
-    } else {
-      window._terraceRaining = false;
-      _stopRain();
-    }
-  } else {
-    window._terraceRaining = false;
-    if (_rainActive) _stopRain();
-  }
-
   // Apply candle flicker to room bg
   const roomEl = document.getElementById(`room-${roomId}`);
   if (!roomEl) return;
@@ -138,6 +106,11 @@ function _applyRoomAmbient(roomId) {
   bg.classList.remove('candle-room', 'candle-room-2', 'candle-room-3');
   const candleClass = CANDLE_ROOMS[roomId];
   if (candleClass) bg.classList.add(candleClass);
+
+  // Rain
+  const shouldRain = RAIN_ROOMS.includes(roomId) && _isAfterSevenThirty();
+  if (shouldRain && !_rainActive) _startRain();
+  else if (!shouldRain && _rainActive) _stopRain();
 }
 
 // ── RAIN ───────────────────────────────────────────────────
@@ -186,22 +159,9 @@ function _stopRain() {
 
 function _checkRain() {
   const roomId = gameState.currentRoom;
-  if (RAIN_ROOMS.includes(roomId)) {
-    // Only roll once per room visit — if already decided, honour it
-    if (window._terraceRaining === true) {
-      if (!_rainActive) _startRain();
-    } else if (window._terraceRaining === false) {
-      if (_rainActive) _stopRain();
-    } else {
-      // First time — roll
-      const isRaining = Math.random() < 0.333;
-      window._terraceRaining = isRaining;
-      if (isRaining) _startRain(); else _stopRain();
-    }
-  } else {
-    window._terraceRaining = undefined;
-    if (_rainActive) _stopRain();
-  }
+  const shouldRain = RAIN_ROOMS.includes(roomId) && _isAfterSevenThirty();
+  if (shouldRain && !_rainActive) _startRain();
+  else if (!shouldRain && _rainActive) _stopRain();
 }
 
 function _isAfterSevenThirty() {

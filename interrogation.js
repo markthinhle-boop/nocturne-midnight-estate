@@ -2279,8 +2279,8 @@ const INTERROGATION_DATA = {
             text:     '"The brass telescope on the terrace."',
             type:     'narrative_statement',
             cost:     0,
-            response_composed: '"That telescope." She says it with a slightly different register — not the investigation voice. "I borrowed it from Thomas." A pause. "If you have not been out to the terrace yet — go. When it is clear." She looks at you. "I will be there. I am usually there." Another pause. "I have been learning the constellations. I know eleven now." She smooths her apron. "I could teach you. If you wanted." She says it as if it is not a significant offer. "It is easier than it looks. And the sky over this estate is very good."',
-            response_strained:  '"That telescope." A pause. "I am usually on the terrace when the sky is clear. If you have not been out there — go."',
+            response_composed: '"That telescope." She says it with a slightly different register — not the investigation voice. "I borrowed it from Thomas." A pause. "If you have not been out to the terrace yet — go." She looks at you. "I am usually there." Another pause. "I have been learning the constellations. I know eleven now." She smooths her apron. "I could teach you. If you wanted." She says it as if it is not a significant offer. "It is easier than it looks. And the sky over this estate is very good."',
+            response_strained:  '"That telescope." A pause. "I am usually on the terrace. If you have not been out there — go."',
             grants_node: 'vivienne_telescope_mentioned',
           },
           'VT2': {
