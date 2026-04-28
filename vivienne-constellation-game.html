@@ -141,7 +141,7 @@
   #duel-timer-fill { height: 100%; background: linear-gradient(to right, var(--rouge), var(--rouge-soft), var(--gold-bright)); width: 100%; transition: width 0.06s linear; }
 
   /* ── FRAME PIPS ── */
-  .frame-row { position: fixed; top: clamp(70px,10vh,90px); left: 50%; transform: translateX(-50%); display: flex; gap: clamp(8px,2vw,14px); z-index: 19; opacity: 0; transition: opacity 0.5s; }
+  .frame-row { position: fixed; top: clamp(140px,18vh,170px); left: 50%; transform: translateX(-50%); display: flex; gap: clamp(8px,2vw,14px); z-index: 19; opacity: 0; transition: opacity 0.5s; }
   .frame-row.show { opacity: 1; }
   .frame-pip { width: clamp(60px,12vw,80px); padding: 8px 6px; border: 1px solid var(--gold-faint); background: rgba(8,8,12,0.7); text-align: center; font-family: 'Cinzel', serif; color: var(--gold-dim); }
   .frame-pip .pip-num { font-size: clamp(9px,1.6vw,11px); letter-spacing: 0.2em; margin-bottom: 2px; }
@@ -514,6 +514,7 @@
     <div class="top-buttons">
       <button class="top-btn" id="gallery-btn">Gallery</button>
       <button class="top-btn" id="duel-now-btn" style="display:none;">Duel ●</button>
+      <button class="top-btn" id="exit-btn">Exit</button>
     </div>
   </div>
 </div>
@@ -1327,6 +1328,7 @@ function init() {
   document.getElementById('hotspot-screen').addEventListener('click', launchFromHotspot);
   document.getElementById('begin-btn').addEventListener('click', startGame);
   document.getElementById('gallery-btn').addEventListener('click', showGallery);
+  document.getElementById('exit-btn').addEventListener('click', leaveTerrace);
   document.getElementById('close-gallery').addEventListener('click', hideGallery);
   document.getElementById('duel-accept').addEventListener('click', acceptDuel);
   document.getElementById('duel-decline').addEventListener('click', declineDuel);
