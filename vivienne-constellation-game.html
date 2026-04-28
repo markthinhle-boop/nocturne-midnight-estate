@@ -161,7 +161,7 @@
   /* ── SPEECH BUBBLE ── (repositioned to come FROM vivienne) */
   #speech {
     position: fixed;
-    bottom: clamp(20%,22%,25%);
+    bottom: clamp(8px,2vh,16px);
     left: clamp(12px,3vw,24px);
     width: clamp(200px, 32vw, 260px);
     background: rgba(8,8,10,0.94);
@@ -183,7 +183,7 @@
   .speech-text { font-size: clamp(12px,2.2vw,14px); line-height: 1.5; color: var(--ivory); font-style: italic; font-weight: 300; }
 
   /* ── HINT COUNTDOWN ── */
-  #hint-countdown { position: fixed; bottom: clamp(20%,22%,25%); left: clamp(12px,3vw,24px); z-index: 26; width: clamp(200px,32vw,260px); height: 2px; background: rgba(201,168,76,0.1); pointer-events: none; opacity: 0; transition: opacity 0.3s; margin-bottom: -3px; }
+  #hint-countdown { position: fixed; bottom: clamp(8px,2vh,16px); left: clamp(12px,3vw,24px); z-index: 26; width: clamp(200px,32vw,260px); height: 2px; background: rgba(201,168,76,0.1); pointer-events: none; opacity: 0; transition: opacity 0.3s; margin-bottom: -3px; }
   #hint-countdown.show { opacity: 1; }
   #hint-fill { height: 100%; background: var(--gold-dim); width: 0%; transition: width 0.1s linear; }
 
