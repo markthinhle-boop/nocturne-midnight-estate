@@ -1518,6 +1518,7 @@
 
   function sndBallCollide(speed) {
     if (!_initAudio()) return;
+    if (speed < 2.5) return;  // ignore slow end-of-roll nudges
     if (!_cooldown('ball', 45)) return;
     const vol = Math.min(0.8, 0.15 + speed * 0.018);
     const t = _now() + 0.005;
@@ -1528,7 +1529,8 @@
 
   function sndCushion(speed) {
     if (!_initAudio()) return;
-    if (!_cooldown('cushion', 50)) return;
+    if (speed < 3) return;  // ignore slow rolling contact — only real impacts
+    if (!_cooldown('cushion', 80)) return;
     const vol = Math.min(0.7, 0.1 + speed * 0.02);
     const t = _now() + 0.005;
     _noise(0.1, 120, 600, vol, t);
