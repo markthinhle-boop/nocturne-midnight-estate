@@ -33,6 +33,15 @@ const _newlyDiscovered = new Set();
 
 // ── INIT ───────────────────────────────────────────────────
 function initAmbient() {
+  // Version marker — confirms this build is loaded
+  setTimeout(() => {
+    if (document.getElementById('ambient-version-tag')) return;
+    const tag = document.createElement('div');
+    tag.id = 'ambient-version-tag';
+    tag.textContent = 'rain-v3';
+    tag.style.cssText = 'position:fixed;bottom:4px;right:4px;z-index:99999;font:9px monospace;color:rgba(201,168,76,0.5);background:rgba(0,0,0,0.4);padding:2px 5px;pointer-events:none;border-radius:2px;';
+    document.body.appendChild(tag);
+  }, 500);
   _buildRainOverlay();
   _checkRain();
 
@@ -100,28 +109,23 @@ function initAmbient() {
 
 // ── ROOM AMBIENT ───────────────────────────────────────────
 function _applyRoomAmbient(roomId) {
-  // Rain — always resolve BEFORE any early returns so it stops when leaving terrace.
-  // Roll ONCE per terrace entry. If _terraceRaining is already decided for this
-  // visit (true/false), honour it. Only roll when undefined. The roomEntered
-  // handler clears the flag when leaving terrace, so the next entry re-rolls.
-  // Fires identically in prologue and post-paywall — no gating.
+  // Rain — always resolve BEFORE any early returns so it stops when leaving terrace
   if (RAIN_ROOMS.includes(roomId)) {
-    if (window._terraceRaining === undefined) {
-      const isRaining = Math.random() < 0.333;
-      window._terraceRaining = isRaining;
-      console.log('[NOCTURNE] terrace rain roll:', isRaining ? 'RAINING' : 'clear');
-    }
-    if (window._terraceRaining) {
-      if (!_rainActive) _startRain();
+    const isRaining = Math.random() < 0.333;
+    window._terraceRaining = isRaining;
+    console.log('[NOCTURNE] terrace rain roll:', isRaining ? 'RAINING' : 'clear');
+    if (isRaining) {
+      _startRain();
       setTimeout(() => {
         const hs = document.getElementById('hs-terrace-telescope-obj');
         if (hs) hs.remove();
       }, 300);
     } else {
-      if (_rainActive) _stopRain();
+      window._terraceRaining = false;
+      _stopRain();
     }
   } else {
-    window._terraceRaining = undefined;
+    window._terraceRaining = false;
     if (_rainActive) _stopRain();
   }
 
