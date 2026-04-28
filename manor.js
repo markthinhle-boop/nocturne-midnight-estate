@@ -446,41 +446,35 @@ function initRooms() {
     renderCurrentRoom();
     updateCharacterDots(roomId);
 
-    // ── TERRACE RAIN — 1-in-3 chance on each entry ──────────────────
+    // ── TERRACE RAIN — 1-in-3 chance, post-paywall only ─────────────
+    // Pre-paywall (prologueActive) the terrace is staged warm for Vivienne's
+    // scene; rain is post-paywall investigation atmosphere.
     if (roomId === 'terrace') {
-      const wasRaining = window._terraceRaining;
-      window._terraceRaining = Math.random() < (1 / 3);
+      if (gameState.prologueActive) {
+        window._terraceRaining = false;
+      } else {
+        window._terraceRaining = Math.random() < (1 / 3);
+      }
 
       const telescopeHs = document.getElementById('hs-terrace-telescope-obj');
 
       if (window._terraceRaining) {
-        // Remove telescope hotspot if present
         if (telescopeHs) telescopeHs.remove();
-        // Override room description for rain visit (first-visit panel uses cached text —
-        // update the live element directly so it reflects the weather)
-        const descEl = document.getElementById('room-description-text');
-        if (descEl && descEl.textContent.includes('Iron chairs')) {
-          descEl.textContent = 'Iron chairs. Wet stone. Rain now — a fine, cold sheet of it that makes the garden invisible past ten feet.\n\nThe glass door at the far end is fogged. Sir Greaves is still on the other side of it. You can tell by the shape.\n\nThe telescope is covered. Nothing to see in this weather.';
-        }
-      } else {
-        // Clear — restore hotspot if it was removed by a prior rainy visit
-        if (!telescopeHs) {
-          const obj = (typeof ROOM_OBJECTS !== 'undefined') && ROOM_OBJECTS['terrace-telescope-obj'];
-          if (obj) {
-            const layer = document.getElementById('hotspots-terrace');
-            if (layer) {
-              const hs = document.createElement('div');
-              hs.className = 'hotspot';
-              hs.id = 'hs-terrace-telescope-obj';
-              hs.style.cssText = `left:${obj.hotspot.left}%;top:${obj.hotspot.top}%;width:${obj.hotspot.width}%;height:${obj.hotspot.height}%;`;
-              hs.addEventListener('click', e => {
-                e.stopPropagation();
-                const r = hs.getBoundingClientRect();
-                _onHotspotTap('terrace-telescope-obj', r.left + r.width / 2, r.top);
-              });
-              layer.appendChild(hs);
-            }
-          }
+      } else if (!telescopeHs) {
+        // Restore hotspot if a prior rainy visit removed it
+        const obj = (typeof ROOM_OBJECTS !== 'undefined') && ROOM_OBJECTS['terrace-telescope-obj'];
+        const layer = document.getElementById('hotspots-terrace');
+        if (obj && layer) {
+          const hs = document.createElement('div');
+          hs.className = 'hotspot';
+          hs.id = 'hs-terrace-telescope-obj';
+          hs.style.cssText = `left:${obj.hotspot.left}%;top:${obj.hotspot.top}%;width:${obj.hotspot.width}%;height:${obj.hotspot.height}%;`;
+          hs.addEventListener('click', e => {
+            e.stopPropagation();
+            const r = hs.getBoundingClientRect();
+            _onHotspotTap('terrace-telescope-obj', r.left + r.width / 2, r.top);
+          });
+          layer.appendChild(hs);
         }
       }
     }
