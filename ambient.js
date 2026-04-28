@@ -104,6 +104,7 @@ function _applyRoomAmbient(roomId) {
   if (RAIN_ROOMS.includes(roomId)) {
     const isRaining = Math.random() < 0.333;
     window._terraceRaining = isRaining;
+    console.log('[NOCTURNE] terrace rain roll:', isRaining ? 'RAINING' : 'clear');
     if (isRaining) {
       _startRain();
       setTimeout(() => {
