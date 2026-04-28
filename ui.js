@@ -2850,19 +2850,42 @@ NocturneEngine.on('roomEntered', function(payload) {
   // HUD reveal — one time only
   if (gameState.antechamberGateOpen) return;
   gameState.antechamberGateOpen = true;
-  document.querySelectorAll('[data-hud-gate]').forEach(function(el) {
-    el.style.display = '';
-    el.style.transition = 'opacity 400ms';
-    el.style.opacity = '0';
-    setTimeout(function() {
+  const _hudEls = document.querySelectorAll('[data-hud-gate]');
+  _hudEls.forEach(function(el) { el.style.display = ''; });
+
+  const _timers = new Map();
+
+  function _pulseEl(el) {
+    if (!el._pulsing) return;
+    el.style.transition = 'opacity 350ms';
+    el.style.opacity = '0.15';
+    _timers.set(el, setTimeout(function() {
+      if (!el._pulsing) return;
       el.style.opacity = '1';
-      setTimeout(function() { el.style.opacity = '0.2'; }, 400);
-      setTimeout(function() { el.style.opacity = '1';   }, 700);
-      setTimeout(function() { el.style.opacity = '0.2'; }, 1000);
-      setTimeout(function() { el.style.opacity = '1';   }, 1300);
-      setTimeout(function() { el.style.transition = ''; }, 1600);
-    }, 100);
+      _timers.set(el, setTimeout(function() { _pulseEl(el); }, 500));
+    }, 350));
+  }
+
+  function _stopEl(el) {
+    el._pulsing = false;
+    clearTimeout(_timers.get(el));
+    el.style.transition = '';
+    el.style.opacity = '1';
+  }
+
+  _hudEls.forEach(function(el) {
+    el._pulsing = true;
+    el.addEventListener('click', function() { _stopEl(el); }, { once: true });
+    setTimeout(function() { _pulseEl(el); }, 200);
   });
+
+  NocturneEngine.on('roomLeft', function _stopOnLeave(payload) {
+    if (payload && payload.roomId === 'antechamber') {
+      _hudEls.forEach(_stopEl);
+      NocturneEngine.off('roomLeft', _stopOnLeave);
+    }
+  });
+
   if (typeof saveGame === 'function') saveGame();
 });
 
