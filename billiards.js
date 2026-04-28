@@ -3256,32 +3256,35 @@
     lagState.alistairShot = false;
     lagState.winner = null;
     lagState.resultTimer = 0;
-    lagState.gameMode = 'vs';  // always vs — lag only fires for VS matches
-    // Player cue ball at left half, alistair at right half of head string
-    // Lag balls start in the baulk area (near end)
-    lagState.playerBall  = { x: LAG_HEAD_X, y: PLAY_Y0 + PLAY_H * 0.38, vx: 0, vy: 0, stopped: false, finalDist: null };
-    lagState.alistairBall = { x: LAG_HEAD_X, y: PLAY_Y0 + PLAY_H * 0.62, vx: 0, vy: 0, stopped: false, finalDist: null };
-    lagState.playerPower = 0.6;
-    // Alistair shoots automatically after 0.8s
+    lagState.gameMode = 'vs';
+    lagState._shootBtn = null;
+    lagState._powerBar = null;
+    // Reset balls to baulk line (near end, large x)
+    lagState.playerBall   = { x: PLAY_X0 + PLAY_W * 0.80, y: PLAY_Y0 + PLAY_H * 0.35, vx: 0, stopped: false, finalDist: null };
+    lagState.alistairBall = { x: PLAY_X0 + PLAY_W * 0.80, y: PLAY_Y0 + PLAY_H * 0.65, vx: 0, stopped: false, finalDist: null };
+    lagState.playerPower = 0.65;
+    // Alistair auto-shoots after 1.2s regardless
     setTimeout(() => {
-      if (lagState.active && lagState.phase === 'aim') {
-        const p = 0.5 + Math.random() * 0.35;  // Alistair's lag power
-        lagState.alistairBall.vx = -(1 + p * 18);  // shoot toward far rail (low tx = top of portrait)
+      if (!lagState.active) return;
+      if (!lagState.alistairShot) {
+        lagState.alistairBall.vx = -(6 + Math.random() * 8);
         lagState.alistairShot = true;
-        if (lagState.playerShot) lagState.phase = 'slide';
       }
-    }, 800 + Math.random() * 400);
+      if (lagState.playerShot) lagState.phase = 'slide';
+    }, 1200);
   }
 
   function shootLag() {
     if (!lagState.active || lagState.phase !== 'aim' || lagState.playerShot) return;
-    lagState.playerBall.vx = -(1 + lagState.playerPower * 18);
+    // Player shoots — ball travels toward far rail (negative x direction)
+    lagState.playerBall.vx = -(6 + lagState.playerPower * 8);
     lagState.playerShot = true;
-    if (lagState.alistairShot) lagState.phase = 'slide';
-    // Alistair shoots too if not yet
-    if (!lagState.alistairShot) {
-      const p = 0.5 + Math.random() * 0.35;
-      lagState.alistairBall.vx = -(1 + p * 18);
+    // If Alistair already shot, start physics immediately
+    if (lagState.alistairShot) {
+      lagState.phase = 'slide';
+    } else {
+      // Alistair shoots immediately after player
+      lagState.alistairBall.vx = -(6 + Math.random() * 8);
       lagState.alistairShot = true;
       lagState.phase = 'slide';
     }
@@ -3289,36 +3292,46 @@
 
   function stepLag() {
     if (!lagState.active || lagState.phase !== 'slide') return;
-    const DT = 1;
+    // Simple 1D physics for lag balls along the x axis
+    // Far rail = PLAY_X0 + BALL_R (low x), near rail = PLAY_X1 - BALL_R (high x)
+    const FAR  = PLAY_X0 + BALL_R;
+    const NEAR = PLAY_X1 - BALL_R;
+    const FRIC = 0.978;   // friction per frame — ball stops in ~3s
+    const E    = 0.70;    // cushion restitution
+
     for (const b of [lagState.playerBall, lagState.alistairBall]) {
       if (b.stopped) continue;
-      b.x += b.vx * DT;
-      b.vx *= 0.984;
-      // Bounce off far rail (low x = top of portrait)
-      if (b.x < PLAY_X0 + BALL_R) {
-        b.x = PLAY_X0 + BALL_R;
-        b.vx = -b.vx * 0.72;
+      b.x += b.vx;
+      b.vx *= FRIC;
+      // Bounce off far rail
+      if (b.x < FAR) {
+        b.x = FAR;
+        b.vx = Math.abs(b.vx) * E;  // now positive — heading back
       }
-      // Stop if near starting end or too slow
-      if (Math.abs(b.vx) < 0.06) {
+      // Overshot near rail — disqualified
+      if (b.x > NEAR) {
+        b.x = NEAR;
         b.stopped = true;
-        // Final distance from near rail (high x = near side)
-        b.finalDist = PLAY_X1 - BALL_R - b.x;
-        // Penalty if touched near rail (overshot — went past start)
-        if (b.x > PLAY_X1 - BALL_R) {
-          b.x = PLAY_X1 - BALL_R;
-          b.finalDist = 9999;  // disqualified
-        }
+        b.finalDist = 9999;  // over
+      }
+      // Stopped
+      if (Math.abs(b.vx) < 0.15 && b.x > PLAY_X0 + PLAY_W * 0.3) {
+        b.stopped = true;
+        b.finalDist = NEAR - b.x;  // distance from near rail — smaller = better
       }
     }
-    // Both stopped — determine winner
+
+    // Both stopped — pick winner
     if (lagState.playerBall.stopped && lagState.alistairBall.stopped) {
       const pd = lagState.playerBall.finalDist;
       const ad = lagState.alistairBall.finalDist;
-      lagState.winner = pd < ad ? 'player' : 'alistair';
+      // Lower finalDist = closer to near rail = wins
+      if (pd === 9999 && ad === 9999) lagState.winner = Math.random() < 0.5 ? 'player' : 'alistair';
+      else if (pd === 9999) lagState.winner = 'alistair';
+      else if (ad === 9999) lagState.winner = 'player';
+      else lagState.winner = pd < ad ? 'player' : 'alistair';
       lagState.phase = 'result';
-      lagState.resultTimer = 180;  // frames to show result
-      if (lagState.winner === 'player') say('lagWon'); else say('lagLost');
+      lagState.resultTimer = 200;
     }
   }
 
@@ -3326,120 +3339,113 @@
     if (!lagState.active) return;
     const W = canvas.width, H = canvas.height;
     computeView();
-
-    // Background
+    // Background + table
     const bg = ctx.createRadialGradient(W/2, H/2, 40, W/2, H/2, Math.max(W, H));
     bg.addColorStop(0, '#1a0e07'); bg.addColorStop(1, '#050201');
     ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
     drawTable();
 
-    // Draw head string line (dashed)
-    const hsLeft  = tableToScreen(LAG_HEAD_X, PLAY_Y0);
-    const hsRight = tableToScreen(LAG_HEAD_X, PLAY_Y1);
+    // Head string line (baulk line where balls start)
+    const baulkX = PLAY_X0 + PLAY_W * 0.80;
+    const hsA = tableToScreen(baulkX, PLAY_Y0);
+    const hsB = tableToScreen(baulkX, PLAY_Y1);
     ctx.save();
-    ctx.strokeStyle = 'rgba(255,220,100,0.5)';
+    ctx.strokeStyle = 'rgba(255,220,100,0.55)';
     ctx.lineWidth = 1.5;
-    ctx.setLineDash([8, 6]);
-    ctx.beginPath();
-    ctx.moveTo(hsLeft.x, hsLeft.y);
-    ctx.lineTo(hsRight.x, hsRight.y);
-    ctx.stroke();
+    ctx.setLineDash([6, 5]);
+    ctx.beginPath(); ctx.moveTo(hsA.x, hsA.y); ctx.lineTo(hsB.x, hsB.y); ctx.stroke();
     ctx.setLineDash([]);
+    ctx.fillStyle = '#c9b98a'; ctx.font = '9px Georgia, serif';
+    ctx.textAlign = 'right'; ctx.textBaseline = 'top';
+    ctx.fillText('BAULK LINE', hsA.x - 4, hsA.y + 2);
     ctx.restore();
 
-    // Draw both lag balls as simple spheres
-    for (const [ball, label, color] of [
-      [lagState.playerBall, 'YOU', '#f8f1dc'],
-      [lagState.alistairBall, 'ALISTAIR', '#1a0e06']
+    // Draw both lag balls
+    for (const [ball, label, col] of [
+      [lagState.playerBall,  'YOU',      '#f5f0e8'],
+      [lagState.alistairBall,'ALISTAIR', '#222222']
     ]) {
       const s = tableToScreen(ball.x, ball.y);
       const u = unitScaleAt(ball.x, ball.y);
       const r = BALL_R * BALL_VISUAL_MULT * u;
       // Shadow
-      ctx.fillStyle = 'rgba(0,0,0,0.4)';
-      ctx.beginPath();
-      ctx.arc(s.x + r * 0.1, s.y + r * 0.18, r * 1.0, 0, Math.PI * 2);
-      ctx.fill();
-      // Ball
-      const g = ctx.createRadialGradient(s.x - r*0.35, s.y - r*0.4, r*0.1, s.x, s.y, r);
-      g.addColorStop(0, color === '#f8f1dc' ? '#fff' : '#4a3020');
-      g.addColorStop(1, color === '#f8f1dc' ? '#c9b98a' : '#000');
+      ctx.fillStyle = 'rgba(0,0,0,0.38)';
+      ctx.beginPath(); ctx.arc(s.x + 1.5, s.y + 2.5, r, 0, Math.PI*2); ctx.fill();
+      // Ball gradient
+      const g = ctx.createRadialGradient(s.x - r*0.35, s.y - r*0.4, r*0.08, s.x, s.y, r);
+      if (col === '#f5f0e8') {
+        g.addColorStop(0, '#ffffff'); g.addColorStop(1, '#c0b090');
+      } else {
+        g.addColorStop(0, '#555'); g.addColorStop(1, '#000');
+      }
       ctx.fillStyle = g;
-      ctx.beginPath();
-      ctx.arc(s.x, s.y, r, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.strokeStyle = 'rgba(0,0,0,0.4)';
-      ctx.lineWidth = 0.8;
-      ctx.stroke();
+      ctx.beginPath(); ctx.arc(s.x, s.y, r, 0, Math.PI*2); ctx.fill();
+      ctx.strokeStyle = 'rgba(0,0,0,0.5)'; ctx.lineWidth = 0.8; ctx.stroke();
       // Label
-      ctx.fillStyle = '#e8dcc3';
-      ctx.font = '10px Georgia, serif';
-      ctx.textAlign = 'center';
-      ctx.fillText(label, s.x, s.y + r + 12);
-      // Final dist label if stopped
+      ctx.fillStyle = '#e8dcc3'; ctx.font = '10px Georgia, serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+      ctx.fillText(label, s.x, s.y + r + 13);
+      // Distance if stopped
       if (ball.stopped && ball.finalDist !== null) {
-        const distStr = ball.finalDist >= 9999 ? 'OVER!' : Math.round(ball.finalDist) + 'u';
-        ctx.fillStyle = '#f7c948';
-        ctx.font = 'bold 11px Georgia, serif';
-        ctx.fillText(distStr, s.x, s.y + r + 24);
+        ctx.fillStyle = '#f7c948'; ctx.font = 'bold 10px Georgia, serif';
+        ctx.fillText(ball.finalDist >= 9999 ? 'OVER' : Math.round(ball.finalDist) + 'u', s.x, s.y + r + 25);
       }
     }
 
-    // HUD
-    ctx.fillStyle = 'rgba(20,12,8,0.88)';
-    ctx.fillRect(0, 0, W, 32);
-    ctx.fillStyle = '#f5ecd7';
-    ctx.font = 'italic bold 14px Georgia, serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('LAG FOR BREAK', W / 2, 21);
+    // Top bar
+    ctx.fillStyle = 'rgba(20,12,8,0.9)'; ctx.fillRect(0, 0, W, 32);
+    ctx.fillStyle = '#f5ecd7'; ctx.font = 'italic bold 14px Georgia, serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('LAG FOR BREAK', W/2, 16);
 
     if (lagState.phase === 'aim') {
-      // Power slider for player's lag shot
-      const pw = 28, ph = Math.min(200, H * 0.38);
-      const px = W - pw - 14, py = H - ph - 80;
-      ctx.fillStyle = 'rgba(0,0,0,0.5)';
+      // Instructions
+      ctx.fillStyle = '#c9b98a'; ctx.font = 'italic 11px Georgia, serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+      ctx.fillText('Closest to the baulk line wins. Both balls travel to the far cushion and back.', W/2, H - 14);
+
+      // Power slider
+      const pw = 32, ph = Math.min(180, H * 0.33);
+      const px = W - pw - 14, py = H - ph - 70;
+      ctx.fillStyle = 'rgba(0,0,0,0.6)';
       roundRect(ctx, px, py, pw, ph, 5); ctx.fill();
       const fh = ph * lagState.playerPower;
       const pg = ctx.createLinearGradient(0, py + ph, 0, py);
       pg.addColorStop(0, '#f7c948'); pg.addColorStop(1, '#c0392b');
-      ctx.fillStyle = pg; ctx.fillRect(px, py + ph - fh, pw, fh);
+      ctx.fillStyle = pg; ctx.fillRect(px + 2, py + ph - fh, pw - 4, fh);
       ctx.strokeStyle = '#8a6b2e'; ctx.lineWidth = 1; ctx.strokeRect(px, py, pw, ph);
       ctx.fillStyle = '#c9b98a'; ctx.font = '9px Georgia, serif';
-      ctx.textAlign = 'center'; ctx.fillText('POWER', px + pw/2, py - 4);
-
-      // SHOOT button
-      const sw = Math.min(160, W * 0.38), sh = 52;
-      const sx = 14, sy = H - sh - 16;
-      ctx.fillStyle = lagState.playerShot ? '#2a2a18' : '#7c2a1a';
-      roundRect(ctx, sx, sy, sw, sh, 8); ctx.fill();
-      ctx.strokeStyle = '#d9a679'; ctx.lineWidth = 1.5; ctx.stroke();
-      ctx.fillStyle = '#f5ecd7'; ctx.font = 'bold 17px Georgia, serif';
-      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(lagState.playerShot ? 'SHOT!' : 'LAG!', sx + sw/2, sy + sh/2);
-      lagState._shootBtn = { x: sx, y: sy, w: sw, h: sh };
+      ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+      ctx.fillText('POWER', px + pw/2, py - 4);
       lagState._powerBar = { x: px, y: py, w: pw, h: ph };
 
-      ctx.fillStyle = '#c9b98a'; ctx.font = 'italic 12px Georgia, serif';
-      ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
-      ctx.fillText('Closest to the near rail wins the break', W/2, H - 12);
+      // LAG button
+      const bw = Math.min(150, W * 0.36), bh = 52;
+      const bx = 14, by = H - bh - 14;
+      ctx.fillStyle = lagState.playerShot ? '#2a2a18' : '#7c2a1a';
+      roundRect(ctx, bx, by, bw, bh, 8); ctx.fill();
+      ctx.strokeStyle = '#d9a679'; ctx.lineWidth = 1.5; ctx.stroke();
+      ctx.fillStyle = lagState.playerShot ? '#888' : '#f5ecd7';
+      ctx.font = 'bold 18px Georgia, serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(lagState.playerShot ? 'SHOT' : 'LAG!', bx + bw/2, by + bh/2);
+      lagState._shootBtn = { x: bx, y: by, w: bw, h: bh };
     }
 
     if (lagState.phase === 'result') {
-      lagState.resultTimer--;
       const won = lagState.winner === 'player';
-      ctx.fillStyle = 'rgba(10,5,2,0.82)';
-      ctx.fillRect(0, H/2 - 70, W, 140);
+      ctx.fillStyle = 'rgba(10,5,2,0.85)';
+      ctx.fillRect(0, H/2 - 76, W, 152);
       ctx.fillStyle = won ? '#f7c948' : '#ebdab3';
       ctx.font = 'italic bold 22px Georgia, serif';
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(won ? 'YOU WIN THE LAG' : 'ALISTAIR WINS THE LAG', W/2, H/2 - 24);
-      ctx.fillStyle = '#c9b98a'; ctx.font = '13px Georgia, serif';
-      ctx.fillText(won ? 'You break.' : 'Alistair breaks.', W/2, H/2 + 12);
-      ctx.fillStyle = '#8a6b2e'; ctx.font = '11px Georgia, serif';
-      ctx.fillText('Tap to continue', W/2, H/2 + 40);
-      if (lagState.resultTimer <= 0 && lagState.active) {
-        finishLag();
-      }
+      ctx.fillText(won ? 'YOU WIN THE LAG' : 'ALISTAIR WINS', W/2, H/2 - 28);
+      ctx.fillStyle = '#c9b98a'; ctx.font = '14px Georgia, serif';
+      ctx.fillText(won ? 'You break first.' : 'Alistair breaks.', W/2, H/2 + 8);
+      ctx.fillStyle = '#8a6b2e'; ctx.font = 'italic 11px Georgia, serif';
+      ctx.fillText('Tap anywhere to continue', W/2, H/2 + 44);
+      lagState.resultTimer--;
+      if (lagState.resultTimer <= 0 && lagState.active) finishLag();
     }
   }
 
@@ -3447,8 +3453,7 @@
     if (!lagState.active) return;
     lagState.active = false;
     const playerBreaks = lagState.winner === 'player';
-    // Start the actual game
-    state = null;  // clear any stale state
+    state = null;
     newGame('vs');
     screenState = 'game';
     if (!playerBreaks) {
@@ -3459,6 +3464,7 @@
       }, 1200);
     }
   }
+
 
 
   // ============================================================================
@@ -3662,8 +3668,9 @@
         "When no pot is available or the risk is too high, play safe.\n\n" +
         "A good safety leaves the cue ball behind a colour, with the ball-on hidden or " +
         "difficult to reach without cannoning off other balls.\n\n" +
-        "Declare safety before you shoot (the SAFETY button). In tournament play, failing " +
-        "to declare means the shot is considered an attempt — if you miss, there is no foul.\n\n" +
+        "Use the SAFETY button to declare before shooting. In WPBSA rules, a safety does not " +
+        "legally require declaration — the referee judges intent. The declaration here is a " +
+        "courtesy that affects how Alistair responds.\n\n" +
         "The four standard safeties:\n" +
         "¶ Send the ball-on to the cushion and leave the cue ball tight to another ball\n" +
         "¶ Play the cue ball to the baulk cushion, leaving nothing on\n" +
@@ -3681,8 +3688,8 @@
       },
       { title: 'THE COLOURS PHASE', body:
         "Clearing the colours in sequence (yellow through black) is where frames are often won " +
-        "and lost. The positions are known — each colour must go to its spot on the way back up, " +
-        "so you can plan position play precisely.\n\n" +
+        "and lost. The positions are fixed and known in advance — each colour goes to a specific " +
+        "pocket that you choose, but the cue ball must travel predictable routes between them.\n\n" +
         "Key: coming off the green (3pts) onto the brown (4), then the brown onto the blue. " +
         "The blue-to-pink and pink-to-black angles are the most practised positions in the game.\n\n" +
         "Tournament players have these three positions memorised. The rest of the frame is " +
@@ -3798,8 +3805,9 @@
         "The incoming player nominates any ball as a substitute for the ball-on. That nominated " +
         "ball scores the value of the ball-on if potted, and the player continues their turn.\n\n" +
         "The nominated ball is treated as the ball-on in all respects for that shot only.\n\n" +
-        "If a red is the ball-on and the free ball (a colour) is potted, it counts as 1 red and " +
-        "is re-spotted. The ball-on then becomes any colour, as normal."
+        "If a red is the ball-on and the free ball (a colour) is potted, it counts as 1 red " +
+        "and is re-spotted. The ball-on then becomes any colour, as normal. The player must " +
+        "then pot a colour to continue their break — the sequence resumes as usual after the free ball."
       },
       { title: 'THE MISS RULE', body:
         "If a player fails to hit the ball-on and the referee decides they did not make a " +
@@ -3808,13 +3816,14 @@
         "their original positions and the offending player must play the shot again.\n\n" +
         "The miss rule was introduced to prevent deliberate foul play as a safety tactic. It is " +
         "strictly enforced in professional play.\n\n" +
-        "Three successive fouls from the same position = loss of frame."
+        "Note: the three-consecutive-fouls rule (loss of frame) is a separate rule from the " +
+        "miss rule, and applies across the whole frame, not just a single position."
       },
       { title: 'THE SHOT CLOCK', body:
-        "Professional snooker uses a shot clock in some formats (typically 60 seconds per shot " +
-        "in World Snooker Tour events using this system, though most major championships do not).\n\n" +
-        "This table uses 45 seconds per shot — consistent with timed snooker league formats " +
-        "used in English clubs from the late Victorian era onward.\n\n" +
+        "Professional snooker uses a shot clock in select WST events — 60 seconds per shot. " +
+        "Major championships (the Crucible, Masters, UK Championship) do not use a shot clock.\n\n" +
+        "This table uses 45 seconds per shot — a league format standard used in English club " +
+        "snooker. It creates genuine pressure without being punitive.\n\n" +
         "Clock expiry is a foul: 4 penalty points minimum, opponent receives ball-in-hand in the D."
       },
       { title: 'EQUIPMENT STANDARDS', body:
@@ -3834,7 +3843,8 @@
         "¶ Applaud good breaks from your opponent\n" +
         "¶ Do not question the referee\n" +
         "¶ Declare safety before playing one — in Victorian club play this was a point of honour\n\n" +
-        "'The score on the board does not reflect the score in the mind.' — Fred Davis, 1950"
+        "The greatest players are not those who never feel pressure. They are those who " +
+        "perform despite it. That is the whole of it."
       }
     ],
 
