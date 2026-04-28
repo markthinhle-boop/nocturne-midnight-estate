@@ -1584,13 +1584,7 @@
     _tone(220, 0.7, 0.18, t + notes.length * 0.14, 'sine');
   }
 
-  function sndCloth(totalSpeed) {
-    if (!_initAudio()) return;
-    if (!_cooldown('cloth', 80)) return;
-    if (totalSpeed < 3) return;
-    const vol = Math.min(0.12, totalSpeed * 0.002);
-    _noise(0.1, 80, 400, vol, _now());
-  }
+  function sndCloth(totalSpeed) {}  // suppressed — causes rolling click noise
 
   // ---------- Layout & projection -----------------------------------------
   //
