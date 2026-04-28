@@ -1150,6 +1150,8 @@
   }
 
   function _nextTurn(who, ballInHand) {
+    // Solo mode — always player's turn
+    if (state.mode === 'solo') who = 'player';
     state.turn = who;
     state.ballInHand = ballInHand;
     state.gamePhase = 'aiming';
