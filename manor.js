@@ -553,7 +553,9 @@ function _onHotspotTap(objectId, tapX, tapY) {
   // telescope: launch Vivienne minigame if not raining
   if (objectId === 'terrace-telescope-obj') {
     if (window._terraceRaining) {
-      // Rain — hotspot should be disabled, but guard here too
+      if (typeof showToast === 'function') {
+        showToast('The rain has taken the sky. Return when it clears — Vivienne will be here.');
+      }
       return;
     }
     _launchTelescopeMinigame();

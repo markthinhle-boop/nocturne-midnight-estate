@@ -792,11 +792,7 @@ const NocturneSound = (() => {
       }
       scheduleOwl();
 
-      // ── Rain — always on terrace, subtle ─────────────────
-      _rainStartTimer = setTimeout(() => {
-        _rainStartTimer = null;
-        if (_outdoorActive) startRain(0.18); // only start if still on terrace
-      }, 1000);
+      // ── Rain — controlled by 1/3 chance roll in roomEntered, not here ──
     }
   }
 
@@ -970,7 +966,7 @@ const NocturneSound = (() => {
       }
 
       if (isOutdoor) {
-        if (!_outdoorActive) startOutdoorAmbient(isTerrace); // true = crickets+rain
+        if (!_outdoorActive) startOutdoorAmbient(isTerrace); // true = crickets
       } else {
         if (_outdoorActive) _stopOutdoor();
       }
@@ -982,18 +978,11 @@ const NocturneSound = (() => {
         const isRaining = Math.random() < 0.333;
         window._terraceRaining = isRaining;
         if (isRaining) {
-          // Rain overrides crickets — start heavier rain
-          setTimeout(() => startRain(0.55), 1200);
-          // Disable telescope hotspot
-          NocturneEngine.emit('hotspotsUpdated', {
-            disabled: ['terrace-telescope-obj'],
-            reason: 'raining',
-          });
+          setTimeout(() => { if (_outdoorActive) startRain(0.55); }, 1200);
+          NocturneEngine.emit('hotspotsUpdated', { disabled: ['terrace-telescope-obj'] });
         } else {
           window._terraceRaining = false;
-          NocturneEngine.emit('hotspotsUpdated', {
-            disabled: [],
-          });
+          NocturneEngine.emit('hotspotsUpdated', { disabled: [] });
         }
       }
     });
