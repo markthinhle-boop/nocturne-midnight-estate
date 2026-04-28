@@ -100,23 +100,28 @@ function initAmbient() {
 
 // ── ROOM AMBIENT ───────────────────────────────────────────
 function _applyRoomAmbient(roomId) {
-  // Rain — always resolve BEFORE any early returns so it stops when leaving terrace
+  // Rain — always resolve BEFORE any early returns so it stops when leaving terrace.
+  // Roll ONCE per terrace entry. If _terraceRaining is already decided for this
+  // visit (true/false), honour it. Only roll when undefined. The roomEntered
+  // handler clears the flag when leaving terrace, so the next entry re-rolls.
+  // Fires identically in prologue and post-paywall — no gating.
   if (RAIN_ROOMS.includes(roomId)) {
-    const isRaining = Math.random() < 0.333;
-    window._terraceRaining = isRaining;
-    console.log('[NOCTURNE] terrace rain roll:', isRaining ? 'RAINING' : 'clear');
-    if (isRaining) {
-      _startRain();
+    if (window._terraceRaining === undefined) {
+      const isRaining = Math.random() < 0.333;
+      window._terraceRaining = isRaining;
+      console.log('[NOCTURNE] terrace rain roll:', isRaining ? 'RAINING' : 'clear');
+    }
+    if (window._terraceRaining) {
+      if (!_rainActive) _startRain();
       setTimeout(() => {
         const hs = document.getElementById('hs-terrace-telescope-obj');
         if (hs) hs.remove();
       }, 300);
     } else {
-      window._terraceRaining = false;
-      _stopRain();
+      if (_rainActive) _stopRain();
     }
   } else {
-    window._terraceRaining = false;
+    window._terraceRaining = undefined;
     if (_rainActive) _stopRain();
   }
 
