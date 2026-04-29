@@ -734,7 +734,7 @@ function _renderWineRegionMap(container) {
     const visited = _wineVisited[h.domain].has(id);
     const color = visited
       ? (h.domain === 'white' ? '#d9c79a' : '#a83838')
-      : 'rgba(217,199,154,0.4)';
+      : (h.domain === 'white' ? 'rgba(217,199,154,0.45)' : 'rgba(168,56,56,0.55)');
     const glow = visited
       ? (h.domain === 'white' ? '0 0 14px #d9c79a, 0 0 28px rgba(217,199,154,0.5)' : '0 0 14px #a83838, 0 0 28px rgba(168,56,56,0.5)')
       : 'none';
