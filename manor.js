@@ -725,7 +725,7 @@ function _renderWineRegionMap(container) {
            data-victorian="${h.victorian}"
            title="${h.label}">
         <div class="wm-dot" style="background:${color};box-shadow:${glow};"></div>
-        <div class="wm-label">${h.label}<span class="wm-victorian">${h.victorian}</span></div>
+        <div class="wm-label">${h.label}${h.victorian !== h.label ? `<span class="wm-victorian">${h.victorian}</span>` : ''}</div>
       </div>`;
   }).join('');
 
@@ -804,10 +804,7 @@ function _renderWineRegionMap(container) {
         white-space:nowrap;text-align:center;
         pointer-events:none;
         display:flex;flex-direction:column;align-items:center;gap:1px;
-        text-shadow:
-          -1px -1px 0 #000, 1px -1px 0 #000,
-          -1px  1px 0 #000, 1px  1px 0 #000,
-          0 0 6px rgba(0,0,0,1), 0 0 12px rgba(0,0,0,0.9);
+        text-shadow: 0 1px 3px rgba(0,0,0,1), 0 0 6px rgba(0,0,0,0.9);
       }
       .wm-victorian {
         font-size:10px;color:#8b7855;display:block;
