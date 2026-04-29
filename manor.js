@@ -663,6 +663,14 @@ function _launchWineDuel() {
   _renderWineEntry(container);
 }
 
+window._closeWineDuel = function() {
+  const overlay = document.getElementById('wine-duel-overlay');
+  if (overlay) overlay.style.display = 'none';
+  // Reset container to entry screen so next visit starts fresh
+  const container = document.getElementById('wine-duel-container');
+  if (container && window.WINE_DUEL) _renderWineEntry(container);
+};
+
 function _renderWineEntry(container) {
   const WD = window.WINE_DUEL;
   const paid = window.gameState && window.gameState.paidTierUnlocked;
@@ -734,7 +742,7 @@ function _renderWineRegionMap(container) {
     const visited = _wineVisited[h.domain].has(id);
     const color = visited
       ? (h.domain === 'white' ? '#d9c79a' : '#a83838')
-      : 'rgba(217,199,154,0.4)';
+      : (h.domain === 'white' ? 'rgba(217,199,154,0.45)' : 'rgba(168,56,56,0.55)');
     const glow = visited
       ? (h.domain === 'white' ? '0 0 14px #d9c79a, 0 0 28px rgba(217,199,154,0.5)' : '0 0 14px #a83838, 0 0 28px rgba(168,56,56,0.5)')
       : 'none';
@@ -1241,9 +1249,6 @@ window._showWineGlass = function() {
 
       <!-- Progress + counter -->
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
-        <button onclick="document.getElementById('wine-duel-overlay').style.display='none'"
-                style="background:transparent;border:none;color:rgba(217,199,154,0.4);
-                       font-size:16px;cursor:pointer;padding:0;line-height:1;flex-shrink:0;">✕</button>
         <div style="display:flex;flex:1;gap:1px;">${pips}</div>
         <div style="font-size:10px;letter-spacing:0.2em;text-transform:uppercase;
                     color:#8b7855;white-space:nowrap;">${glassNum} / ${total}</div>
