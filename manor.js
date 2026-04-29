@@ -725,7 +725,7 @@ function _renderWineRegionMap(container) {
            data-victorian="${h.victorian}"
            title="${h.label}">
         <div class="wm-dot" style="background:${color};box-shadow:${glow};"></div>
-        ${!isMobile ? `<div class="wm-label">${h.label}<span class="wm-victorian">${h.victorian}</span></div>` : ''}
+        <div class="wm-label">${h.label}<span class="wm-victorian">${h.victorian}</span></div>
       </div>`;
   }).join('');
 
@@ -812,15 +812,27 @@ function _renderWineRegionMap(container) {
       .wm-victorian {
         font-size:10px;color:#8b7855;display:block;
       }
+      /* Unvisited — white regions gold, red regions rose */
+      .wm-hotspot.white .wm-label { color:#f0e0a0; }
+      .wm-hotspot.red   .wm-label { color:#e8a0a0; }
+      /* Visited — brighter */
       .wm-hotspot.visited.white .wm-label { color:#d9c79a; }
       .wm-hotspot.visited.red   .wm-label { color:#c98787; }
+      /* Victorian name subtitle */
+      .wm-hotspot.white .wm-victorian { color:#c4a85a; }
+      .wm-hotspot.red   .wm-victorian { color:#b07070; }
 
-      /* Mobile — larger dots, no persistent labels */
+      /* Mobile — larger dots, smaller labels */
       .wm-hotspot.mobile .wm-dot {
-        width:20px; height:20px;
-        border:2px solid rgba(255,255,255,0.5);
+        width:14px; height:14px;
+        border:2px solid rgba(255,255,255,0.4);
       }
-      .wm-hotspot.mobile .wm-label { display:none; }
+      .wm-hotspot.mobile .wm-label {
+        font-size:9px;
+      }
+      .wm-hotspot.mobile .wm-victorian {
+        font-size:8px;
+      }
 
       /* Mobile tooltip — shown via JS on tap, positioned above dot */
       .wm-tooltip {
