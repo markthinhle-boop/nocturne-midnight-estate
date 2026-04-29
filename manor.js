@@ -663,14 +663,6 @@ function _launchWineDuel() {
   _renderWineEntry(container);
 }
 
-window._closeWineDuel = function() {
-  const overlay = document.getElementById('wine-duel-overlay');
-  if (overlay) overlay.style.display = 'none';
-  // Reset container to entry screen so next visit starts fresh
-  const container = document.getElementById('wine-duel-container');
-  if (container && window.WINE_DUEL) _renderWineEntry(container);
-};
-
 function _renderWineEntry(container) {
   const WD = window.WINE_DUEL;
   const paid = window.gameState && window.gameState.paidTierUnlocked;
@@ -742,7 +734,7 @@ function _renderWineRegionMap(container) {
     const visited = _wineVisited[h.domain].has(id);
     const color = visited
       ? (h.domain === 'white' ? '#d9c79a' : '#a83838')
-      : (h.domain === 'white' ? 'rgba(217,199,154,0.45)' : 'rgba(168,56,56,0.55)');
+      : 'rgba(217,199,154,0.4)';
     const glow = visited
       ? (h.domain === 'white' ? '0 0 14px #d9c79a, 0 0 28px rgba(217,199,154,0.5)' : '0 0 14px #a83838, 0 0 28px rgba(168,56,56,0.5)')
       : 'none';
@@ -754,7 +746,9 @@ function _renderWineRegionMap(container) {
            data-label="${h.label}"
            data-victorian="${h.victorian}"
            title="${h.label}">
-        <div class="wm-dot" style="background:${color};box-shadow:${glow};"></div>
+        <div class="wm-dot" style="background:${color};box-shadow:${glow};display:flex;align-items:center;justify-content:center;">
+          ${visited ? '<span style="color:#2ecc71;font-size:9px;line-height:1;font-weight:700;">✓</span>' : ''}
+        </div>
         <div class="wm-label">${h.label}${h.victorian !== h.label ? `<span class="wm-victorian">${h.victorian}</span>` : ''}</div>
       </div>`;
   }).join('');
