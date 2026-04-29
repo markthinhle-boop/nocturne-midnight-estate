@@ -1313,10 +1313,10 @@ function _revealEstateCorridorsIfReady() {
     { id: 'mle-study-map-room',             a: 'study',        b: 'map-room' },
     { id: 'mle-map-room-dining-room',       a: 'map-room',     b: 'dining-room' },
     { id: 'mle-map-room-trophy-room',       a: 'map-room',     b: 'trophy-room' },
-    { id: 'mle-dining-room-billiard-room',  a: 'dining-room',  b: 'billiard-room' },
+    { id: 'mle-dining-room-billiard-room',  a: 'dining-room',  b: 'conservatory' },
     { id: 'mle-trophy-room-weapons-room',   a: 'trophy-room',  b: 'weapons-room' },
-    { id: 'mle-billiard-room-conservatory', a: 'billiard-room',b: 'conservatory' },
-    { id: 'mle-weapons-room-conservatory',  a: 'weapons-room', b: 'conservatory' },
+    { id: 'mle-billiard-room-conservatory', a: 'conservatory', b: 'billiard-room' },
+    { id: 'mle-weapons-room-conservatory',  a: 'weapons-room', b: 'billiard-room' },
   ];
   CORRIDOR_LINES.forEach(({ id, a, b }) => {
     const line = document.getElementById(id);
@@ -2638,11 +2638,11 @@ const NAV_LAYOUT = {
   'study':        { rows: [['foyer'], ['map-room']],                                                 split: 1 },
   // ── EAST WING — symmetric chain matches the map layout ──
   'map-room':     { rows: [['study'], ['dining-room', 'trophy-room']],                               split: 1 },
-  'dining-room':  { rows: [['map-room'], ['billiard-room']],                                         split: 1 },
-  'trophy-room':  { rows: [['map-room'], ['weapons-room']],                                         split: 1 },
-  'billiard-room':{ rows: [['dining-room'], ['conservatory']],                                       split: 1 },
-  'weapons-room': { rows: [['trophy-room'], ['conservatory']],                                       split: 1 },
-  'conservatory': { rows: [['billiard-room'], ['weapons-room']],                                     split: 1 },
+  'dining-room':  { rows: [['map-room'], ['conservatory']],                                          split: 1 },
+  'trophy-room':  { rows: [['map-room'], ['weapons-room']],                                          split: 1 },
+  'conservatory': { rows: [['dining-room'], ['billiard-room']],                                      split: 1 },
+  'weapons-room': { rows: [['trophy-room'], ['billiard-room']],                                      split: 1 },
+  'billiard-room':{ rows: [['conservatory', 'weapons-room']],                                        split: 0 },
   'archive-path': { rows: [['physicians', 'smoking']],                                                split: 0 },
   'terrace':      { rows: [['gallery'], ['ballroom'], ['maids-quarters', 'groundskeeper-cottage']], split: 1 },
   'maids-quarters': { rows: [['terrace'], ['groundskeeper-cottage']], split: 1 },
