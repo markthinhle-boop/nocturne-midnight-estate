@@ -1380,6 +1380,15 @@ const ROOM_OBJECTS = {
     tap_1: "A sealed mahogany and brass display case. The lock mechanism is not a keyhole — something else controls it.",
     item_id: null, item_at_depth: null, is_essential: false, is_deception_item: false,
     slow_drag: false, max_depth: 1,
+    hotspot: { left: 77, top: 49, width: 21, height: 26 },
+  },
+
+  // ── WEAPONS ROOM ───────────────────────────────────────────
+  "weapons-case-obj": {
+    room: "weapons-room",
+    tap_1: "A sealed mahogany and brass display case. The lock mechanism is not a keyhole — something else controls it.",
+    item_id: null, item_at_depth: null, is_essential: false, is_deception_item: false,
+    slow_drag: false, max_depth: 1,
     hotspot: { left: 70, top: 48, width: 22, height: 28 },
   },
 
@@ -2024,6 +2033,19 @@ function tapObject(objectId, tapX, tapY) {
     } else {
       showToast('Chess script not loaded. Add <script src="chess.js"></script> to index.html.');
       console.error('[chess] window.openChess is undefined — chess.js is not loaded');
+    }
+    return;
+  }
+
+  // weapons-case-obj — launches The Armoury escape room
+  if (objectId === 'weapons-case-obj') {
+    if (typeof window.openArmory === 'function') {
+      const scrollX = (typeof window.getArmoryScrollX === 'function')
+        ? window.getArmoryScrollX() : 0;
+      window.openArmory(scrollX);
+    } else {
+      showToast('Armoury script not loaded. Add <script src="armory-escape.js"></script> to index.html.');
+      console.error('[armoury] window.openArmory is undefined — armory-escape.js is not loaded');
     }
     return;
   }

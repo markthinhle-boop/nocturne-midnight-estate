@@ -556,96 +556,103 @@
   //   Writing table:   xf 0.70-1.00  yf 0.60-0.88
 
   function buildHotspots(s) {
-    const L = _layout; // current layout, set each frame
+    const L = _layout;
     if (!L) return [];
 
+    // All xf/yf fractions mapped exactly to nocturne-room-weapons-bg.png (1536×768)
+    // Door is implied off-screen left — player pans left to find it.
+    // Image at 2:1 fills screen width; at default zoom left edge starts at screen left.
+
     const hs = [
-      // ── DOOR — far left, implied (player looks left) ─────────────────────
+      // ── DOOR — far left wall, implied. Hotspot at leftmost edge ──────────
       {
         id: 'door', label: 'Door',
-        xf: 0.00, yf: 0.15, wf: 0.038, hf: 0.68,
+        xf: -0.05, yf: 0.10, wf: 0.06, hf: 0.80,
         onTap: (s) => _tapDoor(s),
-        examineText: null, // handled in _tapDoor
         pulse: !s.escaped,
       },
 
-      // ── SWORD RACK ───────────────────────────────────────────────────────
-      // Four blade rows — rack positions map to rackOrder shuffled swords
-      { id: 'rack_0', label: null, xf: 0.03, yf: 0.10, wf: 0.18, hf: 0.12,
+      // ── SWORD CABINET + RACK ─────────────────────────────────────────────
+      // Cabinet occupies x 0.00–0.22 of image
+      // 5 blade rows visible; we use top 4 (rows at y 0.08, 0.28, 0.45, 0.60)
+      { id: 'rack_0', label: 'Dress Sword',
+        xf: 0.01, yf: 0.06, wf: 0.20, hf: 0.14,
         onTap: (s) => _tapRackBlade(s, 0), pulse: !s.puzzles.sequence.solved },
-      { id: 'rack_1', label: null, xf: 0.03, yf: 0.27, wf: 0.18, hf: 0.12,
+      { id: 'rack_1', label: 'Cavalry Sabre',
+        xf: 0.01, yf: 0.25, wf: 0.20, hf: 0.14,
         onTap: (s) => _tapRackBlade(s, 1), pulse: !s.puzzles.sequence.solved },
-      { id: 'rack_2', label: null, xf: 0.03, yf: 0.43, wf: 0.18, hf: 0.12,
+      { id: 'rack_2', label: 'Presentation Foil',
+        xf: 0.01, yf: 0.42, wf: 0.20, hf: 0.14,
         onTap: (s) => _tapRackBlade(s, 2), pulse: !s.puzzles.sequence.solved },
-      { id: 'rack_3', label: null, xf: 0.03, yf: 0.59, wf: 0.18, hf: 0.12,
+      { id: 'rack_3', label: 'Naval Cutlass',
+        xf: 0.01, yf: 0.57, wf: 0.20, hf: 0.14,
         onTap: (s) => _tapRackBlade(s, 3), pulse: !s.puzzles.sequence.solved },
 
-      // ── CABINET NOTE — inside cabinet base, only visible after examine ──
+      // Cabinet base — note pinned inside
       { id: 'cabinet_note', label: 'Cabinet Note',
-        xf: 0.01, yf: 0.76, wf: 0.10, hf: 0.10,
+        xf: 0.01, yf: 0.74, wf: 0.14, hf: 0.14,
         onTap: (s) => _tapCabinetNote(s),
-        // Paid: note only visible after examining at least 2 swords (harder find)
         gate: () => s.mode!=='paid' || [0,1,2,3].filter(i=>s.examined['blade_'+i]).length>=2,
         gateMsg: "The base of the cabinet. Nothing is immediately visible.",
         pulse: !s.examined['cabinet_note'] && !s.puzzles.sequence.solved && s.mode!=='paid' },
 
-      // ── HIDDEN PANEL — wall between rack and fireplace ──────────────────
+      // ── HIDDEN PANEL — dark strip between cabinet and fireplace ──────────
       { id: 'hidden_panel', label: 'Wall Panel',
-        xf: 0.23, yf: 0.28, wf: 0.09, hf: 0.44,
+        xf: 0.22, yf: 0.24, wf: 0.10, hf: 0.52,
         onTap: (s) => _tapPanel(s),
         pulse: s.puzzles.sequence.solved && !s.puzzles.sequence.panelOpen },
 
-      // ── MANTLE ── (examine for diagram clue) ────────────────────────────
+      // ── MANTLE — examine for diagram clue ────────────────────────────────
       { id: 'mantle', label: 'Mantle',
-        xf: 0.34, yf: 0.26, wf: 0.32, hf: 0.10,
+        xf: 0.32, yf: 0.27, wf: 0.36, hf: 0.10,
         onTap: (s) => _tapMantle(s),
         pulse: s.puzzles.sequence.solved && !s.examined['mantle'] },
 
-      // ── LEFT CANDELABRA — draggable puzzle ──────────────────────────────
+      // ── LEFT CANDELABRA — draggable ───────────────────────────────────────
       { id: 'candle', label: 'Candelabra',
-        xf: 0.37, yf: 0.14, wf: 0.07, hf: 0.18,
+        xf: 0.345, yf: 0.14, wf: 0.06, hf: 0.14,
         onTap: (s) => _openPuzzle('candle'),
         gate: () => s.examined['mantle'],
-        gateMsg: "The candelabra. It sits in a brass stud on the mantle. There are others.",
+        gateMsg: "The candelabra sits in a brass stud on the mantle. There are others.",
         pulse: s.examined['mantle'] && !s.puzzles.candle.solved },
 
-      // ── COAT OF ARMS — above fireplace ──────────────────────────────────
+      // ── COAT OF ARMS — above fireplace ────────────────────────────────────
       { id: 'coat_of_arms', label: 'Coat of Arms',
-        xf: 0.39, yf: 0.00, wf: 0.22, hf: 0.27,
+        xf: 0.38, yf: 0.00, wf: 0.24, hf: 0.28,
         onTap: (s) => _openPuzzle('arms'),
         gate: () => s.puzzles.candle.solved,
         gateMsg: "The Ashworth coat of arms. Three charges on the shield. The order is not obvious.",
         pulse: s.puzzles.candle.solved && !s.puzzles.arms.solved },
 
-      // ── FIREPLACE — examine only ─────────────────────────────────────────
+      // ── FIREPLACE — examine only (red herring) ────────────────────────────
       { id: 'fireplace', label: 'Fireplace',
-        xf: 0.34, yf: 0.35, wf: 0.32, hf: 0.53,
+        xf: 0.32, yf: 0.30, wf: 0.36, hf: 0.58,
         onTap: (s) => {
           s.examined['fireplace']=true;
           notify(s,"The fire is low. The grate is cast iron — ornate, heavy. The ash below is old. There is nothing here that helps you.",'examine');
           const l=northcottSay(s,'herring_fireplace');if(l)_dlg(s,l);
         }},
 
-      // ── PORTRAIT — examine, clue about sword ────────────────────────────
+      // ── PORTRAIT — right wall (red herring / clue) ───────────────────────
       { id: 'portrait', label: 'Portrait',
-        xf: 0.72, yf: 0.04, wf: 0.17, hf: 0.46,
+        xf: 0.71, yf: 0.03, wf: 0.17, hf: 0.50,
         onTap: (s) => _tapPortrait(s) },
 
-      // ── GLASS CASE — puzzle trigger ──────────────────────────────────────
+      // ── GLASS CASE — far right on table ──────────────────────────────────
       { id: 'glass_case', label: 'Glass Case',
-        xf: 0.78, yf: 0.48, wf: 0.20, hf: 0.27,
+        xf: 0.77, yf: 0.49, wf: 0.21, hf: 0.26,
         onTap: (s) => _openPuzzle('case'),
         gate: () => s.puzzles.arms.solved,
         gateMsg: "A sealed mahogany and brass display case. The lock is integrated — no keyhole. Something else controls it.",
         pulse: s.puzzles.arms.solved && !s.puzzles.case.solved },
 
-      // ── WRITING TABLE — notebook (free) or empty (paid) ─────────────────
+      // ── WRITING TABLE ─────────────────────────────────────────────────────
       { id: 'writing_table', label: 'Writing Table',
-        xf: 0.70, yf: 0.64, wf: 0.15, hf: 0.14,
+        xf: 0.70, yf: 0.64, wf: 0.16, hf: 0.22,
         onTap: (s) => _tapTable(s),
         modeOnly: ['free', 'paid'] },
 
-      // ── FALSE KEY DRAWER (paid only) — openable, leads nowhere
+      // ── FALSE KEY DRAWER (paid only) ──────────────────────────────────────
       { id: 'false_key_drawer', label: 'Locked Drawer',
         xf: 0.74, yf: 0.70, wf: 0.08, hf: 0.06,
         modeOnly: ['paid'],
@@ -665,8 +672,7 @@
         pulse: !s.examined['false_key_drawer'] && s.mode==='paid' },
     ];
 
-    return hs;
-  }
+    return hs;  }
 
   /* =========================================================================
    * HOTSPOT TAP HANDLERS
@@ -1265,11 +1271,35 @@
 
   function _openPuzzle(id) {
     _activePuzzle = id;
+    // Enable canvas touch interception for puzzle overlay
+    if (_canvas) {
+      _canvas.style.pointerEvents = 'auto';
+      _canvas.style.touchAction   = 'none';
+      _canvas.addEventListener('mousedown',  _onDown);
+      _canvas.addEventListener('mousemove',  _onMove);
+      _canvas.addEventListener('mouseup',    _onUp);
+      _canvas.addEventListener('touchstart', _onDown, { passive: false });
+      _canvas.addEventListener('touchmove',  _onMove, { passive: false });
+      _canvas.addEventListener('touchend',   _onUp,   { passive: false });
+    }
     if (id === 'case' && _state) cspOpen(_state);
     _framesSince = 0;
     SND.tap();
   }
-  function _closePuzzle() { _activePuzzle = null; _pressing = false; _framesSince = 0; }
+  function _closePuzzle() {
+    _activePuzzle = null; _pressing = false; _framesSince = 0;
+    // Return canvas to passthrough so manor can pan again
+    if (_canvas) {
+      _canvas.style.pointerEvents = 'none';
+      _canvas.style.touchAction   = '';
+      _canvas.removeEventListener('mousedown',  _onDown);
+      _canvas.removeEventListener('mousemove',  _onMove);
+      _canvas.removeEventListener('mouseup',    _onUp);
+      _canvas.removeEventListener('touchstart', _onDown);
+      _canvas.removeEventListener('touchmove',  _onMove);
+      _canvas.removeEventListener('touchend',   _onUp);
+    }
+  }
 
   function puzzleDown(e, px, py, W, H, s) {
     if (!_activePuzzle) return false;
@@ -1304,7 +1334,20 @@
    * ======================================================================= */
   let _layout = null;
 
+  function _getLiveScrollX() {
+    // Read actual pixel offset of room bg from screen left edge
+    if (typeof window.getArmoryScrollX === 'function') return window.getArmoryScrollX();
+    // Fallback: read bg element directly
+    const roomId = (window.gameState && window.gameState.currentRoom) || '';
+    const room = document.getElementById('room-' + roomId);
+    const bg = room ? room.querySelector('.room-bg') : null;
+    if (bg) { const r = bg.getBoundingClientRect(); return Math.max(0, -r.left); }
+    return 0;
+  }
+
   function renderOverlay(ctx, W, H, s, animT) {
+    // Read live scroll position each frame — room may be panning
+    s._scrollX = _getLiveScrollX();
     _layout = imgLayout(W, H);
     const L = _layout;
 
@@ -1853,12 +1896,22 @@
       }
     }
 
+    // Enable canvas pointer-events only when overlay needs interaction
+    if(_canvas){
+      const needsPointer=s.phase==='intro'||s.phase==='summary'||!!_activePuzzle||s._nbOpen||!!s._discovery;
+      const pe=needsPointer?'auto':'none';
+      if(_canvas.style.pointerEvents!==pe){
+        _canvas.style.pointerEvents=pe;
+        _canvas.style.touchAction=needsPointer?'none':'';
+      }
+    }
     if(s.phase==='intro'){
       _drawIntro(_ctx,_canvas.width,_canvas.height);
     } else if(s.phase==='play'){
       renderOverlay(_ctx,_canvas.width,_canvas.height,s,_animT);
       puzzleRender(_ctx,_canvas.width,_canvas.height,s);
       if(s._nbOpen)_renderNotebook(_ctx,_canvas.width,_canvas.height,s);
+      if(s._discovery){}// handled in renderOverlay
     } else if(s.phase==='summary'){
       _drawSummary(_ctx,_canvas.width,_canvas.height,s);
     }
@@ -1878,50 +1931,67 @@
   }
 
   function _onDown(e){
-    if(e.cancelable)e.preventDefault();
+    // Only initialise audio — don't prevent default (manor handles pan/pinch)
     aInit();aResume();
     const p=_gP(e);_pdX=p.x;_pdY=p.y;_pdT=Date.now();_pDown=true;_framesSince=0;
     const s=_state;if(!s)return;
 
+    // Discovery overlay — needs pointer-events back on canvas temporarily
+    if(s._discovery&&s._discoveryRect){
+      if(p.x>=s._discoveryRect.x&&p.x<=s._discoveryRect.x+s._discoveryRect.w&&
+         p.y>=s._discoveryRect.y&&p.y<=s._discoveryRect.y+s._discoveryRect.h){
+        s._discovery=null;s._discoveryFade=0;s._discoveryRect=null;
+        notify(s,'Use the sword tip on the door lock mechanism to clear the jam.','item');
+      }
+      return;
+    }
+
+    // Intro / summary — full intercept
     if(s.phase==='intro'){
-      if(_hit(p.x,p.y,_introRects.enter)){s.phase='play';_introFade=0;return;}
-      if(_hit(p.x,p.y,_introRects.leave)){closeArmory();return;}
+      if(_hit(p.x,p.y,_introRects.enter)){s.phase='play';_introFade=0;}
+      else if(_hit(p.x,p.y,_introRects.leave)){closeArmory();}
       return;
     }
     if(s.phase==='summary'){
-      if(_summaryClose&&_hit(p.x,p.y,_summaryClose)){closeArmory();}
+      if(_summaryClose&&_hit(p.x,p.y,_summaryClose))closeArmory();
       return;
     }
 
-    // Notebook
+    // Notebook overlay
     if(s._nbOpen){
       const nr=s._nbRects||{};
-      if(_hit(p.x,p.y,nr.close)){s._nbOpen=false;return;}
-      if(_hit(p.x,p.y,nr.prev)){s._nbPage=Math.max(0,s._nbPage-1);return;}
-      if(_hit(p.x,p.y,nr.next)){s._nbPage=Math.min(NB_PAGES.length-1,s._nbPage+1);return;}
+      if(_hit(p.x,p.y,nr.close)){s._nbOpen=false;}
+      else if(_hit(p.x,p.y,nr.prev)){s._nbPage=Math.max(0,s._nbPage-1);}
+      else if(_hit(p.x,p.y,nr.next)){s._nbPage=Math.min(NB_PAGES.length-1,s._nbPage+1);}
       return;
     }
 
-    // Active puzzle
+    // Active puzzle — intercept (puzzle fills screen)
     if(_activePuzzle){
       puzzleDown(e,p.x,p.y,_canvas.width,_canvas.height,s);
       if(_activePuzzle==='case'&&cspPressStart(p.x,p.y,s))_pressing=true;
       return;
     }
 
-    // HUD yield
+    // HUD yield — intercept only if tapped
     if(s._hudRects&&_hit(p.x,p.y,s._hudRects.yield)){_yield(s);return;}
 
-    // Inventory
-    if(s._invRects){for(const ir of s._invRects){if(_hit(p.x,p.y,ir)){s._sel=s._sel===ir.id?null:ir.id;SND.tap();return;}}}
+    // Inventory tap
+    if(s._invRects){
+      for(const ir of s._invRects){
+        if(_hit(p.x,p.y,ir)){s._sel=s._sel===ir.id?null:ir.id;SND.tap();return;}
+      }
+    }
+    // Otherwise: fall through — manor handles pan/pinch on rooms-container
   }
 
   function _onMove(e){
-    if(e.cancelable)e.preventDefault();
-    if(!_pDown||!_state)return;_framesSince=0;
+    // Only handle if puzzle active — manor handles everything else
+    if(!_pDown||!_state||_state._nbOpen||_state.phase!=='play')return;
+    if(!_activePuzzle)return;
     const p=_gP(e);
-    if(_state._nbOpen||_state.phase!=='play')return;
-    if(_activePuzzle)puzzleMove(e,p.x,p.y,_canvas.width,_canvas.height,_state);
+    _framesSince=0;
+    puzzleMove(e,p.x,p.y,_canvas.width,_canvas.height,_state);
   }
 
   function _onUp(e){
@@ -1929,8 +1999,9 @@
     if(!_state||_state.phase!=='play'){_pDown=false;return;}
     if(_state._nbOpen){_pDown=false;return;}
     if(_activePuzzle){puzzleUp(e,p.x,p.y,_state);_pDown=false;return;}
+    // Tap = short duration + small movement — hotspot interaction
     const dx=Math.abs(p.x-_pdX),dy=Math.abs(p.y-_pdY),dt=Date.now()-_pdT;
-    if(dx<14&&dy<14&&dt<320)_tap(p.x,p.y,_state);
+    if(dx<18&&dy<18&&dt<380)_tap(p.x,p.y,_state);
     _pDown=false;
   }
 
@@ -1978,15 +2049,18 @@
     if(_modal)return;
     const saved=loadState();
     _modal=document.createElement('div');
-    _modal.style.cssText='position:fixed;inset:0;z-index:9999;background:transparent;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none;';
+    _modal.style.cssText='position:fixed;inset:0;z-index:9999;background:transparent;overflow:hidden;pointer-events:none;user-select:none;-webkit-user-select:none;';
     _canvas=document.createElement('canvas');
-    _canvas.style.cssText='display:block;width:100%;height:100%;touch-action:none;background:transparent;';
+    _canvas.style.cssText='display:block;width:100%;height:100%;background:transparent;pointer-events:none;';
     _modal.appendChild(_canvas);document.body.appendChild(_modal);
     _ctx=_canvas.getContext('2d');_fit();
     window.addEventListener('resize',_fit);window.addEventListener('orientationchange',_fit);
-    _canvas.addEventListener('mousedown',_onDown);_canvas.addEventListener('mousemove',_onMove);_canvas.addEventListener('mouseup',_onUp);
-    _canvas.addEventListener('touchstart',_onDown,{passive:false});_canvas.addEventListener('touchmove',_onMove,{passive:false});
-    _canvas.addEventListener('touchend',_onUp,{passive:false});_canvas.addEventListener('touchcancel',_onUp,{passive:false});
+    // Touch/mouse goes to rooms-container (manor pan/zoom) during exploration.
+    // We only intercept document-level touchend for tap detection.
+    document.addEventListener('mousedown',  _onDown, true);
+    document.addEventListener('mouseup',    _onUp,   true);
+    document.addEventListener('touchstart', _onDown, { capture:true, passive:true });
+    document.addEventListener('touchend',   _onUp,   { capture:true, passive:true });
 
     _state=saved?restoreState(saved):createState();
     _state._scrollX=initScrollX||0;
@@ -2012,6 +2086,10 @@
     _modal=null;_canvas=null;_ctx=null;_state=null;_activePuzzle=null;
     _pDown=false;_pressing=false;
     window.removeEventListener('resize',_fit);window.removeEventListener('orientationchange',_fit);
+    document.removeEventListener('mousedown',  _onDown, true);
+    document.removeEventListener('mouseup',    _onUp,   true);
+    document.removeEventListener('touchstart', _onDown, true);
+    document.removeEventListener('touchend',   _onUp,   true);
   }
 
   window.openArmory=openArmory;
