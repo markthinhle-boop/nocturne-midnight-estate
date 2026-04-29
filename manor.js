@@ -647,62 +647,89 @@ function _launchWineDuel() {
   overlay.appendChild(container);
   document.body.appendChild(overlay);
 
-  // Launch: start Act 1 (teaching) if not done, else go straight to duel
-  _runWineDuelFlow(container);
+  // Show entry choice: Study or Duel
+  _renderWineEntry(container);
 }
 
-function _runWineDuelFlow(container) {
-  if (!window.WINE_DUEL) return;
+function _renderWineEntry(container) {
   const WD = window.WINE_DUEL;
+  const speaker = WD && WD.isRevealed() ? 'steward' : 'figure';
+  const intro = WD && WD.isRevealed()
+    ? 'Sir. The table is set. You may study the wines before you guess, or you may begin immediately. The choice is yours.'
+    : 'The table is set. Study the wines first, or begin the duel. Your choice.';
 
-  // If teaching not done yet — show Act 1 region map
-  if (!WD.act1Done()) {
-    _renderWineRegionMap(container);
-    return;
-  }
+  container.innerHTML = `
+    <div class="wd-panel" style="text-align:center;">
+      <div class="wd-region-name" style="margin-bottom:6px;">The Dining Room</div>
+      <div class="wd-scene" style="margin-bottom:28px;border:none;padding:0;">${intro}</div>
+      <div style="display:flex;flex-direction:column;gap:14px;align-items:center;">
+        <button class="wd-btn" style="width:260px;" onclick="window._openWineTeaching()">Study the wines</button>
+        <button class="wd-btn" style="width:260px;" onclick="window._openWineDuel()">Begin the duel</button>
+      </div>
+    </div>
+  `;
+}
 
-  // Teaching done — show reveal beat if not yet revealed
+window._openWineTeaching = function() {
+  const container = document.getElementById('wine-duel-container');
+  if (!container) return;
+  _renderWineRegionMap(container);
+};
+
+window._openWineDuel = function() {
+  const container = document.getElementById('wine-duel-container');
+  if (!container) return;
+  const WD = window.WINE_DUEL;
   if (!WD.isRevealed()) {
     _renderWineReveal(container);
     return;
   }
-
-  // Ready for duel
   _renderWineDuel(container);
+};
+
+function _runWineDuelFlow(container) {
+  _renderWineEntry(container);
 }
 
 function _renderWineRegionMap(container) {
   const WD = window.WINE_DUEL;
-  const allIds = WD.all;
-  const whiteDone = WD.state.act1WhiteComplete;
-  const redDone   = WD.state.act1RedComplete;
 
   container.innerHTML = `
     <div class="wd-panel" style="max-width:660px;width:min(92vw,660px);">
-      <div class="wd-region-name" style="font-size:20px;margin-bottom:6px;">The Dining Room</div>
-      <div style="font-size:13px;letter-spacing:0.14em;text-transform:uppercase;color:#8b7855;margin-bottom:22px;">
-        ${!whiteDone && !redDone ? 'Choose a region to begin.' : !whiteDone ? 'Continue with the whites.' : !redDone ? 'Continue with the reds.' : 'All regions visited. The table will pour.'}
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+        <div class="wd-region-name" style="font-size:18px;margin-bottom:0;">The Wines</div>
+        <button class="wd-btn" style="padding:7px 16px;font-size:12px;" onclick="window._backToWineEntry()">← Back</button>
       </div>
+      <div style="font-size:13px;color:#8b7855;margin-bottom:20px;">Tap any region to learn about it. Begin the duel whenever you are ready.</div>
+
       <div style="margin-bottom:10px;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:#8b7855;">White Wines</div>
       <div class="wd-map-regions" style="margin-bottom:24px;">
         ${WD.whites.map(id => {
           const r = WD.regions[id];
-          const visited = WD.state.act1WhiteComplete || WD.state['visited_'+id];
+          const visited = _wineVisited.white.has(id);
           return `<div class="wd-map-region ${visited?'visited':''}" onclick="window._visitWineRegion('${id}','white')">${r.displayName}<br><span style="font-size:11px;opacity:0.6">${r.victorianName}</span></div>`;
         }).join('')}
       </div>
+
       <div style="margin-bottom:10px;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:#8b7855;">Red Wines</div>
-      <div class="wd-map-regions">
+      <div class="wd-map-regions" style="margin-bottom:24px;">
         ${WD.reds.map(id => {
           const r = WD.regions[id];
-          const visited = WD.state.act1RedComplete || WD.state['visited_'+id];
+          const visited = _wineVisited.red.has(id);
           return `<div class="wd-map-region ${visited?'visited red':''}" onclick="window._visitWineRegion('${id}','red')">${r.displayName}<br><span style="font-size:11px;opacity:0.6">${r.victorianName}</span></div>`;
         }).join('')}
       </div>
-      ${WD.act1Done() ? '<button class="wd-btn" style="margin-top:24px;width:100%;" onclick="window._startWineDuel()">The table will pour →</button>' : ''}
+
+      <button class="wd-btn" style="width:100%;" onclick="window._openWineDuel()">Begin the duel →</button>
     </div>
   `;
 }
+
+window._backToWineEntry = function() {
+  const container = document.getElementById('wine-duel-container');
+  if (!container) return;
+  _renderWineEntry(container);
+};
 
 // Track visited regions per-session
 const _wineVisited = { white: new Set(), red: new Set() };
