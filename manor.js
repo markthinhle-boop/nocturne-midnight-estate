@@ -653,8 +653,9 @@ function _launchWineDuel() {
 
 function _renderWineEntry(container) {
   const WD = window.WINE_DUEL;
-  const speaker = WD && WD.isRevealed() ? 'steward' : 'figure';
-  const intro = WD && WD.isRevealed()
+  const paid = window.gameState && window.gameState.paidTierUnlocked;
+  const speaker = paid ? 'steward' : 'figure';
+  const intro = paid
     ? 'Sir. The table is set. You may study the wines before you guess, or you may begin immediately. The choice is yours.'
     : 'The table is set. Study the wines first, or begin the duel. Your choice.';
 
@@ -679,11 +680,6 @@ window._openWineTeaching = function() {
 window._openWineDuel = function() {
   const container = document.getElementById('wine-duel-container');
   if (!container) return;
-  const WD = window.WINE_DUEL;
-  if (!WD.isRevealed()) {
-    _renderWineReveal(container);
-    return;
-  }
   _renderWineDuel(container);
 };
 
@@ -710,22 +706,26 @@ const WINE_MAP_HOTSPOTS = {
 function _renderWineRegionMap(container) {
   const WD = window.WINE_DUEL;
 
-  // Build hotspot markers HTML
+  // Build hotspot markers HTML — dots only on mobile, labels on desktop
+  const isMobile = window.innerWidth < 768;
   const markers = Object.entries(WINE_MAP_HOTSPOTS).map(([id, h]) => {
     const visited = _wineVisited[h.domain].has(id);
     const color = visited
       ? (h.domain === 'white' ? '#d9c79a' : '#a83838')
-      : 'rgba(217,199,154,0.35)';
+      : 'rgba(217,199,154,0.4)';
     const glow = visited
-      ? (h.domain === 'white' ? '0 0 12px #d9c79a, 0 0 24px rgba(217,199,154,0.4)' : '0 0 12px #a83838, 0 0 24px rgba(168,56,56,0.4)')
+      ? (h.domain === 'white' ? '0 0 14px #d9c79a, 0 0 28px rgba(217,199,154,0.5)' : '0 0 14px #a83838, 0 0 28px rgba(168,56,56,0.5)')
       : 'none';
+    // On mobile: larger tap target, label hidden until tap (handled by CSS :active + JS)
     return `
-      <div class="wm-hotspot ${visited?'visited':''} ${h.domain}"
+      <div class="wm-hotspot ${visited?'visited':''} ${h.domain} ${isMobile?'mobile':''}"
            style="left:${h.x}%;top:${h.y}%;"
            onclick="window._visitWineRegion('${id}','${h.domain}')"
+           data-label="${h.label}"
+           data-victorian="${h.victorian}"
            title="${h.label}">
         <div class="wm-dot" style="background:${color};box-shadow:${glow};"></div>
-        <div class="wm-label">${h.label}<span class="wm-victorian">${h.victorian}</span></div>
+        ${!isMobile ? `<div class="wm-label">${h.label}<span class="wm-victorian">${h.victorian}</span></div>` : ''}
       </div>`;
   }).join('');
 
@@ -805,22 +805,40 @@ function _renderWineRegionMap(container) {
         pointer-events:none;
         display:flex;flex-direction:column;align-items:center;gap:1px;
         text-shadow:
-          0 0 4px rgba(0,0,0,1),
-          0 0 8px rgba(0,0,0,1),
-          0 1px 2px rgba(0,0,0,1),
-          -1px -1px 0 rgba(0,0,0,0.9),
-          1px -1px 0 rgba(0,0,0,0.9),
-          -1px 1px 0 rgba(0,0,0,0.9),
-          1px 1px 0 rgba(0,0,0,0.9);
+          -1px -1px 0 #000, 1px -1px 0 #000,
+          -1px  1px 0 #000, 1px  1px 0 #000,
+          0 0 6px rgba(0,0,0,1), 0 0 12px rgba(0,0,0,0.9);
       }
       .wm-victorian {
-        font-size:10px;color:#d9c79a;display:block;
-        text-shadow:
-          0 0 4px rgba(0,0,0,1),
-          0 1px 2px rgba(0,0,0,1);
+        font-size:10px;color:#8b7855;display:block;
       }
       .wm-hotspot.visited.white .wm-label { color:#d9c79a; }
       .wm-hotspot.visited.red   .wm-label { color:#c98787; }
+
+      /* Mobile — larger dots, no persistent labels */
+      .wm-hotspot.mobile .wm-dot {
+        width:20px; height:20px;
+        border:2px solid rgba(255,255,255,0.5);
+      }
+      .wm-hotspot.mobile .wm-label { display:none; }
+
+      /* Mobile tooltip — shown via JS on tap, positioned above dot */
+      .wm-tooltip {
+        position:absolute;
+        background:rgba(10,7,5,0.92);
+        border:1px solid #d9c79a;
+        border-radius:3px;
+        padding:6px 10px;
+        font-family:'Cormorant Garamond',serif;
+        font-size:14px;font-style:italic;
+        color:#d9c79a;
+        white-space:nowrap;
+        pointer-events:none;
+        z-index:20;
+        transform:translate(-50%,-110%);
+        top:0; left:50%;
+      }
+      .wm-tooltip.red { border-color:#a83838; color:#c98787; }
     </style>
   `;
 
@@ -929,6 +947,31 @@ window._visitWineRegion = function(regionId, domain) {
   const container = document.getElementById('wine-duel-container');
   if (!container) return;
 
+  // On mobile: show tooltip briefly then open teaching
+  const tappedEl = document.querySelector(`.wm-hotspot[data-label="${region.displayName}"]`);
+  if (tappedEl && tappedEl.classList.contains('mobile')) {
+    // Remove any existing tooltip
+    document.querySelectorAll('.wm-tooltip').forEach(t => t.remove());
+    const tip = document.createElement('div');
+    tip.className = 'wm-tooltip' + (domain === 'red' ? ' red' : '');
+    tip.textContent = region.displayName + ' · ' + region.victorianName;
+    tappedEl.appendChild(tip);
+    setTimeout(() => {
+      tip.remove();
+      _openWineTeachingRegion(regionId, domain);
+    }, 600);
+    return;
+  }
+
+  _openWineTeachingRegion(regionId, domain);
+};
+
+function _openWineTeachingRegion(regionId, domain) {
+  const WD = window.WINE_DUEL;
+  const region = WD.regions[regionId];
+  const container = document.getElementById('wine-duel-container');
+  if (!container || !region) return;
+
   let dimIndex = 0;
   _wineVisited[domain].add(regionId);
 
@@ -943,6 +986,8 @@ window._visitWineRegion = function(regionId, domain) {
     const text = WD.dimText(dim);
     const speaker = WD.speakerType();
     const isLast = dimIndex === region.dims.length - 1;
+    const paid = window.gameState && window.gameState.paidTierUnlocked;
+    const closingText = paid ? (region.closing || '') : (region.closingMasked || region.closing || '');
 
     container.innerHTML = `
       <div class="wd-panel">
@@ -959,13 +1004,13 @@ window._visitWineRegion = function(regionId, domain) {
             : `<button class="wd-btn" onclick="window._nextWineDim('${regionId}','${domain}',${dimIndex+1})">Continue →</button>`
           }
         </div>
-        ${isLast && region.closing ? `<div class="wd-scene" style="margin-top:16px;">${WD.isRevealed() ? region.closing : region.closingMasked || region.closing}</div>` : ''}
+        ${isLast && closingText ? `<div class="wd-scene" style="margin-top:16px;">${closingText}</div>` : ''}
       </div>
     `;
   }
 
   renderDim();
-};
+}
 
 window._nextWineDim = function(regionId, domain, idx) {
   const container = document.getElementById('wine-duel-container');
@@ -1069,7 +1114,8 @@ function _renderWineDuel(container) {
   WD.duel.start();
 
   // Show steward intro lines then first glass
-  const intro = WD.isRevealed() ? [
+  const paid = window.gameState && window.gameState.paidTierUnlocked;
+  const intro = paid ? [
     { type:'scene', text:'The Steward stands at his side of the table. He has been waiting for this part of the evening for thirty years.' },
     { type:'steward', text:'Sir. Seven glasses — white and red, mixed. I will pour each in turn. I will give you a hint. You will guess. I will not lie.' }
   ] : [
@@ -1109,7 +1155,7 @@ window._showWineGlass = function() {
 
   const glassNum = WD.duel._idx + 1;
   const total = WD.glasses.length;
-  const speaker = WD.isRevealed() ? 'steward' : 'figure';
+  const speaker = (window.gameState && window.gameState.paidTierUnlocked) ? 'steward' : 'figure';
 
   if (glass.isDisputed) {
     container.innerHTML = `
