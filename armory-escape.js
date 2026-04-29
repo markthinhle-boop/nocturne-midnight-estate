@@ -525,7 +525,7 @@
   }
 
   // Image layout — 2:1 image fills screen width, anchored to top of play area
-  const INV_H = 88;
+  const INV_H = 62;
   function imgLayout(W, H) {
     const imgW = W, imgH = W / 2.0;
     const imgX = 0, imgY = Math.max(0, (H - INV_H - imgH) / 2);
@@ -1589,8 +1589,9 @@
       const rx = sp.x, ry = sp.y;
       s._hotspots.push({ ...h, rx, ry, sw, sh });
 
-      // Paid: no pulses anywhere — room gives nothing away
-      if (h.pulse && s.mode !== 'paid') {
+      // Pulses: paid = none. Door = never (player pans to find it). Others = after door examined.
+      const canPulse = s.mode !== 'paid' && h.id !== 'door' && s.examined['door'];
+      if (h.pulse && canPulse) {
         const p = 0.08 + 0.05 * Math.sin(Date.now() / 700 + h.xf * 9);
         ctx.strokeStyle = C.gold; ctx.lineWidth = 1.5; ctx.globalAlpha = p;
         ctx.strokeRect(rx, ry, sw, sh); ctx.globalAlpha = 1;
@@ -1611,7 +1612,7 @@
     ctx.globalAlpha=1;
   }
 
-  const INV_SLOT = 72;
+  const INV_SLOT = 52;
   function _drawInventory(ctx, W, H, s) {
     const invY=H-INV_H;
     ctx.fillStyle='rgba(6,4,8,0.97)';ctx.fillRect(0,invY,W,INV_H);
@@ -2081,6 +2082,7 @@
   }
 
   function closeArmory(){
+    window._armoryClosedAt = Date.now(); // suppress re-open from same tap
     if(_raf)cancelAnimationFrame(_raf);_raf=null;
     if(_modal&&_modal.parentNode)_modal.parentNode.removeChild(_modal);
     _modal=null;_canvas=null;_ctx=null;_state=null;_activePuzzle=null;

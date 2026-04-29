@@ -2039,6 +2039,8 @@ function tapObject(objectId, tapX, tapY) {
 
   // weapons-case-obj — launches The Armoury escape room
   if (objectId === 'weapons-case-obj') {
+    // Guard: suppress re-open if player just hit LEAVE (same touchend propagation)
+    if (window._armoryClosedAt && Date.now() - window._armoryClosedAt < 800) return;
     if (typeof window.openArmory === 'function') {
       const scrollX = (typeof window.getArmoryScrollX === 'function')
         ? window.getArmoryScrollX() : 0;
