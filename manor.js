@@ -638,18 +638,7 @@ function _launchWineDuel() {
   bgDim.style.cssText = 'position:absolute;inset:0;background:rgba(5,3,2,0.72);pointer-events:none;z-index:0;';
   overlay.appendChild(bgDim);
 
-  // Close button
-  const closeBtn = document.createElement('button');
-  closeBtn.textContent = '← Leave the Table';
-  closeBtn.style.cssText = [
-    'position:absolute','top:18px','left:18px',
-    'background:transparent','border:none',
-    'color:rgba(217,199,154,0.5)','font-family:Cormorant Garamond,serif',
-    'font-size:13px','letter-spacing:0.12em','cursor:pointer',
-    'z-index:10',
-  ].join(';');
-  closeBtn.addEventListener('click', () => { overlay.style.display = 'none'; });
-  overlay.appendChild(closeBtn);
+  // Close button injected into map header — not floating over the map
 
   // Mount WINE_DUEL UI into overlay
   const container = document.createElement('div');
@@ -734,7 +723,7 @@ function _renderWineRegionMap(container) {
     const visited = _wineVisited[h.domain].has(id);
     const color = visited
       ? (h.domain === 'white' ? '#d9c79a' : '#a83838')
-      : 'rgba(217,199,154,0.4)';
+      : (h.domain === 'white' ? 'rgba(217,199,154,0.45)' : 'rgba(168,56,56,0.5)');
     const glow = visited
       ? (h.domain === 'white' ? '0 0 14px #d9c79a, 0 0 28px rgba(217,199,154,0.5)' : '0 0 14px #a83838, 0 0 28px rgba(168,56,56,0.5)')
       : 'none';
@@ -756,10 +745,16 @@ function _renderWineRegionMap(container) {
 
       <!-- Header -->
       <div style="display:flex;justify-content:space-between;align-items:center;
-                  padding:14px 18px;background:rgba(26,18,8,0.9);
+                  padding:12px 16px;background:rgba(26,18,8,0.9);
                   border-bottom:1px solid #3a2e1f;flex-shrink:0;z-index:2;">
-        <div style="font-family:'Cormorant Garamond',serif;font-size:18px;font-style:italic;color:#d9c79a;">
-          The Wine Regions of Europe
+        <div style="display:flex;align-items:center;gap:14px;">
+          <button style="background:transparent;border:none;color:rgba(217,199,154,0.5);
+                         font-family:'Cormorant Garamond',serif;font-size:13px;
+                         letter-spacing:0.1em;cursor:pointer;padding:0;"
+                  onclick="document.getElementById('wine-duel-overlay').style.display='none'">✕</button>
+          <div style="font-family:'Cormorant Garamond',serif;font-size:16px;font-style:italic;color:#d9c79a;">
+            The Wine Regions of Europe
+          </div>
         </div>
         <div style="display:flex;gap:10px;">
           <button class="wd-btn" style="padding:7px 14px;font-size:12px;" onclick="window._openWineDuel()">Begin the duel →</button>
