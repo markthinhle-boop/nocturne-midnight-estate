@@ -290,7 +290,7 @@ const ROOM_DESCRIPTIONS = {
 
   "map-room":      "A cartography study. Wall maps of territories Ashworth did business in and several he did not. A globe older than the country it was made in.\n\nOne map is pinned open.",
 
-  "dining-room":   "The long table is set for forty. Nobody sat here tonight. The candles are lit anyway — tall tapers, fresh, burning down with the measured patience of a room that was never intended to be used.\n\nTwo places at the head have napkins folded differently from the rest. The Steward's hand, or someone imitating it.\n\nThe food was prepared. The food was never served. Someone decided, late in the afternoon, that dinner would not happen tonight. That decision was not announced.",
+  "dining-room":   "The long table is set for forty. Nobody sat here tonight. The candles are lit anyway — tall tapers, fresh, burning down with the measured patience of a room that was never intended to be used.\n\nTwo places at the head have napkins folded differently from the rest. The Steward's hand, or someone imitating it.\n\nA masked figure stands at the head of the table. Bottles arranged before them. They are waiting.\n\nApproach the table.",
 
   "trophy-room":   "The Estate's private museum. Glass cases. Antlered heads. A mounted bird on the mantle with a yellowed label in Ashworth's handwriting. A leather armchair positioned to face the fire and nothing else.\n\nMost of these specimens were acquired legally. Most.",
 
@@ -556,6 +556,12 @@ function _onHotspotTap(objectId, tapX, tapY) {
     return;
   }
 
+  // dining-table: launch wine duel
+  if (objectId === 'dining-table') {
+    _launchWineDuel();
+    return;
+  }
+
   tapObject(objectId, tapX, tapY);
 }
 
@@ -586,6 +592,405 @@ function _launchTelescopeMinigame() {
   overlay.appendChild(iframe);
   document.body.appendChild(overlay);
 }
+
+function _launchWineDuel() {
+  if (!window.WINE_DUEL) return;
+  let overlay = document.getElementById('wine-duel-overlay');
+  if (overlay) { overlay.style.display = 'flex'; return; }
+
+  overlay = document.createElement('div');
+  overlay.id = 'wine-duel-overlay';
+  overlay.style.cssText = [
+    'position:fixed','inset:0','z-index:9000',
+    'background:#0a0705','display:flex',
+    'align-items:center','justify-content:center',
+  ].join(';');
+
+  // Close button
+  const closeBtn = document.createElement('button');
+  closeBtn.textContent = '← Leave the Table';
+  closeBtn.style.cssText = [
+    'position:absolute','top:18px','left:18px',
+    'background:transparent','border:none',
+    'color:rgba(217,199,154,0.5)','font-family:Cormorant Garamond,serif',
+    'font-size:13px','letter-spacing:0.12em','cursor:pointer',
+    'z-index:10',
+  ].join(';');
+  closeBtn.addEventListener('click', () => { overlay.style.display = 'none'; });
+  overlay.appendChild(closeBtn);
+
+  // Mount WINE_DUEL UI into overlay
+  const container = document.createElement('div');
+  container.id = 'wine-duel-container';
+  overlay.appendChild(container);
+  document.body.appendChild(overlay);
+
+  // Launch: start Act 1 (teaching) if not done, else go straight to duel
+  _runWineDuelFlow(container);
+}
+
+function _runWineDuelFlow(container) {
+  if (!window.WINE_DUEL) return;
+  const WD = window.WINE_DUEL;
+
+  // If teaching not done yet — show Act 1 region map
+  if (!WD.act1Done()) {
+    _renderWineRegionMap(container);
+    return;
+  }
+
+  // Teaching done — show reveal beat if not yet revealed
+  if (!WD.isRevealed()) {
+    _renderWineReveal(container);
+    return;
+  }
+
+  // Ready for duel
+  _renderWineDuel(container);
+}
+
+function _renderWineRegionMap(container) {
+  const WD = window.WINE_DUEL;
+  const allIds = WD.all;
+  const whiteDone = WD.state.act1WhiteComplete;
+  const redDone   = WD.state.act1RedComplete;
+
+  container.innerHTML = `
+    <div class="wd-panel" style="max-width:660px;width:min(92vw,660px);">
+      <div class="wd-region-name" style="font-size:20px;margin-bottom:6px;">The Dining Room</div>
+      <div style="font-size:13px;letter-spacing:0.14em;text-transform:uppercase;color:#8b7855;margin-bottom:22px;">
+        ${!whiteDone && !redDone ? 'Choose a region to begin.' : !whiteDone ? 'Continue with the whites.' : !redDone ? 'Continue with the reds.' : 'All regions visited. The table will pour.'}
+      </div>
+      <div style="margin-bottom:10px;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:#8b7855;">White Wines</div>
+      <div class="wd-map-regions" style="margin-bottom:24px;">
+        ${WD.whites.map(id => {
+          const r = WD.regions[id];
+          const visited = WD.state.act1WhiteComplete || WD.state['visited_'+id];
+          return `<div class="wd-map-region ${visited?'visited':''}" onclick="window._visitWineRegion('${id}','white')">${r.displayName}<br><span style="font-size:11px;opacity:0.6">${r.victorianName}</span></div>`;
+        }).join('')}
+      </div>
+      <div style="margin-bottom:10px;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:#8b7855;">Red Wines</div>
+      <div class="wd-map-regions">
+        ${WD.reds.map(id => {
+          const r = WD.regions[id];
+          const visited = WD.state.act1RedComplete || WD.state['visited_'+id];
+          return `<div class="wd-map-region ${visited?'visited red':''}" onclick="window._visitWineRegion('${id}','red')">${r.displayName}<br><span style="font-size:11px;opacity:0.6">${r.victorianName}</span></div>`;
+        }).join('')}
+      </div>
+      ${WD.act1Done() ? '<button class="wd-btn" style="margin-top:24px;width:100%;" onclick="window._startWineDuel()">The table will pour →</button>' : ''}
+    </div>
+  `;
+}
+
+// Track visited regions per-session
+const _wineVisited = { white: new Set(), red: new Set() };
+
+window._visitWineRegion = function(regionId, domain) {
+  const WD = window.WINE_DUEL;
+  const region = WD.regions[regionId];
+  if (!region) return;
+
+  const container = document.getElementById('wine-duel-container');
+  if (!container) return;
+
+  let dimIndex = 0;
+  _wineVisited[domain].add(regionId);
+
+  // Check completion
+  const whiteComplete = WD.whites.every(id => _wineVisited.white.has(id));
+  const redComplete   = WD.reds.every(id => _wineVisited.red.has(id));
+  if (whiteComplete) WD.markWhiteDone();
+  if (redComplete)   WD.markRedDone();
+
+  function renderDim() {
+    const dim = region.dims[dimIndex];
+    const text = WD.dimText(dim);
+    const speaker = WD.speakerType();
+    const isLast = dimIndex === region.dims.length - 1;
+
+    container.innerHTML = `
+      <div class="wd-panel">
+        <div class="wd-region-name">${region.displayName}</div>
+        <div class="wd-victorian-name">${region.victorianName}</div>
+        <div class="wd-dim-label">${dim.label}</div>
+        <div class="wd-${speaker}">${text}</div>
+        <div class="wd-btn-row">
+          <div class="wd-dots">
+            ${region.dims.map((_, i) => `<div class="wd-dot ${i<dimIndex?'done':i===dimIndex?'current':''}"></div>`).join('')}
+          </div>
+          ${isLast
+            ? `<button class="wd-btn" onclick="window._finishWineRegion('${regionId}','${domain}')">← Back to map</button>`
+            : `<button class="wd-btn" onclick="window._nextWineDim('${regionId}','${domain}',${dimIndex+1})">Continue →</button>`
+          }
+        </div>
+        ${isLast && region.closing ? `<div class="wd-scene" style="margin-top:16px;">${WD.isRevealed() ? region.closing : region.closingMasked || region.closing}</div>` : ''}
+      </div>
+    `;
+  }
+
+  renderDim();
+};
+
+window._nextWineDim = function(regionId, domain, idx) {
+  const container = document.getElementById('wine-duel-container');
+  if (!container) return;
+  const region = window.WINE_DUEL.regions[regionId];
+  if (!region) return;
+
+  const dim = region.dims[idx];
+  const text = window.WINE_DUEL.dimText(dim);
+  const speaker = window.WINE_DUEL.speakerType();
+  const isLast = idx === region.dims.length - 1;
+
+  container.innerHTML = `
+    <div class="wd-panel">
+      <div class="wd-region-name">${region.displayName}</div>
+      <div class="wd-victorian-name">${region.victorianName}</div>
+      <div class="wd-dim-label">${dim.label}</div>
+      <div class="wd-${speaker}">${text}</div>
+      <div class="wd-btn-row">
+        <div class="wd-dots">
+          ${region.dims.map((_, i) => `<div class="wd-dot ${i<idx?'done':i===idx?'current':''}"></div>`).join('')}
+        </div>
+        ${isLast
+          ? `<button class="wd-btn" onclick="window._finishWineRegion('${regionId}','${domain}')">← Back to map</button>`
+          : `<button class="wd-btn" onclick="window._nextWineDim('${regionId}','${domain}',${idx+1})">Continue →</button>`
+        }
+      </div>
+      ${isLast && region.closing ? `<div class="wd-scene" style="margin-top:16px;">${window.WINE_DUEL.isRevealed() ? region.closing : region.closingMasked || region.closing}</div>` : ''}
+    </div>
+  `;
+};
+
+window._finishWineRegion = function(regionId, domain) {
+  const container = document.getElementById('wine-duel-container');
+  if (!container) return;
+  _renderWineRegionMap(container);
+};
+
+function _renderWineReveal(container) {
+  const WD = window.WINE_DUEL;
+  const beat = WD.reveal.beat;
+  let idx = 0;
+
+  function renderBeat() {
+    const line = beat[idx];
+    const isLast = idx === beat.length - 1;
+    container.innerHTML = `
+      <div class="wd-panel">
+        <div class="wd-${line.type}">${line.text}</div>
+        <div style="margin-top:24px;text-align:right;">
+          ${isLast
+            ? `<button class="wd-btn" onclick="window._afterWineReveal()">Continue →</button>`
+            : `<button class="wd-btn" onclick="window._advanceWineReveal(${idx+1})">→</button>`
+          }
+        </div>
+      </div>
+    `;
+  }
+  renderBeat();
+}
+
+window._advanceWineReveal = function(idx) {
+  const container = document.getElementById('wine-duel-container');
+  if (!container) return;
+  const WD = window.WINE_DUEL;
+  const beat = WD.reveal.beat;
+  const line = beat[idx];
+  const isLast = idx === beat.length - 1;
+  container.innerHTML = `
+    <div class="wd-panel">
+      <div class="wd-${line.type}">${line.text}</div>
+      <div style="margin-top:24px;text-align:right;">
+        ${isLast
+          ? `<button class="wd-btn" onclick="window._afterWineReveal()">Continue →</button>`
+          : `<button class="wd-btn" onclick="window._advanceWineReveal(${idx+1})">→</button>`
+        }
+      </div>
+    </div>
+  `;
+};
+
+window._afterWineReveal = function() {
+  window.WINE_DUEL.reveal.trigger();
+  const container = document.getElementById('wine-duel-container');
+  if (!container) return;
+  _renderWineDuel(container);
+};
+
+window._startWineDuel = function() {
+  const container = document.getElementById('wine-duel-container');
+  if (!container) return;
+  if (!window.WINE_DUEL.isRevealed()) {
+    _renderWineReveal(container);
+    return;
+  }
+  _renderWineDuel(container);
+};
+
+function _renderWineDuel(container) {
+  const WD = window.WINE_DUEL;
+  WD.duel.start();
+
+  // Show steward intro lines then first glass
+  const intro = WD.isRevealed() ? [
+    { type:'scene', text:'The Steward stands at his side of the table. He has been waiting for this part of the evening for thirty years.' },
+    { type:'steward', text:'Sir. Seven glasses — white and red, mixed. I will pour each in turn. I will give you a hint. You will guess. I will not lie.' }
+  ] : [
+    { type:'scene', text:'The masked figure draws a bottle from the arrangement before them.' },
+    { type:'figure', text:'The table will pour. Eleven regions. I will give you one hint per glass. Begin.' }
+  ];
+
+  let iIdx = 0;
+  function showIntro() {
+    const line = intro[iIdx];
+    const isLast = iIdx === intro.length - 1;
+    container.innerHTML = `
+      <div class="wd-panel">
+        <div class="wd-${line.type}">${line.text}</div>
+        <div style="margin-top:24px;text-align:right;">
+          ${isLast
+            ? `<button class="wd-btn" onclick="window._showWineGlass()">Begin →</button>`
+            : `<button class="wd-btn" onclick="window._nextWineIntro(${iIdx+1})">→</button>`
+          }
+        </div>
+      </div>
+    `;
+  }
+  showIntro();
+  window._nextWineIntro = function(i) {
+    iIdx = i;
+    showIntro();
+  };
+}
+
+window._showWineGlass = function() {
+  const container = document.getElementById('wine-duel-container');
+  if (!container) return;
+  const WD = window.WINE_DUEL;
+  const glass = WD.duel.current();
+  if (!glass) return;
+
+  const glassNum = WD.duel._idx + 1;
+  const total = WD.glasses.length;
+  const speaker = WD.isRevealed() ? 'steward' : 'figure';
+
+  if (glass.isDisputed) {
+    container.innerHTML = `
+      <div class="wd-panel">
+        <div class="wd-glass-number">Glass ${glassNum} of ${total} · The Disputed Bottle</div>
+        <div class="wd-pour">${glass.pour}</div>
+        <div class="wd-hint">${glass.hint}</div>
+        <div class="wd-q-label">${glass.disputePrompt}</div>
+        ${glass.disputeOptions.map(opt => `
+          <div style="margin-bottom:12px;padding:12px 14px;border:1px solid #3a2e1f;border-radius:2px;cursor:pointer;"
+               onclick="window._submitWineDispute('${opt.id}')">
+            <div style="font-family:'Cormorant Garamond',serif;font-size:15px;color:#d9c79a;">${opt.label}</div>
+            <div style="font-size:13px;color:#8b7855;margin-top:4px;">${opt.desc}</div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+    return;
+  }
+
+  // Appearance options differ by domain
+  const appearanceOpts = glass.truth.region && ['rhine','moselle','sauternes','champagne','madeira'].includes(glass.truth.region)
+    ? ['pale-gold','deep-gold','amber','copper']
+    : ['ruby','deep-ruby','garnet','tawny','amber','pale-gold'];
+
+  container.innerHTML = `
+    <div class="wd-panel">
+      <div class="wd-glass-number">Glass ${glassNum} of ${total}</div>
+      <div class="wd-pour">${glass.pour}</div>
+      <div class="wd-hint">${glass.hint}</div>
+
+      <div class="wd-q-label">The colour?</div>
+      <div class="wd-options" id="wd-opts-appearance">
+        ${appearanceOpts.map(o => `<button class="wd-option" onclick="window._selectWineOpt('appearance','${o}',this)">${o.replace('-',' ')}</button>`).join('')}
+      </div>
+
+      <div class="wd-q-label">The region?</div>
+      <div class="wd-options" id="wd-opts-region">
+        ${['rhine','moselle','sauternes','champagne','madeira','bordeaux','burgundy','rhone','douro','tokaj','jerez']
+          .map(r => `<button class="wd-option" onclick="window._selectWineOpt('region','${r}',this)">${r.charAt(0).toUpperCase()+r.slice(1)}</button>`).join('')}
+      </div>
+
+      <div class="wd-q-label">The style?</div>
+      <div class="wd-options" id="wd-opts-style">
+        ${['hock','moselle','champagne','sauternes','madeira','claret','red-burgundy','hermitage','port','tokay','sherry']
+          .map(s => `<button class="wd-option" onclick="window._selectWineOpt('style','${s}',this)">${s.replace('-',' ')}</button>`).join('')}
+      </div>
+
+      <div class="wd-q-label">When at the Estate?</div>
+      <div class="wd-options" id="wd-opts-occasion">
+        ${['arrival','fish-course','luncheon','meat-course','sweet-course','after-dinner']
+          .map(o => `<button class="wd-option" onclick="window._selectWineOpt('occasion','${o}',this)">${o.replace(/-/g,' ')}</button>`).join('')}
+      </div>
+
+      <button class="wd-submit" id="wd-submit-btn" onclick="window._submitWineGlass()" disabled>Submit</button>
+    </div>
+  `;
+};
+
+window._selectWineOpt = function(question, value, btn) {
+  // Deselect others in this group
+  const group = document.getElementById('wd-opts-' + question);
+  if (group) group.querySelectorAll('.wd-option').forEach(b => b.classList.remove('sel'));
+  btn.classList.add('sel');
+  window.WINE_DUEL.duel.setAnswer(question, value);
+
+  // Enable submit if all four answered
+  const d = window.WINE_DUEL.duel._answers;
+  if (d.appearance && d.region && d.style && d.occasion) {
+    const sb = document.getElementById('wd-submit-btn');
+    if (sb) sb.disabled = false;
+  }
+};
+
+window._submitWineDispute = function(choice) {
+  window.WINE_DUEL.duel.setAnswer('disputeChoice', choice);
+  const result = window.WINE_DUEL.duel.submit();
+  const container = document.getElementById('wine-duel-container');
+  if (!container) return;
+
+  container.innerHTML = `
+    <div class="wd-panel">
+      <div class="wd-glass-number">The Disputed Bottle</div>
+      <div class="wd-scene">${result.reaction}</div>
+      <div style="margin-top:24px;text-align:right;">
+        ${result.last
+          ? `<button class="wd-btn" onclick="window._finishWineDuel()">See your result →</button>`
+          : `<button class="wd-btn" onclick="window._showWineGlass()">Next glass →</button>`
+        }
+      </div>
+    </div>
+  `;
+};
+
+window._submitWineGlass = function() {
+  const result = window.WINE_DUEL.duel.submit();
+  const container = document.getElementById('wine-duel-container');
+  if (!container) return;
+
+  container.innerHTML = `
+    <div class="wd-panel">
+      <div class="wd-glass-number">Glass result</div>
+      <div class="wd-reaction">${result.reaction}</div>
+      <div style="margin-top:24px;text-align:right;">
+        ${result.last
+          ? `<button class="wd-btn" onclick="window._finishWineDuel()">See your result →</button>`
+          : `<button class="wd-btn" onclick="window._showWineGlass()">Next glass →</button>`
+        }
+      </div>
+    </div>
+  `;
+};
+
+window._finishWineDuel = function() {
+  const finalResult = window.WINE_DUEL.duel.finish();
+  window.WINE_DUEL.card.show(finalResult);
+};
 
 // Rain hotspot removal — ambient.js calls remove() directly, this is belt-and-suspenders
 
@@ -1555,6 +1960,24 @@ const ROOM_PARALLAX = {
     } else {
       _targetY = 0;
       _curY    = 0;
+    }
+
+    // Inject dining-table hotspot when dining room is entered
+    if (roomId === 'dining-room') {
+      setTimeout(() => {
+        const layer = document.getElementById('hotspots-dining-room');
+        if (!layer || document.getElementById('hs-dining-table')) return;
+        const hs = document.createElement('div');
+        hs.id = 'hs-dining-table';
+        hs.className = 'hotspot';
+        // Table runs across the lower-centre of the room image
+        hs.style.cssText = 'left:20%;top:55%;width:60%;height:30%;cursor:pointer;';
+        hs.addEventListener('click', e => {
+          e.stopPropagation();
+          _onHotspotTap('dining-table', 0, 0);
+        });
+        layer.appendChild(hs);
+      }, 300);
     }
   });
 
