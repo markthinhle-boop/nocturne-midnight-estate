@@ -663,6 +663,13 @@ function _launchWineDuel() {
   _renderWineEntry(container);
 }
 
+window._closeWineDuel = function() {
+  const overlay = document.getElementById('wine-duel-overlay');
+  if (overlay) overlay.style.display = 'none';
+  const container = document.getElementById('wine-duel-container');
+  if (container && window.WINE_DUEL) _renderWineEntry(container);
+};
+
 function _renderWineEntry(container) {
   const WD = window.WINE_DUEL;
   const paid = window.gameState && window.gameState.paidTierUnlocked;
@@ -1243,6 +1250,9 @@ window._showWineGlass = function() {
 
       <!-- Progress + counter -->
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+        <button onclick="window._closeWineDuel()"
+                style="background:transparent;border:none;color:rgba(217,199,154,0.4);
+                       font-size:18px;cursor:pointer;padding:0;line-height:1;flex-shrink:0;">✕</button>
         <div style="display:flex;flex:1;gap:1px;">${pips}</div>
         <div style="font-size:10px;letter-spacing:0.2em;text-transform:uppercase;
                     color:#8b7855;white-space:nowrap;">${glassNum} / ${total}</div>
