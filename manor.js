@@ -624,9 +624,19 @@ function _launchWineDuel() {
   overlay.id = 'wine-duel-overlay';
   overlay.style.cssText = [
     'position:fixed','inset:0','z-index:9000',
-    'background:#0a0705','display:flex',
-    'align-items:center','justify-content:center',
+    'display:flex','align-items:center','justify-content:center',
+    'background:#0a0705',
   ].join(';');
+
+  // Background image
+  overlay.style.backgroundImage = `url(${ASSET_BASE}items/nocturne-wine-bottles.png)`;
+  overlay.style.backgroundSize = 'cover';
+  overlay.style.backgroundPosition = 'center';
+
+  // Dark overlay over the image so panels remain legible
+  const bgDim = document.createElement('div');
+  bgDim.style.cssText = 'position:absolute;inset:0;background:rgba(5,3,2,0.72);pointer-events:none;z-index:0;';
+  overlay.appendChild(bgDim);
 
   // Close button
   const closeBtn = document.createElement('button');
@@ -644,6 +654,8 @@ function _launchWineDuel() {
   // Mount WINE_DUEL UI into overlay
   const container = document.createElement('div');
   container.id = 'wine-duel-container';
+  container.style.position = 'relative';
+  container.style.zIndex = '1';
   overlay.appendChild(container);
   document.body.appendChild(overlay);
 
@@ -660,12 +672,22 @@ function _renderWineEntry(container) {
     : 'The table is set. Study the wines first, or begin the duel. Your choice.';
 
   container.innerHTML = `
-    <div class="wd-panel" style="text-align:center;">
-      <div class="wd-region-name" style="margin-bottom:6px;">The Dining Room</div>
-      <div class="wd-scene" style="margin-bottom:28px;border:none;padding:0;">${intro}</div>
-      <div style="display:flex;flex-direction:column;gap:14px;align-items:center;">
-        <button class="wd-btn" style="width:260px;" onclick="window._openWineTeaching()">Study the wines</button>
-        <button class="wd-btn" style="width:260px;" onclick="window._openWineDuel()">Begin the duel</button>
+    <div class="wd-panel" style="padding:36px 32px;text-align:center;">
+      <div style="font-size:11px;letter-spacing:0.24em;text-transform:uppercase;
+                  color:#8b7855;margin-bottom:14px;">The Ashworth Estate · Dining Room</div>
+      <div style="width:40px;height:1px;background:#3a2e1f;margin:0 auto 22px;"></div>
+      <div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-style:italic;
+                  color:#d9c79a;margin-bottom:20px;">The Wine Table</div>
+      <div style="font-size:15px;line-height:1.7;color:#8b7855;margin-bottom:36px;
+                  max-width:340px;margin-left:auto;margin-right:auto;">${intro}</div>
+      <div style="display:flex;flex-direction:column;gap:10px;align-items:center;">
+        <button class="wd-btn" style="width:240px;letter-spacing:0.16em;"
+                onclick="window._openWineTeaching()">Study the Wines</button>
+        <button class="wd-btn" style="width:240px;letter-spacing:0.16em;"
+                onclick="window._openWineDuel()">Begin the Duel</button>
+      </div>
+      <div style="margin-top:28px;font-size:11px;color:#3a2e1f;font-style:italic;">
+        ${paid ? 'The Steward is at the table.' : 'The masked figure is at the table.'}
       </div>
     </div>
   `;
@@ -1164,20 +1186,36 @@ window._showWineGlass = function() {
 
   const glassNum = WD.duel._idx + 1;
   const total = WD.glasses.length;
-  const speaker = (window.gameState && window.gameState.paidTierUnlocked) ? 'steward' : 'figure';
+  const paid = window.gameState && window.gameState.paidTierUnlocked;
+
+  // Progress bar — filled segments for completed glasses
+  const pips = Array.from({length:total}, (_,i) =>
+    `<div style="flex:1;height:2px;border-radius:1px;margin:0 1px;
+      background:${i < WD.duel._idx ? '#d9c79a' : i === WD.duel._idx ? 'rgba(217,199,154,0.4)' : '#2a1f15'};
+      transition:background 0.4s;"></div>`
+  ).join('');
 
   if (glass.isDisputed) {
     container.innerHTML = `
-      <div class="wd-panel">
-        <div class="wd-glass-number">Glass ${glassNum} of ${total} · The Disputed Bottle</div>
-        <div class="wd-pour">${glass.pour}</div>
-        <div class="wd-hint">${glass.hint}</div>
-        <div class="wd-q-label">${glass.disputePrompt}</div>
+      <div class="wd-panel" style="padding:28px 28px 24px;">
+        <div style="display:flex;gap:1px;margin-bottom:20px;width:100%;">${pips}</div>
+        <div style="font-size:10px;letter-spacing:0.22em;text-transform:uppercase;
+                    color:#8b1a1a;margin-bottom:16px;">The Disputed Bottle</div>
+        <div style="font-style:italic;color:#c4b48a;font-size:15px;line-height:1.7;
+                    padding:14px 16px;background:rgba(217,199,154,0.04);
+                    border-top:1px solid #3a2e1f;border-bottom:1px solid #3a2e1f;
+                    margin-bottom:18px;">${glass.pour}</div>
+        <div style="padding-left:14px;border-left:2px solid #8b7855;margin-bottom:24px;">
+          <div style="font-size:10px;letter-spacing:0.2em;text-transform:uppercase;
+                      color:#8b7855;margin-bottom:7px;opacity:0.7;">${paid ? 'The Steward' : 'The Figure'}</div>
+          <div style="font-size:15px;line-height:1.7;color:#ebd9b8;">${glass.hint}</div>
+        </div>
+        <div style="font-size:11px;letter-spacing:0.16em;text-transform:uppercase;
+                    color:#8b7855;margin-bottom:14px;">${glass.disputePrompt}</div>
         ${glass.disputeOptions.map(opt => `
-          <div style="margin-bottom:12px;padding:12px 14px;border:1px solid #3a2e1f;border-radius:2px;cursor:pointer;"
-               onclick="window._submitWineDispute('${opt.id}')">
-            <div style="font-family:'Cormorant Garamond',serif;font-size:15px;color:#d9c79a;">${opt.label}</div>
-            <div style="font-size:13px;color:#8b7855;margin-top:4px;">${opt.desc}</div>
+          <div class="wd-dispute-opt" onclick="window._submitWineDispute('${opt.id}')">
+            <div class="wd-dispute-opt-label">${opt.label}</div>
+            <div class="wd-dispute-opt-desc">${opt.desc}</div>
           </div>
         `).join('')}
       </div>
@@ -1185,41 +1223,93 @@ window._showWineGlass = function() {
     return;
   }
 
-  // Appearance options differ by domain
   const appearanceOpts = glass.truth.region && ['rhine','moselle','sauternes','champagne','madeira'].includes(glass.truth.region)
     ? ['pale-gold','deep-gold','amber','copper']
     : ['ruby','deep-ruby','garnet','tawny','amber','pale-gold'];
 
+  const regionLabels = {rhine:'Rhine',moselle:'Moselle',sauternes:'Sauternes',champagne:'Champagne',
+    madeira:'Madeira',bordeaux:'Bordeaux',burgundy:'Burgundy',rhone:'Rhône',
+    douro:'Douro',tokaj:'Tokaj',jerez:'Jerez'};
+  const styleLabels = {hock:'Hock',moselle:'Moselle',champagne:'Champagne',sauternes:'Sauterne',
+    madeira:'Madeira',claret:'Claret','red-burgundy':'Burgundy',hermitage:'Hermitage',
+    port:'Port',tokay:'Tokay',sherry:'Sherry'};
+  const occasionLabels = {'arrival':'Arrival','fish-course':'Fish Course','luncheon':'Luncheon',
+    'meat-course':'Meat Course','sweet-course':'Sweet Course','after-dinner':'After Dinner'};
+
   container.innerHTML = `
-    <div class="wd-panel">
-      <div class="wd-glass-number">Glass ${glassNum} of ${total}</div>
-      <div class="wd-pour">${glass.pour}</div>
-      <div class="wd-hint">${glass.hint}</div>
+    <div class="wd-panel" style="padding:24px 26px 22px;">
 
-      <div class="wd-q-label">The colour?</div>
-      <div class="wd-options" id="wd-opts-appearance">
-        ${appearanceOpts.map(o => `<button class="wd-option" onclick="window._selectWineOpt('appearance','${o}',this)">${o.replace('-',' ')}</button>`).join('')}
+      <!-- Progress + counter -->
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+        <div style="display:flex;flex:1;gap:1px;">${pips}</div>
+        <div style="font-size:10px;letter-spacing:0.2em;text-transform:uppercase;
+                    color:#8b7855;white-space:nowrap;">${glassNum} / ${total}</div>
       </div>
 
-      <div class="wd-q-label">The region?</div>
-      <div class="wd-options" id="wd-opts-region">
-        ${['rhine','moselle','sauternes','champagne','madeira','bordeaux','burgundy','rhone','douro','tokaj','jerez']
-          .map(r => `<button class="wd-option" onclick="window._selectWineOpt('region','${r}',this)">${r.charAt(0).toUpperCase()+r.slice(1)}</button>`).join('')}
+      <!-- Pour — cinematic scene block -->
+      <div style="padding:14px 16px;background:rgba(217,199,154,0.04);
+                  border-top:1px solid #3a2e1f;border-bottom:1px solid #3a2e1f;
+                  margin-bottom:18px;">
+        <div style="font-size:9px;letter-spacing:0.22em;text-transform:uppercase;
+                    color:#8b7855;margin-bottom:6px;opacity:0.7;">The Pour</div>
+        <div style="font-style:italic;color:#c4b48a;font-size:14px;line-height:1.7;">${glass.pour}</div>
       </div>
 
-      <div class="wd-q-label">The style?</div>
-      <div class="wd-options" id="wd-opts-style">
-        ${['hock','moselle','champagne','sauternes','madeira','claret','red-burgundy','hermitage','port','tokay','sherry']
-          .map(s => `<button class="wd-option" onclick="window._selectWineOpt('style','${s}',this)">${s.replace('-',' ')}</button>`).join('')}
+      <!-- Expert hint -->
+      <div style="padding-left:14px;border-left:2px solid #d9c79a;margin-bottom:22px;">
+        <div style="font-size:9px;letter-spacing:0.22em;text-transform:uppercase;
+                    color:#d9c79a;margin-bottom:7px;opacity:0.6;">${paid ? 'The Steward' : 'The Figure'}</div>
+        <div style="font-size:15px;line-height:1.7;color:#ebd9b8;">${glass.hint}</div>
       </div>
 
-      <div class="wd-q-label">When at the Estate?</div>
-      <div class="wd-options" id="wd-opts-occasion">
-        ${['arrival','fish-course','luncheon','meat-course','sweet-course','after-dinner']
-          .map(o => `<button class="wd-option" onclick="window._selectWineOpt('occasion','${o}',this)">${o.replace(/-/g,' ')}</button>`).join('')}
+      <!-- 2-col: Colour + Occasion -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+        <div>
+          <div style="font-size:9px;letter-spacing:0.2em;text-transform:uppercase;
+                      color:#8b7855;margin-bottom:8px;">Colour</div>
+          <div style="display:flex;flex-direction:column;gap:4px;" id="wd-opts-appearance">
+            ${appearanceOpts.map(o => `
+              <button class="wd-option" onclick="window._selectWineOpt('appearance','${o}',this)">
+                ${o.replace('-',' ')}
+              </button>`).join('')}
+          </div>
+        </div>
+        <div>
+          <div style="font-size:9px;letter-spacing:0.2em;text-transform:uppercase;
+                      color:#8b7855;margin-bottom:8px;">Occasion</div>
+          <div style="display:flex;flex-direction:column;gap:4px;" id="wd-opts-occasion">
+            ${Object.entries(occasionLabels).map(([k,v]) =>
+              `<button class="wd-option" onclick="window._selectWineOpt('occasion','${k}',this)">${v}</button>`
+            ).join('')}
+          </div>
+        </div>
       </div>
 
-      <button class="wd-submit" id="wd-submit-btn" onclick="window._submitWineGlass()" disabled>Submit</button>
+      <!-- Region -->
+      <div style="margin-bottom:12px;">
+        <div style="font-size:9px;letter-spacing:0.2em;text-transform:uppercase;
+                    color:#8b7855;margin-bottom:8px;">Region</div>
+        <div class="wd-options" id="wd-opts-region">
+          ${Object.entries(regionLabels).map(([k,v]) =>
+            `<button class="wd-option" onclick="window._selectWineOpt('region','${k}',this)">${v}</button>`
+          ).join('')}
+        </div>
+      </div>
+
+      <!-- Style -->
+      <div style="margin-bottom:18px;">
+        <div style="font-size:9px;letter-spacing:0.2em;text-transform:uppercase;
+                    color:#8b7855;margin-bottom:8px;">Style</div>
+        <div class="wd-options" id="wd-opts-style">
+          ${Object.entries(styleLabels).map(([k,v]) =>
+            `<button class="wd-option" onclick="window._selectWineOpt('style','${k}',this)">${v}</button>`
+          ).join('')}
+        </div>
+      </div>
+
+      <button class="wd-submit" id="wd-submit-btn" onclick="window._submitWineGlass()" disabled>
+        Pour and Judge
+      </button>
     </div>
   `;
 };
@@ -1245,13 +1335,22 @@ window._submitWineDispute = function(choice) {
   const container = document.getElementById('wine-duel-container');
   if (!container) return;
 
+  const paid = window.gameState && window.gameState.paidTierUnlocked;
+
   container.innerHTML = `
-    <div class="wd-panel">
-      <div class="wd-glass-number">The Disputed Bottle</div>
-      <div class="wd-scene">${result.reaction}</div>
-      <div style="margin-top:24px;text-align:right;">
+    <div class="wd-panel" style="padding:28px 28px 24px;">
+      <div style="font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:#8b1a1a;margin-bottom:20px;">
+        The Disputed Bottle · Your Reading
+      </div>
+      <div style="padding:16px 18px;background:rgba(217,199,154,0.04);
+                  border-left:2px solid #8b7855;margin-bottom:24px;">
+        <div style="font-size:10px;letter-spacing:0.2em;text-transform:uppercase;
+                    color:#8b7855;margin-bottom:8px;opacity:0.7;">${paid ? 'The Steward' : 'The Figure'}</div>
+        <div style="font-size:15px;line-height:1.7;color:#ebd9b8;">${result.reaction}</div>
+      </div>
+      <div style="text-align:right;">
         ${result.last
-          ? `<button class="wd-btn" onclick="window._finishWineDuel()">See your result →</button>`
+          ? `<button class="wd-btn" onclick="window._finishWineDuel()">The reckoning →</button>`
           : `<button class="wd-btn" onclick="window._showWineGlass()">Next glass →</button>`
         }
       </div>
@@ -1264,13 +1363,52 @@ window._submitWineGlass = function() {
   const container = document.getElementById('wine-duel-container');
   if (!container) return;
 
+  const WD = window.WINE_DUEL;
+  const paid = window.gameState && window.gameState.paidTierUnlocked;
+  const glassNum = WD.duel._idx;
+  const total = WD.glasses.length;
+
+  // Score this glass
+  const pts = result.score ? result.score.total : 0;
+  const maxPts = 12;
+  const pct = Math.round((pts / maxPts) * 100);
+  const scoreColor = pts >= 10 ? '#d9c79a' : pts >= 6 ? '#8b7855' : '#6b3a20';
+
   container.innerHTML = `
-    <div class="wd-panel">
-      <div class="wd-glass-number">Glass result</div>
-      <div class="wd-reaction">${result.reaction}</div>
-      <div style="margin-top:24px;text-align:right;">
+    <div class="wd-panel" style="padding:28px 28px 24px;">
+
+      <!-- Result header -->
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:22px;">
+        <div>
+          <div style="font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:#8b7855;margin-bottom:6px;">
+            Glass ${glassNum} of ${total} · Result
+          </div>
+          <div style="font-size:11px;color:#3a2e1f;font-style:italic;">
+            ${result.truth ? `${result.truth.region ? result.truth.region.charAt(0).toUpperCase()+result.truth.region.slice(1) : ''} · ${result.truth.style || ''}` : ''}
+          </div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:32px;font-style:italic;color:${scoreColor};line-height:1;">${pts}</div>
+          <div style="font-size:11px;color:#8b7855;">of ${maxPts}</div>
+        </div>
+      </div>
+
+      <!-- Score bar -->
+      <div style="height:2px;background:#1a1410;border-radius:1px;margin-bottom:22px;overflow:hidden;">
+        <div style="height:100%;width:${pct}%;background:${scoreColor};transition:width 0.8s ease;border-radius:1px;"></div>
+      </div>
+
+      <!-- Reaction -->
+      <div style="padding:16px 18px;background:rgba(217,199,154,0.04);
+                  border-left:2px solid ${scoreColor};margin-bottom:24px;">
+        <div style="font-size:10px;letter-spacing:0.2em;text-transform:uppercase;
+                    color:#8b7855;margin-bottom:8px;opacity:0.7;">${paid ? 'The Steward' : 'The Figure'}</div>
+        <div style="font-size:15px;line-height:1.7;color:#ebd9b8;">${result.reaction}</div>
+      </div>
+
+      <div style="text-align:right;">
         ${result.last
-          ? `<button class="wd-btn" onclick="window._finishWineDuel()">See your result →</button>`
+          ? `<button class="wd-btn" onclick="window._finishWineDuel()">The reckoning →</button>`
           : `<button class="wd-btn" onclick="window._showWineGlass()">Next glass →</button>`
         }
       </div>

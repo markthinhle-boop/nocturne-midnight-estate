@@ -124,23 +124,89 @@ window.WINE_DUEL = (function() {
 }
 .wd-options { display:flex; flex-wrap:wrap; gap:8px; }
 .wd-option {
-  padding:8px 14px; border:1px solid #3a2e1f; border-radius:2px;
-  font-family:'Cormorant Garamond',serif; font-size:14px; color:#ebd9b8;
-  background:transparent; cursor:pointer;
-  transition:border-color 0.3s,background 0.3s,color 0.3s;
+  padding:7px 12px;
+  border:1px solid #2a1f15;
+  border-radius:2px;
+  font-family:'Cormorant Garamond',serif;
+  font-size:13px;
+  color:#8b7855;
+  background:rgba(0,0,0,0.2);
+  cursor:pointer;
+  text-align:left;
+  letter-spacing:0.04em;
+  transition:border-color 0.25s, color 0.25s, background 0.25s;
+  position:relative;
 }
-.wd-option:hover { border-color:#d9c79a; }
-.wd-option.sel { border-color:#d9c79a; background:rgba(217,199,154,0.15); color:#d9c79a; }
+.wd-option::before {
+  content:'';
+  position:absolute;
+  left:0; top:0; bottom:0;
+  width:0;
+  background:#d9c79a;
+  transition:width 0.25s;
+  border-radius:1px 0 0 1px;
+}
+.wd-option:hover {
+  border-color:#3a2e1f;
+  color:#c4b48a;
+  background:rgba(217,199,154,0.04);
+}
+.wd-option.sel {
+  border-color:#d9c79a;
+  color:#d9c79a;
+  background:rgba(217,199,154,0.08);
+}
+.wd-option.sel::before { width:2px; }
 
 .wd-submit {
-  margin-top:22px; width:100%;
-  background:transparent; border:1px solid #d9c79a; color:#d9c79a;
-  font-family:'Cormorant Garamond',serif; font-size:13px;
-  letter-spacing:0.14em; text-transform:uppercase;
-  padding:11px 0; cursor:pointer;
-  transition:background 0.3s,color 0.3s;
+  width:100%;
+  background:transparent;
+  border:1px solid #3a2e1f;
+  color:#8b7855;
+  font-family:'Cormorant Garamond',serif;
+  font-size:12px;
+  letter-spacing:0.18em;
+  text-transform:uppercase;
+  padding:12px 0;
+  cursor:pointer;
+  transition:border-color 0.3s, color 0.3s, background 0.3s;
 }
-.wd-submit:hover { background:#d9c79a; color:#1a1410; }
+.wd-submit:not(:disabled):hover {
+  border-color:#d9c79a;
+  color:#d9c79a;
+  background:rgba(217,199,154,0.06);
+}
+.wd-submit:disabled {
+  opacity:0.35;
+  cursor:default;
+}
+
+/* Dispute options */
+.wd-dispute-opt {
+  padding:14px 16px;
+  border:1px solid #2a1f15;
+  border-radius:2px;
+  cursor:pointer;
+  margin-bottom:10px;
+  background:rgba(0,0,0,0.2);
+  transition:border-color 0.3s, background 0.3s;
+}
+.wd-dispute-opt:hover {
+  border-color:#d9c79a;
+  background:rgba(217,199,154,0.06);
+}
+.wd-dispute-opt-label {
+  font-family:'Cormorant Garamond',serif;
+  font-size:16px;
+  font-style:italic;
+  color:#d9c79a;
+  margin-bottom:4px;
+}
+.wd-dispute-opt-desc {
+  font-size:12px;
+  color:#8b7855;
+  letter-spacing:0.04em;
+}
 
 .wd-reaction {
   font-size:15px; line-height:1.65; color:#ebd9b8;
