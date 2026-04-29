@@ -440,7 +440,20 @@ function initRooms() {
   window.placeEvidenceOnPedestal = placeEvidenceWithCheck;
 
   // Wire ROOM_DESCRIPTIONS for ui.js
-  window.ROOM_DESCRIPTIONS = ROOM_DESCRIPTIONS;
+  // Expose current room pan offset for armory overlay alignment
+window.getArmoryScrollX = function () {
+  // _curX is the pan position in the room renderer (positive = panned left)
+  // Armory overlay uses this to align hotspots with the visible image position.
+  // We negate because _curX positive means image shifted right (scrolled left).
+  // The overlay imgLayout function positions from left edge, so we pass
+  // the absolute pixel offset of the image left edge from screen left.
+  const bg = (typeof _getBg === 'function') ? _getBg() : null;
+  if (!bg) return 0;
+  const rect = bg.getBoundingClientRect();
+  return Math.max(0, -rect.left);
+};
+
+window.ROOM_DESCRIPTIONS = ROOM_DESCRIPTIONS;
 
   NocturneEngine.on('roomEntered', ({ roomId }) => {
     renderCurrentRoom();
@@ -666,6 +679,13 @@ window._closeWineDuel = function() {
   if (container && window.WINE_DUEL) _renderWineEntry(container);
 };
 
+window._closeWineDuel = function() {
+  const overlay = document.getElementById('wine-duel-overlay');
+  if (overlay) overlay.style.display = 'none';
+  const container = document.getElementById('wine-duel-container');
+  if (container && window.WINE_DUEL) _renderWineEntry(container);
+};
+
 function _renderWineEntry(container) {
   const WD = window.WINE_DUEL;
   const paid = window.gameState && window.gameState.paidTierUnlocked;
@@ -769,6 +789,10 @@ function _renderWineRegionMap(container) {
         <div style="display:flex;gap:10px;">
           <button class="wd-btn" style="padding:7px 14px;font-size:12px;" onclick="window._openWineDuel()">Begin the duel →</button>
           <button class="wd-btn" style="padding:7px 14px;font-size:12px;" onclick="window._backToWineEntry()">← Back</button>
+          <button style="background:transparent;border:1px solid rgba(217,199,154,0.3);
+                         color:rgba(217,199,154,0.5);font-size:14px;cursor:pointer;
+                         padding:5px 10px;border-radius:2px;"
+                  onclick="window._closeWineDuel()">✕</button>
         </div>
       </div>
 
@@ -2420,6 +2444,19 @@ const ROOM_PARALLAX = {
 
   requestAnimationFrame(_tick);
 })();
+// Expose current room pan offset for armory overlay alignment
+window.getArmoryScrollX = function () {
+  // _curX is the pan position in the room renderer (positive = panned left)
+  // Armory overlay uses this to align hotspots with the visible image position.
+  // We negate because _curX positive means image shifted right (scrolled left).
+  // The overlay imgLayout function positions from left edge, so we pass
+  // the absolute pixel offset of the image left edge from screen left.
+  const bg = (typeof _getBg === 'function') ? _getBg() : null;
+  if (!bg) return 0;
+  const rect = bg.getBoundingClientRect();
+  return Math.max(0, -rect.left);
+};
+
 window.ROOM_DESCRIPTIONS = ROOM_DESCRIPTIONS;
 window.CURATOR_INSULTS = CURATOR_INSULTS;
 window.CHARACTER_POSITIONS = CHARACTER_POSITIONS;

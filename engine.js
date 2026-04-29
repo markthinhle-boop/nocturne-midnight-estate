@@ -256,16 +256,15 @@ const ROOM_ADJACENCY = {
   "wine-cellar":       ["vault"],
   "tunnel-passage":    [],
   // ── EAST WING — symmetric 2×3 grid attached to Study by a corridor ──
-  // Study → Map Room → Dining Room (row 1, chains east)
-  // Map Room → Trophy Room → Armory (inner column, chains south)
-  // Dining Room → Billiard Room → Glasshouse (outer column, chains south)
-  // Armory ↔ Glasshouse (loop close at far south)
+  // Inner column (x=405): Map Room → Trophy → Armory (top to bottom)
+  // Outer column (x=485): Dining → Conservatory → Billiard (top to bottom)
+  // Cross-links: Map↔Dining (row 1), Armory↔Billiard (row 3). No row-2 cross-link.
   "map-room":          ["study", "dining-room", "trophy-room"],
-  "dining-room":       ["map-room", "billiard-room"],
+  "dining-room":       ["map-room", "conservatory"],
   "trophy-room":       ["map-room", "weapons-room"],
-  "billiard-room":     ["dining-room", "conservatory"],
-  "weapons-room":      ["trophy-room", "conservatory"],
-  "conservatory":      ["billiard-room", "weapons-room"],
+  "conservatory":      ["dining-room", "billiard-room"],
+  "weapons-room":      ["trophy-room", "billiard-room"],
+  "billiard-room":     ["conservatory", "weapons-room"],
   // Compact — all open simultaneously on tunnel arrival
   "c6-tunnel":         ["c1-arrival","wine-cellar"],
   "c1-arrival":        ["c6-tunnel","c7-study","c3-original","c5-correspondence","c8-gallery"],
@@ -1375,6 +1374,15 @@ const ROOM_OBJECTS = {
     hotspot: { left: 18, top: 33, width: 42, height: 32 },
   },
 
+  // ── WEAPONS ROOM ───────────────────────────────────────────
+  "weapons-case-obj": {
+    room: "weapons-room",
+    tap_1: "A sealed mahogany and brass display case. The lock mechanism is not a keyhole — something else controls it.",
+    item_id: null, item_at_depth: null, is_essential: false, is_deception_item: false,
+    slow_drag: false, max_depth: 1,
+    hotspot: { left: 70, top: 48, width: 22, height: 28 },
+  },
+
   // ── LIBRARY ────────────────────────────────────────────────
   "chess-board-obj": {
     room: "library",
@@ -2016,6 +2024,20 @@ function tapObject(objectId, tapX, tapY) {
     } else {
       showToast('Chess script not loaded. Add <script src="chess.js"></script> to index.html.');
       console.error('[chess] window.openChess is undefined — chess.js is not loaded');
+    }
+    return;
+  }
+
+  // weapons-case-obj — launches The Armoury escape room
+  if (objectId === 'weapons-case-obj') {
+    if (typeof window.openArmory === 'function') {
+      // Pass current room scroll offset so overlay aligns with the image
+      const scrollX = (typeof window.getArmoryScrollX === 'function')
+        ? window.getArmoryScrollX() : 0;
+      window.openArmory(scrollX);
+    } else {
+      showToast('Armoury script not loaded. Add <script src="%PUBLIC_URL%/armory-escape.js"></script> to index.html.');
+      console.error('[armoury] window.openArmory is undefined — armory-escape.js is not loaded');
     }
     return;
   }
