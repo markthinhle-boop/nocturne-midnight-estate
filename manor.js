@@ -763,7 +763,7 @@ function _renderWineRegionMap(container) {
         <div id="wine-map-inner" style="position:absolute;width:100%;height:100%;
               transform-origin:center center;transition:none;">
           <!-- Map image -->
-          <img src="assets/items/nocturne-wine-map.png"
+          <img src="${ASSET_BASE}items/nocturne-wine-map.png"
                style="width:100%;height:100%;object-fit:cover;display:block;user-select:none;"
                draggable="false">
           <!-- SVG hotspot overlay — same dimensions as image -->
@@ -799,15 +799,25 @@ function _renderWineRegionMap(container) {
       }
       .wm-label {
         font-family:'Cormorant Garamond',serif;
-        font-size:11px;font-style:italic;
-        color:#ebd9b8;
+        font-size:12px;font-style:italic;font-weight:600;
+        color:#fff;
         white-space:nowrap;text-align:center;
         pointer-events:none;
         display:flex;flex-direction:column;align-items:center;gap:1px;
-        text-shadow:0 1px 3px rgba(0,0,0,0.9),0 0 8px rgba(0,0,0,0.8);
+        text-shadow:
+          0 0 4px rgba(0,0,0,1),
+          0 0 8px rgba(0,0,0,1),
+          0 1px 2px rgba(0,0,0,1),
+          -1px -1px 0 rgba(0,0,0,0.9),
+          1px -1px 0 rgba(0,0,0,0.9),
+          -1px 1px 0 rgba(0,0,0,0.9),
+          1px 1px 0 rgba(0,0,0,0.9);
       }
       .wm-victorian {
-        font-size:10px;color:#8b7855;display:block;
+        font-size:10px;color:#d9c79a;display:block;
+        text-shadow:
+          0 0 4px rgba(0,0,0,1),
+          0 1px 2px rgba(0,0,0,1);
       }
       .wm-hotspot.visited.white .wm-label { color:#d9c79a; }
       .wm-hotspot.visited.red   .wm-label { color:#c98787; }
