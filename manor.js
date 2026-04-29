@@ -691,38 +691,216 @@ function _runWineDuelFlow(container) {
   _renderWineEntry(container);
 }
 
+// Wine region hotspot positions on nocturne-wine-map.png
+// Coordinates as percentage of image dimensions
+const WINE_MAP_HOTSPOTS = {
+  rhine:     { x:57, y:38, label:'The Rhine',    victorian:'Hock',       domain:'white' },
+  moselle:   { x:54, y:40, label:'The Moselle',  victorian:'Moselle',    domain:'white' },
+  champagne: { x:47, y:42, label:'Champagne',    victorian:'Champagne',  domain:'white' },
+  sauternes: { x:40, y:55, label:'Sauternes',    victorian:'Sauterne',   domain:'white' },
+  madeira:   { x:18, y:82, label:'Madeira',      victorian:'Madeira',    domain:'white' },
+  bordeaux:  { x:40, y:52, label:'Bordeaux',     victorian:'Claret',     domain:'red'   },
+  burgundy:  { x:50, y:47, label:'Burgundy',     victorian:'Burgundy',   domain:'red'   },
+  rhone:     { x:51, y:53, label:'The Rhône',    victorian:'Hermitage',  domain:'red'   },
+  douro:     { x:32, y:62, label:'The Douro',    victorian:'Port',       domain:'red'   },
+  tokaj:     { x:74, y:42, label:'Tokaj',        victorian:'Tokay',      domain:'red'   },
+  jerez:     { x:35, y:72, label:'Jerez',        victorian:'Sherry',     domain:'red'   },
+};
+
 function _renderWineRegionMap(container) {
   const WD = window.WINE_DUEL;
 
+  // Build hotspot markers HTML
+  const markers = Object.entries(WINE_MAP_HOTSPOTS).map(([id, h]) => {
+    const visited = _wineVisited[h.domain].has(id);
+    const color = visited
+      ? (h.domain === 'white' ? '#d9c79a' : '#a83838')
+      : 'rgba(217,199,154,0.35)';
+    const glow = visited
+      ? (h.domain === 'white' ? '0 0 12px #d9c79a, 0 0 24px rgba(217,199,154,0.4)' : '0 0 12px #a83838, 0 0 24px rgba(168,56,56,0.4)')
+      : 'none';
+    return `
+      <div class="wm-hotspot ${visited?'visited':''} ${h.domain}"
+           style="left:${h.x}%;top:${h.y}%;"
+           onclick="window._visitWineRegion('${id}','${h.domain}')"
+           title="${h.label}">
+        <div class="wm-dot" style="background:${color};box-shadow:${glow};"></div>
+        <div class="wm-label">${h.label}<span class="wm-victorian">${h.victorian}</span></div>
+      </div>`;
+  }).join('');
+
   container.innerHTML = `
-    <div class="wd-panel" style="max-width:660px;width:min(92vw,660px);">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
-        <div class="wd-region-name" style="font-size:18px;margin-bottom:0;">The Wines</div>
-        <button class="wd-btn" style="padding:7px 16px;font-size:12px;" onclick="window._backToWineEntry()">← Back</button>
-      </div>
-      <div style="font-size:13px;color:#8b7855;margin-bottom:20px;">Tap any region to learn about it. Begin the duel whenever you are ready.</div>
+    <div id="wine-map-screen" style="position:fixed;inset:0;background:#1a1208;display:flex;flex-direction:column;z-index:1;">
 
-      <div style="margin-bottom:10px;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:#8b7855;">White Wines</div>
-      <div class="wd-map-regions" style="margin-bottom:24px;">
-        ${WD.whites.map(id => {
-          const r = WD.regions[id];
-          const visited = _wineVisited.white.has(id);
-          return `<div class="wd-map-region ${visited?'visited':''}" onclick="window._visitWineRegion('${id}','white')">${r.displayName}<br><span style="font-size:11px;opacity:0.6">${r.victorianName}</span></div>`;
-        }).join('')}
-      </div>
-
-      <div style="margin-bottom:10px;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:#8b7855;">Red Wines</div>
-      <div class="wd-map-regions" style="margin-bottom:24px;">
-        ${WD.reds.map(id => {
-          const r = WD.regions[id];
-          const visited = _wineVisited.red.has(id);
-          return `<div class="wd-map-region ${visited?'visited red':''}" onclick="window._visitWineRegion('${id}','red')">${r.displayName}<br><span style="font-size:11px;opacity:0.6">${r.victorianName}</span></div>`;
-        }).join('')}
+      <!-- Header -->
+      <div style="display:flex;justify-content:space-between;align-items:center;
+                  padding:14px 18px;background:rgba(26,18,8,0.9);
+                  border-bottom:1px solid #3a2e1f;flex-shrink:0;z-index:2;">
+        <div style="font-family:'Cormorant Garamond',serif;font-size:18px;font-style:italic;color:#d9c79a;">
+          The Wine Regions of Europe
+        </div>
+        <div style="display:flex;gap:10px;">
+          <button class="wd-btn" style="padding:7px 14px;font-size:12px;" onclick="window._openWineDuel()">Begin the duel →</button>
+          <button class="wd-btn" style="padding:7px 14px;font-size:12px;" onclick="window._backToWineEntry()">← Back</button>
+        </div>
       </div>
 
-      <button class="wd-btn" style="width:100%;" onclick="window._openWineDuel()">Begin the duel →</button>
+      <!-- Legend -->
+      <div style="display:flex;gap:18px;padding:8px 18px;background:rgba(26,18,8,0.8);flex-shrink:0;z-index:2;">
+        <div style="display:flex;align-items:center;gap:6px;font-family:'Cormorant Garamond',serif;font-size:12px;color:#d9c79a;">
+          <div style="width:10px;height:10px;border-radius:50%;background:#d9c79a;"></div> White wines
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;font-family:'Cormorant Garamond',serif;font-size:12px;color:#c98787;">
+          <div style="width:10px;height:10px;border-radius:50%;background:#a83838;"></div> Red wines
+        </div>
+        <div style="font-family:'Cormorant Garamond',serif;font-size:12px;color:#8b7855;margin-left:auto;">
+          Pinch to zoom · Tap a region to learn
+        </div>
+      </div>
+
+      <!-- Map container -->
+      <div id="wine-map-viewport" style="flex:1;overflow:hidden;position:relative;touch-action:none;">
+        <div id="wine-map-inner" style="position:absolute;width:100%;height:100%;
+              transform-origin:center center;transition:none;">
+          <!-- Map image -->
+          <img src="assets/items/nocturne-wine-map.png"
+               style="width:100%;height:100%;object-fit:cover;display:block;user-select:none;"
+               draggable="false">
+          <!-- SVG hotspot overlay — same dimensions as image -->
+          <div id="wine-map-hotspots" style="position:absolute;inset:0;">
+            ${markers}
+          </div>
+        </div>
+      </div>
+
     </div>
+
+    <style>
+      .wm-hotspot {
+        position:absolute;
+        transform:translate(-50%,-50%);
+        cursor:pointer;
+        z-index:5;
+        display:flex;
+        flex-direction:column;
+        align-items:center;
+        gap:4px;
+      }
+      .wm-dot {
+        width:16px;height:16px;
+        border-radius:50%;
+        border:2px solid rgba(255,255,255,0.3);
+        transition:transform 0.3s,box-shadow 0.4s;
+        flex-shrink:0;
+      }
+      .wm-hotspot:hover .wm-dot,
+      .wm-hotspot:active .wm-dot {
+        transform:scale(1.4);
+      }
+      .wm-label {
+        font-family:'Cormorant Garamond',serif;
+        font-size:11px;font-style:italic;
+        color:#ebd9b8;
+        background:rgba(10,7,5,0.75);
+        padding:2px 6px;border-radius:2px;
+        white-space:nowrap;text-align:center;
+        pointer-events:none;
+        display:flex;flex-direction:column;align-items:center;gap:1px;
+      }
+      .wm-victorian {
+        font-size:10px;color:#8b7855;display:block;
+      }
+      .wm-hotspot.visited.white .wm-label { color:#d9c79a; }
+      .wm-hotspot.visited.red   .wm-label { color:#c98787; }
+    </style>
   `;
+
+  // Wire pinch-zoom and pan on the map
+  _initWineMapGestures();
+}
+
+function _initWineMapGestures() {
+  const viewport = document.getElementById('wine-map-viewport');
+  const inner    = document.getElementById('wine-map-inner');
+  if (!viewport || !inner) return;
+
+  let scale = 1, tx = 0, ty = 0;
+  let isDragging = false, dragStartX = 0, dragStartY = 0, baseTx = 0, baseTy = 0;
+  let pinchStartDist = 0, pinchStartScale = 1;
+
+  const MIN_SCALE = 1, MAX_SCALE = 4;
+
+  function clamp(val, min, max) { return Math.max(min, Math.min(max, val)); }
+
+  function applyTransform() {
+    const vw = viewport.offsetWidth, vh = viewport.offsetHeight;
+    const maxTx = (scale - 1) * vw / 2;
+    const maxTy = (scale - 1) * vh / 2;
+    tx = clamp(tx, -maxTx, maxTx);
+    ty = clamp(ty, -maxTy, maxTy);
+    inner.style.transform = `translate(${tx}px,${ty}px) scale(${scale})`;
+  }
+
+  function pinchDist(e) {
+    const dx = e.touches[0].clientX - e.touches[1].clientX;
+    const dy = e.touches[0].clientY - e.touches[1].clientY;
+    return Math.sqrt(dx*dx + dy*dy);
+  }
+
+  viewport.addEventListener('touchstart', e => {
+    if (e.touches.length === 1) {
+      isDragging = true;
+      dragStartX = e.touches[0].clientX;
+      dragStartY = e.touches[0].clientY;
+      baseTx = tx; baseTy = ty;
+    }
+    if (e.touches.length === 2) {
+      isDragging = false;
+      pinchStartDist  = pinchDist(e);
+      pinchStartScale = scale;
+    }
+  }, { passive: true });
+
+  viewport.addEventListener('touchmove', e => {
+    e.preventDefault();
+    if (e.touches.length === 2) {
+      const ratio = pinchDist(e) / pinchStartDist;
+      scale = clamp(pinchStartScale * ratio, MIN_SCALE, MAX_SCALE);
+      applyTransform();
+      return;
+    }
+    if (isDragging && e.touches.length === 1) {
+      tx = baseTx + (e.touches[0].clientX - dragStartX);
+      ty = baseTy + (e.touches[0].clientY - dragStartY);
+      applyTransform();
+    }
+  }, { passive: false });
+
+  viewport.addEventListener('touchend', e => {
+    if (e.touches.length === 0) {
+      isDragging = false;
+      if (scale < 1.05) { scale = 1; tx = 0; ty = 0; applyTransform(); }
+    }
+  }, { passive: true });
+
+  // Mouse drag for desktop testing
+  viewport.addEventListener('mousedown', e => {
+    isDragging = true;
+    dragStartX = e.clientX; dragStartY = e.clientY;
+    baseTx = tx; baseTy = ty;
+  });
+  viewport.addEventListener('mousemove', e => {
+    if (!isDragging) return;
+    tx = baseTx + (e.clientX - dragStartX);
+    ty = baseTy + (e.clientY - dragStartY);
+    applyTransform();
+  });
+  viewport.addEventListener('mouseup', () => { isDragging = false; });
+  viewport.addEventListener('wheel', e => {
+    e.preventDefault();
+    scale = clamp(scale - e.deltaY * 0.001, MIN_SCALE, MAX_SCALE);
+    applyTransform();
+  }, { passive: false });
 }
 
 window._backToWineEntry = function() {
