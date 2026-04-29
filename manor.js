@@ -453,6 +453,15 @@ window.getArmoryScrollX = function () {
   return Math.max(0, -rect.left);
 };
 
+// Expose current room image scroll offset for armory overlay alignment
+window.getArmoryScrollX = function () {
+  const roomId = (window.gameState && window.gameState.currentRoom) || '';
+  const room = document.getElementById('room-' + roomId);
+  const bg = room ? room.querySelector('.room-bg') : null;
+  if (bg) { const r = bg.getBoundingClientRect(); return Math.max(0, -r.left); }
+  return 0;
+};
+
 window.ROOM_DESCRIPTIONS = ROOM_DESCRIPTIONS;
 
   NocturneEngine.on('roomEntered', ({ roomId }) => {
@@ -2455,6 +2464,15 @@ window.getArmoryScrollX = function () {
   if (!bg) return 0;
   const rect = bg.getBoundingClientRect();
   return Math.max(0, -rect.left);
+};
+
+// Expose current room image scroll offset for armory overlay alignment
+window.getArmoryScrollX = function () {
+  const roomId = (window.gameState && window.gameState.currentRoom) || '';
+  const room = document.getElementById('room-' + roomId);
+  const bg = room ? room.querySelector('.room-bg') : null;
+  if (bg) { const r = bg.getBoundingClientRect(); return Math.max(0, -r.left); }
+  return 0;
 };
 
 window.ROOM_DESCRIPTIONS = ROOM_DESCRIPTIONS;

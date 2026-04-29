@@ -1430,8 +1430,7 @@
     // Room state changes — visual feedback on the actual room
     _drawRoomStateChanges(ctx, L, s, animT);
 
-    // Northcott silhouette (prologue)
-    if(s.mode==='prologue'&&!s.escaped) _drawNorthcott(ctx, L, animT);
+    // Northcott speaks via dialogue text only — no silhouette drawn
 
     // Hotspot markers
     _drawHotspots(ctx, W, H, L, s, animT);
@@ -1949,7 +1948,16 @@
 
     // Intro / summary — full intercept
     if(s.phase==='intro'){
-      if(_hit(p.x,p.y,_introRects.enter)){s.phase='play';_introFade=0;}
+      if(_hit(p.x,p.y,_introRects.enter)){
+        s.phase='play';_introFade=0;
+        // Fade Northcott portrait out — he speaks via dialogue boxes during the game
+        const nc=document.getElementById('char-northcott');
+        if(nc){
+          nc.style.transition='opacity 1.2s ease';
+          nc.style.opacity='0';
+          nc.style.pointerEvents='none';
+        }
+      }
       else if(_hit(p.x,p.y,_introRects.leave)){closeArmory();}
       return;
     }
@@ -2083,6 +2091,13 @@
 
   function closeArmory(){
     window._armoryClosedAt = Date.now(); // suppress re-open from same tap
+    // Restore Northcott portrait — fade back in at his last prologue dialogue state
+    const nc=document.getElementById('char-northcott');
+    if(nc){
+      nc.style.transition='opacity 0.8s ease';
+      nc.style.opacity='1';
+      nc.style.pointerEvents='';
+    }
     if(_raf)cancelAnimationFrame(_raf);_raf=null;
     if(_modal&&_modal.parentNode)_modal.parentNode.removeChild(_modal);
     _modal=null;_canvas=null;_ctx=null;_state=null;_activePuzzle=null;
