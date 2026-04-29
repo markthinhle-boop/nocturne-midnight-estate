@@ -801,11 +801,10 @@ function _renderWineRegionMap(container) {
         font-family:'Cormorant Garamond',serif;
         font-size:11px;font-style:italic;
         color:#ebd9b8;
-        background:rgba(10,7,5,0.75);
-        padding:2px 6px;border-radius:2px;
         white-space:nowrap;text-align:center;
         pointer-events:none;
         display:flex;flex-direction:column;align-items:center;gap:1px;
+        text-shadow:0 1px 3px rgba(0,0,0,0.9),0 0 8px rgba(0,0,0,0.8);
       }
       .wm-victorian {
         font-size:10px;color:#8b7855;display:block;
