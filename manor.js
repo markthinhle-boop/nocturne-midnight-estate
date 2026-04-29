@@ -516,6 +516,8 @@ function _buildHotspots() {
   const THUMB_ROOMS = new Set(['study']);
 
   Object.entries(ROOM_OBJECTS).forEach(([objectId, obj]) => {
+    // Skip telescope hotspot during prologue — Vivienne is masked, doesn't fit her hostess role
+    if (objectId === 'terrace-telescope-obj' && gameState.prologueActive) return;
     const layer = document.getElementById(`hotspots-${obj.room}`);
     if (!layer) return;
     const hs = document.createElement('div');
@@ -542,6 +544,25 @@ function _buildHotspots() {
   });
 }
 
+// Build just the telescope hotspot — called when prologue ends
+window.buildTelescopeHotspot = function() {
+  if (document.getElementById('hs-terrace-telescope-obj')) return; // already exists
+  const obj = ROOM_OBJECTS['terrace-telescope-obj'];
+  if (!obj) return;
+  const layer = document.getElementById(`hotspots-${obj.room}`);
+  if (!layer) return;
+  const hs = document.createElement('div');
+  hs.className = 'hotspot';
+  hs.id = 'hs-terrace-telescope-obj';
+  hs.style.cssText = `left:${obj.hotspot.left}%;top:${obj.hotspot.top}%;width:${obj.hotspot.width}%;height:${obj.hotspot.height}%;`;
+  hs.addEventListener('click', e => {
+    e.stopPropagation();
+    const r = hs.getBoundingClientRect();
+    _onHotspotTap('terrace-telescope-obj', r.left + r.width / 2, r.top);
+  });
+  layer.appendChild(hs);
+};
+
 function _onHotspotTap(objectId, tapX, tapY) {
   // tunnel-door: bypass tapObject entirely — launch tunnel directly
   if (objectId === 'tunnel-door') {
@@ -552,6 +573,7 @@ function _onHotspotTap(objectId, tapX, tapY) {
 
   // telescope: launch Vivienne minigame if not raining
   if (objectId === 'terrace-telescope-obj') {
+    if (gameState.prologueActive) return; // not available during prologue
     _launchTelescopeMinigame();
     return;
   }
