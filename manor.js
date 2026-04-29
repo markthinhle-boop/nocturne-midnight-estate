@@ -638,18 +638,7 @@ function _launchWineDuel() {
   bgDim.style.cssText = 'position:absolute;inset:0;background:rgba(5,3,2,0.72);pointer-events:none;z-index:0;';
   overlay.appendChild(bgDim);
 
-  // Close button
-  const closeBtn = document.createElement('button');
-  closeBtn.textContent = '← Leave the Table';
-  closeBtn.style.cssText = [
-    'position:absolute','top:18px','left:18px',
-    'background:transparent','border:none',
-    'color:rgba(217,199,154,0.5)','font-family:Cormorant Garamond,serif',
-    'font-size:13px','letter-spacing:0.12em','cursor:pointer',
-    'z-index:10',
-  ].join(';');
-  closeBtn.addEventListener('click', () => { overlay.style.display = 'none'; });
-  overlay.appendChild(closeBtn);
+  // Close injected into map header and duel panel — not floating here
 
   // Mount WINE_DUEL UI into overlay
   const container = document.createElement('div');
@@ -662,6 +651,13 @@ function _launchWineDuel() {
   // Show entry choice: Study or Duel
   _renderWineEntry(container);
 }
+
+window._closeWineDuel = function() {
+  const overlay = document.getElementById('wine-duel-overlay');
+  if (overlay) overlay.style.display = 'none';
+  const container = document.getElementById('wine-duel-container');
+  if (container && window.WINE_DUEL) _renderWineEntry(container);
+};
 
 window._closeWineDuel = function() {
   const overlay = document.getElementById('wine-duel-overlay');
