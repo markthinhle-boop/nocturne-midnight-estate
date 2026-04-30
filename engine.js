@@ -1365,6 +1365,15 @@ const ROOM_OBJECTS = {
     max_depth: 1, hotspot: { left: 61.6, top: 32.1, width: 10.3, height: 8.8 },
   },
 
+  // ── MAP ROOM ───────────────────────────────────────────────
+  "map-table-obj": {
+    room: "map-room",
+    tap_1: "A large campaign table. Spread across it: a map of the British Empire, 1888. Territory markers, demand tokens, dispatch routes. Someone has been playing.",
+    item_id: null, item_at_depth: null, is_essential: false, is_deception_item: false,
+    slow_drag: false, max_depth: 1,
+    hotspot: { left: 15, top: 30, width: 70, height: 55 },
+  },
+
   // ── BILLIARD ROOM ──────────────────────────────────────────
   "billiard-table-obj": {
     room: "billiard-room",
@@ -2033,6 +2042,31 @@ function tapObject(objectId, tapX, tapY) {
     } else {
       showToast('Chess script not loaded. Add <script src="chess.js"></script> to index.html.');
       console.error('[chess] window.openChess is undefined — chess.js is not loaded');
+    }
+    return;
+  }
+
+  // map-table-obj — launches The Map Room game
+  if (objectId === 'map-table-obj') {
+    if (window._mapGameClosedAt && Date.now() - window._mapGameClosedAt < 800) return;
+    if (typeof window.openMapGame === 'function') {
+      window.openMapGame();
+    } else {
+      showToast('Map Room script not loaded. Add <script src="map-room-game.js"></script> to index.html.');
+      console.error('[mapgame] window.openMapGame is undefined — map-room-game.js is not loaded');
+    }
+    return;
+  }
+
+  // weapons-case-obj — launches The Armoury escape room
+  if (objectId === 'weapons-case-obj') {
+    if (window._armoryClosedAt && Date.now() - window._armoryClosedAt < 800) return;
+    if (typeof window.openArmory === 'function') {
+      const scrollX = (typeof window.getArmoryScrollX === 'function') ? window.getArmoryScrollX() : 0;
+      window.openArmory(scrollX);
+    } else {
+      showToast('Armoury script not loaded. Add <script src="armory-escape.js"></script> to index.html.');
+      console.error('[armoury] window.openArmory is undefined — armory-escape.js is not loaded');
     }
     return;
   }
