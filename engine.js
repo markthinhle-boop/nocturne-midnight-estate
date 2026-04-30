@@ -1371,7 +1371,7 @@ const ROOM_OBJECTS = {
     tap_1: "A large campaign table. Spread across it: a map of the British Empire, 1888. Territory markers, demand tokens, dispatch routes. Someone has been playing.",
     item_id: null, item_at_depth: null, is_essential: false, is_deception_item: false,
     slow_drag: false, max_depth: 1,
-    hotspot: { left: 20, top: 35, width: 60, height: 45 },
+    hotspot: { left: 25, top: 55, width: 45, height: 30 },
   },
 
   // ── BILLIARD ROOM ──────────────────────────────────────────
