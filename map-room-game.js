@@ -19,7 +19,14 @@
     // Inject scoped styles
     _styleEl = document.createElement('style');
     _styleEl.id = 'map-room-styles';
-    _styleEl.textContent = CSS;
+    // Fix asset paths — resolve against ASSET_BASE when running inside main game
+    const _assetBase = (typeof ASSET_BASE !== 'undefined') ? ASSET_BASE : './assets/';
+    const _fixedCSS = CSS
+      .replace("url('assets/items/nocturne-item-mapboard.png')",
+               "url('" + _assetBase + "items/nocturne-item-mapboard.png')")
+      .replace("url('surgeon-masked.png')",
+               "url('" + _assetBase + "characters/nocturne-char-surgeon-masked.png')");
+    _styleEl.textContent = _fixedCSS;
     document.head.appendChild(_styleEl);
 
     // Build modal
