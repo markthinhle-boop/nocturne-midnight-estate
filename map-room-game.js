@@ -1,63 +1,2115 @@
 /* ============================================================================
  * NOCTURNE — MAP ROOM GAME
- * Wraps map-room-game.html as a modal.
- * Exposes: openMapGame() / closeMapGame() on window.
+ * Self-contained module. Call openMapGame() to launch, closeMapGame() to exit.
  * ============================================================================ */
-(function () {
+(function(){
   'use strict';
 
-  let _modal = null;
-  let _styleEl = null;
+  if (window.openMapGame) return; // already loaded
 
-  function openMapGame() {
-    if (_modal) return;
+  var _modal = null;
+  var _styleEl = null;
+  var _gameInited = false;
 
-    const _assetBase = (typeof ASSET_BASE !== 'undefined') ? ASSET_BASE : './assets/';
-    const mapUrl     = _assetBase + 'items/nocturne-item-mapboard.png';
-    const surgeonUrl = _assetBase + 'characters/nocturne-char-surgeon-masked.png';
+  window.openMapGame = function() {
+    if (_modal) { _modal.style.display = 'block'; return; }
 
-    _styleEl = document.createElement('style');
-    _styleEl.id = 'map-room-styles';
-    _styleEl.textContent = CSS
-      .replace('url(\'MAPBOARD_PLACEHOLDER\')', "url('" + mapUrl + "')")
-      .replace('url(\'SURGEON_PLACEHOLDER\')',  "url('" + surgeonUrl + "')");
-    document.head.appendChild(_styleEl);
+    // Inject styles once
+    if (!_styleEl) {
+      _styleEl = document.createElement('style');
+      _styleEl.id = 'map-room-styles';
+      _styleEl.textContent = MAP_CSS;
+      document.head.appendChild(_styleEl);
+    }
 
+    // Create modal container with the game markup
     _modal = document.createElement('div');
     _modal.id = 'map-room-modal';
-    _modal.style.cssText = 'position:fixed;inset:0;z-index:9999;overflow:hidden;background:#1a110a;';
-    _modal.innerHTML = BODY_HTML;
+    _modal.style.cssText = 'position:fixed;inset:0;z-index:9999;background:#1a110a;overflow:hidden;';
+    _modal.innerHTML = MAP_BODY;
     document.body.appendChild(_modal);
 
-    const closeBtn = document.createElement('button');
-    closeBtn.textContent = '✕ LEAVE';
-    closeBtn.style.cssText = 'position:fixed;top:8px;right:140px;z-index:10001;background:rgba(26,17,10,0.92);color:#b08838;border:1px solid #8a6926;padding:5px 12px;font-family:Georgia,serif;font-size:11px;cursor:pointer;border-radius:3px;letter-spacing:0.05em;';
-    closeBtn.onclick = closeMapGame;
-    _modal.appendChild(closeBtn);
+    // Add LEAVE button
+    var leaveBtn = document.createElement('button');
+    leaveBtn.textContent = '✕ LEAVE';
+    leaveBtn.style.cssText = 'position:fixed;top:8px;right:12px;z-index:10001;background:rgba(26,17,10,0.92);color:#b08838;border:1px solid #8a6926;padding:5px 12px;font-family:Georgia,serif;font-size:11px;cursor:pointer;letter-spacing:0.05em;';
+    leaveBtn.onclick = window.closeMapGame;
+    _modal.appendChild(leaveBtn);
 
-    // Run game script
+    // Run game initialization (the IIFE wires everything up)
     try {
-      const fn = new Function(GAME_SCRIPT);
+      var fn = new Function(MAP_GAME);
       fn();
+      _gameInited = true;
     } catch(e) {
       console.error('[MapGame] init error:', e);
     }
+  };
+
+  window.closeMapGame = function() {
+    if (_modal && _modal.parentNode) {
+      _modal.parentNode.removeChild(_modal);
+    }
+    _modal = null;
+    _gameInited = false;
+    // Note: leave styles in head for next open (cheaper)
+  };
+
+  // ============================================================================
+  // EMBEDDED ASSETS
+  // ============================================================================
+
+  var _AB = (typeof window.ASSET_BASE !== "undefined") ? window.ASSET_BASE : "./assets/";
+
+  var MAP_CSS = `@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&display=swap');
+
+  :root {
+    --parchment: #e8dcc4;
+    --parchment-dark: #d4c19f;
+    --ink: #2a1a0e;
+    --oxblood: #722f1d;
+    --gold: #b08838;
+    --gold-faded: #8a6926;
+    --candle: #d4a04a;
+    --walnut: #2d1f15;
+    --walnut-deep: #1a110a;
+    --player-color: #2c3e4a;
+    --player-light: rgba(44, 62, 74, 0.30);
+    --opponent-color: #722f1d;
+    --opponent-light: rgba(114, 47, 29, 0.30);
   }
 
-  function closeMapGame() {
-    window._mapGameClosedAt = Date.now();
-    if (_modal && _modal.parentNode) _modal.parentNode.removeChild(_modal);
-    if (_styleEl && _styleEl.parentNode) _styleEl.parentNode.removeChild(_styleEl);
-    _modal = null; _styleEl = null;
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; width: 100%; overflow: hidden; background: var(--walnut-deep); font-family: 'Old Standard TT', Georgia, serif; color: var(--parchment); }
+  body { background: radial-gradient(ellipse at 30% 20%, rgba(212, 160, 74, 0.08) 0%, transparent 50%), radial-gradient(ellipse at 70% 80%, rgba(114, 47, 29, 0.06) 0%, transparent 50%), var(--walnut-deep); position: relative; }
+  body::before { content: ''; position: fixed; inset: 0; background: radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.55) 100%); pointer-events: none; z-index: 1; }
+
+  .room { position: fixed; top: 0; left: 0; right: 0; bottom: 0; display: grid; grid-template-rows: auto 1fr auto; z-index: 2; overflow: hidden; padding-top: env(safe-area-inset-top); padding-right: env(safe-area-inset-right); padding-bottom: env(safe-area-inset-bottom); padding-left: env(safe-area-inset-left); }
+
+  .header { position: relative; display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 0.9rem; border-bottom: 1px solid rgba(212, 160, 74, 0.18); background: linear-gradient(180deg, rgba(232, 220, 196, 0.04), transparent); }
+  .title { font-family: 'Cormorant Garamond', serif; font-weight: 600; font-style: italic; color: var(--gold); font-size: 0.85rem; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.85; }
+  .score { display: flex; flex-direction: column; line-height: 1.2; }
+  .score.right { text-align: right; }
+  .score .name { font-style: italic; color: var(--gold-faded); font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase; }
+  .score .nums { color: var(--parchment); font-size: 0.78rem; }
+  .score .inf { color: var(--candle); font-weight: 700; }
+  .score .sterling { opacity: 0.65; }
+  .inf-target { opacity: 0.4; font-size: 0.7rem; }
+
+  .main { position: relative; overflow: hidden; }
+  .map-area { position: relative; overflow: hidden; background: #2a1f15; width: 100%; height: 100%; touch-action: none; cursor: grab; }
+  .map-area.dragging { cursor: grabbing; }
+  /* Inner viewport — gets transformed for pan/zoom */
+  .map-viewport { position: absolute; inset: 0; transform-origin: 0 0; will-change: transform; }
+  .map-bg { position: absolute; inset: 0; background-image: url('" + _AB + "items/nocturne-item-mapboard.png'); background-size: contain; background-repeat: no-repeat; background-position: center; background-color: var(--parchment-dark); }
+
+  /* Zoom controls */
+  .zoom-controls { position: absolute; bottom: 0.6rem; left: 0.6rem; display: flex; flex-direction: column; gap: 4px; z-index: 6; }
+  .zoom-btn { width: 32px; height: 32px; background: rgba(26, 17, 10, 0.85); border: 1px solid var(--gold-faded); color: var(--parchment); font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s ease; padding: 0; line-height: 1; }
+  .zoom-btn:hover { background: rgba(212, 160, 74, 0.18); border-color: var(--candle); }
+  .zoom-btn:active { background: rgba(212, 160, 74, 0.3); }
+
+  .territories { position: absolute; inset: 0; pointer-events: none; }
+  .territory { position: absolute; pointer-events: auto; cursor: pointer; border-radius: 50%; transition: transform 0.15s ease; }
+  .territory .pin { width: 18px; height: 18px; border-radius: 50%; background: rgba(255, 255, 255, 0.35); border: 2px solid rgba(0, 0, 0, 0.55); box-shadow: 0 1px 4px rgba(0,0,0,0.4), inset 0 1px 2px rgba(255,255,255,0.4); transition: all 0.2s ease; }
+  /* Owned territories — bigger, brighter, pulsing in player color */
+  .territory.callum .pin {
+    background: var(--player-color);
+    border-color: #8fa8b8;
+    width: 22px; height: 22px;
+    box-shadow:
+      0 0 0 3px rgba(143, 168, 184, 0.45),
+      0 0 14px rgba(44, 62, 74, 0.95),
+      0 1px 6px rgba(0,0,0,0.6),
+      inset 0 1px 2px rgba(255,255,255,0.3);
+    animation: pulseCallum 2.2s ease-in-out infinite;
+  }
+  .territory.surgeon .pin {
+    background: var(--opponent-color);
+    border-color: #f5d088;
+    width: 22px; height: 22px;
+    box-shadow:
+      0 0 0 3px rgba(245, 208, 136, 0.5),
+      0 0 14px rgba(114, 47, 29, 0.9),
+      0 1px 6px rgba(0,0,0,0.6),
+      inset 0 1px 2px rgba(255,255,255,0.4);
+    animation: pulseSurgeon 2.4s ease-in-out infinite;
+  }
+  /* Reachable highlight stays gold/candle, faster pulse to feel "active" */
+  .territory.reachable .pin {
+    background: var(--candle);
+    border-color: var(--gold-faded);
+    width: 22px; height: 22px;
+    box-shadow: 0 0 12px rgba(212, 160, 74, 0.85);
+    animation: pulseReach 1.4s ease-in-out infinite;
+  }
+  .territory:hover .pin { transform: scale(1.25); }
+
+  @keyframes pulseCallum {
+    0%, 100% { box-shadow: 0 0 0 3px rgba(143, 168, 184, 0.35), 0 0 8px rgba(44, 62, 74, 0.7),  0 1px 6px rgba(0,0,0,0.6), inset 0 1px 2px rgba(255,255,255,0.25); }
+    50%      { box-shadow: 0 0 0 5px rgba(143, 168, 184, 0.65), 0 0 22px rgba(100, 140, 170, 1), 0 1px 6px rgba(0,0,0,0.6), inset 0 1px 2px rgba(255,255,255,0.35); }
+  }
+  @keyframes pulseSurgeon {
+    0%, 100% { box-shadow: 0 0 0 3px rgba(245, 208, 136, 0.4), 0 0 8px rgba(114, 47, 29, 0.7), 0 1px 6px rgba(0,0,0,0.6), inset 0 1px 2px rgba(255,255,255,0.4); }
+    50%      { box-shadow: 0 0 0 5px rgba(245, 208, 136, 0.7), 0 0 22px rgba(245, 100, 50, 1),  0 1px 6px rgba(0,0,0,0.6), inset 0 1px 2px rgba(255,255,255,0.5); }
+  }
+  @keyframes pulseReach {
+    0%, 100% { box-shadow: 0 0 8px rgba(212, 160, 74, 0.6); transform: scale(1); }
+    50%      { box-shadow: 0 0 18px rgba(255, 215, 130, 1);  transform: scale(1.15); }
   }
 
-  window.openMapGame  = openMapGame;
-  window.closeMapGame = closeMapGame;
+  .territory .label { position: absolute; top: 22px; left: 50%; transform: translateX(-50%); background: rgba(26, 17, 10, 0.92); color: var(--parchment); padding: 4px 8px; border-radius: 2px; font-family: 'Cormorant Garamond', serif; font-size: 0.75rem; white-space: nowrap; pointer-events: none; opacity: 0; transition: opacity 0.15s ease; z-index: 10; }
+  .territory:hover .label { opacity: 1; }
 
-  const CSS = "@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&display=swap');\n\n  :root {\n    --parchment: #e8dcc4;\n    --parchment-dark: #d4c19f;\n    --ink: #2a1a0e;\n    --oxblood: #722f1d;\n    --gold: #b08838;\n    --gold-faded: #8a6926;\n    --candle: #d4a04a;\n    --walnut: #2d1f15;\n    --walnut-deep: #1a110a;\n    --player-color: #2c3e4a;\n    --player-light: rgba(44, 62, 74, 0.30);\n    --opponent-color: #722f1d;\n    --opponent-light: rgba(114, 47, 29, 0.30);\n  }\n\n  * { box-sizing: border-box; margin: 0; padding: 0; }\n  html, body { height: 100%; width: 100%; overflow: hidden; background: var(--walnut-deep); font-family: 'Old Standard TT', Georgia, serif; color: var(--parchment); }\n  body { background: radial-gradient(ellipse at 30% 20%, rgba(212, 160, 74, 0.08) 0%, transparent 50%), radial-gradient(ellipse at 70% 80%, rgba(114, 47, 29, 0.06) 0%, transparent 50%), var(--walnut-deep); position: relative; }\n  body::before { content: ''; position: fixed; inset: 0; background: radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.55) 100%); pointer-events: none; z-index: 1; }\n\n  .room { position: fixed; top: 0; left: 0; right: 0; bottom: 0; display: grid; grid-template-rows: auto 1fr auto; z-index: 2; overflow: hidden; padding-top: env(safe-area-inset-top); padding-right: env(safe-area-inset-right); padding-bottom: env(safe-area-inset-bottom); padding-left: env(safe-area-inset-left); }\n\n  .header { position: relative; display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 0.9rem; border-bottom: 1px solid rgba(212, 160, 74, 0.18); background: linear-gradient(180deg, rgba(232, 220, 196, 0.04), transparent); }\n  .title { font-family: 'Cormorant Garamond', serif; font-weight: 600; font-style: italic; color: var(--gold); font-size: 0.85rem; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.85; }\n  .score { display: flex; flex-direction: column; line-height: 1.2; }\n  .score.right { text-align: right; }\n  .score .name { font-style: italic; color: var(--gold-faded); font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase; }\n  .score .nums { color: var(--parchment); font-size: 0.78rem; }\n  .score .inf { color: var(--candle); font-weight: 700; }\n  .score .sterling { opacity: 0.65; }\n  .inf-target { opacity: 0.4; font-size: 0.7rem; }\n\n  .main { position: relative; overflow: hidden; }\n  .map-area { position: relative; overflow: hidden; background: #2a1f15; width: 100%; height: 100%; touch-action: none; cursor: grab; }\n  .map-area.dragging { cursor: grabbing; }\n  /* Inner viewport \u2014 gets transformed for pan/zoom */\n  .map-viewport { position: absolute; inset: 0; transform-origin: 0 0; will-change: transform; }\n  .map-bg { position: absolute; inset: 0; background-image: url('MAPBOARD_PLACEHOLDER'); background-size: contain; background-repeat: no-repeat; background-position: center; background-color: var(--parchment-dark); }\n\n  /* Zoom controls */\n  .zoom-controls { position: absolute; bottom: 0.6rem; left: 0.6rem; display: flex; flex-direction: column; gap: 4px; z-index: 6; }\n  .zoom-btn { width: 32px; height: 32px; background: rgba(26, 17, 10, 0.85); border: 1px solid var(--gold-faded); color: var(--parchment); font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s ease; padding: 0; line-height: 1; }\n  .zoom-btn:hover { background: rgba(212, 160, 74, 0.18); border-color: var(--candle); }\n  .zoom-btn:active { background: rgba(212, 160, 74, 0.3); }\n\n  .territories { position: absolute; inset: 0; pointer-events: none; }\n  .territory { position: absolute; pointer-events: auto; cursor: pointer; border-radius: 50%; transition: transform 0.15s ease; }\n  .territory .pin { width: 18px; height: 18px; border-radius: 50%; background: rgba(255, 255, 255, 0.35); border: 2px solid rgba(0, 0, 0, 0.55); box-shadow: 0 1px 4px rgba(0,0,0,0.4), inset 0 1px 2px rgba(255,255,255,0.4); transition: all 0.2s ease; }\n  /* Owned territories \u2014 bigger, brighter, pulsing in player color */\n  .territory.callum .pin {\n    background: var(--player-color);\n    border-color: #8fa8b8;\n    width: 22px; height: 22px;\n    box-shadow:\n      0 0 0 3px rgba(143, 168, 184, 0.45),\n      0 0 14px rgba(44, 62, 74, 0.95),\n      0 1px 6px rgba(0,0,0,0.6),\n      inset 0 1px 2px rgba(255,255,255,0.3);\n    animation: pulseCallum 2.2s ease-in-out infinite;\n  }\n  .territory.surgeon .pin {\n    background: var(--opponent-color);\n    border-color: #f5d088;\n    width: 22px; height: 22px;\n    box-shadow:\n      0 0 0 3px rgba(245, 208, 136, 0.5),\n      0 0 14px rgba(114, 47, 29, 0.9),\n      0 1px 6px rgba(0,0,0,0.6),\n      inset 0 1px 2px rgba(255,255,255,0.4);\n    animation: pulseSurgeon 2.4s ease-in-out infinite;\n  }\n  /* Reachable highlight stays gold/candle, faster pulse to feel \"active\" */\n  .territory.reachable .pin {\n    background: var(--candle);\n    border-color: var(--gold-faded);\n    width: 22px; height: 22px;\n    box-shadow: 0 0 12px rgba(212, 160, 74, 0.85);\n    animation: pulseReach 1.4s ease-in-out infinite;\n  }\n  .territory:hover .pin { transform: scale(1.25); }\n\n  @keyframes pulseCallum {\n    0%, 100% { box-shadow: 0 0 0 3px rgba(143, 168, 184, 0.35), 0 0 8px rgba(44, 62, 74, 0.7),  0 1px 6px rgba(0,0,0,0.6), inset 0 1px 2px rgba(255,255,255,0.25); }\n    50%      { box-shadow: 0 0 0 5px rgba(143, 168, 184, 0.65), 0 0 22px rgba(100, 140, 170, 1), 0 1px 6px rgba(0,0,0,0.6), inset 0 1px 2px rgba(255,255,255,0.35); }\n  }\n  @keyframes pulseSurgeon {\n    0%, 100% { box-shadow: 0 0 0 3px rgba(245, 208, 136, 0.4), 0 0 8px rgba(114, 47, 29, 0.7), 0 1px 6px rgba(0,0,0,0.6), inset 0 1px 2px rgba(255,255,255,0.4); }\n    50%      { box-shadow: 0 0 0 5px rgba(245, 208, 136, 0.7), 0 0 22px rgba(245, 100, 50, 1),  0 1px 6px rgba(0,0,0,0.6), inset 0 1px 2px rgba(255,255,255,0.5); }\n  }\n  @keyframes pulseReach {\n    0%, 100% { box-shadow: 0 0 8px rgba(212, 160, 74, 0.6); transform: scale(1); }\n    50%      { box-shadow: 0 0 18px rgba(255, 215, 130, 1);  transform: scale(1.15); }\n  }\n\n  .territory .label { position: absolute; top: 22px; left: 50%; transform: translateX(-50%); background: rgba(26, 17, 10, 0.92); color: var(--parchment); padding: 4px 8px; border-radius: 2px; font-family: 'Cormorant Garamond', serif; font-size: 0.75rem; white-space: nowrap; pointer-events: none; opacity: 0; transition: opacity 0.15s ease; z-index: 10; }\n  .territory:hover .label { opacity: 1; }\n\n  /* ============== DEMAND TAB + DRAWER ============== */\n  /* Tab: small handle on right edge of map, always visible */\n  .demand-tab { position: absolute; top: 0.6rem; right: 0; background: rgba(26, 17, 10, 0.92); border: 1px solid var(--gold-faded); border-right: none; color: var(--gold); font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; padding: 0.5rem 0.45rem; cursor: pointer; z-index: 5; writing-mode: vertical-rl; transition: all 0.2s ease; }\n  .demand-tab:hover { background: rgba(212, 160, 74, 0.18); color: var(--candle); }\n  .demand-tab .badge { display: block; writing-mode: horizontal-tb; font-family: 'Old Standard TT', serif; font-style: normal; font-size: 0.55rem; color: var(--candle); margin-top: 4px; opacity: 0; transition: opacity 0.2s; }\n  .demand-tab.has-tremor .badge { opacity: 1; animation: tremor 1.2s ease-in-out infinite; }\n\n  /* Drawer: slides out from right, contains demand board */\n  .demand-drawer { position: absolute; top: 0; right: 0; bottom: 0; width: 220px; max-width: 70vw; background: rgba(26, 17, 10, 0.97); border-left: 1px solid var(--gold-faded); padding: 0.7rem 0.8rem 0.7rem 0.8rem; z-index: 6; transform: translateX(100%); transition: transform 0.25s ease; overflow-y: auto; box-shadow: -4px 0 16px rgba(0,0,0,0.5); }\n  .demand-drawer.open { transform: translateX(0); }\n  .demand-drawer .close-tab { position: absolute; top: 0.4rem; left: 0.5rem; background: rgba(232, 220, 196, 0.06); border: 1px solid var(--gold-faded); color: var(--gold); font-size: 1rem; font-weight: 600; cursor: pointer; font-family: 'Old Standard TT', serif; padding: 0; line-height: 1; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; transition: all 0.15s ease; }\n  .demand-drawer .close-tab:hover { background: rgba(212, 160, 74, 0.2); color: var(--candle); border-color: var(--candle); }\n  .demand-title { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 0.75rem; color: var(--gold); text-transform: uppercase; letter-spacing: 0.1em; border-bottom: 1px solid rgba(212, 160, 74, 0.2); padding-bottom: 5px; padding-left: 1.7rem; margin-bottom: 8px; }\n  .commodity-row { display: flex; align-items: center; justify-content: space-between; padding: 3px 0; font-size: 0.72rem; border-bottom: 1px dotted rgba(212, 160, 74, 0.08); }\n  .commodity-row:last-child { border-bottom: none; }\n  .commodity-name { color: var(--parchment); text-transform: capitalize; flex: 1; }\n  .commodity-dots { display: flex; gap: 2px; margin: 0 6px; }\n  .dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(180, 150, 100, 0.2); border: 1px solid rgba(180, 150, 100, 0.3); }\n  .dot.filled { background: var(--candle); border-color: var(--gold); }\n  .dot.tremor { animation: tremor 1.2s ease-in-out infinite; }\n  @keyframes tremor { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.4); opacity: 0.7; } }\n  .commodity-trend { font-family: 'Old Standard TT', serif; font-size: 0.65rem; width: 16px; text-align: right; color: var(--parchment); opacity: 0.6; }\n  .commodity-trend.up { color: #6b8e5a; opacity: 1; }\n  .commodity-trend.down { color: #8b4543; opacity: 1; }\n\n  /* ============== DISPATCH (cleaner) ============== */\n  .dispatch { position: absolute; top: 0.6rem; left: 0.6rem; max-width: 220px; background: rgba(232, 220, 196, 0.95); color: var(--ink); border: 1px solid var(--gold-faded); padding: 0.45rem 0.65rem; font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 0.75rem; line-height: 1.3; box-shadow: 0 2px 8px rgba(0,0,0,0.4); z-index: 5; }\n  .dispatch-label { display: block; font-family: 'Old Standard TT', serif; font-style: normal; font-size: 0.55rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--oxblood); margin-bottom: 3px; border-bottom: 1px solid rgba(114, 47, 29, 0.3); padding-bottom: 2px; }\n\n  .portrait-frame { position: absolute; bottom: 0.6rem; right: 0.6rem; width: 100px; height: 130px; background: var(--walnut); border: 2px solid var(--gold-faded); box-shadow: 0 4px 12px rgba(0,0,0,0.6), inset 0 0 0 1px rgba(0,0,0,0.5); overflow: hidden; z-index: 5; }\n  .portrait-img { position: absolute; inset: 0; background-image: url('SURGEON_PLACEHOLDER'); background-size: cover; background-position: center top; background-color: #1a110a; }\n  .mouth-overlay { position: absolute; bottom: 30%; left: 50%; transform: translateX(-50%); width: 20px; height: 5px; background: rgba(190, 155, 130, 0.55); mix-blend-mode: screen; border-radius: 50%; opacity: 0; transition: opacity 0.1s; }\n  .portrait-frame.speaking .mouth-overlay { opacity: 1; animation: speak 0.3s ease-in-out infinite; }\n  @keyframes speak { 0%, 100% { transform: translateX(-50%) scaleY(0.4); } 50% { transform: translateX(-50%) scaleY(1); } }\n\n  .dialogue { position: absolute; bottom: 0.6rem; left: 0.6rem; right: 120px; background: rgba(26, 17, 10, 0.9); border-left: 3px solid var(--candle); padding: 0.6rem 0.9rem; color: var(--parchment); font-family: 'Cormorant Garamond', serif; font-size: 0.85rem; line-height: 1.4; min-height: 50px; max-height: 110px; overflow-y: auto; z-index: 5; box-shadow: 0 2px 10px rgba(0,0,0,0.5); }\n  .dialogue:empty { display: none; }\n\n  .turn-bar { background: linear-gradient(180deg, transparent, rgba(232, 220, 196, 0.04)); border-top: 1px solid rgba(212, 160, 74, 0.18); padding: 0.5rem 0.7rem; display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; font-size: 0.72rem; z-index: 3; flex-wrap: wrap; }\n  .turn-info { display: flex; gap: 0.7rem; color: var(--parchment); flex-wrap: wrap; }\n  .turn-info .label { color: var(--gold-faded); font-style: italic; margin-right: 0.3rem; }\n  .actions { display: flex; gap: 0.4rem; flex-wrap: wrap; }\n  .btn { background: rgba(232, 220, 196, 0.08); border: 1px solid var(--gold-faded); color: var(--parchment); padding: 0.35rem 0.7rem; font-family: 'Cormorant Garamond', serif; font-size: 0.78rem; cursor: pointer; transition: all 0.15s ease; letter-spacing: 0.03em; white-space: nowrap; }\n  .btn:hover { background: rgba(212, 160, 74, 0.18); border-color: var(--candle); }\n  .btn:disabled { opacity: 0.35; cursor: not-allowed; }\n  .btn.primary { background: rgba(114, 47, 29, 0.4); border-color: var(--oxblood); }\n  .btn.primary:hover { background: rgba(114, 47, 29, 0.6); }\n\n  .event-banner { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(232, 220, 196, 0.97); color: var(--ink); border: 2px solid var(--oxblood); padding: 1rem 1.5rem; max-width: 320px; text-align: center; font-family: 'Cormorant Garamond', serif; box-shadow: 0 6px 30px rgba(0,0,0,0.7); z-index: 20; opacity: 0; pointer-events: none; transition: opacity 0.4s ease; }\n  .event-banner.show { opacity: 1; pointer-events: auto; }\n  .event-banner .label { font-family: 'Old Standard TT', serif; font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--oxblood); border-bottom: 1px solid var(--oxblood); padding-bottom: 4px; margin-bottom: 8px; }\n  .event-banner .text { font-style: italic; font-size: 0.95rem; line-height: 1.4; }\n\n  .toast-area { position: absolute; top: 70px; left: 50%; transform: translateX(-50%); z-index: 15; pointer-events: none; display: flex; flex-direction: column; gap: 4px; }\n  .toast { background: rgba(26, 17, 10, 0.95); color: var(--parchment); border-left: 2px solid var(--candle); padding: 0.4rem 0.8rem; font-family: 'Cormorant Garamond', serif; font-size: 0.78rem; font-style: italic; animation: toastIn 0.3s ease forwards, toastOut 0.4s ease 2.6s forwards; }\n  @keyframes toastIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }\n  @keyframes toastOut { to { opacity: 0; transform: translateY(-8px); } }\n\n  /* ============== SCORECARD BUTTON IN HEADER ============== */\n  .scorecard-btn { background: rgba(232, 220, 196, 0.08); border: 1px solid var(--gold-faded); color: var(--parchment); padding: 0.3rem 0.6rem; font-family: 'Cormorant Garamond', serif; font-size: 0.7rem; cursor: pointer; transition: all 0.15s ease; letter-spacing: 0.06em; text-transform: uppercase; }\n  .scorecard-btn:hover { background: rgba(212, 160, 74, 0.18); border-color: var(--candle); }\n\n  /* ============== LIVE SCORECARD DRAWER ============== */\n  .scorecard-drawer { position: fixed; top: 0; right: 0; bottom: 0; width: 340px; max-width: 88vw; background: rgba(26, 17, 10, 0.97); border-left: 2px solid var(--gold-faded); box-shadow: -8px 0 24px rgba(0,0,0,0.6); z-index: 30; transform: translateX(100%); transition: transform 0.3s ease; overflow-y: auto; padding: 1rem 1.1rem; }\n  .scorecard-drawer.open { transform: translateX(0); }\n  .scorecard-drawer .close { position: absolute; top: 0.5rem; right: 0.6rem; background: none; border: none; color: var(--gold); font-size: 1.4rem; cursor: pointer; font-family: 'Cormorant Garamond', serif; line-height: 1; padding: 4px 8px; }\n  .scorecard-drawer .close:hover { color: var(--candle); }\n  .scorecard-drawer h2 { font-family: 'Cormorant Garamond', serif; font-style: italic; font-weight: 600; font-size: 1rem; color: var(--gold); letter-spacing: 0.1em; text-transform: uppercase; border-bottom: 1px solid rgba(212, 160, 74, 0.2); padding-bottom: 6px; margin-bottom: 0.7rem; }\n  .sc-section { margin-bottom: 1.1rem; }\n  .sc-section h3 { font-family: 'Old Standard TT', serif; font-size: 0.7rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--gold-faded); margin-bottom: 0.4rem; }\n  .sc-row { display: flex; justify-content: space-between; align-items: center; padding: 3px 0; font-size: 0.78rem; color: var(--parchment); border-bottom: 1px dotted rgba(212, 160, 74, 0.1); }\n  .sc-row:last-child { border-bottom: none; }\n  .sc-row .label { color: var(--parchment); opacity: 0.85; }\n  .sc-row .val { color: var(--candle); font-weight: 700; font-family: 'Old Standard TT', serif; }\n  .sc-row .val.muted { color: var(--parchment); opacity: 0.7; font-weight: 400; }\n  .sc-vs-row { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; padding: 4px 0; font-size: 0.78rem; align-items: center; border-bottom: 1px dotted rgba(212, 160, 74, 0.1); }\n  .sc-vs-row .col-c { text-align: right; color: var(--player-color); }\n  .sc-vs-row .col-s { text-align: left; color: var(--opponent-color); filter: brightness(1.5); }\n  .sc-vs-row .lbl { text-align: center; color: var(--parchment); opacity: 0.7; font-size: 0.7rem; font-style: italic; }\n  .sc-vs-row.bold .col-c, .sc-vs-row.bold .col-s { font-weight: 700; }\n  .sc-territory-list { font-size: 0.7rem; line-height: 1.5; color: var(--parchment); opacity: 0.8; }\n  .sc-territory-list .terr-item { display: inline-block; padding: 1px 6px; margin: 1px 2px 1px 0; background: rgba(212, 160, 74, 0.08); border: 1px solid rgba(212, 160, 74, 0.15); border-radius: 2px; font-size: 0.68rem; }\n  .sc-territory-list .terr-item.crown { border-color: var(--candle); background: rgba(212, 160, 74, 0.18); }\n  .sc-territory-list .terr-item.dominion { border-color: var(--gold-faded); }\n  .sc-region-list .region-row { display: flex; justify-content: space-between; align-items: center; padding: 2px 0; font-size: 0.72rem; }\n  .sc-region-list .region-row .name { text-transform: capitalize; color: var(--parchment); }\n  .sc-region-list .region-row .progress { font-family: 'Old Standard TT', serif; color: var(--candle); }\n  .sc-region-list .region-row.complete .progress { color: #98c08a; }\n\n  /* ============== END-GAME SCORECARD (full screen) ============== */\n  .endgame-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 40; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.5s ease; backdrop-filter: blur(3px); }\n  .endgame-overlay.show { opacity: 1; pointer-events: auto; }\n  .endgame-card { background: var(--parchment); color: var(--ink); border: 3px double var(--oxblood); padding: 1.5rem 1.8rem; max-width: 540px; width: 92%; max-height: 92vh; overflow-y: auto; box-shadow: 0 12px 50px rgba(0,0,0,0.8); font-family: 'Cormorant Garamond', serif; }\n  .endgame-card .header-line { font-family: 'Old Standard TT', serif; font-size: 0.7rem; letter-spacing: 0.25em; text-transform: uppercase; color: var(--oxblood); text-align: center; }\n  .endgame-card h1 { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 2rem; font-weight: 600; color: var(--ink); text-align: center; margin: 0.4rem 0 0.2rem; letter-spacing: 0.04em; }\n  .endgame-card .subtitle { text-align: center; font-style: italic; color: var(--ink-faded, #4a3320); font-size: 0.95rem; margin-bottom: 1.2rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(114, 47, 29, 0.3); }\n  .endgame-card .vs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }\n  .endgame-card .vs-col { padding: 0.7rem; background: rgba(114, 47, 29, 0.05); border: 1px solid rgba(114, 47, 29, 0.2); }\n  .endgame-card .vs-col.callum { border-color: var(--player-color); }\n  .endgame-card .vs-col.surgeon { border-color: var(--opponent-color); }\n  .endgame-card .vs-col h3 { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 1.1rem; color: var(--ink); margin-bottom: 0.4rem; padding-bottom: 0.3rem; border-bottom: 1px solid rgba(0,0,0,0.15); }\n  .endgame-card .vs-stat { display: flex; justify-content: space-between; padding: 2px 0; font-size: 0.82rem; color: var(--ink); }\n  .endgame-card .vs-stat .label { opacity: 0.7; }\n  .endgame-card .vs-stat .val { font-weight: 700; }\n  .endgame-card .surgeon-quote { background: rgba(0,0,0,0.05); border-left: 3px solid var(--oxblood); padding: 0.7rem 0.9rem; font-style: italic; font-size: 0.95rem; line-height: 1.4; color: var(--ink); margin: 0.8rem 0; }\n  .endgame-card .endgame-actions { display: flex; gap: 0.6rem; justify-content: center; margin-top: 1rem; }\n  .endgame-card .endgame-actions button { background: var(--oxblood); color: var(--parchment); border: 1px solid var(--oxblood-dark, #4d1f12); padding: 0.5rem 1.2rem; font-family: 'Cormorant Garamond', serif; font-size: 0.95rem; cursor: pointer; letter-spacing: 0.05em; transition: all 0.15s ease; }\n  .endgame-card .endgame-actions button:hover { background: #4d1f12; }\n  .endgame-card .endgame-actions button.secondary { background: transparent; color: var(--oxblood); border-color: var(--oxblood); }\n  .endgame-card .endgame-actions button.secondary:hover { background: rgba(114, 47, 29, 0.1); }\n\n  /* ============== TURN PHASE INDICATOR (flashing) ============== */\n  .phase-indicator { position: absolute; top: 50%; left: 1rem; transform: translateY(-50%); background: rgba(26, 17, 10, 0.92); border: 1px solid var(--candle); padding: 0.5rem 0.9rem; font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 0.85rem; color: var(--candle); letter-spacing: 0.1em; text-transform: uppercase; box-shadow: 0 0 14px rgba(212, 160, 74, 0.35); z-index: 8; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }\n  .phase-indicator.show { opacity: 1; animation: phaseFlash 1.6s ease-in-out infinite; }\n  @keyframes phaseFlash {\n    0%, 100% { box-shadow: 0 0 8px rgba(212, 160, 74, 0.3); border-color: var(--gold-faded); }\n    50%      { box-shadow: 0 0 22px rgba(245, 200, 100, 0.85); border-color: var(--candle); }\n  }\n  .phase-indicator .small { display: block; font-size: 0.6rem; color: var(--gold-faded); margin-top: 2px; letter-spacing: 0.15em; }\n\n  /* ============== MODAL DIALOGS ============== */\n  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 35; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.2s ease; backdrop-filter: blur(2px); }\n  .modal-overlay.show { opacity: 1; pointer-events: auto; }\n  .modal-card { background: var(--parchment); color: var(--ink); border: 2px solid var(--oxblood); padding: 1.2rem 1.4rem; min-width: 290px; max-width: 90vw; box-shadow: 0 10px 40px rgba(0,0,0,0.7); font-family: 'Cormorant Garamond', serif; transform: scale(0.94); transition: transform 0.2s ease; }\n  .modal-overlay.show .modal-card { transform: scale(1); }\n  .modal-card .label { display: block; font-family: 'Old Standard TT', serif; font-size: 0.62rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--oxblood); border-bottom: 1px solid rgba(114, 47, 29, 0.3); padding-bottom: 4px; margin-bottom: 8px; }\n  .modal-card h3 { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 1.4rem; font-weight: 600; color: var(--ink); margin-bottom: 4px; }\n  .modal-card .subtext { font-style: italic; font-size: 0.92rem; color: rgba(42, 26, 14, 0.7); margin-bottom: 0.8rem; line-height: 1.4; }\n  .modal-card .stat-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 0.9rem; border-bottom: 1px dotted rgba(114, 47, 29, 0.15); }\n  .modal-card .stat-row:last-of-type { border-bottom: none; margin-bottom: 0.5rem; }\n  .modal-card .stat-row .l { color: rgba(42, 26, 14, 0.7); font-style: italic; }\n  .modal-card .stat-row .v { font-weight: 700; color: var(--ink); }\n  .modal-card .actions { display: flex; gap: 0.5rem; margin-top: 0.9rem; }\n  .modal-card .actions button { flex: 1; padding: 0.55rem 0.9rem; font-family: 'Cormorant Garamond', serif; font-size: 0.9rem; cursor: pointer; letter-spacing: 0.04em; border: 1px solid var(--oxblood); transition: all 0.15s ease; }\n  .modal-card .actions button.primary { background: var(--oxblood); color: var(--parchment); }\n  .modal-card .actions button.primary:hover { background: #4d1f12; }\n  .modal-card .actions button.secondary { background: transparent; color: var(--oxblood); }\n  .modal-card .actions button.secondary:hover { background: rgba(114, 47, 29, 0.1); }\n  .modal-card .actions button:disabled { opacity: 0.4; cursor: not-allowed; }\n\n  /* ============== ACTION MENU (after move confirmed) ============== */\n  .action-menu { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(26, 17, 10, 0.96); border: 2px solid var(--gold); padding: 1rem 1.2rem; min-width: 250px; box-shadow: 0 8px 32px rgba(0,0,0,0.7); z-index: 25; opacity: 0; pointer-events: none; transition: all 0.2s ease; }\n  .action-menu.show { opacity: 1; pointer-events: auto; }\n  .action-menu .menu-title { font-family: 'Cormorant Garamond', serif; font-style: italic; color: var(--gold); font-size: 1rem; text-align: center; padding-bottom: 0.5rem; border-bottom: 1px solid rgba(212, 160, 74, 0.3); margin-bottom: 0.7rem; letter-spacing: 0.05em; }\n  .action-menu .menu-title .small { display: block; font-family: 'Old Standard TT', serif; font-style: normal; font-size: 0.6rem; letter-spacing: 0.2em; color: var(--gold-faded); text-transform: uppercase; margin-bottom: 4px; }\n  .action-menu .menu-btn { display: block; width: 100%; background: rgba(232, 220, 196, 0.06); border: 1px solid var(--gold-faded); color: var(--parchment); padding: 0.6rem 0.9rem; font-family: 'Cormorant Garamond', serif; font-size: 0.95rem; cursor: pointer; transition: all 0.15s ease; margin-bottom: 0.4rem; text-align: left; letter-spacing: 0.04em; }\n  .action-menu .menu-btn:hover { background: rgba(212, 160, 74, 0.18); border-color: var(--candle); color: var(--candle); }\n  .action-menu .menu-btn:disabled { opacity: 0.35; cursor: not-allowed; }\n  .action-menu .menu-btn .desc { display: block; font-style: italic; font-size: 0.72rem; opacity: 0.7; margin-top: 2px; }\n\n  /* ============== TRADE PROPOSAL MODAL ============== */\n  .trade-section { margin-bottom: 0.7rem; padding-bottom: 0.6rem; border-bottom: 1px solid rgba(114, 47, 29, 0.2); }\n  .trade-section:last-of-type { border-bottom: none; }\n  .trade-section h4 { font-family: 'Old Standard TT', serif; font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--oxblood); margin-bottom: 0.4rem; }\n  .trade-section .options { display: flex; flex-wrap: wrap; gap: 4px; }\n  .trade-section .opt { background: rgba(114, 47, 29, 0.08); border: 1px solid rgba(114, 47, 29, 0.25); padding: 0.3rem 0.55rem; font-family: 'Cormorant Garamond', serif; font-size: 0.78rem; cursor: pointer; transition: all 0.15s ease; }\n  .trade-section .opt:hover { background: rgba(114, 47, 29, 0.18); }\n  .trade-section .opt.selected { background: var(--oxblood); color: var(--parchment); border-color: var(--oxblood); }\n  .trade-sterling-input { display: flex; align-items: center; gap: 6px; padding: 0.3rem 0; }\n  .trade-sterling-input input { background: rgba(255,255,255,0.4); border: 1px solid rgba(114, 47, 29, 0.4); padding: 4px 8px; font-family: 'Old Standard TT', serif; font-size: 0.9rem; color: var(--ink); width: 80px; }\n\n  /* Achievement notification */\n  .achievement { position: fixed; top: 80px; right: 20px; background: linear-gradient(135deg, var(--gold) 0%, var(--candle) 100%); color: var(--walnut-deep); padding: 0.6rem 1rem; border: 2px solid var(--walnut); font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 0.85rem; box-shadow: 0 4px 20px rgba(0,0,0,0.5); z-index: 50; opacity: 0; transform: translateX(120%); transition: all 0.4s ease; max-width: 280px; }\n  .achievement.show { opacity: 1; transform: translateX(0); }\n  .achievement .label { display: block; font-family: 'Old Standard TT', serif; font-style: normal; font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase; opacity: 0.8; }\n";
+  /* ============== DEMAND TAB + DRAWER ============== */
+  /* Tab: small handle on right edge of map, always visible */
+  .demand-tab { position: absolute; top: 0.6rem; right: 0; background: rgba(26, 17, 10, 0.92); border: 1px solid var(--gold-faded); border-right: none; color: var(--gold); font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; padding: 0.5rem 0.45rem; cursor: pointer; z-index: 5; writing-mode: vertical-rl; transition: all 0.2s ease; }
+  .demand-tab:hover { background: rgba(212, 160, 74, 0.18); color: var(--candle); }
+  .demand-tab .badge { display: block; writing-mode: horizontal-tb; font-family: 'Old Standard TT', serif; font-style: normal; font-size: 0.55rem; color: var(--candle); margin-top: 4px; opacity: 0; transition: opacity 0.2s; }
+  .demand-tab.has-tremor .badge { opacity: 1; animation: tremor 1.2s ease-in-out infinite; }
 
-  const BODY_HTML = "\n<div class=\"room\">\n\n  <header class=\"header\">\n    <div class=\"score\">\n      <div class=\"name\">Callum</div>\n      <div class=\"nums\">\n        <span class=\"inf\" id=\"p1-inf\">0</span><span class=\"inf-target\">/80</span>\n        <span class=\"sterling\" style=\"margin-left:8px\">\u00a3<span id=\"p1-sterling\">40</span></span>\n      </div>\n    </div>\n    <div class=\"title\">The Map Room</div>\n    <button class=\"scorecard-btn\" id=\"btn-scorecard\" style=\"position:absolute; left:50%; top:50%; transform:translate(-50%,-50%) translateY(18px);\">Scorecard</button>\n    <div class=\"score right\">\n      <div class=\"name\">The Surgeon</div>\n      <div class=\"nums\">\n        <span class=\"inf\" id=\"p2-inf\">0</span><span class=\"inf-target\">/80</span>\n        <span class=\"sterling\" style=\"margin-left:8px\">\u00a3<span id=\"p2-sterling\">40</span></span>\n      </div>\n    </div>\n  </header>\n\n  <main class=\"main\">\n    <div class=\"map-area\" id=\"map-area\">\n      <div class=\"map-viewport\" id=\"map-viewport\">\n        <div class=\"map-bg\" id=\"map-bg\"></div>\n        <div class=\"territories\" id=\"territories\"></div>\n      </div>\n      <div class=\"zoom-controls\">\n        <button class=\"zoom-btn\" id=\"zoom-in\" aria-label=\"Zoom in\">+</button>\n        <button class=\"zoom-btn\" id=\"zoom-out\" aria-label=\"Zoom out\">\u2212</button>\n        <button class=\"zoom-btn\" id=\"zoom-reset\" aria-label=\"Reset view\" style=\"font-size: 0.7rem;\">\u2302</button>\n      </div>\n      <div class=\"dispatch\" id=\"dispatch\">\n        <span class=\"dispatch-label\">Dispatch</span>\n        <span id=\"dispatch-text\">Reports from the frontier...</span>\n      </div>\n      <div class=\"demand-tab\" id=\"demand-tab\">\n        Demand\n        <span class=\"badge\" id=\"demand-tremor-badge\">!</span>\n      </div>\n      <div class=\"demand-drawer\" id=\"demand-drawer\">\n        <button class=\"close-tab\" id=\"btn-close-demand\" aria-label=\"Close\">\u2212</button>\n        <div class=\"demand-title\">Colonial Demand</div>\n        <div id=\"demand-rows\"></div>\n      </div>\n      <div class=\"toast-area\" id=\"toast-area\"></div>\n      <div class=\"phase-indicator\" id=\"phase-indicator\">Movement<span class=\"small\">Roll the die</span></div>\n      <div class=\"action-menu\" id=\"action-menu\">\n        <div class=\"menu-title\"><span class=\"small\">Action</span><span id=\"menu-territory\">\u2014</span></div>\n        <button class=\"menu-btn\" id=\"btn-acquire\">Acquire\n          <span class=\"desc\">Attempt to claim this territory</span>\n        </button>\n        <button class=\"menu-btn\" id=\"btn-trade\">Propose Trade\n          <span class=\"desc\">Offer the Surgeon a deal</span>\n        </button>\n        <button class=\"menu-btn\" id=\"btn-skip\">End Turn\n          <span class=\"desc\">Take no action this turn</span>\n        </button>\n      </div>\n      <div class=\"event-banner\" id=\"event-banner\">\n        <div class=\"label\">Event</div>\n        <div class=\"text\" id=\"event-text\"></div>\n      </div>\n      <div class=\"dialogue\" id=\"dialogue\"></div>\n      <div class=\"portrait-frame\" id=\"portrait\">\n        <div class=\"portrait-img\"></div>\n        <div class=\"mouth-overlay\"></div>\n      </div>\n    </div>\n  </main>\n\n  <footer class=\"turn-bar\">\n    <div class=\"turn-info\">\n      <span><span class=\"label\">Turn</span><span id=\"turn-num\">1</span></span>\n      <span><span class=\"label\">First</span><span id=\"first-player\">\u2014</span></span>\n      <span><span class=\"label\">Inflation</span>+\u00a3<span id=\"inflation\">0</span></span>\n    </div>\n    <div class=\"actions\">\n      <button class=\"btn\" id=\"btn-roll\">Roll</button>\n      <button class=\"btn\" id=\"btn-end-turn\" disabled>End Turn</button>\n      <button class=\"btn\" id=\"btn-reset\" title=\"Reset (testing only)\" style=\"opacity:0.55; font-size:0.7rem;\">Reset</button>\n    </div>\n  </footer>\n\n</div>\n\n<!-- LIVE SCORECARD DRAWER -->\n<aside class=\"scorecard-drawer\" id=\"scorecard\">\n  <button class=\"close\" id=\"btn-close-scorecard\" aria-label=\"Close\">&times;</button>\n  <h2 id=\"sc-title\">Scorecard</h2>\n\n  <div class=\"sc-section\">\n    <h3>Standings</h3>\n    <div class=\"sc-vs-row bold\">\n      <div class=\"col-c\">Callum</div>\n      <div class=\"lbl\">Vs.</div>\n      <div class=\"col-s\">Surgeon</div>\n    </div>\n    <div class=\"sc-vs-row\">\n      <div class=\"col-c\"><span id=\"sc-c-inf\">0</span> / 80</div>\n      <div class=\"lbl\">Influence</div>\n      <div class=\"col-s\"><span id=\"sc-s-inf\">0</span> / 80</div>\n    </div>\n    <div class=\"sc-vs-row\">\n      <div class=\"col-c\">\u00a3<span id=\"sc-c-sterling\">40</span></div>\n      <div class=\"lbl\">Sterling</div>\n      <div class=\"col-s\">\u00a3<span id=\"sc-s-sterling\">40</span></div>\n    </div>\n    <div class=\"sc-vs-row\">\n      <div class=\"col-c\"><span id=\"sc-c-territories\">0</span></div>\n      <div class=\"lbl\">Territories</div>\n      <div class=\"col-s\"><span id=\"sc-s-territories\">0</span></div>\n    </div>\n    <div class=\"sc-vs-row\">\n      <div class=\"col-c\"><span id=\"sc-c-chain\">0</span></div>\n      <div class=\"lbl\">Best Chain</div>\n      <div class=\"col-s\"><span id=\"sc-s-chain\">0</span></div>\n    </div>\n    <div class=\"sc-vs-row\">\n      <div class=\"col-c\"><span id=\"sc-c-upkeep\">0</span></div>\n      <div class=\"lbl\">Next Upkeep</div>\n      <div class=\"col-s\"><span id=\"sc-s-upkeep\">0</span></div>\n    </div>\n    <div class=\"sc-vs-row\">\n      <div class=\"col-c\"><span id=\"sc-c-success\">\u2014</span></div>\n      <div class=\"lbl\">Claim Success</div>\n      <div class=\"col-s\"><span id=\"sc-s-success\">\u2014</span></div>\n    </div>\n  </div>\n\n  <div class=\"sc-section\">\n    <h3>Influence by Tier \u2014 Callum</h3>\n    <div id=\"sc-c-tiers\"></div>\n  </div>\n\n  <div class=\"sc-section\">\n    <h3>Holdings \u2014 Callum</h3>\n    <div class=\"sc-territory-list\" id=\"sc-c-list\"></div>\n  </div>\n\n  <div class=\"sc-section\">\n    <h3>Influence by Tier \u2014 Surgeon</h3>\n    <div id=\"sc-s-tiers\"></div>\n  </div>\n\n  <div class=\"sc-section\">\n    <h3>Holdings \u2014 Surgeon</h3>\n    <div class=\"sc-territory-list\" id=\"sc-s-list\"></div>\n  </div>\n\n  <div class=\"sc-section\">\n    <h3>Region Progress</h3>\n    <div class=\"sc-region-list\" id=\"sc-regions\"></div>\n  </div>\n\n  <div class=\"sc-section\">\n    <h3>Match Stats</h3>\n    <div class=\"sc-row\"><span class=\"label\">Turn</span><span class=\"val\" id=\"sc-turn\">0</span></div>\n    <div class=\"sc-row\"><span class=\"label\">First Player</span><span class=\"val muted\" id=\"sc-first\">\u2014</span></div>\n    <div class=\"sc-row\"><span class=\"label\">Inflation</span><span class=\"val\">+\u00a3<span id=\"sc-inflation\">0</span></span></div>\n    <div class=\"sc-row\"><span class=\"label\">Events Fired</span><span class=\"val\" id=\"sc-events\">0</span></div>\n    <div class=\"sc-row\"><span class=\"label\">Tremors Active</span><span class=\"val\" id=\"sc-tremors\">0</span></div>\n  </div>\n\n  <div class=\"sc-section\">\n    <h3>Persistent Record</h3>\n    <div class=\"sc-row\"><span class=\"label\">Games Played</span><span class=\"val\" id=\"sc-games\">0</span></div>\n    <div class=\"sc-row\"><span class=\"label\">Wins / Losses</span><span class=\"val\" id=\"sc-wl\">0 / 0</span></div>\n    <div class=\"sc-row\"><span class=\"label\">Best Influence</span><span class=\"val\" id=\"sc-best-inf\">0</span></div>\n    <div class=\"sc-row\"><span class=\"label\">Longest Chain</span><span class=\"val\" id=\"sc-best-chain\">0</span></div>\n    <div class=\"sc-row\"><span class=\"label\">Total Territories Claimed</span><span class=\"val\" id=\"sc-total-claims\">0</span></div>\n    <div class=\"sc-row\"><span class=\"label\">Achievements</span><span class=\"val\" id=\"sc-ach-count\">0</span></div>\n  </div>\n</aside>\n\n<!-- END-GAME SCORECARD -->\n<div class=\"endgame-overlay\" id=\"endgame\">\n  <div class=\"endgame-card\">\n    <div class=\"header-line\">The Match Concluded</div>\n    <h1 id=\"eg-title\">\u2014</h1>\n    <div class=\"subtitle\" id=\"eg-subtitle\">\u2014</div>\n\n    <div class=\"vs-grid\">\n      <div class=\"vs-col callum\">\n        <h3>Callum</h3>\n        <div class=\"vs-stat\"><span class=\"label\">Influence</span><span class=\"val\" id=\"eg-c-inf\">0</span></div>\n        <div class=\"vs-stat\"><span class=\"label\">Territories</span><span class=\"val\" id=\"eg-c-terr\">0</span></div>\n        <div class=\"vs-stat\"><span class=\"label\">Best Chain</span><span class=\"val\" id=\"eg-c-chain\">0</span></div>\n        <div class=\"vs-stat\"><span class=\"label\">Successful Claims</span><span class=\"val\" id=\"eg-c-good\">0</span></div>\n        <div class=\"vs-stat\"><span class=\"label\">Failed Expeditions</span><span class=\"val\" id=\"eg-c-fail\">0</span></div>\n        <div class=\"vs-stat\"><span class=\"label\">Final Sterling</span><span class=\"val\" id=\"eg-c-sterling\">\u00a30</span></div>\n      </div>\n      <div class=\"vs-col surgeon\">\n        <h3>The Surgeon</h3>\n        <div class=\"vs-stat\"><span class=\"label\">Influence</span><span class=\"val\" id=\"eg-s-inf\">0</span></div>\n        <div class=\"vs-stat\"><span class=\"label\">Territories</span><span class=\"val\" id=\"eg-s-terr\">0</span></div>\n        <div class=\"vs-stat\"><span class=\"label\">Best Chain</span><span class=\"val\" id=\"eg-s-chain\">0</span></div>\n        <div class=\"vs-stat\"><span class=\"label\">Successful Claims</span><span class=\"val\" id=\"eg-s-good\">0</span></div>\n        <div class=\"vs-stat\"><span class=\"label\">Failed Expeditions</span><span class=\"val\" id=\"eg-s-fail\">0</span></div>\n        <div class=\"vs-stat\"><span class=\"label\">Final Sterling</span><span class=\"val\" id=\"eg-s-sterling\">\u00a30</span></div>\n      </div>\n    </div>\n\n    <div class=\"surgeon-quote\" id=\"eg-quote\">\u2014</div>\n\n    <div class=\"endgame-actions\">\n      <button id=\"btn-replay\">Play Again</button>\n      <button class=\"secondary\" id=\"btn-eg-close\">Close</button>\n    </div>\n  </div>\n</div>\n\n<!-- ACHIEVEMENT NOTIFICATION -->\n<div class=\"achievement\" id=\"achievement\">\n  <span class=\"label\">Achievement</span>\n  <span id=\"achievement-text\">\u2014</span>\n</div>\n\n<!-- RESET CONFIRM MODAL -->\n<div class=\"modal-overlay\" id=\"reset-modal\">\n  <div class=\"modal-card\">\n    <span class=\"label\">Reset</span>\n    <h3>Start a new game?</h3>\n    <div class=\"subtext\">This will end the current match and clear all persistent records (testing only).</div>\n    <div class=\"actions\">\n      <button class=\"primary\" id=\"btn-confirm-reset\">Confirm Reset</button>\n      <button class=\"secondary\" id=\"btn-cancel-reset\">Cancel</button>\n    </div>\n  </div>\n</div>\n\n<!-- MOVE CONFIRM MODAL -->\n<div class=\"modal-overlay\" id=\"move-modal\">\n  <div class=\"modal-card\">\n    <span class=\"label\">Movement</span>\n    <h3 id=\"move-name\">\u2014</h3>\n    <div class=\"subtext\" id=\"move-flavor\">Travel to this territory.</div>\n    <div class=\"actions\">\n      <button class=\"primary\" id=\"btn-confirm-move\">Move Here</button>\n      <button class=\"secondary\" id=\"btn-cancel-move\">Cancel</button>\n    </div>\n  </div>\n</div>\n\n<!-- ACQUIRE CONFIRM MODAL -->\n<div class=\"modal-overlay\" id=\"acquire-modal\">\n  <div class=\"modal-card\">\n    <span class=\"label\">Acquisition</span>\n    <h3 id=\"acquire-name\">\u2014</h3>\n    <div class=\"subtext\" id=\"acquire-flavor\">\u2014</div>\n    <div class=\"stat-row\"><span class=\"l\">Tier</span><span class=\"v\" id=\"acquire-tier\">\u2014</span></div>\n    <div class=\"stat-row\"><span class=\"l\">Cost</span><span class=\"v\" id=\"acquire-cost\">\u00a30</span></div>\n    <div class=\"stat-row\"><span class=\"l\">Threshold</span><span class=\"v\" id=\"acquire-threshold\">\u2014</span></div>\n    <div class=\"stat-row\"><span class=\"l\">Modifier</span><span class=\"v\" id=\"acquire-modifier\">+0</span></div>\n    <div class=\"stat-row\"><span class=\"l\">Estimated chance</span><span class=\"v\" id=\"acquire-chance\">\u2014</span></div>\n    <div class=\"actions\">\n      <button class=\"primary\" id=\"btn-confirm-acquire\">Confirm Purchase</button>\n      <button class=\"secondary\" id=\"btn-cancel-acquire\">Cancel</button>\n    </div>\n  </div>\n</div>\n\n<!-- TRADE MODAL -->\n<div class=\"modal-overlay\" id=\"trade-modal\">\n  <div class=\"modal-card\" style=\"min-width: 340px;\">\n    <span class=\"label\">Trade Proposal</span>\n    <h3>Negotiate with the Surgeon</h3>\n    <div class=\"subtext\">Offer something. Request something. He may decline.</div>\n\n    <div class=\"trade-section\">\n      <h4>You offer</h4>\n      <div class=\"trade-sterling-input\">\n        <span style=\"font-size: 0.85rem; color: var(--ink); opacity: 0.7;\">Sterling: \u00a3</span>\n        <input type=\"number\" id=\"trade-offer-sterling\" min=\"0\" value=\"0\" step=\"1\">\n      </div>\n      <div style=\"font-size: 0.7rem; opacity: 0.6; font-style: italic; margin-top: 4px;\">Or one of your territories:</div>\n      <div class=\"options\" id=\"trade-offer-territories\"></div>\n    </div>\n\n    <div class=\"trade-section\">\n      <h4>You request</h4>\n      <div style=\"font-size: 0.7rem; opacity: 0.6; font-style: italic; margin-bottom: 4px;\">One of his territories:</div>\n      <div class=\"options\" id=\"trade-request-territories\"></div>\n    </div>\n\n    <div class=\"actions\">\n      <button class=\"primary\" id=\"btn-confirm-trade\">Make Proposal</button>\n      <button class=\"secondary\" id=\"btn-cancel-trade\">Cancel</button>\n    </div>\n  </div>\n</div>\n";
+  /* Drawer: slides out from right, contains demand board */
+  .demand-drawer { position: absolute; top: 0; right: 0; bottom: 0; width: 220px; max-width: 70vw; background: rgba(26, 17, 10, 0.97); border-left: 1px solid var(--gold-faded); padding: 0.7rem 0.8rem 0.7rem 0.8rem; z-index: 6; transform: translateX(100%); transition: transform 0.25s ease; overflow-y: auto; box-shadow: -4px 0 16px rgba(0,0,0,0.5); }
+  .demand-drawer.open { transform: translateX(0); }
+  .demand-drawer .close-tab { position: absolute; top: 0.4rem; left: 0.5rem; background: rgba(232, 220, 196, 0.06); border: 1px solid var(--gold-faded); color: var(--gold); font-size: 1rem; font-weight: 600; cursor: pointer; font-family: 'Old Standard TT', serif; padding: 0; line-height: 1; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; transition: all 0.15s ease; }
+  .demand-drawer .close-tab:hover { background: rgba(212, 160, 74, 0.2); color: var(--candle); border-color: var(--candle); }
+  .demand-title { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 0.75rem; color: var(--gold); text-transform: uppercase; letter-spacing: 0.1em; border-bottom: 1px solid rgba(212, 160, 74, 0.2); padding-bottom: 5px; padding-left: 1.7rem; margin-bottom: 8px; }
+  .commodity-row { display: flex; align-items: center; justify-content: space-between; padding: 3px 0; font-size: 0.72rem; border-bottom: 1px dotted rgba(212, 160, 74, 0.08); }
+  .commodity-row:last-child { border-bottom: none; }
+  .commodity-name { color: var(--parchment); text-transform: capitalize; flex: 1; }
+  .commodity-dots { display: flex; gap: 2px; margin: 0 6px; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(180, 150, 100, 0.2); border: 1px solid rgba(180, 150, 100, 0.3); }
+  .dot.filled { background: var(--candle); border-color: var(--gold); }
+  .dot.tremor { animation: tremor 1.2s ease-in-out infinite; }
+  @keyframes tremor { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.4); opacity: 0.7; } }
+  .commodity-trend { font-family: 'Old Standard TT', serif; font-size: 0.65rem; width: 16px; text-align: right; color: var(--parchment); opacity: 0.6; }
+  .commodity-trend.up { color: #6b8e5a; opacity: 1; }
+  .commodity-trend.down { color: #8b4543; opacity: 1; }
 
-  const GAME_SCRIPT = "/* ============================================================\n   NOCTURNE MAP ROOM \u2014 single-file build\n   Engine + tells + AI + UI in one file.\n   ============================================================ */\n(function() {\n  'use strict';\n\n  // ============== TERRITORY DATA ==============\n  const TERRITORIES = {\n    india:        { name: 'British India',    tier: 'crown',     inf: 25, upkeepBase: 6, cost: 35, commodity: 'cotton',   region: 'jewel' },\n    canada:       { name: 'Canada',           tier: 'dominion',  inf: 12, upkeepBase: 3, cost: 22, commodity: 'timber',   region: 'americas' },\n    australia:    { name: 'Australia',        tier: 'dominion',  inf: 12, upkeepBase: 3, cost: 22, commodity: 'wool',     region: 'pacific' },\n    cape:         { name: 'Cape Colony',      tier: 'major',     inf: 6,  upkeepBase: 3, cost: 18, commodity: 'diamonds', region: 'satlantic' },\n    burma:        { name: 'Burma',            tier: 'major',     inf: 6,  upkeepBase: 3, cost: 16, commodity: 'teak',     region: 'jewel' },\n    newzealand:   { name: 'New Zealand',      tier: 'major',     inf: 6,  upkeepBase: 2, cost: 14, commodity: 'wool',     region: 'pacific' },\n    hongkong:     { name: 'Hong Kong',        tier: 'major',     inf: 6,  upkeepBase: 2, cost: 14, commodity: 'silk',     region: 'easia' },\n    singapore:    { name: 'Singapore',        tier: 'major',     inf: 6,  upkeepBase: 2, cost: 14, commodity: 'rubber',   region: 'easia' },\n    ceylon:       { name: 'Ceylon',           tier: 'major',     inf: 5,  upkeepBase: 1, cost: 12, commodity: 'tea',      region: 'jewel' },\n    aden:         { name: 'Aden',             tier: 'major',     inf: 5,  upkeepBase: 1, cost: 12, commodity: 'passage',  region: 'eastern' },\n    nigeria:      { name: 'Nigeria',          tier: 'minor',     inf: 4,  upkeepBase: 1, cost: 10, commodity: 'palmoil',  region: 'wafrica' },\n    jamaica:      { name: 'Jamaica',          tier: 'minor',     inf: 4,  upkeepBase: 1, cost: 10, commodity: 'sugar',    region: 'americas' },\n    goldcoast:    { name: 'Gold Coast',       tier: 'minor',     inf: 3,  upkeepBase: 1, cost: 8,  commodity: 'gold',     region: 'wafrica' },\n    sierraleone:  { name: 'Sierra Leone',     tier: 'minor',     inf: 3,  upkeepBase: 1, cost: 8,  commodity: 'ivory',    region: 'wafrica' },\n    trinidad:     { name: 'Trinidad',         tier: 'minor',     inf: 3,  upkeepBase: 1, cost: 8,  commodity: 'sugar',    region: 'americas' },\n    mauritius:    { name: 'Mauritius',        tier: 'minor',     inf: 3,  upkeepBase: 1, cost: 8,  commodity: 'sugar',    region: 'eastern' },\n    malta:        { name: 'Malta',            tier: 'minor',     inf: 3,  upkeepBase: 1, cost: 8,  commodity: 'naval',    region: 'home' },\n    cyprus:       { name: 'Cyprus',           tier: 'minor',     inf: 3,  upkeepBase: 1, cost: 8,  commodity: 'naval',    region: 'home' },\n    gibraltar:    { name: 'Gibraltar',        tier: 'minor',     inf: 3,  upkeepBase: 1, cost: 8,  commodity: 'naval',    region: 'home' },\n    guiana:       { name: 'British Guiana',   tier: 'outpost',   inf: 2,  upkeepBase: 1, cost: 6,  commodity: 'sugar',    region: 'americas' },\n    honduras:     { name: 'British Honduras', tier: 'outpost',   inf: 2,  upkeepBase: 1, cost: 6,  commodity: 'mahogany', region: 'americas' },\n    bermuda:      { name: 'Bermuda',          tier: 'outpost',   inf: 2,  upkeepBase: 1, cost: 6,  commodity: 'naval',    region: 'americas' },\n    sthelena:     { name: 'St Helena',        tier: 'strategic', inf: 1,  upkeepBase: 0, cost: 4,  commodity: 'naval',    region: 'satlantic' },\n    falklands:    { name: 'Falklands',        tier: 'strategic', inf: 1,  upkeepBase: 0, cost: 4,  commodity: 'wool',     region: 'satlantic' },\n  };\n\n  const ADJACENCY = {\n    uk:           ['gibraltar', 'malta', 'bermuda', 'canada'],\n    gibraltar:    ['uk', 'malta', 'sierraleone'],\n    malta:        ['uk', 'gibraltar', 'cyprus', 'aden'],\n    cyprus:       ['malta', 'aden'],\n    aden:         ['malta', 'cyprus', 'india', 'mauritius', 'cape'],\n    mauritius:    ['aden', 'cape', 'ceylon', 'india'],\n    india:        ['aden', 'ceylon', 'burma', 'mauritius'],\n    ceylon:       ['india', 'mauritius', 'singapore'],\n    burma:        ['india', 'singapore'],\n    singapore:    ['ceylon', 'burma', 'hongkong', 'australia'],\n    hongkong:     ['singapore'],\n    australia:    ['singapore', 'newzealand'],\n    newzealand:   ['australia'],\n    cape:         ['aden', 'mauritius', 'sthelena'],\n    sthelena:     ['cape', 'sierraleone', 'falklands'],\n    falklands:    ['sthelena', 'guiana'],\n    sierraleone:  ['gibraltar', 'sthelena', 'goldcoast'],\n    goldcoast:    ['sierraleone', 'nigeria'],\n    nigeria:      ['goldcoast'],\n    bermuda:      ['uk', 'canada', 'jamaica'],\n    canada:       ['uk', 'bermuda'],\n    jamaica:      ['bermuda', 'trinidad', 'honduras'],\n    trinidad:     ['jamaica', 'guiana'],\n    guiana:       ['trinidad', 'falklands'],\n    honduras:     ['jamaica'],\n  };\n\n  const CHOKEPOINTS = ['malta', 'aden', 'singapore', 'gibraltar', 'hongkong'];\n  const DIFFICULTY_THRESHOLD = { crown: 6, dominion: 5, major: 4, minor: 3, outpost: 2, strategic: 1 };\n  const CHAIN_BONUS = { 1: 0, 2: 1, 3: 2, 4: 4, 5: 7, 6: 11, 7: 16, 8: 22, 9: 29, 10: 37 };\n  const COMMODITIES = ['cotton', 'tea', 'gold', 'passage', 'wool', 'diamonds', 'palmoil', 'sugar', 'teak', 'silk', 'rubber', 'mahogany', 'ivory', 'naval', 'timber'];\n\n  const STARTING_STERLING = 40;\n  const WIN_THRESHOLD = 80;\n  const MAX_TURNS = 80;\n\n  // ============== UTIL ==============\n  function rollDie() { return 1 + Math.floor(Math.random() * 6); }\n  function roll2d6() { return rollDie() + rollDie(); }\n\n  function bfsConnectedComponent(startNode, holdings) {\n    const visited = new Set();\n    const queue = [startNode];\n    while (queue.length) {\n      const node = queue.shift();\n      if (visited.has(node)) continue;\n      visited.add(node);\n      const neighbors = ADJACENCY[node] || [];\n      for (const n of neighbors) if (holdings.has(n) && !visited.has(n)) queue.push(n);\n    }\n    return visited;\n  }\n\n  function largestChainSize(holdings) {\n    if (!holdings.size) return 0;\n    const visited = new Set();\n    let maxChain = 0;\n    for (const start of holdings) {\n      if (visited.has(start)) continue;\n      const component = bfsConnectedComponent(start, holdings);\n      for (const c of component) visited.add(c);\n      maxChain = Math.max(maxChain, component.size);\n    }\n    return maxChain;\n  }\n\n  function chainBonus(holdings) {\n    const size = largestChainSize(holdings);\n    return CHAIN_BONUS[Math.min(size, 10)] || (size > 10 ? 37 : 0);\n  }\n\n  // ============== TELL SYSTEM ==============\n  class TellSystem {\n    constructor(game) {\n      this.game = game;\n      this.eventPool = [\n        ['cotton', 2, 'Lancashire mill orders exceed forecast.'],\n        ['cotton', -2, 'Indian harvest exceeds expectations.'],\n        ['tea', 2, 'Ceylon tea blight reported.'],\n        ['tea', -2, 'Assam tea surplus confirmed.'],\n        ['gold', 2, 'Gold Coast survey expedition successful.'],\n        ['passage', 2, 'Suez Canal traffic increases.'],\n        ['passage', -1, 'Mediterranean shipping routes diverted.'],\n        ['wool', -2, 'Australian wool surplus reported.'],\n        ['wool', 1, 'European wool shortage.'],\n        ['diamonds', 3, 'Cape diamond strike confirmed.'],\n        ['palmoil', 2, 'West African palm oil demand rises.'],\n        ['sugar', -1, 'Caribbean sugar tariff revision.'],\n        ['sugar', 1, 'European sugar shortage.'],\n        ['teak', 1, 'Burmese teak imports redirect through Calcutta.'],\n        ['silk', 2, 'Eastern silk demand grows.'],\n        ['rubber', 2, 'Industrial rubber demand.'],\n        ['mahogany', 1, 'Furniture trade expansion.'],\n        ['ivory', 1, 'Decorative arts demand.'],\n        ['naval', 2, 'Royal Naval review at Spithead.'],\n        ['timber', -1, 'Canadian forestry surplus.'],\n      ];\n      this.fired = [];\n      this.tremors = {};\n      this.queuedEvents = [];\n      this._setupDispatch();\n      this._queueEvents();\n    }\n\n    _setupDispatch() {\n      this.dispatchCommodity = COMMODITIES[Math.floor(Math.random() * COMMODITIES.length)];\n      this.dispatchPeakTurn = 4 + Math.floor(Math.random() * 2);\n      this.dispatchRiseTurns = [2, this.dispatchPeakTurn];\n      this.dispatchText = this._dispatchTextFor(this.dispatchCommodity);\n    }\n\n    _dispatchTextFor(commodity) {\n      const lines = {\n        cotton: 'Lancashire mill orders exceed forecast for third quarter.',\n        tea: 'Reports from Ceylon plantations note unusual rainfall.',\n        gold: 'Gold Coast prospecting expedition returns with confirmed deposits.',\n        passage: 'Naval correspondence from Aden notes increased Suez traffic.',\n        wool: 'Australian Wool Federation reports shipping disruptions.',\n        diamonds: 'Cape Town merchants report unusual mining activity.',\n        palmoil: 'West African trading houses request increased shipping.',\n        sugar: 'Caribbean planters petition for tariff review.',\n        teak: 'Burmese timber merchants seek Calcutta routes.',\n        silk: 'Hong Kong silk markets show unusual activity.',\n        rubber: 'Singapore rubber processors increase output.',\n        mahogany: 'British Honduras timber exports on the rise.',\n        ivory: 'Sierra Leone trading posts report higher demand.',\n        naval: 'Admiralty correspondence concerning fleet positions.',\n        timber: 'Canadian Atlantic ports report increased activity.',\n      };\n      return lines[commodity] || 'Commercial reports note unusual activity.';\n    }\n\n    _queueEvents() {\n      const shuffled = [...this.eventPool].sort(() => Math.random() - 0.5);\n      const chosen = shuffled.slice(0, 3);\n      this.queuedEvents = chosen.map((ev, i) => ({ turn: 3 + i * 3, commodity: ev[0], change: ev[1], text: ev[2] }));\n    }\n\n    update() {\n      if (this.dispatchCommodity && this.dispatchRiseTurns.includes(this.game.turn)) {\n        this.game.demand[this.dispatchCommodity] = Math.min(5, this.game.demand[this.dispatchCommodity] + 1);\n      }\n      for (const ev of this.queuedEvents) {\n        if (this.game.turn === ev.turn - 2) this.tremors[ev.commodity] = [ev.turn, ev.change];\n      }\n      const firing = this.queuedEvents.filter(ev => ev.turn === this.game.turn);\n      for (const ev of firing) {\n        this.game.demand[ev.commodity] = Math.max(1, Math.min(5, this.game.demand[ev.commodity] + ev.change));\n        this.fired.push({ commodity: ev.commodity, change: ev.change, text: ev.text, turn: this.game.turn });\n        this.queuedEvents = this.queuedEvents.filter(e => e !== ev);\n        delete this.tremors[ev.commodity];\n      }\n    }\n\n    predictDemand(commodity, futureTurn, aiLevel) {\n      const current = this.game.demand[commodity];\n      if (aiLevel === 'easy') return current;\n      let prediction = current;\n      if (commodity === this.dispatchCommodity && futureTurn <= this.dispatchPeakTurn) {\n        if (this.dispatchPeakTurn > this.game.turn) prediction = Math.min(5, current + 1);\n      }\n      if (aiLevel === 'medium') return prediction;\n      if (this.tremors[commodity]) {\n        const [tremorTurn, change] = this.tremors[commodity];\n        if (futureTurn >= tremorTurn) prediction = Math.max(1, Math.min(5, prediction + change));\n      }\n      for (const ev of this.queuedEvents) {\n        if (ev.commodity === commodity && futureTurn >= ev.turn) prediction = Math.max(1, Math.min(5, prediction + ev.change));\n      }\n      return prediction;\n    }\n  }\n\n  // ============== PLAYER ==============\n  class Player {\n    constructor(name, aiLevel) {\n      this.name = name;\n      this.aiLevel = aiLevel;\n      this.sterling = STARTING_STERLING;\n      this.holdings = new Set();\n      this.influence = 0;\n      this.successfulClaims = 0;\n      this.failedClaims = 0;\n      this._inflationLevel = 0;\n    }\n    updateInfluence() {\n      let total = 0;\n      for (const t of this.holdings) if (TERRITORIES[t]) total += TERRITORIES[t].inf;\n      this.influence = total;\n    }\n    totalUpkeep() {\n      let total = 0;\n      for (const t of this.holdings) if (TERRITORIES[t]) total += TERRITORIES[t].upkeepBase + this._inflationLevel;\n      return total;\n    }\n  }\n\n  // ============== GAME ==============\n  class MapRoomGame {\n    constructor(opts) {\n      opts = opts || {};\n      this.p1 = new Player('Callum', opts.p1Ai || 'human');\n      this.p2 = new Player('Surgeon', opts.p2Ai || 'medium');\n      this.turn = 0;\n      this.demand = {};\n      for (const c of COMMODITIES) this.demand[c] = 3;\n      this.tells = new TellSystem(this);\n      this.firstPlayer = null;\n      this.winner = null;\n      this.endReason = null;\n      this.eventLog = [];\n      this._draft();\n    }\n\n    log(msg) { this.eventLog.push({ turn: this.turn, msg }); }\n\n    _draft() {\n      const tiers = ['outpost', 'minor', 'minor', 'major'];\n      for (const tier of tiers) {\n        for (const player of [this.p1, this.p2]) {\n          const available = Object.keys(TERRITORIES).filter(k =>\n            TERRITORIES[k].tier === tier && !this.p1.holdings.has(k) && !this.p2.holdings.has(k)\n          );\n          if (available.length) {\n            const pick = available[Math.floor(Math.random() * available.length)];\n            player.holdings.add(pick);\n          }\n        }\n      }\n      this.p1.updateInfluence();\n      this.p2.updateInfluence();\n    }\n\n    setupRoll() {\n      let p1Roll, p2Roll;\n      do { p1Roll = roll2d6(); p2Roll = roll2d6(); } while (p1Roll === p2Roll);\n      this.firstPlayer = (p1Roll > p2Roll) ? this.p1 : this.p2;\n      return { p1Roll, p2Roll, firstPlayer: this.firstPlayer.name };\n    }\n\n    rollMovement(player) {\n      const die = rollDie();\n      // Chokepoint bonus: +1 reach per chokepoint owned, capped at 7 total steps. No teleport.\n      const chokeCount = [...player.holdings].filter(t => CHOKEPOINTS.includes(t)).length;\n      const reach = Math.min(7, die + chokeCount);\n      return { die, reach, chokeBonus: chokeCount };\n    }\n\n    getReachableTerritories(player, reachSteps, includeOwn) {\n      const opponent = (player === this.p1) ? this.p2 : this.p1;\n      const reachable = new Set();\n      for (const owned of player.holdings) {\n        const queue = [[owned, 0]];\n        const visited = new Set();\n        while (queue.length) {\n          const [node, dist] = queue.shift();\n          if (visited.has(node) || dist > reachSteps) continue;\n          visited.add(node);\n          if (includeOwn && player.holdings.has(node)) {\n            reachable.add(node);\n          } else if (node !== owned && !player.holdings.has(node) && !opponent.holdings.has(node)) {\n            reachable.add(node);\n          }\n          const neighbors = ADJACENCY[node] || [];\n          for (const n of neighbors) if (!visited.has(n)) queue.push([n, dist + 1]);\n        }\n      }\n      reachable.delete('uk');\n      return reachable;\n    }\n\n    acquisitionModifier(player, territoryKey) {\n      let mod = 0;\n      const adj = ADJACENCY[territoryKey] || [];\n      const adjOwned = adj.filter(n => player.holdings.has(n)).length;\n      mod += Math.min(adjOwned, 2);\n      const region = TERRITORIES[territoryKey].region;\n      const regionTerrs = Object.keys(TERRITORIES).filter(k => TERRITORIES[k].region === region);\n      if (regionTerrs.some(t => player.holdings.has(t))) mod += 1;\n      if (this.demand[TERRITORIES[territoryKey].commodity] >= 4) mod += 1;\n      return mod;\n    }\n\n    attemptAcquisition(player, territoryKey) {\n      const terr = TERRITORIES[territoryKey];\n      if (!terr) return { result: 'invalid_territory', cost: 0 };\n      if (player.sterling < terr.cost) return { result: 'cant_afford', cost: 0 };\n      const threshold = DIFFICULTY_THRESHOLD[terr.tier];\n      const modifier = this.acquisitionModifier(player, territoryKey);\n      const die = rollDie();\n      const total = die + modifier;\n      const gap = threshold - total;\n      const cost = terr.cost;\n      if (total >= threshold) {\n        player.sterling -= cost;\n        player.holdings.add(territoryKey);\n        player.updateInfluence();\n        player.successfulClaims += 1;\n        return { result: 'success', cost, die, modifier, threshold, territory: territoryKey };\n      }\n      player.failedClaims += 1;\n      let lossPercent, severity, influencePenalty = 0;\n      if (die === 1) { lossPercent = 1.0; severity = 'critical_fail'; influencePenalty = 2; }\n      else if (gap === 1) { lossPercent = 0.25; severity = 'failed_close'; }\n      else if (gap === 2) { lossPercent = 0.50; severity = 'failed_mid'; }\n      else { lossPercent = 0.75; severity = 'failed_bad'; influencePenalty = 1; }\n      const loss = Math.floor(cost * lossPercent);\n      player.sterling = Math.max(0, player.sterling - loss);\n      return { result: severity, cost: loss, die, modifier, threshold, territory: territoryKey, influencePenalty };\n    }\n\n    productionPhase(player) {\n      let income = 0;\n      for (const t of player.holdings) {\n        if (t === 'uk' || !TERRITORIES[t]) continue;\n        const commodity = TERRITORIES[t].commodity;\n        const dots = this.demand[commodity];\n        const base = Math.floor(dots * 1.5);\n        const roll = rollDie();\n        let modifier;\n        if (roll === 1) modifier = -1;\n        else if (roll <= 4) modifier = 0;\n        else if (roll === 5) modifier = 1;\n        else modifier = 2;\n        const unit = Math.max(0, base + modifier);\n        income += unit;\n      }\n      const chainBon = chainBonus(player.holdings);\n      income += chainBon;\n      player.sterling += income;\n      return { income, chainBonus: chainBon };\n    }\n\n    upkeepPhase(player) {\n      const cost = player.totalUpkeep();\n      if (player.sterling >= cost) { player.sterling -= cost; return { paid: true, cost, abandoned: [] }; }\n      const abandoned = [];\n      const sortedByInfluence = [...player.holdings].filter(t => t !== 'uk').sort((a, b) => TERRITORIES[a].inf - TERRITORIES[b].inf);\n      while (player.sterling < player.totalUpkeep() && sortedByInfluence.length) {\n        const cheapest = sortedByInfluence.shift();\n        player.holdings.delete(cheapest);\n        abandoned.push(cheapest);\n      }\n      const finalCost = player.totalUpkeep();\n      player.sterling = Math.max(0, player.sterling - finalCost);\n      player.updateInfluence();\n      return { paid: false, cost: finalCost, abandoned };\n    }\n\n    marketPhase() {\n      this.tells.update();\n      for (const commodity of COMMODITIES) {\n        if (Math.random() < 0.05) {\n          const shift = Math.random() < 0.5 ? -1 : 1;\n          this.demand[commodity] = Math.max(1, Math.min(5, this.demand[commodity] + shift));\n        }\n      }\n    }\n\n    aiDecide(player) {\n      const movement = this.rollMovement(player);\n      const reachable = [...this.getReachableTerritories(player, movement.reach)];\n      const opponent = (player === this.p1) ? this.p2 : this.p1;\n      const affordable = reachable.filter(t => TERRITORIES[t] && !opponent.holdings.has(t) && player.sterling >= TERRITORIES[t].cost);\n      if (!affordable.length) return { target: null, movement };\n\n      if (player.aiLevel === 'easy') {\n        const weighted = [];\n        for (const t of affordable) for (let i = 0; i < TERRITORIES[t].inf; i++) weighted.push(t);\n        const target = weighted.length ? weighted[Math.floor(Math.random() * weighted.length)] : affordable[Math.floor(Math.random() * affordable.length)];\n        return { target, movement };\n      }\n\n      const lookahead = (player.aiLevel === 'hard') ? 10 : 4;\n      const projectedNetMultiplier = (player.aiLevel === 'hard') ? 1.5 : 0.8;\n      const chokeMult = (player.aiLevel === 'hard') ? 1.0 : 0.5;\n      const victoryMult = (player.aiLevel === 'hard') ? 1.0 : 0.7;\n\n      const scored = [];\n      for (const t of affordable) {\n        const terr = TERRITORIES[t];\n        const threshold = DIFFICULTY_THRESHOLD[terr.tier];\n        const mod = this.acquisitionModifier(player, t);\n        const successChance = Math.max(0.15, Math.min(1.0, (7 - threshold + mod) / 6));\n        let projectedNet = 0;\n        for (let offset = 1; offset <= lookahead; offset++) {\n          const futureTurn = this.turn + offset;\n          const futureDemand = this.tells.predictDemand(terr.commodity, futureTurn, player.aiLevel);\n          const futureProduction = Math.floor(futureDemand * 1.5);\n          const futureInflation = Math.floor(futureTurn / 5);\n          const futureUpkeep = terr.upkeepBase + futureInflation;\n          projectedNet += (futureProduction - futureUpkeep);\n        }\n        const currentMax = largestChainSize(player.holdings);\n        const hypothetical = new Set(player.holdings);\n        hypothetical.add(t);\n        const newMax = largestChainSize(hypothetical);\n        const chainDelta = (CHAIN_BONUS[Math.min(newMax, 10)] || 0) - (CHAIN_BONUS[Math.min(currentMax, 10)] || 0);\n        const chainFutureValue = chainDelta * lookahead;\n        const victoryBonus = (player.influence + terr.inf >= WIN_THRESHOLD) ? 100 : 0;\n        const chokepointBonus = CHOKEPOINTS.includes(t) ? 8 : 0;\n        const oppRegion = Object.keys(TERRITORIES).filter(k => TERRITORIES[k].region === terr.region);\n        const oppInRegion = oppRegion.filter(x => opponent.holdings.has(x)).length;\n        const blockingValue = oppInRegion >= 2 ? 5 : 0;\n        let score = (terr.inf * successChance) + chainFutureValue + (projectedNet * projectedNetMultiplier) + (chokepointBonus * chokeMult) + blockingValue + (victoryBonus * victoryMult);\n        if (projectedNet < -10) score *= 0.3;\n        scored.push({ score, target: t });\n      }\n      scored.sort((a, b) => b.score - a.score);\n      return { target: scored[0].target, movement };\n    }\n\n    checkWinner() {\n      if (this.p1.influence >= WIN_THRESHOLD) { this.winner = 'p1'; this.endReason = 'threshold_reached'; return true; }\n      if (this.p2.influence >= WIN_THRESHOLD) { this.winner = 'p2'; this.endReason = 'threshold_reached'; return true; }\n      return false;\n    }\n  }\n\n  /* ============================================================\n     UI CONTROLLER\n     ============================================================ */\n\n  const game = new MapRoomGame({ p1Ai: 'human', p2Ai: 'medium' });\n\n  // Territory coordinates calibrated to nocturne-item-mapboard.png\n  // Remapped to nocturne-item-mapboard.png\n  const TERRITORY_COORDS = {\n    canada:       { x: 20, y: 20 },\n    bermuda:      { x: 24, y: 34 },\n    jamaica:      { x: 19, y: 43 },\n    honduras:     { x: 16, y: 44 },\n    trinidad:     { x: 25, y: 49 },\n    guiana:       { x: 27, y: 51 },\n    falklands:    { x: 26, y: 80 },\n    sthelena:     { x: 42, y: 67 },\n    sierraleone:  { x: 44, y: 50 },\n    goldcoast:    { x: 46, y: 53 },\n    nigeria:      { x: 49, y: 52 },\n    cape:         { x: 51, y: 74 },\n    gibraltar:    { x: 46, y: 36 },\n    malta:        { x: 51, y: 37 },\n    cyprus:       { x: 55, y: 36 },\n    aden:         { x: 58, y: 46 },\n    mauritius:    { x: 61, y: 65 },\n    india:        { x: 66, y: 43 },\n    ceylon:       { x: 67, y: 50 },\n    burma:        { x: 72, y: 42 },\n    singapore:    { x: 75, y: 53 },\n    hongkong:     { x: 79, y: 40 },\n    australia:    { x: 83, y: 65 },\n    newzealand:   { x: 89, y: 72 },\n    uk:           { x: 47, y: 24 },\n  };\n\n  let currentMovementReach = 0;\n  let isPlayerTurn = false;\n\n  function renderTerritories() {\n    const container = document.getElementById('territories');\n    container.innerHTML = '';\n    for (const [key, coord] of Object.entries(TERRITORY_COORDS)) {\n      const el = document.createElement('div');\n      el.className = 'territory';\n      el.dataset.key = key;\n      el.style.left = `calc(${coord.x}% - 9px)`;\n      el.style.top = `calc(${coord.y}% - 9px)`;\n      if (game.p1.holdings.has(key)) el.classList.add('callum');\n      if (game.p2.holdings.has(key)) el.classList.add('surgeon');\n      if (key === 'uk') el.classList.add('callum');\n      const pin = document.createElement('div');\n      pin.className = 'pin';\n      el.appendChild(pin);\n      const label = document.createElement('div');\n      label.className = 'label';\n      const terr = TERRITORIES[key];\n      label.textContent = terr ? terr.name : key.toUpperCase();\n      el.appendChild(label);\n      el.addEventListener('click', () => onTerritoryClick(key, el));\n      container.appendChild(el);\n    }\n  }\n\n  function renderDemand() {\n    const rows = document.getElementById('demand-rows');\n    rows.innerHTML = '';\n    const tells = game.tells;\n    let anyTremor = false;\n    for (const commodity of COMMODITIES) {\n      const value = game.demand[commodity];\n      const tremored = tells.tremors[commodity];\n      if (tremored) anyTremor = true;\n      const row = document.createElement('div');\n      row.className = 'commodity-row';\n      const name = document.createElement('span');\n      name.className = 'commodity-name';\n      name.textContent = commodity;\n      row.appendChild(name);\n      const dots = document.createElement('div');\n      dots.className = 'commodity-dots';\n      for (let i = 1; i <= 5; i++) {\n        const dot = document.createElement('div');\n        dot.className = 'dot';\n        if (i <= value) dot.classList.add('filled');\n        if (tremored && i === value) dot.classList.add('tremor');\n        dots.appendChild(dot);\n      }\n      row.appendChild(dots);\n      const trend = document.createElement('span');\n      trend.className = 'commodity-trend';\n      if (tremored) {\n        trend.textContent = tremored[1] > 0 ? '\u2191' : '\u2193';\n        trend.classList.add(tremored[1] > 0 ? 'up' : 'down');\n      } else {\n        trend.textContent = '\u00b7';\n      }\n      row.appendChild(trend);\n      rows.appendChild(row);\n    }\n    // Update tab badge \u2014 show ! when tremor active to signal the player\n    const tab = document.getElementById('demand-tab');\n    if (tab) tab.classList.toggle('has-tremor', anyTremor);\n  }\n\n  function toggleDemandDrawer() {\n    document.getElementById('demand-drawer').classList.toggle('open');\n  }\n  function closeDemandDrawer() {\n    document.getElementById('demand-drawer').classList.remove('open');\n  }\n\n  function renderScores() {\n    document.getElementById('p1-inf').textContent = game.p1.influence;\n    document.getElementById('p2-inf').textContent = game.p2.influence;\n    document.getElementById('p1-sterling').textContent = game.p1.sterling;\n    document.getElementById('p2-sterling').textContent = game.p2.sterling;\n    document.getElementById('turn-num').textContent = game.turn;\n    document.getElementById('inflation').textContent = Math.floor(game.turn / 5);\n  }\n\n  function renderDispatch() {\n    document.getElementById('dispatch-text').textContent = game.tells.dispatchText;\n  }\n\n  function clearReachable() {\n    document.querySelectorAll('.territory.reachable').forEach(el => el.classList.remove('reachable'));\n  }\n\n  function highlightReachable(reach) {\n    clearReachable();\n    const reachable = game.getReachableTerritories(game.p1, reach, true);\n    for (const key of reachable) {\n      const el = document.querySelector(`.territory[data-key=\"${key}\"]`);\n      if (el) el.classList.add('reachable');\n    }\n  }\n\n  function setDialogue(text) {\n    const el = document.getElementById('dialogue');\n    el.textContent = text;\n    if (text) {\n      document.getElementById('portrait').classList.add('speaking');\n      setTimeout(() => document.getElementById('portrait').classList.remove('speaking'), 1500);\n    }\n  }\n\n  function showToast(text) {\n    const area = document.getElementById('toast-area');\n    const t = document.createElement('div');\n    t.className = 'toast';\n    t.textContent = text;\n    area.appendChild(t);\n    setTimeout(() => t.remove(), 3200);\n  }\n\n  function showEventBanner(text, duration = 2400) {\n    const banner = document.getElementById('event-banner');\n    document.getElementById('event-text').textContent = text;\n    banner.classList.add('show');\n    setTimeout(() => banner.classList.remove('show'), duration);\n  }\n\n  // ============== TURN FLOW STATE ==============\n  // Tracks which phase the player's turn is in.\n  // 'movement_roll' \u2192 player needs to roll for movement\n  // 'movement_select' \u2192 player rolled, picking destination\n  // 'action_select' \u2192 player has moved, choosing acquire/trade/skip\n  // 'idle' \u2192 not player's turn\n  let turnPhase = 'idle';\n  let selectedTerritory = null;\n\n  function showPhaseIndicator(text, sub) {\n    const ind = document.getElementById('phase-indicator');\n    ind.innerHTML = `${text}<span class=\"small\">${sub}</span>`;\n    ind.classList.add('show');\n  }\n  function hidePhaseIndicator() {\n    document.getElementById('phase-indicator').classList.remove('show');\n  }\n\n  function showModal(id) { document.getElementById(id).classList.add('show'); }\n  function hideModal(id) { document.getElementById(id).classList.remove('show'); }\n  function showActionMenu() { document.getElementById('action-menu').classList.add('show'); }\n  function hideActionMenu() { document.getElementById('action-menu').classList.remove('show'); }\n\n  function startTurn() {\n    document.getElementById('btn-roll').disabled = false;\n    document.getElementById('btn-end-turn').disabled = false;\n    isPlayerTurn = true;\n    currentMovementReach = 0;\n    selectedTerritory = null;\n    turnPhase = 'movement_roll';\n    const inflation = Math.floor(game.turn / 5);\n    game.p1._inflationLevel = inflation;\n    game.p2._inflationLevel = inflation;\n    game.marketPhase();\n    const p1Income = game.productionPhase(game.p1);\n    game.productionPhase(game.p2);\n    renderDemand();\n    renderScores();\n    if (p1Income.income > 0) showToast(`Production: +\u00a3${p1Income.income} (chain bonus \u00a3${p1Income.chainBonus})`);\n    const lastFired = game.tells.fired[game.tells.fired.length - 1];\n    if (lastFired && lastFired.turn === game.turn) showEventBanner(lastFired.text);\n    setDialogue('Your move. Roll for movement.');\n    showPhaseIndicator('Movement', 'Roll the die');\n  }\n\n  function onRollMovement() {\n    if (turnPhase !== 'movement_roll') return;\n    const movement = game.rollMovement(game.p1);\n    currentMovementReach = movement.reach;\n    const bonusText = movement.chokeBonus > 0 ? ` +${movement.chokeBonus} chokepoint` : '';\n    showToast(`Movement: ${movement.die}${bonusText} \u2014 reach ${movement.reach} step${movement.reach === 1 ? '' : 's'}`);\n    highlightReachable(movement.reach);\n    document.getElementById('btn-roll').disabled = true;\n    turnPhase = 'movement_select';\n    showPhaseIndicator('Select Destination', 'Tap a glowing territory');\n    setDialogue('Tap a glowing territory to travel there.');\n  }\n\n  function onTerritoryClick(key, el) {\n    if (!isPlayerTurn) return;\n    if (window.__panZoomDragged && window.__panZoomDragged()) return;\n    if (turnPhase !== 'movement_select') return;\n    if (!el.classList.contains('reachable')) return;\n    selectedTerritory = key;\n    openMoveConfirm(key);\n  }\n\n  function openMoveConfirm(key) {\n    const terr = TERRITORIES[key];\n    const stayingPut = game.p1.holdings.has(key);\n    document.getElementById('move-name').textContent = terr.name;\n    document.getElementById('move-flavor').textContent = stayingPut\n      ? `Hold position. Take action from this territory you already control.`\n      : `${capitalize(terr.tier)} territory \u00b7 ${capitalize(terr.commodity)} \u00b7 Region: ${capitalize(terr.region)}`;\n    document.getElementById('btn-confirm-move').textContent = stayingPut ? 'Hold Here' : 'Move Here';\n    showModal('move-modal');\n  }\n\n  function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }\n\n  function onConfirmMove() {\n    hideModal('move-modal');\n    clearReachable();\n    hidePhaseIndicator();\n    turnPhase = 'action_select';\n    // Highlight only the selected territory\n    const el = document.querySelector(`.territory[data-key=\"${selectedTerritory}\"]`);\n    if (el) el.classList.add('reachable');\n    document.getElementById('menu-territory').textContent = TERRITORIES[selectedTerritory].name;\n\n    // Disable acquire if can't afford or already owned by surgeon\n    const terr = TERRITORIES[selectedTerritory];\n    const canAfford = game.p1.sterling >= terr.cost;\n    const surgeonOwned = game.p2.holdings.has(selectedTerritory);\n    const playerOwned = game.p1.holdings.has(selectedTerritory);\n    const acquireBtn = document.getElementById('btn-acquire');\n    if (playerOwned) {\n      acquireBtn.disabled = true;\n      acquireBtn.querySelector('.desc').textContent = 'You already own this territory';\n    } else if (surgeonOwned) {\n      acquireBtn.disabled = true;\n      acquireBtn.querySelector('.desc').textContent = 'The Surgeon controls this \u2014 try a trade';\n    } else if (!canAfford) {\n      acquireBtn.disabled = true;\n      acquireBtn.querySelector('.desc').textContent = `Need \u00a3${terr.cost} (you have \u00a3${game.p1.sterling})`;\n    } else {\n      acquireBtn.disabled = false;\n      acquireBtn.querySelector('.desc').textContent = `Cost: \u00a3${terr.cost}`;\n    }\n\n    // Trade requires the surgeon to own at least one territory\n    const tradeBtn = document.getElementById('btn-trade');\n    const surgeonHas = [...game.p2.holdings].filter(t => t !== 'uk').length;\n    if (surgeonHas === 0) {\n      tradeBtn.disabled = true;\n      tradeBtn.querySelector('.desc').textContent = 'The Surgeon has no territories to trade';\n    } else {\n      tradeBtn.disabled = false;\n      tradeBtn.querySelector('.desc').textContent = 'Offer the Surgeon a deal';\n    }\n\n    showActionMenu();\n    setDialogue(`You arrive at ${TERRITORIES[selectedTerritory].name}. Choose your action.`);\n  }\n\n  function onCancelMove() {\n    hideModal('move-modal');\n    selectedTerritory = null;\n    // Stay in movement_select phase, player can pick another territory\n  }\n\n  function onClickAcquire() {\n    hideActionMenu();\n    openAcquireConfirm(selectedTerritory);\n  }\n\n  function openAcquireConfirm(key) {\n    const terr = TERRITORIES[key];\n    const threshold = DIFFICULTY_THRESHOLD[terr.tier];\n    const modifier = game.acquisitionModifier(game.p1, key);\n    const successChance = Math.max(0.15, Math.min(1.0, (7 - threshold + modifier) / 6));\n    document.getElementById('acquire-name').textContent = terr.name;\n    document.getElementById('acquire-flavor').textContent = `${capitalize(terr.commodity)} producer in ${capitalize(terr.region)}.`;\n    document.getElementById('acquire-tier').textContent = capitalize(terr.tier);\n    document.getElementById('acquire-cost').textContent = '\u00a3' + terr.cost;\n    document.getElementById('acquire-threshold').textContent = `${threshold}+ on 1d6`;\n    document.getElementById('acquire-modifier').textContent = (modifier >= 0 ? '+' : '') + modifier;\n    document.getElementById('acquire-chance').textContent = Math.round(successChance * 100) + '%';\n    showModal('acquire-modal');\n  }\n\n  function onConfirmAcquire() {\n    hideModal('acquire-modal');\n    const result = game.attemptAcquisition(game.p1, selectedTerritory);\n    handleAcquisitionResult(result, game.p1);\n    finishPlayerAction();\n  }\n\n  function onCancelAcquire() {\n    hideModal('acquire-modal');\n    showActionMenu(); // Back to action menu\n  }\n\n  function onClickTrade() {\n    hideActionMenu();\n    openTradeProposal();\n  }\n\n  // Trade state\n  let tradeOffer = { sterling: 0, territory: null };\n  let tradeRequest = { territory: null };\n\n  function openTradeProposal() {\n    tradeOffer = { sterling: 0, territory: null };\n    tradeRequest = { territory: null };\n    document.getElementById('trade-offer-sterling').value = '0';\n    document.getElementById('trade-offer-sterling').max = game.p1.sterling;\n\n    // Populate offerable territories (player's, except UK)\n    const offerEl = document.getElementById('trade-offer-territories');\n    offerEl.innerHTML = '';\n    for (const t of game.p1.holdings) {\n      if (t === 'uk') continue;\n      const opt = document.createElement('div');\n      opt.className = 'opt';\n      opt.dataset.key = t;\n      opt.textContent = `${TERRITORIES[t].name} (\u00a3${TERRITORIES[t].cost})`;\n      opt.addEventListener('click', () => {\n        document.querySelectorAll('#trade-offer-territories .opt').forEach(x => x.classList.remove('selected'));\n        if (tradeOffer.territory === t) {\n          tradeOffer.territory = null;\n        } else {\n          opt.classList.add('selected');\n          tradeOffer.territory = t;\n        }\n      });\n      offerEl.appendChild(opt);\n    }\n\n    // Populate requestable territories (surgeon's, except UK)\n    const requestEl = document.getElementById('trade-request-territories');\n    requestEl.innerHTML = '';\n    for (const t of game.p2.holdings) {\n      if (t === 'uk') continue;\n      const opt = document.createElement('div');\n      opt.className = 'opt';\n      opt.dataset.key = t;\n      opt.textContent = `${TERRITORIES[t].name} (\u00a3${TERRITORIES[t].cost})`;\n      opt.addEventListener('click', () => {\n        document.querySelectorAll('#trade-request-territories .opt').forEach(x => x.classList.remove('selected'));\n        if (tradeRequest.territory === t) {\n          tradeRequest.territory = null;\n        } else {\n          opt.classList.add('selected');\n          tradeRequest.territory = t;\n        }\n      });\n      requestEl.appendChild(opt);\n    }\n    showModal('trade-modal');\n  }\n\n  function onConfirmTrade() {\n    const sterling = Math.max(0, Math.min(game.p1.sterling, parseInt(document.getElementById('trade-offer-sterling').value, 10) || 0));\n    tradeOffer.sterling = sterling;\n    if (!tradeRequest.territory) {\n      showToast('Select a territory to request.');\n      return;\n    }\n    if (sterling === 0 && !tradeOffer.territory) {\n      showToast('Offer something.');\n      return;\n    }\n    hideModal('trade-modal');\n    // Surgeon evaluates the trade\n    const accepted = surgeonEvaluatesTrade(tradeOffer, tradeRequest);\n    if (accepted) {\n      executeTrade(tradeOffer, tradeRequest);\n      const reqName = TERRITORIES[tradeRequest.territory].name;\n      const offerDesc = [];\n      if (tradeOffer.sterling > 0) offerDesc.push(`\u00a3${tradeOffer.sterling}`);\n      if (tradeOffer.territory) offerDesc.push(TERRITORIES[tradeOffer.territory].name);\n      showToast(`Trade accepted: ${offerDesc.join(' + ')} for ${reqName}`);\n      setDialogue(`\"Done. ${reqName} is yours.\"`);\n    } else {\n      showToast('The Surgeon declines the trade.');\n      setDialogue('\"No. Not for that.\"');\n    }\n    renderTerritories();\n    renderScores();\n    finishPlayerAction();\n  }\n\n  function onCancelTrade() {\n    hideModal('trade-modal');\n    showActionMenu();\n  }\n\n  function surgeonEvaluatesTrade(offer, request) {\n    // Calculate value of what surgeon would give up\n    const requestedTerr = TERRITORIES[request.territory];\n    let surgeonLoses = requestedTerr.inf * 1.5 + requestedTerr.cost * 0.3;\n\n    // Calculate value of what surgeon would receive\n    let surgeonGains = offer.sterling;\n    if (offer.territory) {\n      const offered = TERRITORIES[offer.territory];\n      surgeonGains += offered.inf * 1.5 + offered.cost * 0.3;\n    }\n\n    // Surgeon accepts if he gains at least 110% of what he loses\n    return surgeonGains >= surgeonLoses * 1.1;\n  }\n\n  function executeTrade(offer, request) {\n    // Transfer sterling\n    game.p1.sterling -= offer.sterling;\n    game.p2.sterling += offer.sterling;\n    // Transfer territories\n    if (offer.territory) {\n      game.p1.holdings.delete(offer.territory);\n      game.p2.holdings.add(offer.territory);\n    }\n    game.p2.holdings.delete(request.territory);\n    game.p1.holdings.add(request.territory);\n    game.p1.updateInfluence();\n    game.p2.updateInfluence();\n  }\n\n  function onClickSkip() {\n    hideActionMenu();\n    setDialogue('You take a moment. The empire waits.');\n    finishPlayerAction();\n  }\n\n  function finishPlayerAction() {\n    clearReachable();\n    hidePhaseIndicator();\n    selectedTerritory = null;\n    turnPhase = 'idle';\n    isPlayerTurn = false;\n    document.getElementById('btn-roll').disabled = true;\n    document.getElementById('btn-end-turn').disabled = true;\n    renderTerritories();\n    renderScores();\n    if (game.checkWinner()) { endGame(); return; }\n    setTimeout(surgeonTurn, 1000);\n  }\n\n  function handleAcquisitionResult(result, player) {\n    if (result.result === 'success') {\n      showToast(`${player.name} claimed ${TERRITORIES[result.territory].name} (rolled ${result.die}+${result.modifier} vs ${result.threshold})`);\n    } else if (result.result === 'cant_afford') {\n      showToast('Not enough sterling.');\n    } else if (result.result === 'invalid_territory') {\n      // ignore\n    } else {\n      const desc = { failed_close: 'narrow miss', failed_mid: 'expedition stalled', failed_bad: 'expedition failed', critical_fail: 'catastrophic loss' }[result.result] || 'failed';\n      showToast(`${player.name} failed ${TERRITORIES[result.territory].name} \u2014 ${desc} (\u00a3${result.cost} lost)`);\n    }\n  }\n\n  function surgeonTurn() {\n    setDialogue('');\n    document.getElementById('portrait').classList.add('speaking');\n    const decision = game.aiDecide(game.p2);\n    if (decision.target) {\n      const result = game.attemptAcquisition(game.p2, decision.target);\n      handleAcquisitionResult(result, game.p2);\n    } else {\n      showToast('The Surgeon passes.');\n    }\n    setTimeout(() => {\n      document.getElementById('portrait').classList.remove('speaking');\n      game.upkeepPhase(game.p1);\n      game.upkeepPhase(game.p2);\n      renderTerritories();\n      renderScores();\n      if (game.checkWinner()) { endGame(); return; }\n      game.turn += 1;\n      startTurn();\n    }, 1400);\n  }\n\n  function onEndTurn() {\n    if (turnPhase === 'movement_roll') {\n      // Hadn't rolled yet \u2014 just skip\n      onClickSkip();\n    } else if (turnPhase === 'movement_select') {\n      // Rolled but didn't pick a destination \u2014 skip\n      onClickSkip();\n    } else if (turnPhase === 'action_select') {\n      // Already moved, end turn = same as Skip from menu\n      hideActionMenu();\n      onClickSkip();\n    }\n  }\n\n  function endGame() {\n    const winner = game.winner === 'p1' ? 'You' : 'The Surgeon';\n    showEventBanner(`${winner} won. Final: Callum ${game.p1.influence} vs Surgeon ${game.p2.influence}.`, 6000);\n    document.getElementById('btn-roll').disabled = true;\n    document.getElementById('btn-end-turn').disabled = true;\n    showEndgameScorecard();\n    saveMatchToPersistent();\n  }\n\n  // ============== SCORECARD STATE ==============\n  // Track per-match high-water marks\n  const matchStats = {\n    bestChainP1: 0,\n    bestChainP2: 0,\n    eventsFired: 0,\n  };\n\n  function influenceByTier(player) {\n    const tiers = { crown: 0, dominion: 0, major: 0, minor: 0, outpost: 0, strategic: 0 };\n    for (const t of player.holdings) {\n      if (t === 'uk' || !TERRITORIES[t]) continue;\n      tiers[TERRITORIES[t].tier] += TERRITORIES[t].inf;\n    }\n    return tiers;\n  }\n\n  function regionProgress() {\n    const regions = {};\n    for (const [key, terr] of Object.entries(TERRITORIES)) {\n      if (!regions[terr.region]) regions[terr.region] = { total: 0, c: 0, s: 0 };\n      regions[terr.region].total++;\n      if (game.p1.holdings.has(key)) regions[terr.region].c++;\n      if (game.p2.holdings.has(key)) regions[terr.region].s++;\n    }\n    return regions;\n  }\n\n  function updateMatchStats() {\n    matchStats.bestChainP1 = Math.max(matchStats.bestChainP1, largestChainSize(game.p1.holdings));\n    matchStats.bestChainP2 = Math.max(matchStats.bestChainP2, largestChainSize(game.p2.holdings));\n    matchStats.eventsFired = game.tells.fired.length;\n  }\n\n  function renderTierList(player, elId) {\n    const tiers = influenceByTier(player);\n    const labels = { crown: 'Crown', dominion: 'Dominion', major: 'Major', minor: 'Minor', outpost: 'Outpost', strategic: 'Strategic' };\n    const el = document.getElementById(elId);\n    el.innerHTML = '';\n    for (const [tier, val] of Object.entries(tiers)) {\n      if (val === 0) continue;\n      const row = document.createElement('div');\n      row.className = 'sc-row';\n      row.innerHTML = `<span class=\"label\">${labels[tier]}</span><span class=\"val\">${val}</span>`;\n      el.appendChild(row);\n    }\n    if (!el.children.length) {\n      el.innerHTML = '<div class=\"sc-row\"><span class=\"label muted\">No holdings</span></div>';\n    }\n  }\n\n  function renderHoldingsList(player, elId) {\n    const el = document.getElementById(elId);\n    el.innerHTML = '';\n    const sorted = [...player.holdings]\n      .filter(t => t !== 'uk')\n      .sort((a, b) => TERRITORIES[b].inf - TERRITORIES[a].inf);\n    if (!sorted.length) { el.innerHTML = '<span style=\"opacity:0.5;font-style:italic;\">None</span>'; return; }\n    for (const t of sorted) {\n      const span = document.createElement('span');\n      span.className = `terr-item ${TERRITORIES[t].tier}`;\n      span.textContent = `${TERRITORIES[t].name} \u00b7 ${TERRITORIES[t].inf}`;\n      el.appendChild(span);\n    }\n  }\n\n  function renderRegionProgress() {\n    const el = document.getElementById('sc-regions');\n    el.innerHTML = '';\n    const labels = { home: 'Home Isles', americas: 'Americas', wafrica: 'West Africa', satlantic: 'South Atlantic', eastern: 'Eastern Approaches', jewel: 'The Jewel', easia: 'East Asia & Pacific', pacific: 'Pacific' };\n    const regions = regionProgress();\n    for (const [key, prog] of Object.entries(regions)) {\n      const row = document.createElement('div');\n      row.className = 'region-row';\n      const totalHeld = prog.c + prog.s;\n      if (prog.c === prog.total || prog.s === prog.total) row.classList.add('complete');\n      row.innerHTML = `<span class=\"name\">${labels[key] || key}</span><span class=\"progress\">C ${prog.c} \u00b7 S ${prog.s} / ${prog.total}</span>`;\n      el.appendChild(row);\n    }\n  }\n\n  function renderScorecard() {\n    updateMatchStats();\n    document.getElementById('sc-c-inf').textContent = game.p1.influence;\n    document.getElementById('sc-s-inf').textContent = game.p2.influence;\n    document.getElementById('sc-c-sterling').textContent = game.p1.sterling;\n    document.getElementById('sc-s-sterling').textContent = game.p2.sterling;\n    document.getElementById('sc-c-territories').textContent = [...game.p1.holdings].filter(t => t !== 'uk').length;\n    document.getElementById('sc-s-territories').textContent = [...game.p2.holdings].filter(t => t !== 'uk').length;\n    document.getElementById('sc-c-chain').textContent = matchStats.bestChainP1;\n    document.getElementById('sc-s-chain').textContent = matchStats.bestChainP2;\n    document.getElementById('sc-c-upkeep').textContent = '\u00a3' + game.p1.totalUpkeep();\n    document.getElementById('sc-s-upkeep').textContent = '\u00a3' + game.p2.totalUpkeep();\n\n    const c1 = game.p1.successfulClaims + game.p1.failedClaims;\n    const c2 = game.p2.successfulClaims + game.p2.failedClaims;\n    document.getElementById('sc-c-success').textContent = c1 ? `${Math.round(100 * game.p1.successfulClaims / c1)}% (${game.p1.successfulClaims}/${c1})` : '\u2014';\n    document.getElementById('sc-s-success').textContent = c2 ? `${Math.round(100 * game.p2.successfulClaims / c2)}% (${game.p2.successfulClaims}/${c2})` : '\u2014';\n\n    renderTierList(game.p1, 'sc-c-tiers');\n    renderTierList(game.p2, 'sc-s-tiers');\n    renderHoldingsList(game.p1, 'sc-c-list');\n    renderHoldingsList(game.p2, 'sc-s-list');\n    renderRegionProgress();\n\n    document.getElementById('sc-turn').textContent = game.turn;\n    document.getElementById('sc-first').textContent = game.firstPlayer ? game.firstPlayer.name : '\u2014';\n    document.getElementById('sc-inflation').textContent = Math.floor(game.turn / 5);\n    document.getElementById('sc-events').textContent = matchStats.eventsFired;\n    document.getElementById('sc-tremors').textContent = Object.keys(game.tells.tremors).length;\n\n    // Persistent\n    const p = loadPersistent();\n    document.getElementById('sc-games').textContent = p.gamesPlayed;\n    document.getElementById('sc-wl').textContent = `${p.wins} / ${p.losses}`;\n    document.getElementById('sc-best-inf').textContent = p.bestInfluence;\n    document.getElementById('sc-best-chain').textContent = p.longestChain;\n    document.getElementById('sc-total-claims').textContent = p.totalClaims;\n    document.getElementById('sc-ach-count').textContent = (p.achievements || []).length;\n  }\n\n  function openScorecard() {\n    renderScorecard();\n    document.getElementById('scorecard').classList.add('open');\n  }\n  function closeScorecard() {\n    document.getElementById('scorecard').classList.remove('open');\n  }\n\n  // ============== END-GAME SCORECARD ==============\n  function showEndgameScorecard() {\n    updateMatchStats();\n    const wonByPlayer = game.winner === 'p1';\n    const tied = game.winner === 'tie';\n\n    document.getElementById('eg-title').textContent = tied ? 'Stalemate' : (wonByPlayer ? 'Victory' : 'Defeat');\n    const subtitle = tied\n      ? `After ${game.turn} turns, neither party reached the threshold.`\n      : (wonByPlayer\n          ? `You won in ${game.turn} turns. The Surgeon takes his leave.`\n          : `The Surgeon won in ${game.turn} turns. He thanks you for the game.`);\n    document.getElementById('eg-subtitle').textContent = subtitle;\n\n    document.getElementById('eg-c-inf').textContent = game.p1.influence;\n    document.getElementById('eg-s-inf').textContent = game.p2.influence;\n    document.getElementById('eg-c-terr').textContent = [...game.p1.holdings].filter(t => t !== 'uk').length;\n    document.getElementById('eg-s-terr').textContent = [...game.p2.holdings].filter(t => t !== 'uk').length;\n    document.getElementById('eg-c-chain').textContent = matchStats.bestChainP1;\n    document.getElementById('eg-s-chain').textContent = matchStats.bestChainP2;\n    document.getElementById('eg-c-good').textContent = game.p1.successfulClaims;\n    document.getElementById('eg-s-good').textContent = game.p2.successfulClaims;\n    document.getElementById('eg-c-fail').textContent = game.p1.failedClaims;\n    document.getElementById('eg-s-fail').textContent = game.p2.failedClaims;\n    document.getElementById('eg-c-sterling').textContent = '\u00a3' + game.p1.sterling;\n    document.getElementById('eg-s-sterling').textContent = '\u00a3' + game.p2.sterling;\n\n    document.getElementById('eg-quote').textContent = surgeonEndQuote(wonByPlayer, tied);\n    document.getElementById('endgame').classList.add('show');\n  }\n\n  function surgeonEndQuote(playerWon, tied) {\n    if (tied) {\n      const lines = [\n        '\"A draw. The empire endures, indifferent to either of us. We should play again. I think you have more in you.\"',\n        '\"Stalemate. The board outlasted us both. There is something instructive in that.\"',\n      ];\n      return lines[Math.floor(Math.random() * lines.length)];\n    }\n    if (playerWon) {\n      const lines = [\n        '\"Well played. You read the dispatch correctly on turn one. Most do not.\"',\n        '\"You won. I underestimated how quickly you would commit. I will not make that error twice.\"',\n        '\"The dice were yours tonight. The reasoning behind your moves was also yours. The two are easy to confuse.\"',\n      ];\n      return lines[Math.floor(Math.random() * lines.length)];\n    }\n    const lines = [\n      '\"You played well. You did not play long enough. Next time, watch the tremors.\"',\n      '\"You committed too early to The Jewel. Empire is not collected. It is composed.\"',\n      '\"You held what you could not afford. The inflation table is as honest as the dice.\"',\n    ];\n    return lines[Math.floor(Math.random() * lines.length)];\n  }\n\n  function closeEndgame() {\n    document.getElementById('endgame').classList.remove('show');\n  }\n\n  function replay() {\n    closeEndgame();\n    if(typeof closeMapGame==='function'){closeMapGame();setTimeout(()=>{if(typeof openMapGame==='function')openMapGame();},300);}else{location.reload();}\n  }\n\n  // ============== PERSISTENT RECORD (localStorage) ==============\n  const PERSIST_KEY = 'nocturne_map_room_record_v1';\n\n  function loadPersistent() {\n    try {\n      const raw = localStorage.getItem(PERSIST_KEY);\n      if (raw) {\n        const obj = JSON.parse(raw);\n        return Object.assign(defaultPersistent(), obj);\n      }\n    } catch (e) { /* ignore */ }\n    return defaultPersistent();\n  }\n\n  function defaultPersistent() {\n    return {\n      gamesPlayed: 0,\n      wins: 0,\n      losses: 0,\n      ties: 0,\n      bestInfluence: 0,\n      longestChain: 0,\n      totalClaims: 0,\n      claimedTerritories: {}, // territory key -> count\n      achievements: [],\n    };\n  }\n\n  function savePersistent(p) {\n    try { localStorage.setItem(PERSIST_KEY, JSON.stringify(p)); } catch (e) { /* ignore */ }\n  }\n\n  function saveMatchToPersistent() {\n    const p = loadPersistent();\n    p.gamesPlayed += 1;\n    if (game.winner === 'p1') p.wins += 1;\n    else if (game.winner === 'p2') p.losses += 1;\n    else p.ties += 1;\n    p.bestInfluence = Math.max(p.bestInfluence, game.p1.influence);\n    p.longestChain = Math.max(p.longestChain, matchStats.bestChainP1);\n    p.totalClaims += game.p1.successfulClaims;\n    for (const t of game.p1.holdings) {\n      if (t === 'uk') continue;\n      p.claimedTerritories[t] = (p.claimedTerritories[t] || 0) + 1;\n    }\n    checkAchievements(p);\n    savePersistent(p);\n  }\n\n  // ============== ACHIEVEMENTS ==============\n  const ACHIEVEMENTS = [\n    { id: 'first_blood',   name: 'First Blood',          test: (p) => p.totalClaims >= 1 },\n    { id: 'first_win',     name: 'The Empire Listens',   test: (p) => p.wins >= 1 },\n    { id: 'jewel',         name: 'The Jewel in the Crown', test: (p) => p.claimedTerritories['india'] >= 1 },\n    { id: 'cape_cairo',    name: 'Cape to Suez',         test: (p) => p.claimedTerritories['cape'] >= 1 && p.claimedTerritories['aden'] >= 1 },\n    { id: 'pacific_lord',  name: 'Lord of the Pacific',  test: (p) => p.claimedTerritories['australia'] >= 1 && p.claimedTerritories['newzealand'] >= 1 },\n    { id: 'chain_5',       name: 'A Network Forms',      test: (p) => p.longestChain >= 5 },\n    { id: 'chain_8',       name: 'The Empire Coheres',   test: (p) => p.longestChain >= 8 },\n    { id: 'three_wins',    name: 'Established Hand',     test: (p) => p.wins >= 3 },\n    { id: 'ten_wins',      name: 'Master of the Map',    test: (p) => p.wins >= 10 },\n    { id: 'big_score',     name: 'A Decisive Margin',    test: (p) => p.bestInfluence >= 100 },\n    { id: 'all_chokepoints', name: 'Mistress of Routes', test: (p) => CHOKEPOINTS.every(c => p.claimedTerritories[c] >= 1) },\n  ];\n\n  function checkAchievements(p) {\n    if (!p.achievements) p.achievements = [];\n    for (const ach of ACHIEVEMENTS) {\n      if (!p.achievements.includes(ach.id) && ach.test(p)) {\n        p.achievements.push(ach.id);\n        showAchievement(ach.name);\n      }\n    }\n  }\n\n  function showAchievement(name) {\n    const el = document.getElementById('achievement');\n    document.getElementById('achievement-text').textContent = name;\n    el.classList.add('show');\n    setTimeout(() => el.classList.remove('show'), 3500);\n  }\n\n  // ============== PAN / ZOOM ==============\n  // Pinch-zoom + drag-pan using pointer events. Works on touch and mouse.\n  // The viewport is transformed (translate + scale); the map-area stays fixed.\n  function setupPanZoom() {\n    const area = document.getElementById('map-area');\n    const viewport = document.getElementById('map-viewport');\n\n    const state = {\n      scale: 1,\n      tx: 0,\n      ty: 0,\n      minScale: 1,\n      maxScale: 4,\n    };\n\n    // Active pointers \u2014 for pinch detection\n    const pointers = new Map();\n    let lastPinchDist = null;\n    let lastPinchCenter = null;\n\n    // Drag state (single pointer)\n    let isDragging = false;\n    let dragStartX = 0, dragStartY = 0;\n    let dragStartTx = 0, dragStartTy = 0;\n    // To distinguish click from drag \u2014 if movement < threshold, treat as tap\n    let totalDragDistance = 0;\n    const DRAG_THRESHOLD = 6; // pixels\n\n    function applyTransform() {\n      // Clamp pan so the map doesn't slide entirely offscreen\n      const rect = area.getBoundingClientRect();\n      const scaledW = rect.width * state.scale;\n      const scaledH = rect.height * state.scale;\n      // When scale > 1, allow panning so any point can be brought to center\n      const maxTx = 0;\n      const minTx = rect.width - scaledW;\n      const maxTy = 0;\n      const minTy = rect.height - scaledH;\n      if (state.scale <= 1) {\n        state.tx = 0;\n        state.ty = 0;\n      } else {\n        state.tx = Math.max(minTx, Math.min(maxTx, state.tx));\n        state.ty = Math.max(minTy, Math.min(maxTy, state.ty));\n      }\n      viewport.style.transform = `translate(${state.tx}px, ${state.ty}px) scale(${state.scale})`;\n    }\n\n    function zoomAt(clientX, clientY, deltaScale) {\n      const rect = area.getBoundingClientRect();\n      const localX = clientX - rect.left;\n      const localY = clientY - rect.top;\n      const newScale = Math.max(state.minScale, Math.min(state.maxScale, state.scale * deltaScale));\n      // Adjust translation so the point under the cursor stays put\n      const ratio = newScale / state.scale;\n      state.tx = localX - ratio * (localX - state.tx);\n      state.ty = localY - ratio * (localY - state.ty);\n      state.scale = newScale;\n      applyTransform();\n    }\n\n    function getPinchDistance() {\n      const pts = [...pointers.values()];\n      if (pts.length < 2) return null;\n      const dx = pts[0].x - pts[1].x;\n      const dy = pts[0].y - pts[1].y;\n      return Math.hypot(dx, dy);\n    }\n\n    function getPinchCenter() {\n      const pts = [...pointers.values()];\n      if (pts.length < 2) return null;\n      return {\n        x: (pts[0].x + pts[1].x) / 2,\n        y: (pts[0].y + pts[1].y) / 2,\n      };\n    }\n\n    area.addEventListener('pointerdown', (e) => {\n      pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });\n      try { area.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }\n\n      if (pointers.size === 1) {\n        // Begin potential drag\n        isDragging = true;\n        totalDragDistance = 0;\n        dragStartX = e.clientX;\n        dragStartY = e.clientY;\n        dragStartTx = state.tx;\n        dragStartTy = state.ty;\n        area.classList.add('dragging');\n      } else if (pointers.size === 2) {\n        // Two fingers down \u2014 switch to pinch\n        isDragging = false;\n        area.classList.remove('dragging');\n        lastPinchDist = getPinchDistance();\n        lastPinchCenter = getPinchCenter();\n      }\n    });\n\n    area.addEventListener('pointermove', (e) => {\n      if (!pointers.has(e.pointerId)) return;\n      pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });\n\n      if (pointers.size === 2) {\n        // Pinch zoom\n        const newDist = getPinchDistance();\n        const newCenter = getPinchCenter();\n        if (lastPinchDist && newDist && lastPinchCenter) {\n          const ratio = newDist / lastPinchDist;\n          zoomAt(lastPinchCenter.x, lastPinchCenter.y, ratio);\n          // Also pan so the pinch center tracks finger movement\n          state.tx += newCenter.x - lastPinchCenter.x;\n          state.ty += newCenter.y - lastPinchCenter.y;\n          applyTransform();\n        }\n        lastPinchDist = newDist;\n        lastPinchCenter = newCenter;\n      } else if (isDragging && pointers.size === 1) {\n        const dx = e.clientX - dragStartX;\n        const dy = e.clientY - dragStartY;\n        totalDragDistance = Math.hypot(dx, dy);\n        if (state.scale > 1) {\n          state.tx = dragStartTx + dx;\n          state.ty = dragStartTy + dy;\n          applyTransform();\n        }\n      }\n    });\n\n    function endPointer(e) {\n      pointers.delete(e.pointerId);\n      try {\n        if (area.hasPointerCapture && area.hasPointerCapture(e.pointerId)) {\n          area.releasePointerCapture(e.pointerId);\n        }\n      } catch (err) { /* ignore \u2014 pointer already released */ }\n      if (pointers.size < 2) {\n        lastPinchDist = null;\n        lastPinchCenter = null;\n      }\n      if (pointers.size === 0) {\n        isDragging = false;\n        area.classList.remove('dragging');\n      }\n    }\n    area.addEventListener('pointerup', endPointer);\n    area.addEventListener('pointercancel', endPointer);\n    area.addEventListener('pointerleave', endPointer);\n\n    // Wheel zoom (desktop)\n    area.addEventListener('wheel', (e) => {\n      e.preventDefault();\n      const delta = e.deltaY < 0 ? 1.15 : 1 / 1.15;\n      zoomAt(e.clientX, e.clientY, delta);\n    }, { passive: false });\n\n    // Buttons\n    document.getElementById('zoom-in').addEventListener('click', () => {\n      const rect = area.getBoundingClientRect();\n      zoomAt(rect.left + rect.width / 2, rect.top + rect.height / 2, 1.3);\n    });\n    document.getElementById('zoom-out').addEventListener('click', () => {\n      const rect = area.getBoundingClientRect();\n      zoomAt(rect.left + rect.width / 2, rect.top + rect.height / 2, 1 / 1.3);\n    });\n    document.getElementById('zoom-reset').addEventListener('click', () => {\n      state.scale = 1;\n      state.tx = 0;\n      state.ty = 0;\n      applyTransform();\n    });\n\n    // Block clicks on territories that are actually drag releases\n    // (Territory click handler runs only if drag distance was small)\n    window.__panZoomDragged = () => totalDragDistance > DRAG_THRESHOLD;\n  }\n\n  function init() {\n    const setup = game.setupRoll();\n    document.getElementById('first-player').textContent = setup.firstPlayer;\n    renderTerritories();\n    renderDemand();\n    renderDispatch();\n    renderScores();\n    document.getElementById('btn-roll').addEventListener('click', onRollMovement);\n    document.getElementById('btn-end-turn').addEventListener('click', onEndTurn);\n    document.getElementById('btn-reset').addEventListener('click', () => {\n      showModal('reset-modal');\n    });\n    document.getElementById('btn-confirm-reset').addEventListener('click', () => {\n      try { localStorage.removeItem(PERSIST_KEY); } catch (e) { /* ignore */ }\n      if(typeof closeMapGame==='function'){closeMapGame();setTimeout(()=>{if(typeof openMapGame==='function')openMapGame();},300);}else{location.reload();}\n    });\n    document.getElementById('btn-cancel-reset').addEventListener('click', () => {\n      hideModal('reset-modal');\n    });\n    document.getElementById('btn-scorecard').addEventListener('click', openScorecard);\n    document.getElementById('btn-close-scorecard').addEventListener('click', closeScorecard);\n    document.getElementById('btn-replay').addEventListener('click', replay);\n    document.getElementById('btn-eg-close').addEventListener('click', closeEndgame);\n    document.getElementById('demand-tab').addEventListener('click', toggleDemandDrawer);\n    document.getElementById('btn-close-demand').addEventListener('click', closeDemandDrawer);\n    document.getElementById('btn-confirm-move').addEventListener('click', onConfirmMove);\n    document.getElementById('btn-cancel-move').addEventListener('click', onCancelMove);\n    document.getElementById('btn-acquire').addEventListener('click', onClickAcquire);\n    document.getElementById('btn-trade').addEventListener('click', onClickTrade);\n    document.getElementById('btn-skip').addEventListener('click', onClickSkip);\n    document.getElementById('btn-confirm-acquire').addEventListener('click', onConfirmAcquire);\n    document.getElementById('btn-cancel-acquire').addEventListener('click', onCancelAcquire);\n    document.getElementById('btn-confirm-trade').addEventListener('click', onConfirmTrade);\n    document.getElementById('btn-cancel-trade').addEventListener('click', onCancelTrade);\n    setupPanZoom();\n    game.turn = 1;\n    if (game.firstPlayer === game.p1) {\n      startTurn();\n    } else {\n      setDialogue('The Surgeon takes the first turn.');\n      setTimeout(() => {\n        const inflation = Math.floor(game.turn / 5);\n        game.p1._inflationLevel = inflation;\n        game.p2._inflationLevel = inflation;\n        game.marketPhase();\n        game.productionPhase(game.p1);\n        game.productionPhase(game.p2);\n        renderDemand();\n        renderScores();\n        surgeonTurn();\n      }, 1500);\n    }\n  }\n\n  init();\n})();\n";
+  /* ============== DISPATCH (cleaner) ============== */
+  .dispatch { position: absolute; top: 0.6rem; left: 0.6rem; max-width: 220px; background: rgba(232, 220, 196, 0.95); color: var(--ink); border: 1px solid var(--gold-faded); padding: 0.45rem 0.65rem; font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 0.75rem; line-height: 1.3; box-shadow: 0 2px 8px rgba(0,0,0,0.4); z-index: 5; }
+  .dispatch-label { display: block; font-family: 'Old Standard TT', serif; font-style: normal; font-size: 0.55rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--oxblood); margin-bottom: 3px; border-bottom: 1px solid rgba(114, 47, 29, 0.3); padding-bottom: 2px; }
 
-}());
+  .portrait-frame { position: absolute; bottom: 0.6rem; right: 0.6rem; width: 100px; height: 130px; background: var(--walnut); border: 2px solid var(--gold-faded); box-shadow: 0 4px 12px rgba(0,0,0,0.6), inset 0 0 0 1px rgba(0,0,0,0.5); overflow: hidden; z-index: 5; }
+  .portrait-img { position: absolute; inset: 0; background-image: url('surgeon-masked.png'); background-size: cover; background-position: center top; background-color: #1a110a; }
+  .mouth-overlay { position: absolute; bottom: 30%; left: 50%; transform: translateX(-50%); width: 20px; height: 5px; background: rgba(190, 155, 130, 0.55); mix-blend-mode: screen; border-radius: 50%; opacity: 0; transition: opacity 0.1s; }
+  .portrait-frame.speaking .mouth-overlay { opacity: 1; animation: speak 0.3s ease-in-out infinite; }
+  @keyframes speak { 0%, 100% { transform: translateX(-50%) scaleY(0.4); } 50% { transform: translateX(-50%) scaleY(1); } }
+
+  .dialogue { position: absolute; bottom: 0.6rem; left: 0.6rem; right: 120px; background: rgba(26, 17, 10, 0.9); border-left: 3px solid var(--candle); padding: 0.6rem 0.9rem; color: var(--parchment); font-family: 'Cormorant Garamond', serif; font-size: 0.85rem; line-height: 1.4; min-height: 50px; max-height: 110px; overflow-y: auto; z-index: 5; box-shadow: 0 2px 10px rgba(0,0,0,0.5); }
+  .dialogue:empty { display: none; }
+
+  .turn-bar { background: linear-gradient(180deg, transparent, rgba(232, 220, 196, 0.04)); border-top: 1px solid rgba(212, 160, 74, 0.18); padding: 0.5rem 0.7rem; display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; font-size: 0.72rem; z-index: 3; flex-wrap: wrap; }
+  .turn-info { display: flex; gap: 0.7rem; color: var(--parchment); flex-wrap: wrap; }
+  .turn-info .label { color: var(--gold-faded); font-style: italic; margin-right: 0.3rem; }
+  .actions { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+  .btn { background: rgba(232, 220, 196, 0.08); border: 1px solid var(--gold-faded); color: var(--parchment); padding: 0.35rem 0.7rem; font-family: 'Cormorant Garamond', serif; font-size: 0.78rem; cursor: pointer; transition: all 0.15s ease; letter-spacing: 0.03em; white-space: nowrap; }
+  .btn:hover { background: rgba(212, 160, 74, 0.18); border-color: var(--candle); }
+  .btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .btn.primary { background: rgba(114, 47, 29, 0.4); border-color: var(--oxblood); }
+  .btn.primary:hover { background: rgba(114, 47, 29, 0.6); }
+
+  .event-banner { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(232, 220, 196, 0.97); color: var(--ink); border: 2px solid var(--oxblood); padding: 1rem 1.5rem; max-width: 320px; text-align: center; font-family: 'Cormorant Garamond', serif; box-shadow: 0 6px 30px rgba(0,0,0,0.7); z-index: 20; opacity: 0; pointer-events: none; transition: opacity 0.4s ease; }
+  .event-banner.show { opacity: 1; pointer-events: auto; }
+  .event-banner .label { font-family: 'Old Standard TT', serif; font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--oxblood); border-bottom: 1px solid var(--oxblood); padding-bottom: 4px; margin-bottom: 8px; }
+  .event-banner .text { font-style: italic; font-size: 0.95rem; line-height: 1.4; }
+
+  .toast-area { position: absolute; top: 70px; left: 50%; transform: translateX(-50%); z-index: 15; pointer-events: none; display: flex; flex-direction: column; gap: 4px; }
+  .toast { background: rgba(26, 17, 10, 0.95); color: var(--parchment); border-left: 2px solid var(--candle); padding: 0.4rem 0.8rem; font-family: 'Cormorant Garamond', serif; font-size: 0.78rem; font-style: italic; animation: toastIn 0.3s ease forwards, toastOut 0.4s ease 2.6s forwards; }
+  @keyframes toastIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes toastOut { to { opacity: 0; transform: translateY(-8px); } }
+
+  /* ============== SCORECARD BUTTON IN HEADER ============== */
+  .scorecard-btn { background: rgba(232, 220, 196, 0.08); border: 1px solid var(--gold-faded); color: var(--parchment); padding: 0.3rem 0.6rem; font-family: 'Cormorant Garamond', serif; font-size: 0.7rem; cursor: pointer; transition: all 0.15s ease; letter-spacing: 0.06em; text-transform: uppercase; }
+  .scorecard-btn:hover { background: rgba(212, 160, 74, 0.18); border-color: var(--candle); }
+
+  /* ============== LIVE SCORECARD DRAWER ============== */
+  .scorecard-drawer { position: fixed; top: 0; right: 0; bottom: 0; width: 340px; max-width: 88vw; background: rgba(26, 17, 10, 0.97); border-left: 2px solid var(--gold-faded); box-shadow: -8px 0 24px rgba(0,0,0,0.6); z-index: 30; transform: translateX(100%); transition: transform 0.3s ease; overflow-y: auto; padding: 1rem 1.1rem; }
+  .scorecard-drawer.open { transform: translateX(0); }
+  .scorecard-drawer .close { position: absolute; top: 0.5rem; right: 0.6rem; background: none; border: none; color: var(--gold); font-size: 1.4rem; cursor: pointer; font-family: 'Cormorant Garamond', serif; line-height: 1; padding: 4px 8px; }
+  .scorecard-drawer .close:hover { color: var(--candle); }
+  .scorecard-drawer h2 { font-family: 'Cormorant Garamond', serif; font-style: italic; font-weight: 600; font-size: 1rem; color: var(--gold); letter-spacing: 0.1em; text-transform: uppercase; border-bottom: 1px solid rgba(212, 160, 74, 0.2); padding-bottom: 6px; margin-bottom: 0.7rem; }
+  .sc-section { margin-bottom: 1.1rem; }
+  .sc-section h3 { font-family: 'Old Standard TT', serif; font-size: 0.7rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--gold-faded); margin-bottom: 0.4rem; }
+  .sc-row { display: flex; justify-content: space-between; align-items: center; padding: 3px 0; font-size: 0.78rem; color: var(--parchment); border-bottom: 1px dotted rgba(212, 160, 74, 0.1); }
+  .sc-row:last-child { border-bottom: none; }
+  .sc-row .label { color: var(--parchment); opacity: 0.85; }
+  .sc-row .val { color: var(--candle); font-weight: 700; font-family: 'Old Standard TT', serif; }
+  .sc-row .val.muted { color: var(--parchment); opacity: 0.7; font-weight: 400; }
+  .sc-vs-row { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; padding: 4px 0; font-size: 0.78rem; align-items: center; border-bottom: 1px dotted rgba(212, 160, 74, 0.1); }
+  .sc-vs-row .col-c { text-align: right; color: var(--player-color); }
+  .sc-vs-row .col-s { text-align: left; color: var(--opponent-color); filter: brightness(1.5); }
+  .sc-vs-row .lbl { text-align: center; color: var(--parchment); opacity: 0.7; font-size: 0.7rem; font-style: italic; }
+  .sc-vs-row.bold .col-c, .sc-vs-row.bold .col-s { font-weight: 700; }
+  .sc-territory-list { font-size: 0.7rem; line-height: 1.5; color: var(--parchment); opacity: 0.8; }
+  .sc-territory-list .terr-item { display: inline-block; padding: 1px 6px; margin: 1px 2px 1px 0; background: rgba(212, 160, 74, 0.08); border: 1px solid rgba(212, 160, 74, 0.15); border-radius: 2px; font-size: 0.68rem; }
+  .sc-territory-list .terr-item.crown { border-color: var(--candle); background: rgba(212, 160, 74, 0.18); }
+  .sc-territory-list .terr-item.dominion { border-color: var(--gold-faded); }
+  .sc-region-list .region-row { display: flex; justify-content: space-between; align-items: center; padding: 2px 0; font-size: 0.72rem; }
+  .sc-region-list .region-row .name { text-transform: capitalize; color: var(--parchment); }
+  .sc-region-list .region-row .progress { font-family: 'Old Standard TT', serif; color: var(--candle); }
+  .sc-region-list .region-row.complete .progress { color: #98c08a; }
+
+  /* ============== END-GAME SCORECARD (full screen) ============== */
+  .endgame-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 40; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.5s ease; backdrop-filter: blur(3px); }
+  .endgame-overlay.show { opacity: 1; pointer-events: auto; }
+  .endgame-card { background: var(--parchment); color: var(--ink); border: 3px double var(--oxblood); padding: 1.5rem 1.8rem; max-width: 540px; width: 92%; max-height: 92vh; overflow-y: auto; box-shadow: 0 12px 50px rgba(0,0,0,0.8); font-family: 'Cormorant Garamond', serif; }
+  .endgame-card .header-line { font-family: 'Old Standard TT', serif; font-size: 0.7rem; letter-spacing: 0.25em; text-transform: uppercase; color: var(--oxblood); text-align: center; }
+  .endgame-card h1 { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 2rem; font-weight: 600; color: var(--ink); text-align: center; margin: 0.4rem 0 0.2rem; letter-spacing: 0.04em; }
+  .endgame-card .subtitle { text-align: center; font-style: italic; color: var(--ink-faded, #4a3320); font-size: 0.95rem; margin-bottom: 1.2rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(114, 47, 29, 0.3); }
+  .endgame-card .vs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+  .endgame-card .vs-col { padding: 0.7rem; background: rgba(114, 47, 29, 0.05); border: 1px solid rgba(114, 47, 29, 0.2); }
+  .endgame-card .vs-col.callum { border-color: var(--player-color); }
+  .endgame-card .vs-col.surgeon { border-color: var(--opponent-color); }
+  .endgame-card .vs-col h3 { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 1.1rem; color: var(--ink); margin-bottom: 0.4rem; padding-bottom: 0.3rem; border-bottom: 1px solid rgba(0,0,0,0.15); }
+  .endgame-card .vs-stat { display: flex; justify-content: space-between; padding: 2px 0; font-size: 0.82rem; color: var(--ink); }
+  .endgame-card .vs-stat .label { opacity: 0.7; }
+  .endgame-card .vs-stat .val { font-weight: 700; }
+  .endgame-card .surgeon-quote { background: rgba(0,0,0,0.05); border-left: 3px solid var(--oxblood); padding: 0.7rem 0.9rem; font-style: italic; font-size: 0.95rem; line-height: 1.4; color: var(--ink); margin: 0.8rem 0; }
+  .endgame-card .endgame-actions { display: flex; gap: 0.6rem; justify-content: center; margin-top: 1rem; }
+  .endgame-card .endgame-actions button { background: var(--oxblood); color: var(--parchment); border: 1px solid var(--oxblood-dark, #4d1f12); padding: 0.5rem 1.2rem; font-family: 'Cormorant Garamond', serif; font-size: 0.95rem; cursor: pointer; letter-spacing: 0.05em; transition: all 0.15s ease; }
+  .endgame-card .endgame-actions button:hover { background: #4d1f12; }
+  .endgame-card .endgame-actions button.secondary { background: transparent; color: var(--oxblood); border-color: var(--oxblood); }
+  .endgame-card .endgame-actions button.secondary:hover { background: rgba(114, 47, 29, 0.1); }
+
+  /* ============== TURN PHASE INDICATOR (flashing) ============== */
+  .phase-indicator { position: absolute; top: 50%; left: 1rem; transform: translateY(-50%); background: rgba(26, 17, 10, 0.92); border: 1px solid var(--candle); padding: 0.5rem 0.9rem; font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 0.85rem; color: var(--candle); letter-spacing: 0.1em; text-transform: uppercase; box-shadow: 0 0 14px rgba(212, 160, 74, 0.35); z-index: 8; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+  .phase-indicator.show { opacity: 1; animation: phaseFlash 1.6s ease-in-out infinite; }
+  @keyframes phaseFlash {
+    0%, 100% { box-shadow: 0 0 8px rgba(212, 160, 74, 0.3); border-color: var(--gold-faded); }
+    50%      { box-shadow: 0 0 22px rgba(245, 200, 100, 0.85); border-color: var(--candle); }
+  }
+  .phase-indicator .small { display: block; font-size: 0.6rem; color: var(--gold-faded); margin-top: 2px; letter-spacing: 0.15em; }
+
+  /* ============== MODAL DIALOGS ============== */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 35; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.2s ease; backdrop-filter: blur(2px); }
+  .modal-overlay.show { opacity: 1; pointer-events: auto; }
+  .modal-card { background: var(--parchment); color: var(--ink); border: 2px solid var(--oxblood); padding: 1.2rem 1.4rem; min-width: 290px; max-width: 90vw; box-shadow: 0 10px 40px rgba(0,0,0,0.7); font-family: 'Cormorant Garamond', serif; transform: scale(0.94); transition: transform 0.2s ease; }
+  .modal-overlay.show .modal-card { transform: scale(1); }
+  .modal-card .label { display: block; font-family: 'Old Standard TT', serif; font-size: 0.62rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--oxblood); border-bottom: 1px solid rgba(114, 47, 29, 0.3); padding-bottom: 4px; margin-bottom: 8px; }
+  .modal-card h3 { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 1.4rem; font-weight: 600; color: var(--ink); margin-bottom: 4px; }
+  .modal-card .subtext { font-style: italic; font-size: 0.92rem; color: rgba(42, 26, 14, 0.7); margin-bottom: 0.8rem; line-height: 1.4; }
+  .modal-card .stat-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 0.9rem; border-bottom: 1px dotted rgba(114, 47, 29, 0.15); }
+  .modal-card .stat-row:last-of-type { border-bottom: none; margin-bottom: 0.5rem; }
+  .modal-card .stat-row .l { color: rgba(42, 26, 14, 0.7); font-style: italic; }
+  .modal-card .stat-row .v { font-weight: 700; color: var(--ink); }
+  .modal-card .actions { display: flex; gap: 0.5rem; margin-top: 0.9rem; }
+  .modal-card .actions button { flex: 1; padding: 0.55rem 0.9rem; font-family: 'Cormorant Garamond', serif; font-size: 0.9rem; cursor: pointer; letter-spacing: 0.04em; border: 1px solid var(--oxblood); transition: all 0.15s ease; }
+  .modal-card .actions button.primary { background: var(--oxblood); color: var(--parchment); }
+  .modal-card .actions button.primary:hover { background: #4d1f12; }
+  .modal-card .actions button.secondary { background: transparent; color: var(--oxblood); }
+  .modal-card .actions button.secondary:hover { background: rgba(114, 47, 29, 0.1); }
+  .modal-card .actions button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* ============== ACTION MENU (after move confirmed) ============== */
+  .action-menu { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(26, 17, 10, 0.96); border: 2px solid var(--gold); padding: 1rem 1.2rem; min-width: 250px; box-shadow: 0 8px 32px rgba(0,0,0,0.7); z-index: 25; opacity: 0; pointer-events: none; transition: all 0.2s ease; }
+  .action-menu.show { opacity: 1; pointer-events: auto; }
+  .action-menu .menu-title { font-family: 'Cormorant Garamond', serif; font-style: italic; color: var(--gold); font-size: 1rem; text-align: center; padding-bottom: 0.5rem; border-bottom: 1px solid rgba(212, 160, 74, 0.3); margin-bottom: 0.7rem; letter-spacing: 0.05em; }
+  .action-menu .menu-title .small { display: block; font-family: 'Old Standard TT', serif; font-style: normal; font-size: 0.6rem; letter-spacing: 0.2em; color: var(--gold-faded); text-transform: uppercase; margin-bottom: 4px; }
+  .action-menu .menu-btn { display: block; width: 100%; background: rgba(232, 220, 196, 0.06); border: 1px solid var(--gold-faded); color: var(--parchment); padding: 0.6rem 0.9rem; font-family: 'Cormorant Garamond', serif; font-size: 0.95rem; cursor: pointer; transition: all 0.15s ease; margin-bottom: 0.4rem; text-align: left; letter-spacing: 0.04em; }
+  .action-menu .menu-btn:hover { background: rgba(212, 160, 74, 0.18); border-color: var(--candle); color: var(--candle); }
+  .action-menu .menu-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .action-menu .menu-btn .desc { display: block; font-style: italic; font-size: 0.72rem; opacity: 0.7; margin-top: 2px; }
+
+  /* ============== TRADE PROPOSAL MODAL ============== */
+  .trade-section { margin-bottom: 0.7rem; padding-bottom: 0.6rem; border-bottom: 1px solid rgba(114, 47, 29, 0.2); }
+  .trade-section:last-of-type { border-bottom: none; }
+  .trade-section h4 { font-family: 'Old Standard TT', serif; font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--oxblood); margin-bottom: 0.4rem; }
+  .trade-section .options { display: flex; flex-wrap: wrap; gap: 4px; }
+  .trade-section .opt { background: rgba(114, 47, 29, 0.08); border: 1px solid rgba(114, 47, 29, 0.25); padding: 0.3rem 0.55rem; font-family: 'Cormorant Garamond', serif; font-size: 0.78rem; cursor: pointer; transition: all 0.15s ease; }
+  .trade-section .opt:hover { background: rgba(114, 47, 29, 0.18); }
+  .trade-section .opt.selected { background: var(--oxblood); color: var(--parchment); border-color: var(--oxblood); }
+  .trade-sterling-input { display: flex; align-items: center; gap: 6px; padding: 0.3rem 0; }
+  .trade-sterling-input input { background: rgba(255,255,255,0.4); border: 1px solid rgba(114, 47, 29, 0.4); padding: 4px 8px; font-family: 'Old Standard TT', serif; font-size: 0.9rem; color: var(--ink); width: 80px; }
+
+  /* Achievement notification */
+  .achievement { position: fixed; top: 80px; right: 20px; background: linear-gradient(135deg, var(--gold) 0%, var(--candle) 100%); color: var(--walnut-deep); padding: 0.6rem 1rem; border: 2px solid var(--walnut); font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 0.85rem; box-shadow: 0 4px 20px rgba(0,0,0,0.5); z-index: 50; opacity: 0; transform: translateX(120%); transition: all 0.4s ease; max-width: 280px; }
+  .achievement.show { opacity: 1; transform: translateX(0); }
+  .achievement .label { display: block; font-family: 'Old Standard TT', serif; font-style: normal; font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase; opacity: 0.8; }`;
+
+  var MAP_BODY = `<div class="room">
+
+  <header class="header">
+    <div class="score">
+      <div class="name">Callum</div>
+      <div class="nums">
+        <span class="inf" id="p1-inf">0</span><span class="inf-target">/80</span>
+        <span class="sterling" style="margin-left:8px">£<span id="p1-sterling">40</span></span>
+      </div>
+    </div>
+    <div class="title">The Map Room</div>
+    <button class="scorecard-btn" id="btn-scorecard" style="position:absolute; left:50%; top:50%; transform:translate(-50%,-50%) translateY(18px);">Scorecard</button>
+    <div class="score right">
+      <div class="name">The Surgeon</div>
+      <div class="nums">
+        <span class="inf" id="p2-inf">0</span><span class="inf-target">/80</span>
+        <span class="sterling" style="margin-left:8px">£<span id="p2-sterling">40</span></span>
+      </div>
+    </div>
+  </header>
+
+  <main class="main">
+    <div class="map-area" id="map-area">
+      <div class="map-viewport" id="map-viewport">
+        <div class="map-bg" id="map-bg"></div>
+        <div class="territories" id="territories"></div>
+      </div>
+      <div class="zoom-controls">
+        <button class="zoom-btn" id="zoom-in" aria-label="Zoom in">+</button>
+        <button class="zoom-btn" id="zoom-out" aria-label="Zoom out">−</button>
+        <button class="zoom-btn" id="zoom-reset" aria-label="Reset view" style="font-size: 0.7rem;">⌂</button>
+      </div>
+      <div class="dispatch" id="dispatch">
+        <span class="dispatch-label">Dispatch</span>
+        <span id="dispatch-text">Reports from the frontier...</span>
+      </div>
+      <div class="demand-tab" id="demand-tab">
+        Demand
+        <span class="badge" id="demand-tremor-badge">!</span>
+      </div>
+      <div class="demand-drawer" id="demand-drawer">
+        <button class="close-tab" id="btn-close-demand" aria-label="Close">−</button>
+        <div class="demand-title">Colonial Demand</div>
+        <div id="demand-rows"></div>
+      </div>
+      <div class="toast-area" id="toast-area"></div>
+      <div class="phase-indicator" id="phase-indicator">Movement<span class="small">Roll the die</span></div>
+      <div class="action-menu" id="action-menu">
+        <div class="menu-title"><span class="small">Action</span><span id="menu-territory">—</span></div>
+        <button class="menu-btn" id="btn-acquire">Acquire
+          <span class="desc">Attempt to claim this territory</span>
+        </button>
+        <button class="menu-btn" id="btn-trade">Propose Trade
+          <span class="desc">Offer the Surgeon a deal</span>
+        </button>
+        <button class="menu-btn" id="btn-skip">End Turn
+          <span class="desc">Take no action this turn</span>
+        </button>
+      </div>
+      <div class="event-banner" id="event-banner">
+        <div class="label">Event</div>
+        <div class="text" id="event-text"></div>
+      </div>
+      <div class="dialogue" id="dialogue"></div>
+      <div class="portrait-frame" id="portrait">
+        <div class="portrait-img"></div>
+        <div class="mouth-overlay"></div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="turn-bar">
+    <div class="turn-info">
+      <span><span class="label">Turn</span><span id="turn-num">1</span></span>
+      <span><span class="label">First</span><span id="first-player">—</span></span>
+      <span><span class="label">Inflation</span>+£<span id="inflation">0</span></span>
+    </div>
+    <div class="actions">
+      <button class="btn" id="btn-roll">Roll</button>
+      <button class="btn" id="btn-end-turn" disabled>End Turn</button>
+      <button class="btn" id="btn-reset" title="Reset (testing only)" style="opacity:0.55; font-size:0.7rem;">Reset</button>
+    </div>
+  </footer>
+
+</div>
+
+<!-- LIVE SCORECARD DRAWER -->
+<aside class="scorecard-drawer" id="scorecard">
+  <button class="close" id="btn-close-scorecard" aria-label="Close">&times;</button>
+  <h2 id="sc-title">Scorecard</h2>
+
+  <div class="sc-section">
+    <h3>Standings</h3>
+    <div class="sc-vs-row bold">
+      <div class="col-c">Callum</div>
+      <div class="lbl">Vs.</div>
+      <div class="col-s">Surgeon</div>
+    </div>
+    <div class="sc-vs-row">
+      <div class="col-c"><span id="sc-c-inf">0</span> / 80</div>
+      <div class="lbl">Influence</div>
+      <div class="col-s"><span id="sc-s-inf">0</span> / 80</div>
+    </div>
+    <div class="sc-vs-row">
+      <div class="col-c">£<span id="sc-c-sterling">40</span></div>
+      <div class="lbl">Sterling</div>
+      <div class="col-s">£<span id="sc-s-sterling">40</span></div>
+    </div>
+    <div class="sc-vs-row">
+      <div class="col-c"><span id="sc-c-territories">0</span></div>
+      <div class="lbl">Territories</div>
+      <div class="col-s"><span id="sc-s-territories">0</span></div>
+    </div>
+    <div class="sc-vs-row">
+      <div class="col-c"><span id="sc-c-chain">0</span></div>
+      <div class="lbl">Best Chain</div>
+      <div class="col-s"><span id="sc-s-chain">0</span></div>
+    </div>
+    <div class="sc-vs-row">
+      <div class="col-c"><span id="sc-c-upkeep">0</span></div>
+      <div class="lbl">Next Upkeep</div>
+      <div class="col-s"><span id="sc-s-upkeep">0</span></div>
+    </div>
+    <div class="sc-vs-row">
+      <div class="col-c"><span id="sc-c-success">—</span></div>
+      <div class="lbl">Claim Success</div>
+      <div class="col-s"><span id="sc-s-success">—</span></div>
+    </div>
+  </div>
+
+  <div class="sc-section">
+    <h3>Influence by Tier — Callum</h3>
+    <div id="sc-c-tiers"></div>
+  </div>
+
+  <div class="sc-section">
+    <h3>Holdings — Callum</h3>
+    <div class="sc-territory-list" id="sc-c-list"></div>
+  </div>
+
+  <div class="sc-section">
+    <h3>Influence by Tier — Surgeon</h3>
+    <div id="sc-s-tiers"></div>
+  </div>
+
+  <div class="sc-section">
+    <h3>Holdings — Surgeon</h3>
+    <div class="sc-territory-list" id="sc-s-list"></div>
+  </div>
+
+  <div class="sc-section">
+    <h3>Region Progress</h3>
+    <div class="sc-region-list" id="sc-regions"></div>
+  </div>
+
+  <div class="sc-section">
+    <h3>Match Stats</h3>
+    <div class="sc-row"><span class="label">Turn</span><span class="val" id="sc-turn">0</span></div>
+    <div class="sc-row"><span class="label">First Player</span><span class="val muted" id="sc-first">—</span></div>
+    <div class="sc-row"><span class="label">Inflation</span><span class="val">+£<span id="sc-inflation">0</span></span></div>
+    <div class="sc-row"><span class="label">Events Fired</span><span class="val" id="sc-events">0</span></div>
+    <div class="sc-row"><span class="label">Tremors Active</span><span class="val" id="sc-tremors">0</span></div>
+  </div>
+
+  <div class="sc-section">
+    <h3>Persistent Record</h3>
+    <div class="sc-row"><span class="label">Games Played</span><span class="val" id="sc-games">0</span></div>
+    <div class="sc-row"><span class="label">Wins / Losses</span><span class="val" id="sc-wl">0 / 0</span></div>
+    <div class="sc-row"><span class="label">Best Influence</span><span class="val" id="sc-best-inf">0</span></div>
+    <div class="sc-row"><span class="label">Longest Chain</span><span class="val" id="sc-best-chain">0</span></div>
+    <div class="sc-row"><span class="label">Total Territories Claimed</span><span class="val" id="sc-total-claims">0</span></div>
+    <div class="sc-row"><span class="label">Achievements</span><span class="val" id="sc-ach-count">0</span></div>
+  </div>
+</aside>
+
+<!-- END-GAME SCORECARD -->
+<div class="endgame-overlay" id="endgame">
+  <div class="endgame-card">
+    <div class="header-line">The Match Concluded</div>
+    <h1 id="eg-title">—</h1>
+    <div class="subtitle" id="eg-subtitle">—</div>
+
+    <div class="vs-grid">
+      <div class="vs-col callum">
+        <h3>Callum</h3>
+        <div class="vs-stat"><span class="label">Influence</span><span class="val" id="eg-c-inf">0</span></div>
+        <div class="vs-stat"><span class="label">Territories</span><span class="val" id="eg-c-terr">0</span></div>
+        <div class="vs-stat"><span class="label">Best Chain</span><span class="val" id="eg-c-chain">0</span></div>
+        <div class="vs-stat"><span class="label">Successful Claims</span><span class="val" id="eg-c-good">0</span></div>
+        <div class="vs-stat"><span class="label">Failed Expeditions</span><span class="val" id="eg-c-fail">0</span></div>
+        <div class="vs-stat"><span class="label">Final Sterling</span><span class="val" id="eg-c-sterling">£0</span></div>
+      </div>
+      <div class="vs-col surgeon">
+        <h3>The Surgeon</h3>
+        <div class="vs-stat"><span class="label">Influence</span><span class="val" id="eg-s-inf">0</span></div>
+        <div class="vs-stat"><span class="label">Territories</span><span class="val" id="eg-s-terr">0</span></div>
+        <div class="vs-stat"><span class="label">Best Chain</span><span class="val" id="eg-s-chain">0</span></div>
+        <div class="vs-stat"><span class="label">Successful Claims</span><span class="val" id="eg-s-good">0</span></div>
+        <div class="vs-stat"><span class="label">Failed Expeditions</span><span class="val" id="eg-s-fail">0</span></div>
+        <div class="vs-stat"><span class="label">Final Sterling</span><span class="val" id="eg-s-sterling">£0</span></div>
+      </div>
+    </div>
+
+    <div class="surgeon-quote" id="eg-quote">—</div>
+
+    <div class="endgame-actions">
+      <button id="btn-replay">Play Again</button>
+      <button class="secondary" id="btn-eg-close">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ACHIEVEMENT NOTIFICATION -->
+<div class="achievement" id="achievement">
+  <span class="label">Achievement</span>
+  <span id="achievement-text">—</span>
+</div>
+
+<!-- RESET CONFIRM MODAL -->
+<div class="modal-overlay" id="reset-modal">
+  <div class="modal-card">
+    <span class="label">Reset</span>
+    <h3>Start a new game?</h3>
+    <div class="subtext">This will end the current match and clear all persistent records (testing only).</div>
+    <div class="actions">
+      <button class="primary" id="btn-confirm-reset">Confirm Reset</button>
+      <button class="secondary" id="btn-cancel-reset">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- MOVE CONFIRM MODAL -->
+<div class="modal-overlay" id="move-modal">
+  <div class="modal-card">
+    <span class="label">Movement</span>
+    <h3 id="move-name">—</h3>
+    <div class="subtext" id="move-flavor">Travel to this territory.</div>
+    <div class="actions">
+      <button class="primary" id="btn-confirm-move">Move Here</button>
+      <button class="secondary" id="btn-cancel-move">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ACQUIRE CONFIRM MODAL -->
+<div class="modal-overlay" id="acquire-modal">
+  <div class="modal-card">
+    <span class="label">Acquisition</span>
+    <h3 id="acquire-name">—</h3>
+    <div class="subtext" id="acquire-flavor">—</div>
+    <div class="stat-row"><span class="l">Tier</span><span class="v" id="acquire-tier">—</span></div>
+    <div class="stat-row"><span class="l">Cost</span><span class="v" id="acquire-cost">£0</span></div>
+    <div class="stat-row"><span class="l">Threshold</span><span class="v" id="acquire-threshold">—</span></div>
+    <div class="stat-row"><span class="l">Modifier</span><span class="v" id="acquire-modifier">+0</span></div>
+    <div class="stat-row"><span class="l">Estimated chance</span><span class="v" id="acquire-chance">—</span></div>
+    <div class="actions">
+      <button class="primary" id="btn-confirm-acquire">Confirm Purchase</button>
+      <button class="secondary" id="btn-cancel-acquire">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- TRADE MODAL -->
+<div class="modal-overlay" id="trade-modal">
+  <div class="modal-card" style="min-width: 340px;">
+    <span class="label">Trade Proposal</span>
+    <h3>Negotiate with the Surgeon</h3>
+    <div class="subtext">Offer something. Request something. He may decline.</div>
+
+    <div class="trade-section">
+      <h4>You offer</h4>
+      <div class="trade-sterling-input">
+        <span style="font-size: 0.85rem; color: var(--ink); opacity: 0.7;">Sterling: £</span>
+        <input type="number" id="trade-offer-sterling" min="0" value="0" step="1">
+      </div>
+      <div style="font-size: 0.7rem; opacity: 0.6; font-style: italic; margin-top: 4px;">Or one of your territories:</div>
+      <div class="options" id="trade-offer-territories"></div>
+    </div>
+
+    <div class="trade-section">
+      <h4>You request</h4>
+      <div style="font-size: 0.7rem; opacity: 0.6; font-style: italic; margin-bottom: 4px;">One of his territories:</div>
+      <div class="options" id="trade-request-territories"></div>
+    </div>
+
+    <div class="actions">
+      <button class="primary" id="btn-confirm-trade">Make Proposal</button>
+      <button class="secondary" id="btn-cancel-trade">Cancel</button>
+    </div>
+  </div>
+</div>`;
+
+  var MAP_GAME = `/* ============================================================
+   NOCTURNE MAP ROOM — single-file build
+   Engine + tells + AI + UI in one file.
+   ============================================================ */
+(function() {
+  'use strict';
+
+  // ============== TERRITORY DATA ==============
+  const TERRITORIES = {
+    india:        { name: 'British India',    tier: 'crown',     inf: 25, upkeepBase: 6, cost: 35, commodity: 'cotton',   region: 'jewel' },
+    canada:       { name: 'Canada',           tier: 'dominion',  inf: 12, upkeepBase: 3, cost: 22, commodity: 'timber',   region: 'americas' },
+    australia:    { name: 'Australia',        tier: 'dominion',  inf: 12, upkeepBase: 3, cost: 22, commodity: 'wool',     region: 'pacific' },
+    cape:         { name: 'Cape Colony',      tier: 'major',     inf: 6,  upkeepBase: 3, cost: 18, commodity: 'diamonds', region: 'satlantic' },
+    burma:        { name: 'Burma',            tier: 'major',     inf: 6,  upkeepBase: 3, cost: 16, commodity: 'teak',     region: 'jewel' },
+    newzealand:   { name: 'New Zealand',      tier: 'major',     inf: 6,  upkeepBase: 2, cost: 14, commodity: 'wool',     region: 'pacific' },
+    hongkong:     { name: 'Hong Kong',        tier: 'major',     inf: 6,  upkeepBase: 2, cost: 14, commodity: 'silk',     region: 'easia' },
+    singapore:    { name: 'Singapore',        tier: 'major',     inf: 6,  upkeepBase: 2, cost: 14, commodity: 'rubber',   region: 'easia' },
+    ceylon:       { name: 'Ceylon',           tier: 'major',     inf: 5,  upkeepBase: 1, cost: 12, commodity: 'tea',      region: 'jewel' },
+    aden:         { name: 'Aden',             tier: 'major',     inf: 5,  upkeepBase: 1, cost: 12, commodity: 'passage',  region: 'eastern' },
+    nigeria:      { name: 'Nigeria',          tier: 'minor',     inf: 4,  upkeepBase: 1, cost: 10, commodity: 'palmoil',  region: 'wafrica' },
+    jamaica:      { name: 'Jamaica',          tier: 'minor',     inf: 4,  upkeepBase: 1, cost: 10, commodity: 'sugar',    region: 'americas' },
+    goldcoast:    { name: 'Gold Coast',       tier: 'minor',     inf: 3,  upkeepBase: 1, cost: 8,  commodity: 'gold',     region: 'wafrica' },
+    sierraleone:  { name: 'Sierra Leone',     tier: 'minor',     inf: 3,  upkeepBase: 1, cost: 8,  commodity: 'ivory',    region: 'wafrica' },
+    trinidad:     { name: 'Trinidad',         tier: 'minor',     inf: 3,  upkeepBase: 1, cost: 8,  commodity: 'sugar',    region: 'americas' },
+    mauritius:    { name: 'Mauritius',        tier: 'minor',     inf: 3,  upkeepBase: 1, cost: 8,  commodity: 'sugar',    region: 'eastern' },
+    malta:        { name: 'Malta',            tier: 'minor',     inf: 3,  upkeepBase: 1, cost: 8,  commodity: 'naval',    region: 'home' },
+    cyprus:       { name: 'Cyprus',           tier: 'minor',     inf: 3,  upkeepBase: 1, cost: 8,  commodity: 'naval',    region: 'home' },
+    gibraltar:    { name: 'Gibraltar',        tier: 'minor',     inf: 3,  upkeepBase: 1, cost: 8,  commodity: 'naval',    region: 'home' },
+    guiana:       { name: 'British Guiana',   tier: 'outpost',   inf: 2,  upkeepBase: 1, cost: 6,  commodity: 'sugar',    region: 'americas' },
+    honduras:     { name: 'British Honduras', tier: 'outpost',   inf: 2,  upkeepBase: 1, cost: 6,  commodity: 'mahogany', region: 'americas' },
+    bermuda:      { name: 'Bermuda',          tier: 'outpost',   inf: 2,  upkeepBase: 1, cost: 6,  commodity: 'naval',    region: 'americas' },
+    sthelena:     { name: 'St Helena',        tier: 'strategic', inf: 1,  upkeepBase: 0, cost: 4,  commodity: 'naval',    region: 'satlantic' },
+    falklands:    { name: 'Falklands',        tier: 'strategic', inf: 1,  upkeepBase: 0, cost: 4,  commodity: 'wool',     region: 'satlantic' },
+  };
+
+  const ADJACENCY = {
+    uk:           ['gibraltar', 'malta', 'bermuda', 'canada'],
+    gibraltar:    ['uk', 'malta', 'sierraleone'],
+    malta:        ['uk', 'gibraltar', 'cyprus', 'aden'],
+    cyprus:       ['malta', 'aden'],
+    aden:         ['malta', 'cyprus', 'india', 'mauritius', 'cape'],
+    mauritius:    ['aden', 'cape', 'ceylon', 'india'],
+    india:        ['aden', 'ceylon', 'burma', 'mauritius'],
+    ceylon:       ['india', 'mauritius', 'singapore'],
+    burma:        ['india', 'singapore'],
+    singapore:    ['ceylon', 'burma', 'hongkong', 'australia'],
+    hongkong:     ['singapore'],
+    australia:    ['singapore', 'newzealand'],
+    newzealand:   ['australia'],
+    cape:         ['aden', 'mauritius', 'sthelena'],
+    sthelena:     ['cape', 'sierraleone', 'falklands'],
+    falklands:    ['sthelena', 'guiana'],
+    sierraleone:  ['gibraltar', 'sthelena', 'goldcoast'],
+    goldcoast:    ['sierraleone', 'nigeria'],
+    nigeria:      ['goldcoast'],
+    bermuda:      ['uk', 'canada', 'jamaica'],
+    canada:       ['uk', 'bermuda'],
+    jamaica:      ['bermuda', 'trinidad', 'honduras'],
+    trinidad:     ['jamaica', 'guiana'],
+    guiana:       ['trinidad', 'falklands'],
+    honduras:     ['jamaica'],
+  };
+
+  const CHOKEPOINTS = ['malta', 'aden', 'singapore', 'gibraltar', 'hongkong'];
+  const DIFFICULTY_THRESHOLD = { crown: 6, dominion: 5, major: 4, minor: 3, outpost: 2, strategic: 1 };
+  const CHAIN_BONUS = { 1: 0, 2: 1, 3: 2, 4: 4, 5: 7, 6: 11, 7: 16, 8: 22, 9: 29, 10: 37 };
+  const COMMODITIES = ['cotton', 'tea', 'gold', 'passage', 'wool', 'diamonds', 'palmoil', 'sugar', 'teak', 'silk', 'rubber', 'mahogany', 'ivory', 'naval', 'timber'];
+
+  const STARTING_STERLING = 40;
+  const WIN_THRESHOLD = 80;
+  const MAX_TURNS = 80;
+
+  // ============== UTIL ==============
+  function rollDie() { return 1 + Math.floor(Math.random() * 6); }
+  function roll2d6() { return rollDie() + rollDie(); }
+
+  function bfsConnectedComponent(startNode, holdings) {
+    const visited = new Set();
+    const queue = [startNode];
+    while (queue.length) {
+      const node = queue.shift();
+      if (visited.has(node)) continue;
+      visited.add(node);
+      const neighbors = ADJACENCY[node] || [];
+      for (const n of neighbors) if (holdings.has(n) && !visited.has(n)) queue.push(n);
+    }
+    return visited;
+  }
+
+  function largestChainSize(holdings) {
+    if (!holdings.size) return 0;
+    const visited = new Set();
+    let maxChain = 0;
+    for (const start of holdings) {
+      if (visited.has(start)) continue;
+      const component = bfsConnectedComponent(start, holdings);
+      for (const c of component) visited.add(c);
+      maxChain = Math.max(maxChain, component.size);
+    }
+    return maxChain;
+  }
+
+  function chainBonus(holdings) {
+    const size = largestChainSize(holdings);
+    return CHAIN_BONUS[Math.min(size, 10)] || (size > 10 ? 37 : 0);
+  }
+
+  // ============== TELL SYSTEM ==============
+  class TellSystem {
+    constructor(game) {
+      this.game = game;
+      this.eventPool = [
+        ['cotton', 2, 'Lancashire mill orders exceed forecast.'],
+        ['cotton', -2, 'Indian harvest exceeds expectations.'],
+        ['tea', 2, 'Ceylon tea blight reported.'],
+        ['tea', -2, 'Assam tea surplus confirmed.'],
+        ['gold', 2, 'Gold Coast survey expedition successful.'],
+        ['passage', 2, 'Suez Canal traffic increases.'],
+        ['passage', -1, 'Mediterranean shipping routes diverted.'],
+        ['wool', -2, 'Australian wool surplus reported.'],
+        ['wool', 1, 'European wool shortage.'],
+        ['diamonds', 3, 'Cape diamond strike confirmed.'],
+        ['palmoil', 2, 'West African palm oil demand rises.'],
+        ['sugar', -1, 'Caribbean sugar tariff revision.'],
+        ['sugar', 1, 'European sugar shortage.'],
+        ['teak', 1, 'Burmese teak imports redirect through Calcutta.'],
+        ['silk', 2, 'Eastern silk demand grows.'],
+        ['rubber', 2, 'Industrial rubber demand.'],
+        ['mahogany', 1, 'Furniture trade expansion.'],
+        ['ivory', 1, 'Decorative arts demand.'],
+        ['naval', 2, 'Royal Naval review at Spithead.'],
+        ['timber', -1, 'Canadian forestry surplus.'],
+      ];
+      this.fired = [];
+      this.tremors = {};
+      this.queuedEvents = [];
+      this._setupDispatch();
+      this._queueEvents();
+    }
+
+    _setupDispatch() {
+      this.dispatchCommodity = COMMODITIES[Math.floor(Math.random() * COMMODITIES.length)];
+      this.dispatchPeakTurn = 4 + Math.floor(Math.random() * 2);
+      this.dispatchRiseTurns = [2, this.dispatchPeakTurn];
+      this.dispatchText = this._dispatchTextFor(this.dispatchCommodity);
+    }
+
+    _dispatchTextFor(commodity) {
+      const lines = {
+        cotton: 'Lancashire mill orders exceed forecast for third quarter.',
+        tea: 'Reports from Ceylon plantations note unusual rainfall.',
+        gold: 'Gold Coast prospecting expedition returns with confirmed deposits.',
+        passage: 'Naval correspondence from Aden notes increased Suez traffic.',
+        wool: 'Australian Wool Federation reports shipping disruptions.',
+        diamonds: 'Cape Town merchants report unusual mining activity.',
+        palmoil: 'West African trading houses request increased shipping.',
+        sugar: 'Caribbean planters petition for tariff review.',
+        teak: 'Burmese timber merchants seek Calcutta routes.',
+        silk: 'Hong Kong silk markets show unusual activity.',
+        rubber: 'Singapore rubber processors increase output.',
+        mahogany: 'British Honduras timber exports on the rise.',
+        ivory: 'Sierra Leone trading posts report higher demand.',
+        naval: 'Admiralty correspondence concerning fleet positions.',
+        timber: 'Canadian Atlantic ports report increased activity.',
+      };
+      return lines[commodity] || 'Commercial reports note unusual activity.';
+    }
+
+    _queueEvents() {
+      const shuffled = [...this.eventPool].sort(() => Math.random() - 0.5);
+      const chosen = shuffled.slice(0, 3);
+      this.queuedEvents = chosen.map((ev, i) => ({ turn: 3 + i * 3, commodity: ev[0], change: ev[1], text: ev[2] }));
+    }
+
+    update() {
+      if (this.dispatchCommodity && this.dispatchRiseTurns.includes(this.game.turn)) {
+        this.game.demand[this.dispatchCommodity] = Math.min(5, this.game.demand[this.dispatchCommodity] + 1);
+      }
+      for (const ev of this.queuedEvents) {
+        if (this.game.turn === ev.turn - 2) this.tremors[ev.commodity] = [ev.turn, ev.change];
+      }
+      const firing = this.queuedEvents.filter(ev => ev.turn === this.game.turn);
+      for (const ev of firing) {
+        this.game.demand[ev.commodity] = Math.max(1, Math.min(5, this.game.demand[ev.commodity] + ev.change));
+        this.fired.push({ commodity: ev.commodity, change: ev.change, text: ev.text, turn: this.game.turn });
+        this.queuedEvents = this.queuedEvents.filter(e => e !== ev);
+        delete this.tremors[ev.commodity];
+      }
+    }
+
+    predictDemand(commodity, futureTurn, aiLevel) {
+      const current = this.game.demand[commodity];
+      if (aiLevel === 'easy') return current;
+      let prediction = current;
+      if (commodity === this.dispatchCommodity && futureTurn <= this.dispatchPeakTurn) {
+        if (this.dispatchPeakTurn > this.game.turn) prediction = Math.min(5, current + 1);
+      }
+      if (aiLevel === 'medium') return prediction;
+      if (this.tremors[commodity]) {
+        const [tremorTurn, change] = this.tremors[commodity];
+        if (futureTurn >= tremorTurn) prediction = Math.max(1, Math.min(5, prediction + change));
+      }
+      for (const ev of this.queuedEvents) {
+        if (ev.commodity === commodity && futureTurn >= ev.turn) prediction = Math.max(1, Math.min(5, prediction + ev.change));
+      }
+      return prediction;
+    }
+  }
+
+  // ============== PLAYER ==============
+  class Player {
+    constructor(name, aiLevel) {
+      this.name = name;
+      this.aiLevel = aiLevel;
+      this.sterling = STARTING_STERLING;
+      this.holdings = new Set();
+      this.influence = 0;
+      this.successfulClaims = 0;
+      this.failedClaims = 0;
+      this._inflationLevel = 0;
+    }
+    updateInfluence() {
+      let total = 0;
+      for (const t of this.holdings) if (TERRITORIES[t]) total += TERRITORIES[t].inf;
+      this.influence = total;
+    }
+    totalUpkeep() {
+      let total = 0;
+      for (const t of this.holdings) if (TERRITORIES[t]) total += TERRITORIES[t].upkeepBase + this._inflationLevel;
+      return total;
+    }
+  }
+
+  // ============== GAME ==============
+  class MapRoomGame {
+    constructor(opts) {
+      opts = opts || {};
+      this.p1 = new Player('Callum', opts.p1Ai || 'human');
+      this.p2 = new Player('Surgeon', opts.p2Ai || 'medium');
+      this.turn = 0;
+      this.demand = {};
+      for (const c of COMMODITIES) this.demand[c] = 3;
+      this.tells = new TellSystem(this);
+      this.firstPlayer = null;
+      this.winner = null;
+      this.endReason = null;
+      this.eventLog = [];
+      this._draft();
+    }
+
+    log(msg) { this.eventLog.push({ turn: this.turn, msg }); }
+
+    _draft() {
+      const tiers = ['outpost', 'minor', 'minor', 'major'];
+      for (const tier of tiers) {
+        for (const player of [this.p1, this.p2]) {
+          const available = Object.keys(TERRITORIES).filter(k =>
+            TERRITORIES[k].tier === tier && !this.p1.holdings.has(k) && !this.p2.holdings.has(k)
+          );
+          if (available.length) {
+            const pick = available[Math.floor(Math.random() * available.length)];
+            player.holdings.add(pick);
+          }
+        }
+      }
+      this.p1.updateInfluence();
+      this.p2.updateInfluence();
+    }
+
+    setupRoll() {
+      let p1Roll, p2Roll;
+      do { p1Roll = roll2d6(); p2Roll = roll2d6(); } while (p1Roll === p2Roll);
+      this.firstPlayer = (p1Roll > p2Roll) ? this.p1 : this.p2;
+      return { p1Roll, p2Roll, firstPlayer: this.firstPlayer.name };
+    }
+
+    rollMovement(player) {
+      const die = rollDie();
+      // Chokepoint bonus: +1 reach per chokepoint owned, capped at 7 total steps. No teleport.
+      const chokeCount = [...player.holdings].filter(t => CHOKEPOINTS.includes(t)).length;
+      const reach = Math.min(7, die + chokeCount);
+      return { die, reach, chokeBonus: chokeCount };
+    }
+
+    getReachableTerritories(player, reachSteps, includeOwn) {
+      const opponent = (player === this.p1) ? this.p2 : this.p1;
+      const reachable = new Set();
+      for (const owned of player.holdings) {
+        const queue = [[owned, 0]];
+        const visited = new Set();
+        while (queue.length) {
+          const [node, dist] = queue.shift();
+          if (visited.has(node) || dist > reachSteps) continue;
+          visited.add(node);
+          if (includeOwn && player.holdings.has(node)) {
+            reachable.add(node);
+          } else if (node !== owned && !player.holdings.has(node) && !opponent.holdings.has(node)) {
+            reachable.add(node);
+          }
+          const neighbors = ADJACENCY[node] || [];
+          for (const n of neighbors) if (!visited.has(n)) queue.push([n, dist + 1]);
+        }
+      }
+      reachable.delete('uk');
+      return reachable;
+    }
+
+    acquisitionModifier(player, territoryKey) {
+      let mod = 0;
+      const adj = ADJACENCY[territoryKey] || [];
+      const adjOwned = adj.filter(n => player.holdings.has(n)).length;
+      mod += Math.min(adjOwned, 2);
+      const region = TERRITORIES[territoryKey].region;
+      const regionTerrs = Object.keys(TERRITORIES).filter(k => TERRITORIES[k].region === region);
+      if (regionTerrs.some(t => player.holdings.has(t))) mod += 1;
+      if (this.demand[TERRITORIES[territoryKey].commodity] >= 4) mod += 1;
+      return mod;
+    }
+
+    attemptAcquisition(player, territoryKey) {
+      const terr = TERRITORIES[territoryKey];
+      if (!terr) return { result: 'invalid_territory', cost: 0 };
+      if (player.sterling < terr.cost) return { result: 'cant_afford', cost: 0 };
+      const threshold = DIFFICULTY_THRESHOLD[terr.tier];
+      const modifier = this.acquisitionModifier(player, territoryKey);
+      const die = rollDie();
+      const total = die + modifier;
+      const gap = threshold - total;
+      const cost = terr.cost;
+      if (total >= threshold) {
+        player.sterling -= cost;
+        player.holdings.add(territoryKey);
+        player.updateInfluence();
+        player.successfulClaims += 1;
+        return { result: 'success', cost, die, modifier, threshold, territory: territoryKey };
+      }
+      player.failedClaims += 1;
+      let lossPercent, severity, influencePenalty = 0;
+      if (die === 1) { lossPercent = 1.0; severity = 'critical_fail'; influencePenalty = 2; }
+      else if (gap === 1) { lossPercent = 0.25; severity = 'failed_close'; }
+      else if (gap === 2) { lossPercent = 0.50; severity = 'failed_mid'; }
+      else { lossPercent = 0.75; severity = 'failed_bad'; influencePenalty = 1; }
+      const loss = Math.floor(cost * lossPercent);
+      player.sterling = Math.max(0, player.sterling - loss);
+      return { result: severity, cost: loss, die, modifier, threshold, territory: territoryKey, influencePenalty };
+    }
+
+    productionPhase(player) {
+      let income = 0;
+      for (const t of player.holdings) {
+        if (t === 'uk' || !TERRITORIES[t]) continue;
+        const commodity = TERRITORIES[t].commodity;
+        const dots = this.demand[commodity];
+        const base = Math.floor(dots * 1.5);
+        const roll = rollDie();
+        let modifier;
+        if (roll === 1) modifier = -1;
+        else if (roll <= 4) modifier = 0;
+        else if (roll === 5) modifier = 1;
+        else modifier = 2;
+        const unit = Math.max(0, base + modifier);
+        income += unit;
+      }
+      const chainBon = chainBonus(player.holdings);
+      income += chainBon;
+      player.sterling += income;
+      return { income, chainBonus: chainBon };
+    }
+
+    upkeepPhase(player) {
+      const cost = player.totalUpkeep();
+      if (player.sterling >= cost) { player.sterling -= cost; return { paid: true, cost, abandoned: [] }; }
+      const abandoned = [];
+      const sortedByInfluence = [...player.holdings].filter(t => t !== 'uk').sort((a, b) => TERRITORIES[a].inf - TERRITORIES[b].inf);
+      while (player.sterling < player.totalUpkeep() && sortedByInfluence.length) {
+        const cheapest = sortedByInfluence.shift();
+        player.holdings.delete(cheapest);
+        abandoned.push(cheapest);
+      }
+      const finalCost = player.totalUpkeep();
+      player.sterling = Math.max(0, player.sterling - finalCost);
+      player.updateInfluence();
+      return { paid: false, cost: finalCost, abandoned };
+    }
+
+    marketPhase() {
+      this.tells.update();
+      for (const commodity of COMMODITIES) {
+        if (Math.random() < 0.05) {
+          const shift = Math.random() < 0.5 ? -1 : 1;
+          this.demand[commodity] = Math.max(1, Math.min(5, this.demand[commodity] + shift));
+        }
+      }
+    }
+
+    aiDecide(player) {
+      const movement = this.rollMovement(player);
+      const reachable = [...this.getReachableTerritories(player, movement.reach)];
+      const opponent = (player === this.p1) ? this.p2 : this.p1;
+      const affordable = reachable.filter(t => TERRITORIES[t] && !opponent.holdings.has(t) && player.sterling >= TERRITORIES[t].cost);
+      if (!affordable.length) return { target: null, movement };
+
+      if (player.aiLevel === 'easy') {
+        const weighted = [];
+        for (const t of affordable) for (let i = 0; i < TERRITORIES[t].inf; i++) weighted.push(t);
+        const target = weighted.length ? weighted[Math.floor(Math.random() * weighted.length)] : affordable[Math.floor(Math.random() * affordable.length)];
+        return { target, movement };
+      }
+
+      const lookahead = (player.aiLevel === 'hard') ? 10 : 4;
+      const projectedNetMultiplier = (player.aiLevel === 'hard') ? 1.5 : 0.8;
+      const chokeMult = (player.aiLevel === 'hard') ? 1.0 : 0.5;
+      const victoryMult = (player.aiLevel === 'hard') ? 1.0 : 0.7;
+
+      const scored = [];
+      for (const t of affordable) {
+        const terr = TERRITORIES[t];
+        const threshold = DIFFICULTY_THRESHOLD[terr.tier];
+        const mod = this.acquisitionModifier(player, t);
+        const successChance = Math.max(0.15, Math.min(1.0, (7 - threshold + mod) / 6));
+        let projectedNet = 0;
+        for (let offset = 1; offset <= lookahead; offset++) {
+          const futureTurn = this.turn + offset;
+          const futureDemand = this.tells.predictDemand(terr.commodity, futureTurn, player.aiLevel);
+          const futureProduction = Math.floor(futureDemand * 1.5);
+          const futureInflation = Math.floor(futureTurn / 5);
+          const futureUpkeep = terr.upkeepBase + futureInflation;
+          projectedNet += (futureProduction - futureUpkeep);
+        }
+        const currentMax = largestChainSize(player.holdings);
+        const hypothetical = new Set(player.holdings);
+        hypothetical.add(t);
+        const newMax = largestChainSize(hypothetical);
+        const chainDelta = (CHAIN_BONUS[Math.min(newMax, 10)] || 0) - (CHAIN_BONUS[Math.min(currentMax, 10)] || 0);
+        const chainFutureValue = chainDelta * lookahead;
+        const victoryBonus = (player.influence + terr.inf >= WIN_THRESHOLD) ? 100 : 0;
+        const chokepointBonus = CHOKEPOINTS.includes(t) ? 8 : 0;
+        const oppRegion = Object.keys(TERRITORIES).filter(k => TERRITORIES[k].region === terr.region);
+        const oppInRegion = oppRegion.filter(x => opponent.holdings.has(x)).length;
+        const blockingValue = oppInRegion >= 2 ? 5 : 0;
+        let score = (terr.inf * successChance) + chainFutureValue + (projectedNet * projectedNetMultiplier) + (chokepointBonus * chokeMult) + blockingValue + (victoryBonus * victoryMult);
+        if (projectedNet < -10) score *= 0.3;
+        scored.push({ score, target: t });
+      }
+      scored.sort((a, b) => b.score - a.score);
+      return { target: scored[0].target, movement };
+    }
+
+    checkWinner() {
+      if (this.p1.influence >= WIN_THRESHOLD) { this.winner = 'p1'; this.endReason = 'threshold_reached'; return true; }
+      if (this.p2.influence >= WIN_THRESHOLD) { this.winner = 'p2'; this.endReason = 'threshold_reached'; return true; }
+      return false;
+    }
+  }
+
+  /* ============================================================
+     UI CONTROLLER
+     ============================================================ */
+
+  const game = new MapRoomGame({ p1Ai: 'human', p2Ai: 'medium' });
+
+  // Territory coordinates calibrated to nocturne-item-mapboard.png
+  const TERRITORY_COORDS = {
+    canada:       { x: 25, y: 25 },   // North America, upper area
+    bermuda:      { x: 28, y: 38 },   // Atlantic island east of US
+    jamaica:      { x: 22, y: 47 },   // Caribbean
+    honduras:     { x: 19, y: 48 },   // Central America
+    trinidad:     { x: 28, y: 52 },   // Lesser Antilles
+    guiana:       { x: 32, y: 55 },   // NE South America coast
+    falklands:    { x: 32, y: 82 },   // Far south Atlantic
+    sthelena:     { x: 47, y: 70 },   // Mid-South Atlantic, west of Africa
+    sierraleone:  { x: 48, y: 52 },   // West Africa coast
+    goldcoast:    { x: 51, y: 55 },   // West Africa
+    nigeria:      { x: 53, y: 55 },   // West Africa, Niger delta
+    cape:         { x: 56, y: 73 },   // Southern tip of Africa
+    gibraltar:    { x: 50, y: 36 },   // Strait between Spain/Africa
+    malta:        { x: 54, y: 38 },   // Mediterranean
+    cyprus:       { x: 57, y: 39 },   // East Mediterranean
+    aden:         { x: 61, y: 47 },   // Arabian peninsula tip
+    mauritius:    { x: 63, y: 67 },   // Indian Ocean, east of Madagascar
+    india:        { x: 70, y: 45 },   // Indian subcontinent
+    ceylon:       { x: 71, y: 50 },   // Just south of India
+    burma:        { x: 75, y: 46 },   // SE Asia mainland
+    singapore:    { x: 78, y: 53 },   // Malay peninsula tip
+    hongkong:     { x: 82, y: 43 },   // South China coast
+    australia:    { x: 87, y: 67 },   // Australian continent
+    newzealand:   { x: 92, y: 72 },   // SE of Australia
+    uk:           { x: 49, y: 27 },   // British Isles
+  };
+
+  let currentMovementReach = 0;
+  let isPlayerTurn = false;
+
+  function renderTerritories() {
+    const container = document.getElementById('territories');
+    container.innerHTML = '';
+    for (const [key, coord] of Object.entries(TERRITORY_COORDS)) {
+      const el = document.createElement('div');
+      el.className = 'territory';
+      el.dataset.key = key;
+      el.style.left = \`calc(\${coord.x}% - 9px)\`;
+      el.style.top = \`calc(\${coord.y}% - 9px)\`;
+      if (game.p1.holdings.has(key)) el.classList.add('callum');
+      if (game.p2.holdings.has(key)) el.classList.add('surgeon');
+      if (key === 'uk') el.classList.add('callum');
+      const pin = document.createElement('div');
+      pin.className = 'pin';
+      el.appendChild(pin);
+      const label = document.createElement('div');
+      label.className = 'label';
+      const terr = TERRITORIES[key];
+      label.textContent = terr ? terr.name : key.toUpperCase();
+      el.appendChild(label);
+      el.addEventListener('click', () => onTerritoryClick(key, el));
+      container.appendChild(el);
+    }
+  }
+
+  function renderDemand() {
+    const rows = document.getElementById('demand-rows');
+    rows.innerHTML = '';
+    const tells = game.tells;
+    let anyTremor = false;
+    for (const commodity of COMMODITIES) {
+      const value = game.demand[commodity];
+      const tremored = tells.tremors[commodity];
+      if (tremored) anyTremor = true;
+      const row = document.createElement('div');
+      row.className = 'commodity-row';
+      const name = document.createElement('span');
+      name.className = 'commodity-name';
+      name.textContent = commodity;
+      row.appendChild(name);
+      const dots = document.createElement('div');
+      dots.className = 'commodity-dots';
+      for (let i = 1; i <= 5; i++) {
+        const dot = document.createElement('div');
+        dot.className = 'dot';
+        if (i <= value) dot.classList.add('filled');
+        if (tremored && i === value) dot.classList.add('tremor');
+        dots.appendChild(dot);
+      }
+      row.appendChild(dots);
+      const trend = document.createElement('span');
+      trend.className = 'commodity-trend';
+      if (tremored) {
+        trend.textContent = tremored[1] > 0 ? '↑' : '↓';
+        trend.classList.add(tremored[1] > 0 ? 'up' : 'down');
+      } else {
+        trend.textContent = '·';
+      }
+      row.appendChild(trend);
+      rows.appendChild(row);
+    }
+    // Update tab badge — show ! when tremor active to signal the player
+    const tab = document.getElementById('demand-tab');
+    if (tab) tab.classList.toggle('has-tremor', anyTremor);
+  }
+
+  function toggleDemandDrawer() {
+    document.getElementById('demand-drawer').classList.toggle('open');
+  }
+  function closeDemandDrawer() {
+    document.getElementById('demand-drawer').classList.remove('open');
+  }
+
+  function renderScores() {
+    document.getElementById('p1-inf').textContent = game.p1.influence;
+    document.getElementById('p2-inf').textContent = game.p2.influence;
+    document.getElementById('p1-sterling').textContent = game.p1.sterling;
+    document.getElementById('p2-sterling').textContent = game.p2.sterling;
+    document.getElementById('turn-num').textContent = game.turn;
+    document.getElementById('inflation').textContent = Math.floor(game.turn / 5);
+  }
+
+  function renderDispatch() {
+    document.getElementById('dispatch-text').textContent = game.tells.dispatchText;
+  }
+
+  function clearReachable() {
+    document.querySelectorAll('.territory.reachable').forEach(el => el.classList.remove('reachable'));
+  }
+
+  function highlightReachable(reach) {
+    clearReachable();
+    const reachable = game.getReachableTerritories(game.p1, reach, true);
+    for (const key of reachable) {
+      const el = document.querySelector(\`.territory[data-key="\${key}"]\`);
+      if (el) el.classList.add('reachable');
+    }
+  }
+
+  function setDialogue(text) {
+    const el = document.getElementById('dialogue');
+    el.textContent = text;
+    if (text) {
+      document.getElementById('portrait').classList.add('speaking');
+      setTimeout(() => document.getElementById('portrait').classList.remove('speaking'), 1500);
+    }
+  }
+
+  function showToast(text) {
+    const area = document.getElementById('toast-area');
+    const t = document.createElement('div');
+    t.className = 'toast';
+    t.textContent = text;
+    area.appendChild(t);
+    setTimeout(() => t.remove(), 3200);
+  }
+
+  function showEventBanner(text, duration = 2400) {
+    const banner = document.getElementById('event-banner');
+    document.getElementById('event-text').textContent = text;
+    banner.classList.add('show');
+    setTimeout(() => banner.classList.remove('show'), duration);
+  }
+
+  // ============== TURN FLOW STATE ==============
+  // Tracks which phase the player's turn is in.
+  // 'movement_roll' → player needs to roll for movement
+  // 'movement_select' → player rolled, picking destination
+  // 'action_select' → player has moved, choosing acquire/trade/skip
+  // 'idle' → not player's turn
+  let turnPhase = 'idle';
+  let selectedTerritory = null;
+
+  function showPhaseIndicator(text, sub) {
+    const ind = document.getElementById('phase-indicator');
+    ind.innerHTML = \`\${text}<span class="small">\${sub}</span>\`;
+    ind.classList.add('show');
+  }
+  function hidePhaseIndicator() {
+    document.getElementById('phase-indicator').classList.remove('show');
+  }
+
+  function showModal(id) { document.getElementById(id).classList.add('show'); }
+  function hideModal(id) { document.getElementById(id).classList.remove('show'); }
+  function showActionMenu() { document.getElementById('action-menu').classList.add('show'); }
+  function hideActionMenu() { document.getElementById('action-menu').classList.remove('show'); }
+
+  function startTurn() {
+    document.getElementById('btn-roll').disabled = false;
+    document.getElementById('btn-end-turn').disabled = false;
+    isPlayerTurn = true;
+    currentMovementReach = 0;
+    selectedTerritory = null;
+    turnPhase = 'movement_roll';
+    const inflation = Math.floor(game.turn / 5);
+    game.p1._inflationLevel = inflation;
+    game.p2._inflationLevel = inflation;
+    game.marketPhase();
+    const p1Income = game.productionPhase(game.p1);
+    game.productionPhase(game.p2);
+    renderDemand();
+    renderScores();
+    if (p1Income.income > 0) showToast(\`Production: +£\${p1Income.income} (chain bonus £\${p1Income.chainBonus})\`);
+    const lastFired = game.tells.fired[game.tells.fired.length - 1];
+    if (lastFired && lastFired.turn === game.turn) showEventBanner(lastFired.text);
+    setDialogue('Your move. Roll for movement.');
+    showPhaseIndicator('Movement', 'Roll the die');
+  }
+
+  function onRollMovement() {
+    if (turnPhase !== 'movement_roll') return;
+    const movement = game.rollMovement(game.p1);
+    currentMovementReach = movement.reach;
+    const bonusText = movement.chokeBonus > 0 ? \` +\${movement.chokeBonus} chokepoint\` : '';
+    showToast(\`Movement: \${movement.die}\${bonusText} — reach \${movement.reach} step\${movement.reach === 1 ? '' : 's'}\`);
+    highlightReachable(movement.reach);
+    document.getElementById('btn-roll').disabled = true;
+    turnPhase = 'movement_select';
+    showPhaseIndicator('Select Destination', 'Tap a glowing territory');
+    setDialogue('Tap a glowing territory to travel there.');
+  }
+
+  function onTerritoryClick(key, el) {
+    if (!isPlayerTurn) return;
+    if (window.__panZoomDragged && window.__panZoomDragged()) return;
+    if (turnPhase !== 'movement_select') return;
+    if (!el.classList.contains('reachable')) return;
+    selectedTerritory = key;
+    openMoveConfirm(key);
+  }
+
+  function openMoveConfirm(key) {
+    const terr = TERRITORIES[key];
+    const stayingPut = game.p1.holdings.has(key);
+    document.getElementById('move-name').textContent = terr.name;
+    document.getElementById('move-flavor').textContent = stayingPut
+      ? \`Hold position. Take action from this territory you already control.\`
+      : \`\${capitalize(terr.tier)} territory · \${capitalize(terr.commodity)} · Region: \${capitalize(terr.region)}\`;
+    document.getElementById('btn-confirm-move').textContent = stayingPut ? 'Hold Here' : 'Move Here';
+    showModal('move-modal');
+  }
+
+  function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+  function onConfirmMove() {
+    hideModal('move-modal');
+    clearReachable();
+    hidePhaseIndicator();
+    turnPhase = 'action_select';
+    // Highlight only the selected territory
+    const el = document.querySelector(\`.territory[data-key="\${selectedTerritory}"]\`);
+    if (el) el.classList.add('reachable');
+    document.getElementById('menu-territory').textContent = TERRITORIES[selectedTerritory].name;
+
+    // Disable acquire if can't afford or already owned by surgeon
+    const terr = TERRITORIES[selectedTerritory];
+    const canAfford = game.p1.sterling >= terr.cost;
+    const surgeonOwned = game.p2.holdings.has(selectedTerritory);
+    const playerOwned = game.p1.holdings.has(selectedTerritory);
+    const acquireBtn = document.getElementById('btn-acquire');
+    if (playerOwned) {
+      acquireBtn.disabled = true;
+      acquireBtn.querySelector('.desc').textContent = 'You already own this territory';
+    } else if (surgeonOwned) {
+      acquireBtn.disabled = true;
+      acquireBtn.querySelector('.desc').textContent = 'The Surgeon controls this — try a trade';
+    } else if (!canAfford) {
+      acquireBtn.disabled = true;
+      acquireBtn.querySelector('.desc').textContent = \`Need £\${terr.cost} (you have £\${game.p1.sterling})\`;
+    } else {
+      acquireBtn.disabled = false;
+      acquireBtn.querySelector('.desc').textContent = \`Cost: £\${terr.cost}\`;
+    }
+
+    // Trade requires the surgeon to own at least one territory
+    const tradeBtn = document.getElementById('btn-trade');
+    const surgeonHas = [...game.p2.holdings].filter(t => t !== 'uk').length;
+    if (surgeonHas === 0) {
+      tradeBtn.disabled = true;
+      tradeBtn.querySelector('.desc').textContent = 'The Surgeon has no territories to trade';
+    } else {
+      tradeBtn.disabled = false;
+      tradeBtn.querySelector('.desc').textContent = 'Offer the Surgeon a deal';
+    }
+
+    showActionMenu();
+    setDialogue(\`You arrive at \${TERRITORIES[selectedTerritory].name}. Choose your action.\`);
+  }
+
+  function onCancelMove() {
+    hideModal('move-modal');
+    selectedTerritory = null;
+    // Stay in movement_select phase, player can pick another territory
+  }
+
+  function onClickAcquire() {
+    hideActionMenu();
+    openAcquireConfirm(selectedTerritory);
+  }
+
+  function openAcquireConfirm(key) {
+    const terr = TERRITORIES[key];
+    const threshold = DIFFICULTY_THRESHOLD[terr.tier];
+    const modifier = game.acquisitionModifier(game.p1, key);
+    const successChance = Math.max(0.15, Math.min(1.0, (7 - threshold + modifier) / 6));
+    document.getElementById('acquire-name').textContent = terr.name;
+    document.getElementById('acquire-flavor').textContent = \`\${capitalize(terr.commodity)} producer in \${capitalize(terr.region)}.\`;
+    document.getElementById('acquire-tier').textContent = capitalize(terr.tier);
+    document.getElementById('acquire-cost').textContent = '£' + terr.cost;
+    document.getElementById('acquire-threshold').textContent = \`\${threshold}+ on 1d6\`;
+    document.getElementById('acquire-modifier').textContent = (modifier >= 0 ? '+' : '') + modifier;
+    document.getElementById('acquire-chance').textContent = Math.round(successChance * 100) + '%';
+    showModal('acquire-modal');
+  }
+
+  function onConfirmAcquire() {
+    hideModal('acquire-modal');
+    const result = game.attemptAcquisition(game.p1, selectedTerritory);
+    handleAcquisitionResult(result, game.p1);
+    finishPlayerAction();
+  }
+
+  function onCancelAcquire() {
+    hideModal('acquire-modal');
+    showActionMenu(); // Back to action menu
+  }
+
+  function onClickTrade() {
+    hideActionMenu();
+    openTradeProposal();
+  }
+
+  // Trade state
+  let tradeOffer = { sterling: 0, territory: null };
+  let tradeRequest = { territory: null };
+
+  function openTradeProposal() {
+    tradeOffer = { sterling: 0, territory: null };
+    tradeRequest = { territory: null };
+    document.getElementById('trade-offer-sterling').value = '0';
+    document.getElementById('trade-offer-sterling').max = game.p1.sterling;
+
+    // Populate offerable territories (player's, except UK)
+    const offerEl = document.getElementById('trade-offer-territories');
+    offerEl.innerHTML = '';
+    for (const t of game.p1.holdings) {
+      if (t === 'uk') continue;
+      const opt = document.createElement('div');
+      opt.className = 'opt';
+      opt.dataset.key = t;
+      opt.textContent = \`\${TERRITORIES[t].name} (£\${TERRITORIES[t].cost})\`;
+      opt.addEventListener('click', () => {
+        document.querySelectorAll('#trade-offer-territories .opt').forEach(x => x.classList.remove('selected'));
+        if (tradeOffer.territory === t) {
+          tradeOffer.territory = null;
+        } else {
+          opt.classList.add('selected');
+          tradeOffer.territory = t;
+        }
+      });
+      offerEl.appendChild(opt);
+    }
+
+    // Populate requestable territories (surgeon's, except UK)
+    const requestEl = document.getElementById('trade-request-territories');
+    requestEl.innerHTML = '';
+    for (const t of game.p2.holdings) {
+      if (t === 'uk') continue;
+      const opt = document.createElement('div');
+      opt.className = 'opt';
+      opt.dataset.key = t;
+      opt.textContent = \`\${TERRITORIES[t].name} (£\${TERRITORIES[t].cost})\`;
+      opt.addEventListener('click', () => {
+        document.querySelectorAll('#trade-request-territories .opt').forEach(x => x.classList.remove('selected'));
+        if (tradeRequest.territory === t) {
+          tradeRequest.territory = null;
+        } else {
+          opt.classList.add('selected');
+          tradeRequest.territory = t;
+        }
+      });
+      requestEl.appendChild(opt);
+    }
+    showModal('trade-modal');
+  }
+
+  function onConfirmTrade() {
+    const sterling = Math.max(0, Math.min(game.p1.sterling, parseInt(document.getElementById('trade-offer-sterling').value, 10) || 0));
+    tradeOffer.sterling = sterling;
+    if (!tradeRequest.territory) {
+      showToast('Select a territory to request.');
+      return;
+    }
+    if (sterling === 0 && !tradeOffer.territory) {
+      showToast('Offer something.');
+      return;
+    }
+    hideModal('trade-modal');
+    // Surgeon evaluates the trade
+    const accepted = surgeonEvaluatesTrade(tradeOffer, tradeRequest);
+    if (accepted) {
+      executeTrade(tradeOffer, tradeRequest);
+      const reqName = TERRITORIES[tradeRequest.territory].name;
+      const offerDesc = [];
+      if (tradeOffer.sterling > 0) offerDesc.push(\`£\${tradeOffer.sterling}\`);
+      if (tradeOffer.territory) offerDesc.push(TERRITORIES[tradeOffer.territory].name);
+      showToast(\`Trade accepted: \${offerDesc.join(' + ')} for \${reqName}\`);
+      setDialogue(\`"Done. \${reqName} is yours."\`);
+    } else {
+      showToast('The Surgeon declines the trade.');
+      setDialogue('"No. Not for that."');
+    }
+    renderTerritories();
+    renderScores();
+    finishPlayerAction();
+  }
+
+  function onCancelTrade() {
+    hideModal('trade-modal');
+    showActionMenu();
+  }
+
+  function surgeonEvaluatesTrade(offer, request) {
+    // Calculate value of what surgeon would give up
+    const requestedTerr = TERRITORIES[request.territory];
+    let surgeonLoses = requestedTerr.inf * 1.5 + requestedTerr.cost * 0.3;
+
+    // Calculate value of what surgeon would receive
+    let surgeonGains = offer.sterling;
+    if (offer.territory) {
+      const offered = TERRITORIES[offer.territory];
+      surgeonGains += offered.inf * 1.5 + offered.cost * 0.3;
+    }
+
+    // Surgeon accepts if he gains at least 110% of what he loses
+    return surgeonGains >= surgeonLoses * 1.1;
+  }
+
+  function executeTrade(offer, request) {
+    // Transfer sterling
+    game.p1.sterling -= offer.sterling;
+    game.p2.sterling += offer.sterling;
+    // Transfer territories
+    if (offer.territory) {
+      game.p1.holdings.delete(offer.territory);
+      game.p2.holdings.add(offer.territory);
+    }
+    game.p2.holdings.delete(request.territory);
+    game.p1.holdings.add(request.territory);
+    game.p1.updateInfluence();
+    game.p2.updateInfluence();
+  }
+
+  function onClickSkip() {
+    hideActionMenu();
+    setDialogue('You take a moment. The empire waits.');
+    finishPlayerAction();
+  }
+
+  function finishPlayerAction() {
+    clearReachable();
+    hidePhaseIndicator();
+    selectedTerritory = null;
+    turnPhase = 'idle';
+    isPlayerTurn = false;
+    document.getElementById('btn-roll').disabled = true;
+    document.getElementById('btn-end-turn').disabled = true;
+    renderTerritories();
+    renderScores();
+    if (game.checkWinner()) { endGame(); return; }
+    setTimeout(surgeonTurn, 1000);
+  }
+
+  function handleAcquisitionResult(result, player) {
+    if (result.result === 'success') {
+      showToast(\`\${player.name} claimed \${TERRITORIES[result.territory].name} (rolled \${result.die}+\${result.modifier} vs \${result.threshold})\`);
+    } else if (result.result === 'cant_afford') {
+      showToast('Not enough sterling.');
+    } else if (result.result === 'invalid_territory') {
+      // ignore
+    } else {
+      const desc = { failed_close: 'narrow miss', failed_mid: 'expedition stalled', failed_bad: 'expedition failed', critical_fail: 'catastrophic loss' }[result.result] || 'failed';
+      showToast(\`\${player.name} failed \${TERRITORIES[result.territory].name} — \${desc} (£\${result.cost} lost)\`);
+    }
+  }
+
+  function surgeonTurn() {
+    setDialogue('');
+    document.getElementById('portrait').classList.add('speaking');
+    const decision = game.aiDecide(game.p2);
+    if (decision.target) {
+      const result = game.attemptAcquisition(game.p2, decision.target);
+      handleAcquisitionResult(result, game.p2);
+    } else {
+      showToast('The Surgeon passes.');
+    }
+    setTimeout(() => {
+      document.getElementById('portrait').classList.remove('speaking');
+      game.upkeepPhase(game.p1);
+      game.upkeepPhase(game.p2);
+      renderTerritories();
+      renderScores();
+      if (game.checkWinner()) { endGame(); return; }
+      game.turn += 1;
+      startTurn();
+    }, 1400);
+  }
+
+  function onEndTurn() {
+    if (turnPhase === 'movement_roll') {
+      // Hadn't rolled yet — just skip
+      onClickSkip();
+    } else if (turnPhase === 'movement_select') {
+      // Rolled but didn't pick a destination — skip
+      onClickSkip();
+    } else if (turnPhase === 'action_select') {
+      // Already moved, end turn = same as Skip from menu
+      hideActionMenu();
+      onClickSkip();
+    }
+  }
+
+  function endGame() {
+    const winner = game.winner === 'p1' ? 'You' : 'The Surgeon';
+    showEventBanner(\`\${winner} won. Final: Callum \${game.p1.influence} vs Surgeon \${game.p2.influence}.\`, 6000);
+    document.getElementById('btn-roll').disabled = true;
+    document.getElementById('btn-end-turn').disabled = true;
+    showEndgameScorecard();
+    saveMatchToPersistent();
+  }
+
+  // ============== SCORECARD STATE ==============
+  // Track per-match high-water marks
+  const matchStats = {
+    bestChainP1: 0,
+    bestChainP2: 0,
+    eventsFired: 0,
+  };
+
+  function influenceByTier(player) {
+    const tiers = { crown: 0, dominion: 0, major: 0, minor: 0, outpost: 0, strategic: 0 };
+    for (const t of player.holdings) {
+      if (t === 'uk' || !TERRITORIES[t]) continue;
+      tiers[TERRITORIES[t].tier] += TERRITORIES[t].inf;
+    }
+    return tiers;
+  }
+
+  function regionProgress() {
+    const regions = {};
+    for (const [key, terr] of Object.entries(TERRITORIES)) {
+      if (!regions[terr.region]) regions[terr.region] = { total: 0, c: 0, s: 0 };
+      regions[terr.region].total++;
+      if (game.p1.holdings.has(key)) regions[terr.region].c++;
+      if (game.p2.holdings.has(key)) regions[terr.region].s++;
+    }
+    return regions;
+  }
+
+  function updateMatchStats() {
+    matchStats.bestChainP1 = Math.max(matchStats.bestChainP1, largestChainSize(game.p1.holdings));
+    matchStats.bestChainP2 = Math.max(matchStats.bestChainP2, largestChainSize(game.p2.holdings));
+    matchStats.eventsFired = game.tells.fired.length;
+  }
+
+  function renderTierList(player, elId) {
+    const tiers = influenceByTier(player);
+    const labels = { crown: 'Crown', dominion: 'Dominion', major: 'Major', minor: 'Minor', outpost: 'Outpost', strategic: 'Strategic' };
+    const el = document.getElementById(elId);
+    el.innerHTML = '';
+    for (const [tier, val] of Object.entries(tiers)) {
+      if (val === 0) continue;
+      const row = document.createElement('div');
+      row.className = 'sc-row';
+      row.innerHTML = \`<span class="label">\${labels[tier]}</span><span class="val">\${val}</span>\`;
+      el.appendChild(row);
+    }
+    if (!el.children.length) {
+      el.innerHTML = '<div class="sc-row"><span class="label muted">No holdings</span></div>';
+    }
+  }
+
+  function renderHoldingsList(player, elId) {
+    const el = document.getElementById(elId);
+    el.innerHTML = '';
+    const sorted = [...player.holdings]
+      .filter(t => t !== 'uk')
+      .sort((a, b) => TERRITORIES[b].inf - TERRITORIES[a].inf);
+    if (!sorted.length) { el.innerHTML = '<span style="opacity:0.5;font-style:italic;">None</span>'; return; }
+    for (const t of sorted) {
+      const span = document.createElement('span');
+      span.className = \`terr-item \${TERRITORIES[t].tier}\`;
+      span.textContent = \`\${TERRITORIES[t].name} · \${TERRITORIES[t].inf}\`;
+      el.appendChild(span);
+    }
+  }
+
+  function renderRegionProgress() {
+    const el = document.getElementById('sc-regions');
+    el.innerHTML = '';
+    const labels = { home: 'Home Isles', americas: 'Americas', wafrica: 'West Africa', satlantic: 'South Atlantic', eastern: 'Eastern Approaches', jewel: 'The Jewel', easia: 'East Asia & Pacific', pacific: 'Pacific' };
+    const regions = regionProgress();
+    for (const [key, prog] of Object.entries(regions)) {
+      const row = document.createElement('div');
+      row.className = 'region-row';
+      const totalHeld = prog.c + prog.s;
+      if (prog.c === prog.total || prog.s === prog.total) row.classList.add('complete');
+      row.innerHTML = \`<span class="name">\${labels[key] || key}</span><span class="progress">C \${prog.c} · S \${prog.s} / \${prog.total}</span>\`;
+      el.appendChild(row);
+    }
+  }
+
+  function renderScorecard() {
+    updateMatchStats();
+    document.getElementById('sc-c-inf').textContent = game.p1.influence;
+    document.getElementById('sc-s-inf').textContent = game.p2.influence;
+    document.getElementById('sc-c-sterling').textContent = game.p1.sterling;
+    document.getElementById('sc-s-sterling').textContent = game.p2.sterling;
+    document.getElementById('sc-c-territories').textContent = [...game.p1.holdings].filter(t => t !== 'uk').length;
+    document.getElementById('sc-s-territories').textContent = [...game.p2.holdings].filter(t => t !== 'uk').length;
+    document.getElementById('sc-c-chain').textContent = matchStats.bestChainP1;
+    document.getElementById('sc-s-chain').textContent = matchStats.bestChainP2;
+    document.getElementById('sc-c-upkeep').textContent = '£' + game.p1.totalUpkeep();
+    document.getElementById('sc-s-upkeep').textContent = '£' + game.p2.totalUpkeep();
+
+    const c1 = game.p1.successfulClaims + game.p1.failedClaims;
+    const c2 = game.p2.successfulClaims + game.p2.failedClaims;
+    document.getElementById('sc-c-success').textContent = c1 ? \`\${Math.round(100 * game.p1.successfulClaims / c1)}% (\${game.p1.successfulClaims}/\${c1})\` : '—';
+    document.getElementById('sc-s-success').textContent = c2 ? \`\${Math.round(100 * game.p2.successfulClaims / c2)}% (\${game.p2.successfulClaims}/\${c2})\` : '—';
+
+    renderTierList(game.p1, 'sc-c-tiers');
+    renderTierList(game.p2, 'sc-s-tiers');
+    renderHoldingsList(game.p1, 'sc-c-list');
+    renderHoldingsList(game.p2, 'sc-s-list');
+    renderRegionProgress();
+
+    document.getElementById('sc-turn').textContent = game.turn;
+    document.getElementById('sc-first').textContent = game.firstPlayer ? game.firstPlayer.name : '—';
+    document.getElementById('sc-inflation').textContent = Math.floor(game.turn / 5);
+    document.getElementById('sc-events').textContent = matchStats.eventsFired;
+    document.getElementById('sc-tremors').textContent = Object.keys(game.tells.tremors).length;
+
+    // Persistent
+    const p = loadPersistent();
+    document.getElementById('sc-games').textContent = p.gamesPlayed;
+    document.getElementById('sc-wl').textContent = \`\${p.wins} / \${p.losses}\`;
+    document.getElementById('sc-best-inf').textContent = p.bestInfluence;
+    document.getElementById('sc-best-chain').textContent = p.longestChain;
+    document.getElementById('sc-total-claims').textContent = p.totalClaims;
+    document.getElementById('sc-ach-count').textContent = (p.achievements || []).length;
+  }
+
+  function openScorecard() {
+    renderScorecard();
+    document.getElementById('scorecard').classList.add('open');
+  }
+  function closeScorecard() {
+    document.getElementById('scorecard').classList.remove('open');
+  }
+
+  // ============== END-GAME SCORECARD ==============
+  function showEndgameScorecard() {
+    updateMatchStats();
+    const wonByPlayer = game.winner === 'p1';
+    const tied = game.winner === 'tie';
+
+    document.getElementById('eg-title').textContent = tied ? 'Stalemate' : (wonByPlayer ? 'Victory' : 'Defeat');
+    const subtitle = tied
+      ? \`After \${game.turn} turns, neither party reached the threshold.\`
+      : (wonByPlayer
+          ? \`You won in \${game.turn} turns. The Surgeon takes his leave.\`
+          : \`The Surgeon won in \${game.turn} turns. He thanks you for the game.\`);
+    document.getElementById('eg-subtitle').textContent = subtitle;
+
+    document.getElementById('eg-c-inf').textContent = game.p1.influence;
+    document.getElementById('eg-s-inf').textContent = game.p2.influence;
+    document.getElementById('eg-c-terr').textContent = [...game.p1.holdings].filter(t => t !== 'uk').length;
+    document.getElementById('eg-s-terr').textContent = [...game.p2.holdings].filter(t => t !== 'uk').length;
+    document.getElementById('eg-c-chain').textContent = matchStats.bestChainP1;
+    document.getElementById('eg-s-chain').textContent = matchStats.bestChainP2;
+    document.getElementById('eg-c-good').textContent = game.p1.successfulClaims;
+    document.getElementById('eg-s-good').textContent = game.p2.successfulClaims;
+    document.getElementById('eg-c-fail').textContent = game.p1.failedClaims;
+    document.getElementById('eg-s-fail').textContent = game.p2.failedClaims;
+    document.getElementById('eg-c-sterling').textContent = '£' + game.p1.sterling;
+    document.getElementById('eg-s-sterling').textContent = '£' + game.p2.sterling;
+
+    document.getElementById('eg-quote').textContent = surgeonEndQuote(wonByPlayer, tied);
+    document.getElementById('endgame').classList.add('show');
+  }
+
+  function surgeonEndQuote(playerWon, tied) {
+    if (tied) {
+      const lines = [
+        '"A draw. The empire endures, indifferent to either of us. We should play again. I think you have more in you."',
+        '"Stalemate. The board outlasted us both. There is something instructive in that."',
+      ];
+      return lines[Math.floor(Math.random() * lines.length)];
+    }
+    if (playerWon) {
+      const lines = [
+        '"Well played. You read the dispatch correctly on turn one. Most do not."',
+        '"You won. I underestimated how quickly you would commit. I will not make that error twice."',
+        '"The dice were yours tonight. The reasoning behind your moves was also yours. The two are easy to confuse."',
+      ];
+      return lines[Math.floor(Math.random() * lines.length)];
+    }
+    const lines = [
+      '"You played well. You did not play long enough. Next time, watch the tremors."',
+      '"You committed too early to The Jewel. Empire is not collected. It is composed."',
+      '"You held what you could not afford. The inflation table is as honest as the dice."',
+    ];
+    return lines[Math.floor(Math.random() * lines.length)];
+  }
+
+  function closeEndgame() {
+    document.getElementById('endgame').classList.remove('show');
+  }
+
+  function replay() {
+    closeEndgame();
+    location.reload();
+  }
+
+  // ============== PERSISTENT RECORD (localStorage) ==============
+  const PERSIST_KEY = 'nocturne_map_room_record_v1';
+
+  function loadPersistent() {
+    try {
+      const raw = localStorage.getItem(PERSIST_KEY);
+      if (raw) {
+        const obj = JSON.parse(raw);
+        return Object.assign(defaultPersistent(), obj);
+      }
+    } catch (e) { /* ignore */ }
+    return defaultPersistent();
+  }
+
+  function defaultPersistent() {
+    return {
+      gamesPlayed: 0,
+      wins: 0,
+      losses: 0,
+      ties: 0,
+      bestInfluence: 0,
+      longestChain: 0,
+      totalClaims: 0,
+      claimedTerritories: {}, // territory key -> count
+      achievements: [],
+    };
+  }
+
+  function savePersistent(p) {
+    try { localStorage.setItem(PERSIST_KEY, JSON.stringify(p)); } catch (e) { /* ignore */ }
+  }
+
+  function saveMatchToPersistent() {
+    const p = loadPersistent();
+    p.gamesPlayed += 1;
+    if (game.winner === 'p1') p.wins += 1;
+    else if (game.winner === 'p2') p.losses += 1;
+    else p.ties += 1;
+    p.bestInfluence = Math.max(p.bestInfluence, game.p1.influence);
+    p.longestChain = Math.max(p.longestChain, matchStats.bestChainP1);
+    p.totalClaims += game.p1.successfulClaims;
+    for (const t of game.p1.holdings) {
+      if (t === 'uk') continue;
+      p.claimedTerritories[t] = (p.claimedTerritories[t] || 0) + 1;
+    }
+    checkAchievements(p);
+    savePersistent(p);
+  }
+
+  // ============== ACHIEVEMENTS ==============
+  const ACHIEVEMENTS = [
+    { id: 'first_blood',   name: 'First Blood',          test: (p) => p.totalClaims >= 1 },
+    { id: 'first_win',     name: 'The Empire Listens',   test: (p) => p.wins >= 1 },
+    { id: 'jewel',         name: 'The Jewel in the Crown', test: (p) => p.claimedTerritories['india'] >= 1 },
+    { id: 'cape_cairo',    name: 'Cape to Suez',         test: (p) => p.claimedTerritories['cape'] >= 1 && p.claimedTerritories['aden'] >= 1 },
+    { id: 'pacific_lord',  name: 'Lord of the Pacific',  test: (p) => p.claimedTerritories['australia'] >= 1 && p.claimedTerritories['newzealand'] >= 1 },
+    { id: 'chain_5',       name: 'A Network Forms',      test: (p) => p.longestChain >= 5 },
+    { id: 'chain_8',       name: 'The Empire Coheres',   test: (p) => p.longestChain >= 8 },
+    { id: 'three_wins',    name: 'Established Hand',     test: (p) => p.wins >= 3 },
+    { id: 'ten_wins',      name: 'Master of the Map',    test: (p) => p.wins >= 10 },
+    { id: 'big_score',     name: 'A Decisive Margin',    test: (p) => p.bestInfluence >= 100 },
+    { id: 'all_chokepoints', name: 'Mistress of Routes', test: (p) => CHOKEPOINTS.every(c => p.claimedTerritories[c] >= 1) },
+  ];
+
+  function checkAchievements(p) {
+    if (!p.achievements) p.achievements = [];
+    for (const ach of ACHIEVEMENTS) {
+      if (!p.achievements.includes(ach.id) && ach.test(p)) {
+        p.achievements.push(ach.id);
+        showAchievement(ach.name);
+      }
+    }
+  }
+
+  function showAchievement(name) {
+    const el = document.getElementById('achievement');
+    document.getElementById('achievement-text').textContent = name;
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 3500);
+  }
+
+  // ============== PAN / ZOOM ==============
+  // Pinch-zoom + drag-pan using pointer events. Works on touch and mouse.
+  // The viewport is transformed (translate + scale); the map-area stays fixed.
+  function setupPanZoom() {
+    const area = document.getElementById('map-area');
+    const viewport = document.getElementById('map-viewport');
+
+    const state = {
+      scale: 1,
+      tx: 0,
+      ty: 0,
+      minScale: 1,
+      maxScale: 4,
+    };
+
+    // Active pointers — for pinch detection
+    const pointers = new Map();
+    let lastPinchDist = null;
+    let lastPinchCenter = null;
+
+    // Drag state (single pointer)
+    let isDragging = false;
+    let dragStartX = 0, dragStartY = 0;
+    let dragStartTx = 0, dragStartTy = 0;
+    // To distinguish click from drag — if movement < threshold, treat as tap
+    let totalDragDistance = 0;
+    const DRAG_THRESHOLD = 6; // pixels
+
+    function applyTransform() {
+      // Clamp pan so the map doesn't slide entirely offscreen
+      const rect = area.getBoundingClientRect();
+      const scaledW = rect.width * state.scale;
+      const scaledH = rect.height * state.scale;
+      // When scale > 1, allow panning so any point can be brought to center
+      const maxTx = 0;
+      const minTx = rect.width - scaledW;
+      const maxTy = 0;
+      const minTy = rect.height - scaledH;
+      if (state.scale <= 1) {
+        state.tx = 0;
+        state.ty = 0;
+      } else {
+        state.tx = Math.max(minTx, Math.min(maxTx, state.tx));
+        state.ty = Math.max(minTy, Math.min(maxTy, state.ty));
+      }
+      viewport.style.transform = \`translate(\${state.tx}px, \${state.ty}px) scale(\${state.scale})\`;
+    }
+
+    function zoomAt(clientX, clientY, deltaScale) {
+      const rect = area.getBoundingClientRect();
+      const localX = clientX - rect.left;
+      const localY = clientY - rect.top;
+      const newScale = Math.max(state.minScale, Math.min(state.maxScale, state.scale * deltaScale));
+      // Adjust translation so the point under the cursor stays put
+      const ratio = newScale / state.scale;
+      state.tx = localX - ratio * (localX - state.tx);
+      state.ty = localY - ratio * (localY - state.ty);
+      state.scale = newScale;
+      applyTransform();
+    }
+
+    function getPinchDistance() {
+      const pts = [...pointers.values()];
+      if (pts.length < 2) return null;
+      const dx = pts[0].x - pts[1].x;
+      const dy = pts[0].y - pts[1].y;
+      return Math.hypot(dx, dy);
+    }
+
+    function getPinchCenter() {
+      const pts = [...pointers.values()];
+      if (pts.length < 2) return null;
+      return {
+        x: (pts[0].x + pts[1].x) / 2,
+        y: (pts[0].y + pts[1].y) / 2,
+      };
+    }
+
+    area.addEventListener('pointerdown', (e) => {
+      pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      try { area.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+
+      if (pointers.size === 1) {
+        // Begin potential drag
+        isDragging = true;
+        totalDragDistance = 0;
+        dragStartX = e.clientX;
+        dragStartY = e.clientY;
+        dragStartTx = state.tx;
+        dragStartTy = state.ty;
+        area.classList.add('dragging');
+      } else if (pointers.size === 2) {
+        // Two fingers down — switch to pinch
+        isDragging = false;
+        area.classList.remove('dragging');
+        lastPinchDist = getPinchDistance();
+        lastPinchCenter = getPinchCenter();
+      }
+    });
+
+    area.addEventListener('pointermove', (e) => {
+      if (!pointers.has(e.pointerId)) return;
+      pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+      if (pointers.size === 2) {
+        // Pinch zoom
+        const newDist = getPinchDistance();
+        const newCenter = getPinchCenter();
+        if (lastPinchDist && newDist && lastPinchCenter) {
+          const ratio = newDist / lastPinchDist;
+          zoomAt(lastPinchCenter.x, lastPinchCenter.y, ratio);
+          // Also pan so the pinch center tracks finger movement
+          state.tx += newCenter.x - lastPinchCenter.x;
+          state.ty += newCenter.y - lastPinchCenter.y;
+          applyTransform();
+        }
+        lastPinchDist = newDist;
+        lastPinchCenter = newCenter;
+      } else if (isDragging && pointers.size === 1) {
+        const dx = e.clientX - dragStartX;
+        const dy = e.clientY - dragStartY;
+        totalDragDistance = Math.hypot(dx, dy);
+        if (state.scale > 1) {
+          state.tx = dragStartTx + dx;
+          state.ty = dragStartTy + dy;
+          applyTransform();
+        }
+      }
+    });
+
+    function endPointer(e) {
+      pointers.delete(e.pointerId);
+      try {
+        if (area.hasPointerCapture && area.hasPointerCapture(e.pointerId)) {
+          area.releasePointerCapture(e.pointerId);
+        }
+      } catch (err) { /* ignore — pointer already released */ }
+      if (pointers.size < 2) {
+        lastPinchDist = null;
+        lastPinchCenter = null;
+      }
+      if (pointers.size === 0) {
+        isDragging = false;
+        area.classList.remove('dragging');
+      }
+    }
+    area.addEventListener('pointerup', endPointer);
+    area.addEventListener('pointercancel', endPointer);
+    area.addEventListener('pointerleave', endPointer);
+
+    // Wheel zoom (desktop)
+    area.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const delta = e.deltaY < 0 ? 1.15 : 1 / 1.15;
+      zoomAt(e.clientX, e.clientY, delta);
+    }, { passive: false });
+
+    // Buttons
+    document.getElementById('zoom-in').addEventListener('click', () => {
+      const rect = area.getBoundingClientRect();
+      zoomAt(rect.left + rect.width / 2, rect.top + rect.height / 2, 1.3);
+    });
+    document.getElementById('zoom-out').addEventListener('click', () => {
+      const rect = area.getBoundingClientRect();
+      zoomAt(rect.left + rect.width / 2, rect.top + rect.height / 2, 1 / 1.3);
+    });
+    document.getElementById('zoom-reset').addEventListener('click', () => {
+      state.scale = 1;
+      state.tx = 0;
+      state.ty = 0;
+      applyTransform();
+    });
+
+    // Block clicks on territories that are actually drag releases
+    // (Territory click handler runs only if drag distance was small)
+    window.__panZoomDragged = () => totalDragDistance > DRAG_THRESHOLD;
+  }
+
+  function init() {
+    const setup = game.setupRoll();
+    document.getElementById('first-player').textContent = setup.firstPlayer;
+    renderTerritories();
+    renderDemand();
+    renderDispatch();
+    renderScores();
+    document.getElementById('btn-roll').addEventListener('click', onRollMovement);
+    document.getElementById('btn-end-turn').addEventListener('click', onEndTurn);
+    document.getElementById('btn-reset').addEventListener('click', () => {
+      showModal('reset-modal');
+    });
+    document.getElementById('btn-confirm-reset').addEventListener('click', () => {
+      try { localStorage.removeItem(PERSIST_KEY); } catch (e) { /* ignore */ }
+      location.reload();
+    });
+    document.getElementById('btn-cancel-reset').addEventListener('click', () => {
+      hideModal('reset-modal');
+    });
+    document.getElementById('btn-scorecard').addEventListener('click', openScorecard);
+    document.getElementById('btn-close-scorecard').addEventListener('click', closeScorecard);
+    document.getElementById('btn-replay').addEventListener('click', replay);
+    document.getElementById('btn-eg-close').addEventListener('click', closeEndgame);
+    document.getElementById('demand-tab').addEventListener('click', toggleDemandDrawer);
+    document.getElementById('btn-close-demand').addEventListener('click', closeDemandDrawer);
+    document.getElementById('btn-confirm-move').addEventListener('click', onConfirmMove);
+    document.getElementById('btn-cancel-move').addEventListener('click', onCancelMove);
+    document.getElementById('btn-acquire').addEventListener('click', onClickAcquire);
+    document.getElementById('btn-trade').addEventListener('click', onClickTrade);
+    document.getElementById('btn-skip').addEventListener('click', onClickSkip);
+    document.getElementById('btn-confirm-acquire').addEventListener('click', onConfirmAcquire);
+    document.getElementById('btn-cancel-acquire').addEventListener('click', onCancelAcquire);
+    document.getElementById('btn-confirm-trade').addEventListener('click', onConfirmTrade);
+    document.getElementById('btn-cancel-trade').addEventListener('click', onCancelTrade);
+    setupPanZoom();
+    game.turn = 1;
+    if (game.firstPlayer === game.p1) {
+      startTurn();
+    } else {
+      setDialogue('The Surgeon takes the first turn.');
+      setTimeout(() => {
+        const inflation = Math.floor(game.turn / 5);
+        game.p1._inflationLevel = inflation;
+        game.p2._inflationLevel = inflation;
+        game.marketPhase();
+        game.productionPhase(game.p1);
+        game.productionPhase(game.p2);
+        renderDemand();
+        renderScores();
+        surgeonTurn();
+      }, 1500);
+    }
+  }
+
+  init();
+})();`;
+
+})();
