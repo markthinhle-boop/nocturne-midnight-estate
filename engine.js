@@ -1371,7 +1371,7 @@ const ROOM_OBJECTS = {
     tap_1: "A large campaign table. Spread across it: a map of the British Empire, 1888. Territory markers, demand tokens, dispatch routes. Someone has been playing.",
     item_id: null, item_at_depth: null, is_essential: false, is_deception_item: false,
     slow_drag: false, max_depth: 1,
-    hotspot: { left: 15, top: 30, width: 70, height: 55 },
+    hotspot: { left: 20, top: 35, width: 60, height: 45 },
   },
 
   // ── BILLIARD ROOM ──────────────────────────────────────────
@@ -2052,8 +2052,7 @@ function tapObject(objectId, tapX, tapY) {
     if (typeof window.openMapGame === 'function') {
       window.openMapGame();
     } else {
-      showToast('Map Room script not loaded. Add <script src="map-room-game.js"></script> to index.html.');
-      console.error('[mapgame] window.openMapGame is undefined — map-room-game.js is not loaded');
+      console.error('[mapgame] window.openMapGame not found — map-room-game.js not loaded');
     }
     return;
   }
@@ -2065,8 +2064,7 @@ function tapObject(objectId, tapX, tapY) {
       const scrollX = (typeof window.getArmoryScrollX === 'function') ? window.getArmoryScrollX() : 0;
       window.openArmory(scrollX);
     } else {
-      showToast('Armoury script not loaded. Add <script src="armory-escape.js"></script> to index.html.');
-      console.error('[armoury] window.openArmory is undefined — armory-escape.js is not loaded');
+      console.error('[armoury] window.openArmory not found — armory-escape.js not loaded');
     }
     return;
   }
