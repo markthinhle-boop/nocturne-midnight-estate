@@ -772,9 +772,9 @@ const CHARACTERS = {
       "Q10": {
         question: "The mask was on the balcony floor. The floor was clear at seven-oh-five. You told me south corridor at seven forty-five.",
         type: "evidence_reveal",
-        requires_item: "surgeons-mask",
         requires_node: "craneBalconyAdmission",
         requires_node_2: "surgeon_committed_745_south_corridor",
+        requires_node_3: "surgeon_admits_balcony_level",
         response: "He is still. Not the managed stillness he has produced all evening — something underneath that. A pause that takes longer than any pause he has chosen. \"You have placed three things in the same sentence.\" He says it. \"The mask. The floor. The corridor.\" Another pause. He looks at the mask. He does not ask where it was found. He has not asked that once. \"That is a precise set of observations.\" He looks at you. The warmth is still there. It is the most disturbing thing about him. \"What specifically are you asking me to account for.\""
       },
       "Q11": {
