@@ -665,6 +665,156 @@ window._applyEscalation         = _applyEscalation;
 window._getEscalation           = _getEscalation;
 
 // ═══════════════════════════════════════════════════════════
+// HALE LINE-OF-QUESTIONING ENGINE
+// New interrogation architecture for Pemberton-Hale only.
+// Reads from characters.js 'opening', 'lines', 'line_techniques',
+// 'followups', 'gates', 'gate_techniques', 'diversions'.
+// State stored in gameState.haleSession.
+// ═══════════════════════════════════════════════════════════
+
+const HALE_LINES = ['register', 'ashworth', 'others'];
+const HALE_TECHNIQUES_BASE = ['wait', 'account', 'approach', 'pressure'];
+
+function initHaleSession() {
+  if (!window.gameState.haleSession) {
+    window.gameState.haleSession = {
+      openingAsked:      false,
+      lineSelected:      null,
+      techniqueSelected: null,
+      followupAsked:     null,  // id of followup asked (excludes partner)
+      gateState:         {},    // { gate1: 'cleared'|'diverted'|null }
+      diversionQueue:    [],    // remaining diversion question ids
+      flags:             {},    // hale_register_on_record, hale_ashworth_on_record etc
+      pencilFlashShown:  false,
+      pencilCaptured:    false,
+    };
+  }
+  return window.gameState.haleSession;
+}
+
+function getHaleSession() {
+  return window.gameState.haleSession || initHaleSession();
+}
+
+function haleOpeningAsked() {
+  const s = getHaleSession();
+  s.openingAsked = true;
+}
+
+function haleSelectLine(lineId) {
+  const s = getHaleSession();
+  s.lineSelected = lineId;
+  s.techniqueSelected = null;
+  s.followupAsked = null;
+}
+
+function haleSelectTechnique(techId) {
+  const s = getHaleSession();
+  s.techniqueSelected = techId;
+  s.followupAsked = null;
+  // Apply composure cost from line technique
+  const char = (window.CHARACTERS || {})['pemberton-hale'];
+  if (char && char.line_techniques && char.line_techniques[s.lineSelected]) {
+    const t = char.line_techniques[s.lineSelected][techId];
+    if (t && t.composure) {
+      window.gameState.composure = Math.max(0, (window.gameState.composure || 100) + t.composure);
+    }
+  }
+}
+
+function haleAskFollowup(followupId) {
+  const s = getHaleSession();
+  const char = (window.CHARACTERS || {})['pemberton-hale'];
+  if (!char || !char.followups) return null;
+  const pool = (char.followups[s.lineSelected] || {})[s.techniqueSelected] || [];
+  const q = pool.find(f => f.id === followupId);
+  if (!q) return null;
+  s.followupAsked = followupId;
+  if (q.flag) s.flags[q.flag] = true;
+  // Pencil flash — only RW2
+  if (q.pencil_flash && !s.pencilFlashShown) {
+    s.pencilFlashShown = true;
+    window.gameState.halePencilFlashPending = true;
+    window.gameState.halePencilNode = q.pencil_node;
+  }
+  return q;
+}
+
+function haleCapturePencil() {
+  const s = getHaleSession();
+  s.pencilCaptured = true;
+  window.gameState.halePencilFlashPending = false;
+  // Set board node
+  if (window.gameState.halePencilNode) {
+    if (!window.gameState.node_inventory) window.gameState.node_inventory = {};
+    window.gameState.node_inventory[window.gameState.halePencilNode] = true;
+  }
+}
+
+function haleGateAvailable(gateId) {
+  const s = getHaleSession();
+  const char = (window.CHARACTERS || {})['pemberton-hale'];
+  if (!char || !char.gates || !char.gates[gateId]) return false;
+  const gate = char.gates[gateId];
+  const flagMet = gate.requires_flag ? !!s.flags[gate.requires_flag] : true;
+  const itemMet = gate.requires_item
+    ? !!((window.gameState.inventory || {})[gate.requires_item])
+    : true;
+  const notCleared = s.gateState[gateId] !== 'cleared';
+  return flagMet && itemMet && notCleared;
+}
+
+function halePickGateTechnique(gateId, techId) {
+  const s = getHaleSession();
+  const char = (window.CHARACTERS || {})['pemberton-hale'];
+  if (!char || !char.gate_techniques || !char.gate_techniques[gateId]) return null;
+  const tech = char.gate_techniques[gateId][techId];
+  if (!tech) return null;
+  // Apply composure
+  if (tech.composure) {
+    window.gameState.composure = Math.max(0, (window.gameState.composure || 100) + tech.composure);
+  }
+  if (tech.kind === 'failure' && s.gateState[gateId] !== 'diverted') {
+    s.gateState[gateId] = 'diverted';
+    // Load diversion queue
+    const divKey = gateId + '_' + techId;
+    const divs = (char.diversions || {})[divKey] || [];
+    s.diversionQueue = divs.map(d => d.id);
+  } else {
+    s.gateState[gateId] = 'cleared';
+    if (char.gates[gateId].grants) {
+      if (!window.gameState.node_inventory) window.gameState.node_inventory = {};
+      window.gameState.node_inventory[char.gates[gateId].grants] = true;
+    }
+    // Slip fires
+    if (char.gates[gateId].slip) {
+      window.gameState.phSlipFired = true;
+    }
+  }
+  return tech;
+}
+
+function haleAvailableFollowups() {
+  const s = getHaleSession();
+  const char = (window.CHARACTERS || {})['pemberton-hale'];
+  if (!char || !char.followups || !s.lineSelected || !s.techniqueSelected) return [];
+  const pool = (char.followups[s.lineSelected] || {})[s.techniqueSelected] || [];
+  // Filter out the excluded followup
+  return pool.filter(f => f.id !== s.followupAsked);
+}
+
+window.initHaleSession          = initHaleSession;
+window.getHaleSession           = getHaleSession;
+window.haleOpeningAsked         = haleOpeningAsked;
+window.haleSelectLine           = haleSelectLine;
+window.haleSelectTechnique      = haleSelectTechnique;
+window.haleAskFollowup          = haleAskFollowup;
+window.haleCapturePencil        = haleCapturePencil;
+window.haleGateAvailable        = haleGateAvailable;
+window.halePickGateTechnique    = halePickGateTechnique;
+window.haleAvailableFollowups   = haleAvailableFollowups;
+
+// ═══════════════════════════════════════════════════════════
 // PORTRAIT REACTION ENGINE — 3-layer system
 // ═══════════════════════════════════════════════════════════
 // Layer 1: ambient breathing keyed to composure
