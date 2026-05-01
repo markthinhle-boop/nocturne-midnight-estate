@@ -1754,6 +1754,15 @@ function _openConversationDirect(charId) {
     : (charData.intro || '');
   document.getElementById('char-response').textContent = introText;
   const _introEl = document.getElementById('char-response'); if (_introEl) _introEl.scrollTop = 0;
+
+  // Hale — initialise session and clear any stale Callum read block
+  if (charId === 'pemberton-hale') {
+    if (typeof window.initHaleSession === 'function') window.initHaleSession();
+    const stale = document.getElementById('hale-callum-read');
+    if (stale) stale.remove();
+    const staleFlash = document.getElementById('hale-pencil-flash');
+    if (staleFlash) staleFlash.remove();
+  }
   if (typeof window.applyPivotBonus === 'function') window.applyPivotBonus(charId);
   renderQuestions(charId);
   updateDeceptionButton();
@@ -1827,9 +1836,9 @@ function openConversation(charId) {
   if (!charData) return;
 
   // Compact characters skip technique selector — warmth rule, no composure decay.
-  // All Estate characters including the Uninvited get the selector.
+  // Hale skips it too — new line-of-questioning system handles technique selection inline.
   // Train characters are handled by train.js directly — never reach here.
-  const skipSelector = charData.is_compact === true;
+  const skipSelector = charData.is_compact === true || charId === 'pemberton-hale';
 
   if (!skipSelector && typeof window.openTechniqueSelector === 'function') {
     window.openTechniqueSelector(charId);
@@ -2107,9 +2116,18 @@ const HALE_TECH_META = {
 
 function _renderHaleQuestions(list) {
   const s = window.getHaleSession ? window.getHaleSession() : null;
-  if (!s) return;
+  if (!s) {
+    // Session not ready — show loading state
+    list.innerHTML = '<div style="padding:14px 20px;font-size:12px;color:var(--text-dim);font-style:italic;">Loading...</div>';
+    return;
+  }
   const char = window.CHARACTERS && window.CHARACTERS['pemberton-hale'];
-  if (!char) return;
+  if (!char || !char.opening) {
+    list.innerHTML = '<div style="padding:14px 20px;font-size:12px;color:var(--text-dim);font-style:italic;">Character data unavailable.</div>';
+    return;
+  }
+  // Ensure minimum height for 3 items on mobile
+  list.style.minHeight = '144px';
 
   // Step 0 — Opening question
   if (!s.openingAsked) {
