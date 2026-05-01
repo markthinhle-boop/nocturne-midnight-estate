@@ -396,7 +396,7 @@ const CHARACTERS = {
   "pemberton-hale": {
     display_name: "Viscount Pemberton-Hale",
     room: "antechamber",
-    intro: "The Antechamber is the kind of room that knows you have arrived before you have decided to enter it. The lamps are low. They have always been low in here — not for atmosphere, for something older than atmosphere. The furniture has not been moved in some time. The air has not been disturbed in some time. There is a portrait above the mantel of a man whose name you will not learn tonight, looking at a door that is not the one you came through.\n\nPemberton-Hale is at the window. Not looking out. The window is dark — there is nothing to see. He is using it as a surface to think against. He turns when you enter with the smooth practised rotation you have seen before. The posture is still worked on. The shoes are still worked on. Everything above the posture is very still.\n\nHe does not speak first.",
+    intro: "",
     composure: 100,
     composure_state: "normal",
     dialogue_limit: 12,
