@@ -675,25 +675,28 @@ window._getEscalation           = _getEscalation;
 const HALE_LINES = ['register', 'ashworth', 'others'];
 const HALE_TECHNIQUES_BASE = ['wait', 'account', 'approach', 'pressure'];
 
+let _haleSessionData = null;
+
 function initHaleSession() {
-  if (!window.gameState.haleSession) {
-    window.gameState.haleSession = {
-      openingAsked:      false,
-      lineSelected:      null,
-      techniqueSelected: null,
-      followupAsked:     null,  // id of followup asked (excludes partner)
-      gateState:         {},    // { gate1: 'cleared'|'diverted'|null }
-      diversionQueue:    [],    // remaining diversion question ids
-      flags:             {},    // hale_register_on_record, hale_ashworth_on_record etc
-      pencilFlashShown:  false,
-      pencilCaptured:    false,
-    };
-  }
-  return window.gameState.haleSession;
+  if (_haleSessionData) return _haleSessionData;
+  _haleSessionData = {
+    openingAsked:      false,
+    lineSelected:      null,
+    techniqueSelected: null,
+    followupAsked:     null,
+    gateState:         {},
+    diversionQueue:    [],
+    flags:             {},
+    pencilFlashShown:  false,
+    pencilCaptured:    false,
+  };
+  if (window.gameState) window.gameState.haleSession = _haleSessionData;
+  return _haleSessionData;
 }
 
 function getHaleSession() {
-  return window.gameState.haleSession || initHaleSession();
+  if (!_haleSessionData) return initHaleSession();
+  return _haleSessionData;
 }
 
 function haleOpeningAsked() {
@@ -805,6 +808,7 @@ function haleAvailableFollowups() {
 
 window.initHaleSession          = initHaleSession;
 window.getHaleSession           = getHaleSession;
+window.resetHaleSession         = function() { _haleSessionData = null; };
 window.haleOpeningAsked         = haleOpeningAsked;
 window.haleSelectLine           = haleSelectLine;
 window.haleSelectTechnique      = haleSelectTechnique;
@@ -4213,6 +4217,14 @@ function openTechniqueSelector(charId) {
   const data = INTERROGATION_DATA[charId];
   if (!data || (data && data.engine === 'rowe')) {
     // Character not in interrogation system, or Alistair Rowe (own engine) — open normally
+    if (typeof window._openConversationDirect === 'function') {
+      window._openConversationDirect(charId);
+    }
+    return;
+  }
+
+  // Hale uses new line-of-questioning engine — skip technique selector entirely
+  if (charId === 'pemberton-hale') {
     if (typeof window._openConversationDirect === 'function') {
       window._openConversationDirect(charId);
     }

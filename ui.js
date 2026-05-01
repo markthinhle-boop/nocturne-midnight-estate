@@ -2229,16 +2229,15 @@ function _renderHaleQuestions(list) {
 
 function _haleFireOpening() {
   const char = window.CHARACTERS && window.CHARACTERS['pemberton-hale'];
-  if (!char) return;
+  if (!char || !char.opening) return;
   const resp = document.getElementById('char-response');
   if (resp) {
+    resp.innerHTML = '';
     resp.textContent = char.opening.response;
-    // Callum read — three paragraphs
     _showHaleCallumRead(char.opening.callum);
   }
   window.haleOpeningAsked();
   renderQuestions('pemberton-hale');
-  if (typeof window.injectPencilIcon === 'function') window.injectPencilIcon();
 }
 
 function _haleFireLineTechnique(lineId, techId) {
@@ -2247,20 +2246,24 @@ function _haleFireLineTechnique(lineId, techId) {
   const tech = (char.line_techniques[lineId] || {})[techId];
   if (!tech) return;
   const resp = document.getElementById('char-response');
-  if (resp) resp.textContent = tech.response;
+  if (resp) {
+    resp.innerHTML = '';
+    resp.textContent = tech.response;
+  }
   window.haleSelectTechnique(techId);
   if (tech.callum) _showHaleCallumRead(tech.callum);
   renderQuestions('pemberton-hale');
-  if (typeof window.injectPencilIcon === 'function') window.injectPencilIcon();
 }
 
 function _haleFireFollowup(followupId) {
   const fq = window.haleAskFollowup(followupId);
   if (!fq) return;
   const resp = document.getElementById('char-response');
-  if (resp) resp.textContent = fq.response;
+  if (resp) {
+    resp.innerHTML = '';
+    resp.textContent = fq.response;
+  }
   if (fq.callum) _showHaleCallumRead(fq.callum);
-  // Pencil flash — only fires once, only on RW2
   if (fq.pencil_flash && window.gameState && window.gameState.halePencilFlashPending) {
     _injectHalePencilFlash();
   }
@@ -2292,7 +2295,6 @@ function _haleOpenGate(gateId) {
 }
 
 function _showHaleCallumRead(text) {
-  // Renders Callum's read as a separate styled block beneath the response
   const existing = document.getElementById('hale-callum-read');
   if (existing) existing.remove();
   if (!text) return;
@@ -2300,10 +2302,11 @@ function _showHaleCallumRead(text) {
   if (!resp) return;
   const el = document.createElement('div');
   el.id = 'hale-callum-read';
-  el.style.cssText = 'margin-top:16px;padding:12px 16px;background:rgba(20,16,10,0.6);border-left:2px solid rgba(180,155,90,0.3);font-size:13px;color:var(--text-dim);font-style:italic;line-height:1.6;';
+  el.style.cssText = 'margin-top:10px;padding:8px 12px;background:rgba(20,16,10,0.6);border-left:2px solid rgba(180,155,90,0.3);font-size:11px;color:var(--text-dim);font-style:italic;line-height:1.5;overflow-y:auto;max-height:30vh;';
+  // Use only the first paragraph on mobile to keep it tight
   const paragraphs = text.split('\n\n').filter(Boolean);
-  el.innerHTML = paragraphs.map(p => `<p style="margin:0 0 8px">${p}</p>`).join('');
-  resp.parentNode.insertBefore(el, resp.nextSibling);
+  el.innerHTML = paragraphs.map(p => `<p style="margin:0 0 6px">${p}</p>`).join('');
+  resp.appendChild(el);
 }
 
 function _injectHalePencilFlash() {
