@@ -741,7 +741,7 @@ const CHARACTERS = {
       "Q5": {
         question: "You walked the balcony level when you arrived.",
         type: "focused_follow_up",
-        response: "\"I walked the full building before the assembly.\" A pause. \"The balcony level, yes. The service stairs. The sightlines.\" He says sightlines with the particular attention of someone who needed to know them. \"Lord Ashworth's position during the opening is well documented — the railing, forty years, every Rite.\" Another pause. \"I read the Estate's ceremonial record when I joined the Compact four years ago. I like to understand the spaces I work in.\" He looks at you. \"Is there something specific about the balcony?\""
+        response: "\"I walked the full building before the assembly.\" A pause. \"The balcony level, yes. The service stairs.\" He looks at you. \"Is there something specific about the balcony?\""
       },
       "Q6": {
         question: "What do you think happened tonight.",
