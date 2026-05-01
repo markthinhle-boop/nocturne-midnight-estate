@@ -2097,6 +2097,24 @@ function _showSuspectDebriefOverlay(charId, debrief, meta, techUsed) {
   requestAnimationFrame(() => { overlay.style.opacity = '1'; });
 }
 
+
+// ── AUTO-SCROLL CHAR-RESPONSE TO TOP ON EVERY RESPONSE ──────────
+// One observer catches all response updates globally — Hale, all other
+// characters, deceptions, snaps, gate responses, branch responses.
+(function _initResponseScrollObserver() {
+  const _observe = () => {
+    const el = document.getElementById('char-response');
+    if (!el) { setTimeout(_observe, 500); return; }
+    new MutationObserver(() => { el.scrollTop = 0; })
+      .observe(el, { childList: true, subtree: true, characterData: true });
+  };
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', _observe);
+  } else {
+    _observe();
+  }
+})();
+
 // ═══════════════════════════════════════════════════════════
 // HALE LINE-OF-QUESTIONING UI
 // ═══════════════════════════════════════════════════════════
