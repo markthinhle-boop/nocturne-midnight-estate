@@ -2170,33 +2170,48 @@ function _renderHaleQuestions(list) {
     return;
   }
 
-  // Step 1 — Line of questioning
-  if (!s.lineSelected) {
-    const note = document.createElement('div');
-    note.style.cssText = 'padding:10px 16px;font-size:12px;color:var(--text-dim);font-style:italic;';
-    note.textContent = 'Choose your line of questioning.';
-    list.appendChild(note);
-    Object.entries(HALE_LINE_LABELS).forEach(([lineId, text]) => {
-      const s = window.getHaleSession ? window.getHaleSession() : null;
-      const alreadyUsed = s && s.completedLines && s.completedLines.includes(lineId);
-      const btn = document.createElement('div');
-      btn.className = 'question-item' + (alreadyUsed ? ' question-asked' : '');
-      btn.style.opacity = alreadyUsed ? '0.4' : '1';
-      btn.style.cursor = alreadyUsed ? 'default' : 'pointer';
-      btn.textContent = text;
-      if (!alreadyUsed) {
-        btn.onclick = () => {
-          if (typeof NocturneSound !== 'undefined') NocturneSound.playUIClick();
-          window.haleSelectLine(lineId);
-          renderQuestions('pemberton-hale');
-        };
-      }
-      list.appendChild(btn);
-    });
+  // ── SEQUENTIAL BRANCH LOGIC ───────────────────────────────────
+  // Register → Ashworth → Others. Each branch must be exhausted before next opens.
+  // Mini arrow: cycles remaining techniques within current branch.
+  // Big arrow: appears when branch exhausted, advances to next branch.
+
+  const BRANCH_ORDER = ['register', 'ashworth', 'others'];
+  const completed = s.completedLines || [];
+
+  // Determine active branch
+  let activeBranch = null;
+  for (const branch of BRANCH_ORDER) {
+    if (!completed.includes(branch)) { activeBranch = branch; break; }
+  }
+
+  // All branches done
+  if (!activeBranch) {
+    list.innerHTML = '<div style="padding:14px 20px;font-size:12px;color:var(--text-dim);font-style:italic;">The conversation has been exhausted.</div>';
     return;
   }
 
-  // Step 2 — Technique selection
+  // Set active line if not already set
+  if (!s.lineSelected || s.lineSelected !== activeBranch) {
+    window.haleSelectLine(activeBranch);
+    s.lineSelected = activeBranch;
+  }
+
+  // Others branch — fires immediately, no technique
+  if (activeBranch === 'others') {
+    const btn = document.createElement('div');
+    btn.className = 'question-item';
+    btn.textContent = HALE_LINE_LABELS['others'];
+    btn.onclick = () => {
+      if (typeof NocturneSound !== 'undefined') NocturneSound.playUIClick();
+      if (!s.completedLines) s.completedLines = [];
+      if (!s.completedLines.includes('others')) s.completedLines.push('others');
+      _haleFireOthers();
+    };
+    list.appendChild(btn);
+    return;
+  }
+
+  // Step 1 — Technique selection (Register or Ashworth)
   if (!s.techniqueSelected) {
     const techniques = char.line_techniques[s.lineSelected] || {};
     const used = (s.usedTechniques && s.usedTechniques[s.lineSelected]) || [];
@@ -2283,6 +2298,89 @@ function _injectHaleForwardArrow() {
   resp.appendChild(btn);
 }
 
+function _haleFireOthers() {
+  const char = window.CHARACTERS && window.CHARACTERS['pemberton-hale'];
+  if (!char || !char.others_techniques) return;
+  const tech = char.others_techniques['wait'];
+  if (!tech) return;
+  const resp = document.getElementById('char-response');
+  if (resp) {
+    resp.innerHTML = '';
+    resp.textContent = tech.response;
+    if (tech.callum) _showHaleCallumRead(tech.callum);
+  }
+  renderQuestions('pemberton-hale');
+}
+
+function _injectHaleMiniArrow() {
+  // Mini arrow — cycles to remaining techniques in current branch
+  const existing = document.getElementById('hale-mini-arrow');
+  if (existing) existing.remove();
+  const s = window.getHaleSession ? window.getHaleSession() : null;
+  if (!s) return;
+  const allTechs = ['wait','account','approach','pressure'];
+  const used = (s.usedTechniques && s.usedTechniques[s.lineSelected]) || [];
+  const remaining = allTechs.filter(t => !used.includes(t));
+  if (remaining.length === 0) {
+    _injectHaleBigArrow();
+    return;
+  }
+  const resp = document.getElementById('char-response');
+  if (!resp) return;
+  const btn = document.createElement('button');
+  btn.id = 'hale-mini-arrow';
+  btn.style.cssText = 'display:flex;align-items:center;justify-content:center;margin:12px auto 0;background:rgba(20,16,10,0.75);border:1px solid rgba(180,155,90,0.35);border-radius:50%;width:32px;height:32px;cursor:pointer;color:#c9a84c;font-size:16px;';
+  btn.innerHTML = '›';
+  btn.title = `${remaining.length} approach${remaining.length !== 1 ? 'es' : ''} remaining`;
+  btn.onclick = () => {
+    btn.remove();
+    const s2 = window.getHaleSession ? window.getHaleSession() : null;
+    if (s2) s2.techniqueSelected = null;
+    renderQuestions('pemberton-hale');
+    const list = document.getElementById('questions-list');
+    if (list) list.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  };
+  resp.appendChild(btn);
+}
+
+function _injectHaleBigArrow() {
+  // Big arrow — advances to next branch
+  const existing = document.getElementById('hale-big-arrow');
+  if (existing) existing.remove();
+  const s = window.getHaleSession ? window.getHaleSession() : null;
+  if (!s) return;
+  const BRANCH_ORDER = ['register', 'ashworth', 'others'];
+  const completed = s.completedLines || [];
+  const nextBranch = BRANCH_ORDER.find(b => !completed.includes(b) && b !== s.lineSelected);
+  if (!nextBranch) return;
+  const resp = document.getElementById('char-response');
+  if (!resp) return;
+  const btn = document.createElement('button');
+  btn.id = 'hale-big-arrow';
+  btn.style.cssText = 'display:flex;align-items:center;justify-content:center;margin:14px auto 0;background:rgba(180,155,90,0.15);border:1px solid rgba(180,155,90,0.6);border-radius:50%;width:42px;height:42px;cursor:pointer;color:#c9a84c;font-size:22px;';
+  btn.innerHTML = '›';
+  btn.title = 'Continue investigation';
+  btn.onclick = () => {
+    btn.remove();
+    // Mark current branch complete
+    if (!s.completedLines) s.completedLines = [];
+    if (!s.completedLines.includes(s.lineSelected)) s.completedLines.push(s.lineSelected);
+    s.lineSelected = null;
+    s.techniqueSelected = null;
+    s.followupAsked = null;
+    s.lastTechnique = null;
+    // Check paywall — fires after Register branch on first advance to Ashworth
+    if (nextBranch === 'ashworth' && typeof window.openPaywall === 'function' && !window.gameState?.paidTier) {
+      window.openPaywall();
+      return;
+    }
+    renderQuestions('pemberton-hale');
+    const list = document.getElementById('questions-list');
+    if (list) list.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  };
+  resp.appendChild(btn);
+}
+
 function _haleFireOpening() {
   const char = window.CHARACTERS && window.CHARACTERS['pemberton-hale'];
   if (!char || !char.opening) return;
@@ -2308,9 +2406,10 @@ function _haleFireLineTechnique(lineId, techId) {
     if (tech.callum) _showHaleCallumRead(tech.callum);
   }
   window.haleSelectTechnique(techId);
-  // Reset techniqueSelected to null so technique panel re-renders with remaining options
   const s = window.getHaleSession ? window.getHaleSession() : null;
   if (s) s.techniqueSelected = null;
+  // Inject mini or big arrow depending on remaining techniques
+  _injectHaleMiniArrow();
   renderQuestions('pemberton-hale');
 }
 
@@ -2323,13 +2422,14 @@ function _haleFireFollowup(followupId) {
     resp.textContent = fq.response;
     if (fq.callum) _showHaleCallumRead(fq.callum);
   }
-  renderQuestions('pemberton-hale');
-  // Flash existing pencil for timeline node capture
+  // Flash pencil for timeline node
   if (fq.pencil_flash && window.gameState && window.gameState.halePencilFlashPending) {
     if (typeof window.flashPencilForTimeline === 'function') {
       window.flashPencilForTimeline(fq.pencil_node || window.gameState.halePencilNode);
     }
   }
+  _injectHaleMiniArrow();
+  renderQuestions('pemberton-hale');
 }
 
 function _haleOpenGate(gateId) {
