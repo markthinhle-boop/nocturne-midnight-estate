@@ -677,6 +677,64 @@ const HALE_TECHNIQUES_BASE = ['wait', 'account', 'approach', 'pressure'];
 
 let _haleSessionData = null;
 
+// ── HALE SNAPBACK ─────────────────────────────────────────────────
+const HALE_SNAPBACK = {
+  ashworth: {
+    question: '"You\'ve asked me about Lord Ashworth twice now in different ways. Let me ask you something." A pause. "In your assessment — what was I afraid of?"',
+    options: [
+      { id: 'A', text: 'That he would use the clause against you.' },
+      { id: 'B', text: 'That he already knew everything and was deciding when to act.' },
+      { id: 'C', text: 'That tonight was going to be the night.' },
+    ],
+    responses: {
+      A: {
+        kind: 'wrong',
+        text: '"You haven\'t been listening." A pause. He almost smiles. "That is a common problem in your profession. People ask questions and hear the answers they expected rather than the ones they received." He straightens his cuff. Once. "Come back when you\'ve decided to pay attention." He turns to the window.',
+        consequence: 'ashworth_branch_locked',
+      },
+      B: {
+        kind: 'correct',
+        text: '"Yes." One word. A pause longer than any previous. "He reviewed my membership when I joined. He asked one question that was not standard. I answered it. He wrote something down." He looks at the writing case. "In thirty years I never found out what he wrote. That is what I was afraid of. Not the clause. The note."',
+        grants: 'hale_ashworth_deep',
+      },
+      C: {
+        kind: 'partial',
+        text: 'He nods once. Slowly. "That is part of it." He looks at the window. Nothing more.',
+      },
+    },
+  },
+};
+
+function haleSnapbackAnswer(branch, optionId) {
+  const s = getHaleSession();
+  const snap = HALE_SNAPBACK[branch];
+  if (!snap) return null;
+  s.snapbackFired = true;
+  s.snapbackPending = false;
+  const result = snap.responses[optionId];
+  if (!result) return null;
+  if (result.kind === 'wrong') {
+    // Lock branch — composure floor rises on return
+    s.ashworthBranchLocked = true;
+    if (!s.completedLines) s.completedLines = [];
+    if (!s.completedLines.includes('ashworth')) s.completedLines.push('ashworth');
+    // Raise composure floor for next visit
+    if (window.gameState) window.gameState.haleComposureFloorBonus = 15;
+  }
+  if (result.grants) {
+    if (!s.flags) s.flags = {};
+    s.flags[result.grants] = true;
+    if (window.gameState) {
+      if (!window.gameState.node_inventory) window.gameState.node_inventory = {};
+      window.gameState.node_inventory[result.grants] = true;
+    }
+  }
+  return result;
+}
+
+window.HALE_SNAPBACK           = HALE_SNAPBACK;
+window.haleSnapbackAnswer      = haleSnapbackAnswer;
+
 function initHaleSession() {
   if (_haleSessionData) return _haleSessionData;
   _haleSessionData = {
@@ -733,6 +791,12 @@ function haleSelectTechnique(techId) {
     if (!s.usedTechniques[s.lineSelected].includes(techId)) {
       s.usedTechniques[s.lineSelected].push(techId);
     }
+  }
+  // Check snapback trigger — fires on Ashworth branch after 2nd technique
+  if (s.lineSelected === 'ashworth'
+      && !s.snapbackFired
+      && (s.usedTechniques['ashworth'] || []).length === 2) {
+    s.snapbackPending = true;
   }
   // Apply composure cost from line technique
   const char = (window.CHARACTERS || {})['pemberton-hale'];
