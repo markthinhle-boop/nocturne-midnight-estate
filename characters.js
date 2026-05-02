@@ -534,24 +534,21 @@ const CHARACTERS = {
   "greaves": {
     display_name: "Sir Aldous Greaves",
     room: "library",
-    intro: "He received a warning note from Ashworth himself.",
+    intro: "",
     composure: 100,
     composure_state: "normal",
     dialogue_limit: 7,
     snap_limit: 3,
     snap_count: 0,
     dialogue: {
-      "Q1": { question: "Where were you at 8:01?", response: "\"In the Library. I've been here since seven.\" He says it the way you'd state the weather. \"I find the Rite better in retrospect.\"" },
-      "Q2": { question: "Did you know Lord Ashworth well?", response: "\"Long enough to understand his methods. Short enough to maintain perspective.\" He doesn't look up from the book he's not reading. \"The Compact's physician was in the Library at seven-twenty.\" He closes the book. \"Used the private reading room. Didn't take anything out. Sat. Sixteen minutes.\" Another pause. \"I note arrivals and departures. The Steward isn't the only one.\"" },
-      "Q3": { question: "What was your debt to him?", requires_item: "debt-record", response: "A pause. \"The Estate creates obligations. I've honoured mine.\" The book closes." },
-      "Q4": { question: "Were you warned the Register would be opened?", requires_q: "Q3", response: "\"The Rite always opens the Register. That's its purpose.\"" },
-      "Q5": { question: "You received this specifically.", requires_item: "warning-note", response: "\"Where did you —\" A pause. \"I received a note, yes. I assumed it was routine notification.\" He assumed it was routine and kept it in his breast pocket." },
-      "Q6": { question: "Who sent the note?", requires_q: "Q5", response: "\"I don't know. I assumed the Curator.\" He said assumed twice. He did not ask the Curator." },
-      "Q7": { question: "Did you see anyone come through the hedge gap tonight?", requires_item: "terrace-garden-map", response: "A pause long enough to be its own answer. \"I saw many things from the library window.\" He looks at the door. \"The garden is dark at this hour.\"" },
-      "SNAP1": { snap: true, response: "\"I've told you the Estate creates obligations. That is a complete answer.\" He picks up the book again." },
-      "SNAP2": { snap: true, response: "\"I'm not in the habit of warning people about things I don't have information on.\" A pause. \"That would be irresponsible.\"" },
-      "SNAP3": { snap: true, response: "\"I saw what I saw. What I saw is for the Estate to establish through proper process.\" He looks at the door. \"I've been cooperative. I'd prefer to leave it there.\"" },
-      "FINAL": { final: true, response: "\"The Library was locked from seven until the Gavel.\" A long pause. \"From the inside.\"" },
+      // Branch A — GA1 → GA2 → GA3
+      // Branch B — GB1 → GB2 → GB3 (cross-character gated)
+      // GB3 = greaves_maskless_witness
+      // Content to be built as investigation progresses
+      "SNAP1": { snap: true, response: "[ Greaves snap 1 — pending ]" },
+      "SNAP2": { snap: true, response: "[ Greaves snap 2 — pending ]" },
+      "SNAP3": { snap: true, response: "[ Greaves snap 3 — pending ]" },
+      "FINAL": { final: true, response: "[ Greaves final — pending ]" },
     },
     deceptions: {},
   },
