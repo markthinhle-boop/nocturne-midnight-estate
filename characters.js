@@ -105,8 +105,29 @@ const CHARACTERS = {
     dialogue_limit: 8,
     snap_limit: 3,
     snap_count: 0,
+
+    opening: {
+      question: "Tell me who you are and what you're doing here tonight.",
+      response: "He is standing. He was standing before you arrived. The notebook is in his hand — not open, not put away. Held.\n\n\"Northcott.\" A pause. \"Six weeks a member. Lord Ashworth invited me personally.\" He looks at the notebook. \"I keep the arrival record. That is what I do here. I log who comes in, what time, which entrance.\" Another pause — shorter. \"Lord Ashworth told me the record mattered more than the person keeping it.\" He looks at you. \"I have been thinking about that since eight-oh-one.\"",
+      callum: "He quoted Lord Ashworth. Precisely and without being asked. A man who has been standing in this foyer for an hour with a dead man's words in his head has been deciding whether to say them out loud. He just did. Whatever is in that notebook he wants someone to read it correctly.",
+    },
+
+    warmup: {
+      question: "Do you enjoy being a member?",
+      response: "A pause. Something shifts — not relief exactly, but the first unguarded moment.\n\n\"Yes.\" He says it simply. \"It is — not something you ask for. You don't apply. You don't lobby for it.\" He looks at the notebook briefly. \"Lord Ashworth saw something and made a decision. Six weeks ago I received a letter and my life changed considerably.\" A small pause. \"There is nothing else like it. The people in this building tonight — the history of what this place is —\" He stops himself. \"Yes. I enjoy it very much.\"",
+      callum: "He stopped himself mid-sentence. Something about the people in this building tonight — he started it and pulled back. Whatever he saw this evening is sitting right behind that unfinished sentence.",
+    },
+
+    line_techniques: {
+      Q1: {
+        text: "Walk me through your evening. From seven o'clock.",
+        wait:     { callum_question: "Say nothing.", response: "He looks at the notebook. Not opening it — he knows what's in it.\n\n\"Seven o'clock. I was at my post.\" A pause. \"Members began arriving at seven-twelve. I logged each one. Name, time, entrance.\" He looks at the corridor. \"I kept the record all evening. That is what I do here.\" Another pause. \"Lord Ashworth told me the record mattered more than the person keeping it.\" He looks at you. \"Tonight I understand what he meant.\"", callum: "He quoted Ashworth again. Second time in two questions. Whatever Ashworth told him is still running in his head. The record is the safe part of this conversation. He is staying inside it for now.", composure: 0 },
+        account:  { callum_question: "\"Take me through the log. Start at seven.\"", response: "He opens the notebook.\n\n\"Seven o'clock, post established. Seven-twelve, first member arrival.\" He reads it precisely. \"I logged arrivals continuously until eight-oh-one.\" A pause. \"There is one gap. Seven-fifteen to seven-twenty-three. Eight minutes.\" He does not look up from the notebook. \"I left my post. I marked the gap. The entries around it are accurate.\"", callum: "He found the gap before I did and handed it to me. Eight minutes he left his post and he volunteered it immediately. Either he wants me to find out what he did in those eight minutes or he's decided telling me first is safer than me finding it another way.", composure: 0 },
+        approach: { callum_question: "\"You've been at this post all evening.\"", response: "He looks at you steadily. \"Yes.\" A pause. \"With one gap.\" He opens the notebook to the page. \"Seven-fifteen to seven-twenty-three. I left my post.\" Another pause. \"Lord Ashworth had spoken to me before the Rite. In the east corridor.\" He looks at the notebook. \"He told me something that required me to find someone. I found her. I came back at seven-twenty-three.\" He closes the notebook. \"The record is accurate from that point.\"", callum: "He said he needed to find someone. He said her. He didn't say the name. The gap is eight minutes and at the end of it he came back to his post and kept the record for the rest of the evening as if the eight minutes hadn't happened.", composure: 0 },
+      },
+    },
+
     dialogue: {
-      // Content to be built fresh
       "SNAP1": { snap: true, response: "[ Northcott snap 1 — pending ]" },
       "SNAP2": { snap: true, response: "[ Northcott snap 2 — pending ]" },
       "SNAP3": { snap: true, response: "[ Northcott snap 3 — pending ]" },

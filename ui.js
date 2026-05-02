@@ -1755,6 +1755,16 @@ function _openConversationDirect(charId) {
   document.getElementById('char-response').textContent = introText;
   const _introEl = document.getElementById('char-response'); if (_introEl) _introEl.scrollTop = 0;
 
+  // Northcott — reset active question on re-entry, preserve progress
+  if (charId === 'northcott') {
+    if (typeof _getNorthcottSession === 'function') {
+      const ns = _getNorthcottSession();
+      ns.activeQ = null;
+    }
+    const stale = document.getElementById('hale-callum-read');
+    if (stale) stale.remove();
+  }
+
   // Hale — initialise session and clear any stale Callum read block
   if (charId === 'pemberton-hale') {
     if (typeof window.initHaleSession === 'function') window.initHaleSession();
@@ -1848,7 +1858,7 @@ function openConversation(charId) {
   // Compact characters skip technique selector — warmth rule, no composure decay.
   // Hale skips it too — new line-of-questioning system handles technique selection inline.
   // Train characters are handled by train.js directly — never reach here.
-  const skipSelector = charData.is_compact === true || charId === 'pemberton-hale';
+  const skipSelector = charData.is_compact === true || charId === 'pemberton-hale' || charId === 'northcott';
 
   if (!skipSelector && typeof window.openTechniqueSelector === 'function') {
     window.openTechniqueSelector(charId);
@@ -2126,8 +2136,118 @@ function _showSuspectDebriefOverlay(charId, debrief, meta, techUsed) {
 })();
 
 // ═══════════════════════════════════════════════════════════
-// HALE LINE-OF-QUESTIONING UI
+// NORTHCOTT LINE-OF-QUESTIONING UI
 // ═══════════════════════════════════════════════════════════
+
+let _northcottSession = null;
+
+function _getNorthcottSession() {
+  if (!_northcottSession) {
+    _northcottSession = {
+      openingAsked: false,
+      warmupAsked:  false,
+      activeQ:      null,
+      usedQs:       [],
+    };
+  }
+  return _northcottSession;
+}
+
+function _renderNorthcottQuestions(list) {
+  const s = _getNorthcottSession();
+  const char = window.CHARACTERS && window.CHARACTERS['northcott'];
+  if (!char) { list.innerHTML = '<div style="padding:14px;font-size:12px;color:var(--text-dim)">Loading...</div>'; return; }
+
+  // Step 0 — Opening
+  if (!s.openingAsked) {
+    const btn = document.createElement('div');
+    btn.className = 'question-item';
+    btn.textContent = char.opening.question;
+    btn.onclick = () => {
+      if (typeof NocturneSound !== 'undefined') NocturneSound.playUIClick();
+      const resp = document.getElementById('char-response');
+      if (resp) { resp.innerHTML = ''; resp.textContent = char.opening.response; _showHaleCallumRead(char.opening.callum); }
+      s.openingAsked = true;
+      renderQuestions('northcott');
+    };
+    list.appendChild(btn);
+    return;
+  }
+
+  // Step 1 — Warmup
+  if (!s.warmupAsked) {
+    const btn = document.createElement('div');
+    btn.className = 'question-item';
+    btn.textContent = char.warmup.question;
+    btn.onclick = () => {
+      if (typeof NocturneSound !== 'undefined') NocturneSound.playUIClick();
+      const resp = document.getElementById('char-response');
+      if (resp) { resp.innerHTML = ''; resp.textContent = char.warmup.response; _showHaleCallumRead(char.warmup.callum); }
+      s.warmupAsked = true;
+      renderQuestions('northcott');
+    };
+    list.appendChild(btn);
+    return;
+  }
+
+  // Step 2 — Branch questions (technique selection active)
+  if (s.activeQ) {
+    const qt = char.line_techniques[s.activeQ];
+    if (!qt) { s.activeQ = null; renderQuestions('northcott'); return; }
+    const note = document.createElement('div');
+    note.style.cssText = 'padding:10px 16px;font-size:12px;color:var(--text-dim);font-style:italic;';
+    note.textContent = 'Choose how you ask.';
+    list.appendChild(note);
+    ['wait','account','approach'].forEach(techId => {
+      const t = qt[techId];
+      if (!t) return;
+      const btn = document.createElement('div');
+      btn.className = 'question-item hale-technique-btn';
+      btn.innerHTML = `<span class="hale-tech-name">${HALE_TECH_META[techId].name}</span>
+        <span class="hale-tech-desc">${HALE_TECH_META[techId].desc}</span>
+        <span class="hale-callum-q">${t.callum_question}</span>`;
+      btn.onclick = () => {
+        if (typeof NocturneSound !== 'undefined') NocturneSound.playUIClick();
+        const resp = document.getElementById('char-response');
+        if (resp) { resp.innerHTML = ''; resp.textContent = t.response; _showHaleCallumRead(t.callum); }
+        if (!s.usedQs.includes(s.activeQ)) s.usedQs.push(s.activeQ);
+        s.activeQ = null;
+        _injectHaleMiniArrow();
+        list.innerHTML = '';
+      };
+      list.appendChild(btn);
+    });
+    return;
+  }
+
+  // Step 3 — Available branch questions
+  const allQs = Object.keys(char.line_techniques || {});
+  const available = allQs.filter(q => !s.usedQs.includes(q));
+  if (available.length === 0) {
+    list.innerHTML = '<div style="padding:14px 20px;font-size:12px;color:var(--text-dim);font-style:italic;">The conversation has been exhausted.</div>';
+    return;
+  }
+  allQs.forEach(qid => {
+    const qt = char.line_techniques[qid];
+    const used = s.usedQs.includes(qid);
+    const btn = document.createElement('div');
+    btn.className = 'question-item' + (used ? ' question-asked' : '');
+    btn.style.opacity = used ? '0.35' : '1';
+    btn.style.cursor = used ? 'default' : 'pointer';
+    btn.textContent = qt.text;
+    if (!used) {
+      btn.onclick = () => {
+        if (typeof NocturneSound !== 'undefined') NocturneSound.playUIClick();
+        s.activeQ = qid;
+        renderQuestions('northcott');
+      };
+    }
+    list.appendChild(btn);
+  });
+}
+
+// ── NORTHCOTT RE-ENTRY RESET ─────────────────────────────
+// Called from _openConversationDirect when Northcott is entered
 
 const HALE_LINE_LABELS = {
   register: "Walk me through your evening. From arrival to now.",
@@ -2576,6 +2696,12 @@ function renderQuestions(charId) {
   // ── HALE LINE-OF-QUESTIONING SYSTEM ──────────────────────────
   if (charId === 'pemberton-hale') {
     _renderHaleQuestions(list);
+    return;
+  }
+
+  // ── NORTHCOTT LINE-OF-QUESTIONING SYSTEM ─────────────────────
+  if (charId === 'northcott') {
+    _renderNorthcottQuestions(list);
     return;
   }
 

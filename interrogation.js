@@ -4321,8 +4321,8 @@ function openTechniqueSelector(charId) {
     return;
   }
 
-  // Hale uses new line-of-questioning engine — skip technique selector entirely
-  if (charId === 'pemberton-hale') {
+  // Hale and Northcott use new line-of-questioning engine — skip technique selector
+  if (charId === 'pemberton-hale' || charId === 'northcott') {
     if (typeof window._openConversationDirect === 'function') {
       window._openConversationDirect(charId);
     }
