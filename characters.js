@@ -99,86 +99,25 @@ const CHARACTERS = {
   "northcott": {
     display_name: "Northcott",
     room: "foyer",
-    intro: "He is twenty-seven. He has been here since seven o'clock. He says it before you've asked anything.\n\n\"Lord Ashworth is dead. Eight-oh-one PM. The Rite was suspended. The body is in the Ballroom. Nobody has moved anything.\" A pause. \"I've been here since seven. I note arrivals. That's what I do here.\" Another pause. \"Nobody asked me to stay. I stayed.\"",
+    intro: "",
     composure: 100,
     composure_state: "normal",
     dialogue_limit: 8,
     snap_limit: 3,
     snap_count: 0,
     dialogue: {
-      "Q1": { question: "How long have you been a member?", type: "open_narrative", response: "\"Six weeks. Lord Ashworth invited me personally. He said I had the right temperament for the Estate.\" A pause. \"I'm still learning what that means.\" He holds the notebook. \"I keep a careful record. Lord Ashworth asked me to. He said the record was more important than whatever happened to the person keeping it.\" Another pause. \"I have been thinking about that sentence since eight-oh-one.\"" },
-      "Q2": { question: "Did Ashworth speak to you tonight.", type: "focused_follow_up", response: "\"Yes.\" He says it immediately. \"Before the Rite. In the east corridor. He took me aside.\" A pause. \"He said he knew about an arrangement I had entered into with a member of the household staff.\" He is very still. \"He said it violated Estate law. Not conduct expectations — Estate law. Formal. Binding.\" A longer pause. \"He said he was going to read it into the Register tonight. At the Rite. With all members present.\" He looks at the notebook. \"My name. The arrangement. The violation. Permanent record.\"" },
-      "Q2b": { question: "What did that mean for you.", type: "focused_follow_up", requires_q: "Q2", response: "\"He said it without anger. That was the part I couldn\'t stop thinking about. No anger. Just the statement and what it would mean.\" He looks at the notebook. \"My family placed me here. Everything I am in this building depends on that record remaining clean.\" A pause. \"I spent the time between that conversation and eight-oh-one deciding what I was going to do.\"" },
-      "Q3": { question: "What did you decide.", type: "focused_follow_up", requires_q: "Q2", response: "\"I decided —\" He stops. \"I was going to tell her. After the Rite. I was going to tell her what Lord Ashworth had said and let her decide.\" A pause. \"That is what I had decided by seven fifty-five when I found her.\" He looks at the notebook. \"And then the Steward came past and I stopped.\" Another pause. \"I don't know why I stopped. The Steward has that effect. He arrives and sentences don't get finished.\"" },
-      "Q4": { question: "You were distracted all evening.", type: "focused_follow_up", response: "\"Yes.\" He says it plainly. \"I was keeping the record and I was thinking about Lord Ashworth's conversation and I was watching for Vivienne and I was — not fully present.\" A pause. \"I notice everything when I am present. Tonight I was not fully present.\" He looks at the notebook. \"The record is still accurate. I made sure of that. But I was distracted behind it.\"" },
-      "Q5": { question: "Someone asked to see the notebook before I did.", type: "focused_follow_up", requires_q: "Q4", response: "\"Three people.\" He holds it up. \"The Steward at seven-fourteen. Pemberton-Hale at seven. The Curator at seven fifty.\" A pause. \"The Steward asked about arrivals. I told him what I had.\" He looks at the notebook. \"The Curator asked me to confirm one specific time. Seven fifty-eight. Not any arrival. Just seven fifty-eight.\" Another pause. \"None of them asked to change anything. They just wanted to know what I had.\"" },
-      "Q6": { question: "What happened between Lord Ashworth's conversation and eight-oh-one.", type: "focused_follow_up", requires_q: "Q2", response: "\"I kept the record.\" He says it. \"And I passed the ballroom twice on my rounds. The candelabra was intact both times. Seven-thirty and seven-forty.\" A pause. \"I noticed it because I notice things when I am trying not to think about something else.\" He looks at the notebook. \"At seven-forty the candelabra base was in its correct position. At eight-oh-two when the body was found I looked at the candelabra immediately. The base was gone.\" He looks at you. \"I do not know when it was taken. I was not looking at it at seven forty-five.\"" },
-      "Q7": { question: "Did Ashworth tell you what to do if something happened.", type: "focused_follow_up", requires_q: "Q2", response: "\"He said: keep the record, and if anything unusual happens, don't let anyone tell you your record is wrong.\" A pause. \"He was specific about that. Don't let anyone tell you your record is wrong.\" Another pause. \"At the time I thought he meant administrative pressure. I'm not sure anymore.\"" },
-      "Q8": { question: "What were you going to tell her.", type: "focused_follow_up", requires_q: "Q3", response: "\"That Lord Ashworth had spoken to me.\" He says it quietly. \"That the arrangement had to end.\" A pause. \"I was going to tell her it wasn't about her. That it was about what I was allowed to be here.\" He looks at the notebook. \"She deserved to know it was Lord Ashworth who made the decision, not me.\" Another pause. \"He died before I could end it the way he required. I don't know what that means for the membership.\" He looks at you. \"I don't know if it matters now.\"" },
-      // ── PIVOT — pair 2: Northcott + Steward → seal-match puzzle ─
-      // unsigned-letter (foyer) + burned-fragments (study)
-      "PQ1": {
-        question: "The Steward nodded when you told him about the seven-oh-three entry.",
-        requires_pivot: true,
-        requires_char_talked: "steward",
-        response: "\"He did.\" He says it with the precision of someone who has replayed it many times. \"Like he was acknowledging something he already knew.\" A pause. \"There is an unsigned letter on the invitation stand in the Foyer. I didn't put it there. Someone placed it before I arrived at seven.\" He looks at the notebook. \"Whoever left that letter and whoever came through the garden at seven-oh-three — I think that's the same person. The burned fragments in the study would tell you if I'm right.\"",
-      },
-      "NQ_PH": {
-        question: "Did you see Pemberton-Hale near the lectern tonight.",
-        type: "focused_follow_up",
-        timeline_critical: true,
-        response: "\"Seven forty.\" He says it immediately. \"The Viscount was at the lectern at seven forty. I noted it because it was before the assembly had entered. A member at the lectern before the assembly is an anomaly.\" He looks at the notebook. \"He was handling something on the surface. I logged the time. I did not log what he was handling.\" A pause. \"I wish I had.\""
-      },
-      "NQ_BARON": {
-        question: "Did you note the Baron's movements tonight.",
-        type: "focused_follow_up",
-        timeline_critical: true,
-        response: "\"He passed the foyer at seven thirty-eight.\" He says it. \"Moving toward the ballroom. Then back toward the smoking room at seven forty-two.\" A pause. \"He stopped at the ballroom entrance at seven forty-two and looked inside for approximately ten seconds. Then continued to the smoking room.\" He looks at the notebook. \"A man who stops at a ballroom entrance and looks inside and then leaves is checking something. I noted it. I did not know what to make of it at the time.\""
-      },
-      "NQ_STEWARD": {
-        question: "When did you last see the Steward before eight o'clock.",
-        type: "focused_follow_up",
-        timeline_critical: true,
-        response: "\"Seven fifty-eight.\" He says it without hesitation. \"South corridor. He was moving quickly. Not running — the Steward never runs — but quickly for the Steward.\" A pause. \"I noted it because seven fifty-eight is very close to the time of death. And the south corridor connects the east service gate to the ballroom approach.\" He looks at the notebook. \"I have been looking at that entry since eight-oh-one.\""
-      },
-      "NQ_CR1": {
-        question: "Did you log Dr. Crane's movements tonight.",
-        type: "focused_follow_up",
-        timeline_critical: true,
-        response: "\"Dr. Crane arrived at seven-oh-one.\" He says it immediately. He holds the notebook. \"Garden entrance. Seven-oh-one.\" A pause. \"She arrived before the main assembly. Before most members. She was carrying her medical case.\" He opens the notebook to the entry. \"I logged her arrival. Garden entrance. Seven-oh-one PM."
-      },
-      "NQ_CR1b": { question: "What about her movements after that.", type: "focused_follow_up", requires_q: "NQ_CR1", response: "\"I did not log a second upstairs visit before the assembly. My log shows her arrival at seven-oh-one and her position in the main assembly from approximately seven-fifty-eight.\" He looks at you. \"Whatever happened between seven-oh-one and seven-fifty-eight — I can only account for her arrival and her assembly position. The interval is not in the log.\"",
-        grants_node: "crane_false_one_visit_only"
-      },
-      "NQ_BA1": {
-        question: "Did your log show any visitor to the smoking room at seven-fifteen.",
-        type: "focused_follow_up",
-        timeline_critical: true,
-        response: "\"Seven-fifteen.\" He opens the notebook. He reads the entry. \"No visitor logged to the smoking room at seven-fifteen.\" A pause. \"I log corridor movements when I observe them. The east corridor connects the main entrance area to the smoking room approach. I was at my post from seven until seven fifty-eight."
-      },
-      "NQ_BA1b": { question: "But you can't see all approaches.", type: "focused_follow_up", requires_q: "NQ_BA1", response: "\"No movement logged in the smoking room direction at seven-fifteen.\" Another pause. \"That does not mean no movement occurred. The south corridor also approaches the smoking room. I cannot observe both corridors from my position.\" He looks at you. \"What I logged is what I observed. The east corridor at seven-fifteen showed no movement toward the smoking room.\"",
-        grants_node: "baron_false_crane_brief"
-      },
-      "NQ_PH1": {
-        question: "What was Pemberton-Hale doing at the Register at seven forty.",
-        type: "focused_follow_up",
-        timeline_critical: true,
-        response: "\"Seven forty.\" He opens the notebook. \"I logged the Viscount at the Register at seven forty. Examining it.\" A pause. \"I noted the observation specifically because my position at seven forty gives me a sightline to the lectern. The Viscount was at the Register. He was not reading the programme — he was reading the Register itself."
-      },
-      "NQ_PH1b": { question: "Examining — not writing.", type: "focused_follow_up", requires_q: "NQ_PH1", response: "\"I logged: Viscount. Lectern. Register. Seven forty. Not writing. Examining.\" A pause. \"Examining is a specific notation. Writing means I observed physical contact with the document. Examining means close reading. He was examining.\" He closes the notebook. \"I did not know what significance that had at seven forty. I know what significance it has now.\"",
-        grants_node: "ph_false_register_untouched"
-      },
-
-      "SNAP1": { snap: true, response: "\"Is there something specific you're looking for? Because if there is, I'd rather you ask directly than keep circling.\"" },
-      "SNAP2": { snap: true, response: "\"I registered an arrival. I note arrivals. That's what I do here.\" He straightens. \"I don't know whose it was.\"" },
-      "FINAL": { final: true, response: "\"I hope you find what you're looking for.\" He means it." },
+      // Content to be built fresh
+      "SNAP1": { snap: true, response: "[ Northcott snap 1 — pending ]" },
+      "SNAP2": { snap: true, response: "[ Northcott snap 2 — pending ]" },
+      "SNAP3": { snap: true, response: "[ Northcott snap 3 — pending ]" },
+      "FINAL": { final: true, response: "[ Northcott final — pending ]" },
     },
     deceptions: {
       "estate-flower": { response: "\"That's — how did you get into the Vault already?\" The word \"already\" is doing a great deal of work.", is_effective: true, composure_effect: -20 },
     },
   },
 
-  // ── THE STEWARD ────────────────────────────────────────────
+    // ── THE STEWARD ────────────────────────────────────────────
   "steward": {
     display_name: "The Steward",
     room: "gallery",
