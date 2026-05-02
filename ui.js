@@ -2206,8 +2206,8 @@ function _renderHaleQuestions(list) {
     return;
   }
 
-  // Technique selection
-  if (!s.techniqueSelected) {
+  // Technique selection — only show when no technique has fired yet this cycle
+  if (!s.techniqueSelected && !s.lastTechnique) {
     const techniques = char.line_techniques[s.lineSelected] || {};
     const used = (s.usedTechniques && s.usedTechniques[s.lineSelected]) || [];
     const remaining = ['wait','account','approach','pressure'].filter(t => !used.includes(t));
