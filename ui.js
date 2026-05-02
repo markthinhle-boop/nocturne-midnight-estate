@@ -2312,13 +2312,17 @@ function _injectHaleSnapback(branch) {
   if (!snap) return;
   const resp = document.getElementById('char-response');
   if (!resp) return;
+  // Clear response — snapback owns the dialogue area entirely
+  resp.innerHTML = '';
+  const existing = document.getElementById('hale-callum-read');
+  if (existing) existing.remove();
   // Snapback question block
   const snapEl = document.createElement('div');
   snapEl.id = 'hale-snapback';
-  snapEl.style.cssText = 'margin-top:16px;padding:12px 16px;background:rgba(20,16,10,0.8);border-left:2px solid rgba(180,155,90,0.6);';
+  snapEl.style.cssText = 'padding:12px 0;';
   // Question
   const qEl = document.createElement('div');
-  qEl.style.cssText = 'font-size:15px;color:var(--text);font-style:italic;margin-bottom:12px;line-height:1.6;';
+  qEl.style.cssText = 'font-size:15px;color:var(--text);font-style:italic;margin-bottom:14px;line-height:1.6;';
   qEl.textContent = snap.question.replace(/"/g, '');
   snapEl.appendChild(qEl);
   // Three options
@@ -2327,21 +2331,20 @@ function _injectHaleSnapback(branch) {
     btn.style.cssText = 'display:block;width:100%;text-align:left;background:rgba(30,24,14,0.8);border:1px solid rgba(180,155,90,0.25);color:var(--text-dim);font-size:13px;padding:9px 12px;margin-bottom:6px;cursor:pointer;font-style:italic;line-height:1.45;';
     btn.textContent = `"${opt.text}"`;
     btn.onclick = () => {
-      snapEl.remove();
+      // Clear and show result as standalone response
+      resp.innerHTML = '';
       const result = window.haleSnapbackAnswer(branch, opt.id);
       if (!result) return;
-      // Show result response
-      const resultEl = document.createElement('div');
-      resultEl.style.cssText = 'margin-top:12px;padding:10px 14px;background:rgba(20,16,10,0.7);border-left:2px solid ' + (result.kind === 'correct' ? 'rgba(107,138,74,0.8)' : result.kind === 'wrong' ? 'rgba(160,74,58,0.8)' : 'rgba(180,155,90,0.4)') + ';font-size:14px;color:var(--text);font-style:italic;line-height:1.6;';
-      resultEl.textContent = result.text;
-      resp.appendChild(resultEl);
-      // Wrong — show branch locked message then big arrow
+      resp.textContent = result.text;
+      // Result indicator
+      const indicator = document.createElement('div');
+      indicator.style.cssText = 'margin-top:6px;font-family:var(--sans);font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:' + (result.kind === 'correct' ? 'rgba(107,138,74,0.9)' : result.kind === 'wrong' ? 'rgba(160,74,58,0.9)' : 'rgba(180,155,90,0.5)') + ';';
+      indicator.textContent = result.kind === 'correct' ? '✓ Correct' : result.kind === 'wrong' ? 'Branch closed this visit' : '—';
+      resp.appendChild(indicator);
       if (result.kind === 'wrong') {
-        const lockEl = document.createElement('div');
-        lockEl.style.cssText = 'margin-top:8px;font-size:11px;color:rgba(160,74,58,0.8);font-family:var(--sans);letter-spacing:0.1em;text-transform:uppercase;text-align:center;';
-        lockEl.textContent = 'Branch closed this visit';
-        resp.appendChild(lockEl);
         _injectHaleBigArrow();
+        const list = document.getElementById('questions-list');
+        if (list) list.innerHTML = '';
       } else {
         _injectHaleMiniArrow();
         renderQuestions('pemberton-hale');
@@ -2350,6 +2353,9 @@ function _injectHaleSnapback(branch) {
     snapEl.appendChild(btn);
   });
   resp.appendChild(snapEl);
+  // Clear question list while snapback is active
+  const list = document.getElementById('questions-list');
+  if (list) list.innerHTML = '';
 }
 
 function _injectHaleMiniArrow() {
