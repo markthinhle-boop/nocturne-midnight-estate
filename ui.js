@@ -1758,6 +1758,15 @@ function _openConversationDirect(charId) {
   // Hale — initialise session and clear any stale Callum read block
   if (charId === 'pemberton-hale') {
     if (typeof window.initHaleSession === 'function') window.initHaleSession();
+    const s = window.getHaleSession ? window.getHaleSession() : null;
+    if (s && s.openingAsked) {
+      // Return visit — reset line/technique/followup so player can pick next branch
+      // Preserve flags, gateState, pencil state
+      s.lineSelected      = null;
+      s.techniqueSelected = null;
+      s.followupAsked     = null;
+      s.diversionQueue    = [];
+    }
     const stale = document.getElementById('hale-callum-read');
     if (stale) stale.remove();
     const staleFlash = document.getElementById('hale-pencil-flash');
@@ -2167,12 +2176,14 @@ function _renderHaleQuestions(list) {
     note.textContent = 'Choose your line of questioning.';
     list.appendChild(note);
     Object.entries(HALE_LINE_LABELS).forEach(([lineId, text]) => {
-      const locked = char.lines[lineId] && char.lines[lineId].requires_cross
-        && !(window.gameState && window.gameState.hale_others_unlocked);
+      const s = window.getHaleSession ? window.getHaleSession() : null;
+      const alreadyUsed = s && s.completedLines && s.completedLines.includes(lineId);
       const btn = document.createElement('div');
-      btn.className = 'question-item' + (locked ? ' question-locked' : '');
+      btn.className = 'question-item' + (alreadyUsed ? ' question-asked' : '');
+      btn.style.opacity = alreadyUsed ? '0.4' : '1';
+      btn.style.cursor = alreadyUsed ? 'default' : 'pointer';
       btn.textContent = text;
-      if (!locked) {
+      if (!alreadyUsed) {
         btn.onclick = () => {
           if (typeof NocturneSound !== 'undefined') NocturneSound.playUIClick();
           window.haleSelectLine(lineId);
