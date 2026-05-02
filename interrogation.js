@@ -702,6 +702,14 @@ function getHaleSession() {
 function haleOpeningAsked() {
   const s = getHaleSession();
   s.openingAsked = true;
+  // Write to char_dialogue_complete so paywall trigger sees Hale as talked-to
+  if (window.gameState) {
+    if (!window.gameState.char_dialogue_complete) window.gameState.char_dialogue_complete = {};
+    if (!window.gameState.char_dialogue_complete['pemberton-hale']) {
+      window.gameState.char_dialogue_complete['pemberton-hale'] = {};
+    }
+    window.gameState.char_dialogue_complete['pemberton-hale']['opening'] = true;
+  }
 }
 
 function haleSelectLine(lineId) {
@@ -734,6 +742,11 @@ function haleAskFollowup(followupId) {
   if (!q) return null;
   s.followupAsked = followupId;
   if (q.flag) s.flags[q.flag] = true;
+  // Mark line as completed
+  if (!s.completedLines) s.completedLines = [];
+  if (s.lineSelected && !s.completedLines.includes(s.lineSelected)) {
+    s.completedLines.push(s.lineSelected);
+  }
   // Pencil flash — only RW2
   if (q.pencil_flash && !s.pencilFlashShown) {
     s.pencilFlashShown = true;
