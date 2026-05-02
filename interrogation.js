@@ -819,21 +819,24 @@ function haleAskFollowup(followupId) {
   const s = getHaleSession();
   const char = (window.CHARACTERS || {})['pemberton-hale'];
   if (!char || !char.followups) return null;
-  const pool = (char.followups[s.lineSelected] || {})[s.techniqueSelected] || [];
+  // Use lastTechnique — techniqueSelected is null after firing
+  const pool = (char.followups[s.lineSelected] || {})[s.lastTechnique] || [];
   const q = pool.find(f => f.id === followupId);
   if (!q) return null;
   s.followupAsked = followupId;
-  if (q.flag) s.flags[q.flag] = true;
-  // Mark line as completed
-  if (!s.completedLines) s.completedLines = [];
-  if (s.lineSelected && !s.completedLines.includes(s.lineSelected)) {
-    s.completedLines.push(s.lineSelected);
+  // Mark excluded followup as asked too
+  if (q.excludes) {
+    const excluded = pool.find(f => f.id === q.excludes);
+    if (excluded) s.followupAsked = followupId; // just tracks one
   }
+  if (q.flag) s.flags[q.flag] = true;
   // Pencil flash — only RW2
   if (q.pencil_flash && !s.pencilFlashShown) {
     s.pencilFlashShown = true;
-    window.gameState.halePencilFlashPending = true;
-    window.gameState.halePencilNode = q.pencil_node;
+    if (window.gameState) {
+      window.gameState.halePencilFlashPending = true;
+      window.gameState.halePencilNode = q.pencil_node;
+    }
   }
   return q;
 }

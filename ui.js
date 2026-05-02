@@ -2170,48 +2170,43 @@ function _renderHaleQuestions(list) {
     return;
   }
 
-  // ── SEQUENTIAL BRANCH LOGIC ───────────────────────────────────
-  // Register → Ashworth → Others. Each branch must be exhausted before next opens.
-  // Mini arrow: cycles remaining techniques within current branch.
-  // Big arrow: appears when branch exhausted, advances to next branch.
-
-  const BRANCH_ORDER = ['register', 'ashworth', 'others'];
-  const completed = s.completedLines || [];
-
-  // Determine active branch
-  let activeBranch = null;
-  for (const branch of BRANCH_ORDER) {
-    if (!completed.includes(branch)) { activeBranch = branch; break; }
-  }
-
-  // All branches done
-  if (!activeBranch) {
-    list.innerHTML = '<div style="padding:14px 20px;font-size:12px;color:var(--text-dim);font-style:italic;">The conversation has been exhausted.</div>';
+  // ── SEQUENTIAL BRANCH SELECTION ──────────────────────────────
+  // Register always available first. Ashworth unlocks after Register exhausted.
+  // Others unlocks after Ashworth exhausted. Player clicks the branch to enter it.
+  if (!s.lineSelected) {
+    const BRANCH_ORDER = ['register', 'ashworth', 'others'];
+    const completed = s.completedLines || [];
+    const used = s.usedTechniques || {};
+    BRANCH_ORDER.forEach((lineId, idx) => {
+      const text = HALE_LINE_LABELS[lineId];
+      const isDone = completed.includes(lineId);
+      // Branch is available if all previous branches are exhausted
+      const prevDone = BRANCH_ORDER.slice(0, idx).every(b => completed.includes(b));
+      const isAvailable = idx === 0 || prevDone;
+      const btn = document.createElement('div');
+      btn.className = 'question-item' + (isDone ? ' question-asked' : '') + (!isAvailable ? ' question-locked' : '');
+      btn.style.opacity = isDone ? '0.35' : !isAvailable ? '0.35' : '1';
+      btn.style.cursor = (isDone || !isAvailable) ? 'default' : 'pointer';
+      btn.textContent = text;
+      if (isAvailable && !isDone) {
+        btn.onclick = () => {
+          if (typeof NocturneSound !== 'undefined') NocturneSound.playUIClick();
+          // Others fires immediately
+          if (lineId === 'others') {
+            window.haleSelectLine(lineId);
+            _haleFireOthers();
+            return;
+          }
+          window.haleSelectLine(lineId);
+          renderQuestions('pemberton-hale');
+        };
+      }
+      list.appendChild(btn);
+    });
     return;
   }
 
-  // Set active line if not already set
-  if (!s.lineSelected || s.lineSelected !== activeBranch) {
-    window.haleSelectLine(activeBranch);
-    s.lineSelected = activeBranch;
-  }
-
-  // Others branch — fires immediately, no technique
-  if (activeBranch === 'others') {
-    const btn = document.createElement('div');
-    btn.className = 'question-item';
-    btn.textContent = HALE_LINE_LABELS['others'];
-    btn.onclick = () => {
-      if (typeof NocturneSound !== 'undefined') NocturneSound.playUIClick();
-      if (!s.completedLines) s.completedLines = [];
-      if (!s.completedLines.includes('others')) s.completedLines.push('others');
-      _haleFireOthers();
-    };
-    list.appendChild(btn);
-    return;
-  }
-
-  // Step 1 — Technique selection (Register or Ashworth)
+  // Technique selection
   if (!s.techniqueSelected) {
     const techniques = char.line_techniques[s.lineSelected] || {};
     const used = (s.usedTechniques && s.usedTechniques[s.lineSelected]) || [];
@@ -2243,8 +2238,8 @@ function _renderHaleQuestions(list) {
   }
 
   // Step 3 — Follow-up questions (mutually exclusive pair)
-  if (!s.followupAsked) {
-    const pool = (char.followups[s.lineSelected] || {})[s.techniqueSelected] || [];
+  if (!s.followupAsked && s.lastTechnique) {
+    const pool = (char.followups[s.lineSelected] || {})[s.lastTechnique] || [];
     if (pool.length > 0) {
       pool.forEach(fq => {
         const btn = document.createElement('div');
@@ -2464,6 +2459,12 @@ function _haleFireFollowup(followupId) {
     resp.innerHTML = '';
     resp.textContent = fq.response;
     if (fq.callum) _showHaleCallumRead(fq.callum);
+  }
+  // Reset followupAsked so next technique shows fresh followups
+  const s = window.getHaleSession ? window.getHaleSession() : null;
+  if (s) {
+    s.followupAsked = null;
+    s.lastTechnique = null;
   }
   // Flash pencil for timeline node
   if (fq.pencil_flash && window.gameState && window.gameState.halePencilFlashPending) {
