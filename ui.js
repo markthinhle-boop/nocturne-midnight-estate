@@ -1760,12 +1760,13 @@ function _openConversationDirect(charId) {
     if (typeof window.initHaleSession === 'function') window.initHaleSession();
     const s = window.getHaleSession ? window.getHaleSession() : null;
     if (s && s.openingAsked) {
-      // Return visit — reset line/technique/followup so player can pick next branch
-      // Preserve flags, gateState, pencil state
+      // Return visit — reset active selection only
+      // usedTechniques, completedLines, flags, gateState, pencil all preserved
       s.lineSelected      = null;
       s.techniqueSelected = null;
       s.followupAsked     = null;
       s.diversionQueue    = [];
+      s.lastTechnique     = null;
     }
     const stale = document.getElementById('hale-callum-read');
     if (stale) stale.remove();
@@ -2198,22 +2199,29 @@ function _renderHaleQuestions(list) {
   // Step 2 — Technique selection
   if (!s.techniqueSelected) {
     const techniques = char.line_techniques[s.lineSelected] || {};
+    const used = (s.usedTechniques && s.usedTechniques[s.lineSelected]) || [];
+    const remaining = ['wait','account','approach','pressure'].filter(t => !used.includes(t));
     const note = document.createElement('div');
     note.style.cssText = 'padding:10px 16px;font-size:12px;color:var(--text-dim);font-style:italic;';
-    note.textContent = 'Choose how you ask.';
+    note.textContent = used.length === 0 ? 'Choose how you ask.' : remaining.length > 0 ? `${remaining.length} approach${remaining.length !== 1 ? 'es' : ''} remaining.` : 'All approaches used.';
     list.appendChild(note);
     ['wait', 'account', 'approach', 'pressure'].forEach(techId => {
       const tech = techniques[techId];
       if (!tech) return;
+      const isUsed = used.includes(techId);
       const btn = document.createElement('div');
-      btn.className = 'question-item hale-technique-btn';
-      btn.innerHTML = `<span class="hale-tech-name">${HALE_TECH_META[techId].name}</span>
+      btn.className = 'question-item hale-technique-btn' + (isUsed ? ' question-asked' : '');
+      btn.style.opacity = isUsed ? '0.35' : '1';
+      btn.style.cursor = isUsed ? 'default' : 'pointer';
+      btn.innerHTML = `<span class="hale-tech-name">${HALE_TECH_META[techId].name}${isUsed ? ' ✓' : ''}</span>
         <span class="hale-tech-desc">${HALE_TECH_META[techId].desc}</span>
-        <span class="hale-callum-q">${tech.callum_question}</span>`;
-      btn.onclick = () => {
-        if (typeof NocturneSound !== 'undefined') NocturneSound.playUIClick();
-        _haleFireLineTechnique(s.lineSelected, techId);
-      };
+        ${!isUsed ? `<span class="hale-callum-q">${tech.callum_question}</span>` : ''}`;
+      if (!isUsed) {
+        btn.onclick = () => {
+          if (typeof NocturneSound !== 'undefined') NocturneSound.playUIClick();
+          _haleFireLineTechnique(s.lineSelected, techId);
+        };
+      }
       list.appendChild(btn);
     });
     return;
@@ -2300,6 +2308,9 @@ function _haleFireLineTechnique(lineId, techId) {
     if (tech.callum) _showHaleCallumRead(tech.callum);
   }
   window.haleSelectTechnique(techId);
+  // Reset techniqueSelected to null so technique panel re-renders with remaining options
+  const s = window.getHaleSession ? window.getHaleSession() : null;
+  if (s) s.techniqueSelected = null;
   renderQuestions('pemberton-hale');
 }
 

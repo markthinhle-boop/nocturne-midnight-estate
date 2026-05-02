@@ -689,6 +689,9 @@ function initHaleSession() {
     flags:             {},
     pencilFlashShown:  false,
     pencilCaptured:    false,
+    completedLines:    [],
+    usedTechniques:    {},
+    lastTechnique:     null,
   };
   if (window.gameState) window.gameState.haleSession = _haleSessionData;
   return _haleSessionData;
@@ -722,7 +725,15 @@ function haleSelectLine(lineId) {
 function haleSelectTechnique(techId) {
   const s = getHaleSession();
   s.techniqueSelected = techId;
+  s.lastTechnique = techId;
   s.followupAsked = null;
+  // Track used techniques per line
+  if (s.lineSelected) {
+    if (!s.usedTechniques[s.lineSelected]) s.usedTechniques[s.lineSelected] = [];
+    if (!s.usedTechniques[s.lineSelected].includes(techId)) {
+      s.usedTechniques[s.lineSelected].push(techId);
+    }
+  }
   // Apply composure cost from line technique
   const char = (window.CHARACTERS || {})['pemberton-hale'];
   if (char && char.line_techniques && char.line_techniques[s.lineSelected]) {
@@ -730,6 +741,13 @@ function haleSelectTechnique(techId) {
     if (t && t.composure) {
       window.gameState.composure = Math.max(0, (window.gameState.composure || 100) + t.composure);
     }
+  }
+  // Check if all 4 techniques used — mark line complete
+  const allTechs = ['wait', 'account', 'approach', 'pressure'];
+  const used = s.usedTechniques[s.lineSelected] || [];
+  if (allTechs.every(t => used.includes(t))) {
+    if (!s.completedLines) s.completedLines = [];
+    if (!s.completedLines.includes(s.lineSelected)) s.completedLines.push(s.lineSelected);
   }
 }
 
