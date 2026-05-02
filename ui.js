@@ -2256,6 +2256,25 @@ function _renderHaleQuestions(list) {
   }
 }
 
+function _injectHaleForwardArrow() {
+  const existing = document.getElementById('hale-forward-arrow');
+  if (existing) existing.remove();
+  const resp = document.getElementById('char-response');
+  if (!resp) return;
+  const btn = document.createElement('button');
+  btn.id = 'hale-forward-arrow';
+  btn.style.cssText = 'display:flex;align-items:center;justify-content:center;margin:14px auto 0;background:rgba(20,16,10,0.75);border:1px solid rgba(180,155,90,0.4);border-radius:50%;width:36px;height:36px;cursor:pointer;color:#c9a84c;font-size:18px;';
+  btn.innerHTML = '›';
+  btn.onclick = () => {
+    btn.remove();
+    renderQuestions('pemberton-hale');
+    // Scroll questions list into view on mobile
+    const list = document.getElementById('questions-list');
+    if (list) list.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  };
+  resp.appendChild(btn);
+}
+
 function _haleFireOpening() {
   const char = window.CHARACTERS && window.CHARACTERS['pemberton-hale'];
   if (!char || !char.opening) return;
@@ -2278,9 +2297,9 @@ function _haleFireLineTechnique(lineId, techId) {
   if (resp) {
     resp.innerHTML = '';
     resp.textContent = tech.response;
+    if (tech.callum) _showHaleCallumRead(tech.callum);
   }
   window.haleSelectTechnique(techId);
-  if (tech.callum) _showHaleCallumRead(tech.callum);
   renderQuestions('pemberton-hale');
 }
 
@@ -2291,12 +2310,15 @@ function _haleFireFollowup(followupId) {
   if (resp) {
     resp.innerHTML = '';
     resp.textContent = fq.response;
-  }
-  if (fq.callum) _showHaleCallumRead(fq.callum);
-  if (fq.pencil_flash && window.gameState && window.gameState.halePencilFlashPending) {
-    _injectHalePencilFlash();
+    if (fq.callum) _showHaleCallumRead(fq.callum);
   }
   renderQuestions('pemberton-hale');
+  // Flash existing pencil for timeline node capture
+  if (fq.pencil_flash && window.gameState && window.gameState.halePencilFlashPending) {
+    if (typeof window.flashPencilForTimeline === 'function') {
+      window.flashPencilForTimeline(fq.pencil_node || window.gameState.halePencilNode);
+    }
+  }
 }
 
 function _haleOpenGate(gateId) {
@@ -2354,10 +2376,11 @@ function _injectHalePencilFlash() {
     btn.onclick = null;
     if (typeof window.haleCapturePencil === 'function') window.haleCapturePencil();
     if (typeof window.saveNoteForChar === 'function') {
-      const node = window.gameState && window.gameState.halePencilNode;
       const label = 'Confirmed entries with Curator at 7:42. Standard procedural review.';
       window.saveNoteForChar('pemberton-hale', label);
     }
+    // After capture, show forward arrow
+    _injectHaleForwardArrow();
   };
   // Inject keyframe animation if not already present
   if (!document.getElementById('hale-pencil-style')) {
