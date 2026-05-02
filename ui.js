@@ -2407,18 +2407,12 @@ function _injectHaleBigArrow() {
   btn.title = 'Continue investigation';
   btn.onclick = () => {
     btn.remove();
-    // Mark current branch complete
     if (!s.completedLines) s.completedLines = [];
     if (!s.completedLines.includes(s.lineSelected)) s.completedLines.push(s.lineSelected);
     s.lineSelected = null;
     s.techniqueSelected = null;
     s.followupAsked = null;
     s.lastTechnique = null;
-    // Check paywall — fires after Register branch on first advance to Ashworth
-    if (nextBranch === 'ashworth' && typeof window.openPaywall === 'function' && !window.gameState?.paidTier) {
-      window.openPaywall();
-      return;
-    }
     renderQuestions('pemberton-hale');
     const list = document.getElementById('questions-list');
     if (list) list.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
