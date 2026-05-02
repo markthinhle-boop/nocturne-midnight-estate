@@ -2375,10 +2375,8 @@ function _injectHaleMiniArrow() {
   btn.onclick = () => {
     btn.remove();
     const s2 = window.getHaleSession ? window.getHaleSession() : null;
-    if (s2) s2.techniqueSelected = null;
+    if (s2) { s2.techniqueSelected = null; s2.lastTechnique = null; }
     renderQuestions('pemberton-hale');
-    const list = document.getElementById('questions-list');
-    if (list) list.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   };
   resp.appendChild(btn);
 }
@@ -2442,13 +2440,31 @@ function _haleFireLineTechnique(lineId, techId) {
   window.haleSelectTechnique(techId);
   const s = window.getHaleSession ? window.getHaleSession() : null;
   if (s) s.techniqueSelected = null;
-  // Check if snapback should fire
+  // Inject snapback or mini arrow
   if (s && s.snapbackPending) {
     _injectHaleSnapback(lineId);
   } else {
     _injectHaleMiniArrow();
   }
-  renderQuestions('pemberton-hale');
+  // Render follow-ups directly in question list — do NOT call renderQuestions
+  // which would re-render all 4 techniques
+  const list = document.getElementById('questions-list');
+  if (!list) return;
+  list.innerHTML = '';
+  const pool = (char.followups[lineId] || {})[techId] || [];
+  if (pool.length > 0) {
+    document.getElementById('action-title') && (document.getElementById('action-title').textContent = 'Follow-up');
+    pool.forEach(fq => {
+      const btn = document.createElement('div');
+      btn.className = 'question-item';
+      btn.textContent = fq.text;
+      btn.onclick = () => {
+        if (typeof NocturneSound !== 'undefined') NocturneSound.playUIClick();
+        _haleFireFollowup(fq.id);
+      };
+      list.appendChild(btn);
+    });
+  }
 }
 
 function _haleFireFollowup(followupId) {
@@ -2460,20 +2476,20 @@ function _haleFireFollowup(followupId) {
     resp.textContent = fq.response;
     if (fq.callum) _showHaleCallumRead(fq.callum);
   }
-  // Reset followupAsked so next technique shows fresh followups
+  // Reset so next technique can show its own follow-ups
   const s = window.getHaleSession ? window.getHaleSession() : null;
-  if (s) {
-    s.followupAsked = null;
-    s.lastTechnique = null;
-  }
+  if (s) { s.followupAsked = null; s.lastTechnique = null; }
   // Flash pencil for timeline node
   if (fq.pencil_flash && window.gameState && window.gameState.halePencilFlashPending) {
     if (typeof window.flashPencilForTimeline === 'function') {
       window.flashPencilForTimeline(fq.pencil_node || window.gameState.halePencilNode);
     }
   }
+  // Inject mini arrow — tapping it brings back remaining techniques
   _injectHaleMiniArrow();
-  renderQuestions('pemberton-hale');
+  // Clear question list — nothing shows until mini arrow tapped
+  const list = document.getElementById('questions-list');
+  if (list) list.innerHTML = '';
 }
 
 function _haleOpenGate(gateId) {
