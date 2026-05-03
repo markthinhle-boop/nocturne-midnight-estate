@@ -2210,6 +2210,20 @@ function _renderNorthcottQuestions(list) {
         if (typeof NocturneSound !== 'undefined') NocturneSound.playUIClick();
         const resp = document.getElementById('char-response');
         if (resp) { resp.innerHTML = ''; resp.textContent = t.response; _showHaleCallumRead(t.callum); }
+        // Apply composure cost
+        if (t.composure && window.gameState) {
+          window.gameState.composure = Math.max(0, (window.gameState.composure || 100) + t.composure);
+        }
+        // Wire notepad capture for node-granting responses
+        if (t.grants) {
+          const pencilBtn = document.getElementById('np-pencil-btn');
+          if (pencilBtn) pencilBtn.dataset.timelineNode = t.grants.split(' ')[0];
+          // Set node in gameState
+          if (window.gameState) {
+            if (!window.gameState.node_inventory) window.gameState.node_inventory = {};
+            t.grants.split(' ').forEach(n => { window.gameState.node_inventory[n] = true; });
+          }
+        }
         if (!s.usedQs.includes(s.activeQ)) s.usedQs.push(s.activeQ);
         s.activeQ = null;
         renderQuestions('northcott');
@@ -2219,16 +2233,17 @@ function _renderNorthcottQuestions(list) {
     return;
   }
 
-  // Step 3 — Available branch questions
+  // Step 3 — Available branch questions (all visible, player picks order)
   const allQs = Object.keys(char.line_techniques || {});
-  const available = allQs.filter(q => !s.usedQs.includes(q));
-  if (available.length === 0) {
+  if (allQs.length === 0) {
     list.innerHTML = '<div style="padding:14px 20px;font-size:12px;color:var(--text-dim);font-style:italic;">The conversation has been exhausted.</div>';
     return;
   }
+  let anyAvailable = false;
   allQs.forEach(qid => {
     const qt = char.line_techniques[qid];
     const used = s.usedQs.includes(qid);
+    if (!used) anyAvailable = true;
     const btn = document.createElement('div');
     btn.className = 'question-item' + (used ? ' question-asked' : '');
     btn.style.opacity = used ? '0.35' : '1';
@@ -2243,6 +2258,9 @@ function _renderNorthcottQuestions(list) {
     }
     list.appendChild(btn);
   });
+  if (!anyAvailable) {
+    list.innerHTML = '<div style="padding:14px 20px;font-size:12px;color:var(--text-dim);font-style:italic;">The conversation has been exhausted.</div>';
+  }
 }
 
 // ── NORTHCOTT RE-ENTRY RESET ─────────────────────────────
