@@ -2212,8 +2212,7 @@ function _renderNorthcottQuestions(list) {
         if (resp) { resp.innerHTML = ''; resp.textContent = t.response; _showHaleCallumRead(t.callum); }
         if (!s.usedQs.includes(s.activeQ)) s.usedQs.push(s.activeQ);
         s.activeQ = null;
-        _injectHaleMiniArrow();
-        list.innerHTML = '';
+        renderQuestions('northcott');
       };
       list.appendChild(btn);
     });
@@ -2502,7 +2501,8 @@ function _injectHaleMiniArrow() {
     btn.remove();
     const s2 = window.getHaleSession ? window.getHaleSession() : null;
     if (s2) { s2.techniqueSelected = null; s2.lastTechnique = null; }
-    renderQuestions('pemberton-hale');
+    const activeCharId = window._activeCharId || 'pemberton-hale';
+    renderQuestions(activeCharId);
   };
   resp.appendChild(btn);
 }
