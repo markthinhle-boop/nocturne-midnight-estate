@@ -2259,12 +2259,85 @@ function _renderNorthcottQuestions(list) {
     list.appendChild(btn);
   });
   if (!anyAvailable) {
+    _showClosure('northcott');
     list.innerHTML = '<div style="padding:14px 20px;font-size:12px;color:var(--text-dim);font-style:italic;">The conversation has been exhausted.</div>';
   }
 }
 
-// ── NORTHCOTT RE-ENTRY RESET ─────────────────────────────
-// Called from _openConversationDirect when Northcott is entered
+// ═══════════════════════════════════════════════════════════
+// CLOSURE MECHANIC
+// Fires when questions exhausted. Checks MMM surface/capture.
+// Flags elegantly if surfaced but player didn't capture.
+// ═══════════════════════════════════════════════════════════
+
+const CLOSURE_CONFIG = {
+  'pemberton-hale': {
+    mmm: {
+      motive: { node: 'hale_immunity_motive',  label: 'motive'  },
+      false:  { node: 'hale_false_timeline',   label: 'timeline' },
+    },
+    final: '"I\'d like to speak to the Curator." Quietly. Not panicked.',
+    callum_missed:  'The immunity clause was in this room. He said it without saying it. It may still be.',
+    callum_captured: 'He gave me the shape of it. The Register. Ashworth. Eighteen months of protection that wasn\'t enough. That goes on the board.',
+  },
+  'northcott': {
+    mmm: {
+      motive: { node: 'northcott_vivienne_motive', label: 'motive'  },
+      false:  { node: 'northcott_false_gap',        label: 'timeline' },
+    },
+    final: '"I hope you find what you\'re looking for." He means it. He always has.',
+    callum_missed:  'He gave me the gap. He gave me the candelabra. The Ashworth conversation was in there. If it surfaced — it wasn\'t written down.',
+    callum_captured: 'He gave me the motive. Ashworth\'s threat. The Register entry. The arrangement with Vivienne. That goes on the board.',
+  },
+};
+
+function _showClosure(charId) {
+  const config = CLOSURE_CONFIG[charId];
+  if (!config) return;
+  const resp = document.getElementById('char-response');
+  if (!resp) return;
+
+  // Get node inventory
+  const ni = (window.gameState && window.gameState.node_inventory) || {};
+
+  // Check what was surfaced and what was captured
+  const pencilBtn = document.getElementById('np-pencil-btn');
+  const capturedNode = pencilBtn ? pencilBtn.dataset.timelineNode : null;
+  const motiveNode = config.mmm.motive.node;
+  const motivesSurfaced = !!ni[motiveNode];
+  const motiveCaptured = capturedNode === motiveNode;
+
+  // Final line
+  resp.innerHTML = '';
+  resp.textContent = config.final;
+
+  // Callum closure thought
+  const closureEl = document.createElement('div');
+  closureEl.style.cssText = 'margin-top:12px;padding:10px 14px;background:rgba(20,16,10,0.7);border-left:2px solid rgba(180,155,90,0.4);font-family:var(--sans);font-size:12px;color:var(--text-dim);font-style:italic;line-height:1.55;';
+
+  if (motivesSurfaced && !motiveCaptured) {
+    // Surfaced but not captured — flag elegantly
+    closureEl.style.borderLeftColor = 'rgba(180,155,90,0.7)';
+    closureEl.textContent = config.mmm.motive.label.charAt(0).toUpperCase() + config.mmm.motive.label.slice(1) + ' was presented. Not captured.';
+    const subEl = document.createElement('div');
+    subEl.style.cssText = 'margin-top:6px;font-size:11px;color:var(--text-dim);';
+    subEl.textContent = config.callum_missed;
+    closureEl.appendChild(subEl);
+  } else if (motivesSurfaced && motiveCaptured) {
+    closureEl.textContent = config.callum_captured;
+  } else {
+    closureEl.textContent = config.callum_missed;
+  }
+
+  resp.appendChild(closureEl);
+
+  // Emit closure event
+  if (typeof NocturneEngine !== 'undefined') {
+    NocturneEngine.emit('closureFired', { charId, motivesSurfaced, motiveCaptured });
+  }
+}
+
+window._showClosure = _showClosure;
 
 const HALE_LINE_LABELS = {
   register: "Walk me through your evening. From arrival to now.",
@@ -2282,7 +2355,6 @@ const HALE_TECH_META = {
 function _renderHaleQuestions(list) {
   const s = window.getHaleSession ? window.getHaleSession() : null;
   if (!s) {
-    // Session not ready — show loading state
     list.innerHTML = '<div style="padding:14px 20px;font-size:12px;color:var(--text-dim);font-style:italic;">Loading...</div>';
     return;
   }
@@ -2291,8 +2363,29 @@ function _renderHaleQuestions(list) {
     list.innerHTML = '<div style="padding:14px 20px;font-size:12px;color:var(--text-dim);font-style:italic;">Character data unavailable.</div>';
     return;
   }
-  // Ensure minimum height for 3 items on mobile
   list.style.minHeight = '144px';
+
+  // ── COMPOSURE COLLAPSE CHECK ──────────────────────────────────
+  // Hale doesn't fracture — he goes cold and bureaucratic.
+  // Fires when composure reaches 0 or snap limit exceeded.
+  const currentComposure = (window.gameState && window.gameState.composure) || s.composure || 100;
+  const snapCount = s.snapCount || 0;
+  const snapLimit = char.snap_limit || 3;
+  if (currentComposure <= 0 || snapCount >= snapLimit) {
+    if (!s.collapsed) {
+      s.collapsed = true;
+      const resp = document.getElementById('char-response');
+      if (resp) {
+        resp.innerHTML = '';
+        resp.textContent = char.final ? char.final.response : '"I\'d like to speak to the Curator." Quietly. Not panicked.';
+      }
+      if (typeof NocturneEngine !== 'undefined') {
+        NocturneEngine.emit('collapseFired', { charId: 'pemberton-hale' });
+      }
+    }
+    list.innerHTML = '<div style="padding:14px 20px;font-size:12px;color:var(--text-dim);font-style:italic;">The conversation is over.</div>';
+    return;
+  }
 
   // Step 0 — Opening question
   if (!s.openingAsked) {
@@ -2407,6 +2500,7 @@ function _renderHaleQuestions(list) {
 
   // Exhausted
   if (list.children.length === 0) {
+    _showClosure('pemberton-hale');
     list.innerHTML = '<div style="padding:14px 20px;font-size:12px;color:var(--text-dim);font-style:italic;">The conversation has been exhausted.</div>';
   }
 }
@@ -2584,14 +2678,31 @@ function _haleFireLineTechnique(lineId, techId) {
   window.haleSelectTechnique(techId);
   const s = window.getHaleSession ? window.getHaleSession() : null;
   if (s) s.techniqueSelected = null;
+
+  // ── NODE GRANTS — no composure gate for Hale ─────────────
+  // Player cycles all techniques via arrows — motive surfaces through exploration
+  if (tech.grants) {
+    tech.grants.split(' ').forEach(node => {
+      if (!node) return;
+      if (window.gameState) {
+        if (!window.gameState.node_inventory) window.gameState.node_inventory = {};
+        window.gameState.node_inventory[node] = true;
+      }
+      if (typeof NocturneEngine !== 'undefined') {
+        NocturneEngine.emit('nodeMarked', { nodeId: node, charId: 'pemberton-hale' });
+      }
+      const pencilBtn = document.getElementById('np-pencil-btn');
+      if (pencilBtn) pencilBtn.dataset.timelineNode = node;
+    });
+  }
+
   // Inject snapback or mini arrow
   if (s && s.snapbackPending) {
     _injectHaleSnapback(lineId);
   } else {
     _injectHaleMiniArrow();
   }
-  // Render follow-ups directly in question list — do NOT call renderQuestions
-  // which would re-render all 4 techniques
+  // Render follow-ups
   const list = document.getElementById('questions-list');
   if (!list) return;
   list.innerHTML = '';

@@ -123,6 +123,10 @@ const INFORMATION_NODES = {
   'scene_reads_as_northcott':         { category: 'actions',   weight: 1.0, event: 'scene_read_northcott_chain',        display: 'Scene read: plain mask + arrival record names Northcott',          accusation_target: 'northcott'},
   'scene_reads_as_ashworth':          { category: 'actions',   weight: 1.0, event: 'scene_read_ashworth_chain',         display: 'Scene read: candle note + estate flower names Lady Ashworth',      accusation_target: 'ashworth' },
 
+  // ── NEW ARCHITECTURE NODES — Hale (clean names) ────────────────────────────
+  'hale_false_timeline':               { category: 'times',     weight: 0.8, event: 'hale_register_branch_answered',       display: 'Hale: claims standard entries -- immunity clause hidden in plain sight', accusation_target: null       },
+  'hale_immunity_motive':              { category: 'actions',   weight: 1.5, event: 'hale_ashworth_branch_answered',       display: 'Hale: immunity clause added 18 months ago -- Ashworth had authority over provisions', accusation_target: 'pemberton-hale'},
+
   // ── NEW ARCHITECTURE NODES — Northcott (clean names) ──────────────────────
   'northcott_vivienne_motive':         { category: 'actions',   weight: 1.5, event: 'northcott_q3_motive_answered',        display: 'Northcott: Ashworth threatened Register entry tonight -- Vivienne named', accusation_target: 'northcott'},
   'northcott_false_gap':               { category: 'times',     weight: 0.8, event: 'northcott_q1_answered',               display: 'Northcott: claims gap 7:15-7:23 -- left post to find Vivienne',          accusation_target: null       },
