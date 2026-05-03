@@ -1712,6 +1712,12 @@ function _openConversationDirect(charId) {
   const charData = window.CHARACTERS && window.CHARACTERS[charId];
   if (!charData) return;
 
+  // ── COMPOSURE RECHARGE ────────────────────────────────────
+  // Load this suspect's current composure into gameState
+  if (window.gameState) {
+    window.gameState.composure = _getSuspectComposure(charId);
+  }
+
   // ROWE DUEL — hide Close button during intro/duel (one-way street)
   const dismissBtn = document.getElementById('btn-dismiss-conv');
   if (charId === 'rowe' && dismissBtn) {
@@ -1759,7 +1765,16 @@ function _openConversationDirect(charId) {
   if (charId === 'northcott') {
     if (typeof _getNorthcottSession === 'function') {
       const ns = _getNorthcottSession();
-      ns.activeQ = null;
+      // Only reset if session was completed — mid-conversation taps don't reset
+      if (ns.sessionComplete) {
+        ns.openingAsked = false;
+        ns.warmupAsked  = false;
+        ns.activeQ      = null;
+        ns.usedQs       = [];
+        ns.sessionComplete = false;
+      } else {
+        ns.activeQ = null;
+      }
     }
     if (typeof window.northcottEmitConversationOpen === 'function') window.northcottEmitConversationOpen();
     const stale = document.getElementById('hale-callum-read');
@@ -2159,23 +2174,29 @@ function _renderNorthcottQuestions(list) {
   const char = window.CHARACTERS && window.CHARACTERS['northcott'];
   if (!char) { list.innerHTML = '<div style="padding:14px;font-size:12px;color:var(--text-dim)">Loading...</div>'; return; }
 
-  // Step 0 — Opening
+  // Determine if this is a return visit
+  const isReturn = (window.gameState && window.gameState.suspectLastVisit && (window.gameState.suspectLastVisit['northcott'] || 0) > 1);
+  const openingData = (isReturn && char.opening_return) ? char.opening_return : char.opening;
+
+  // Step 0 — Opening (or Ask again on return)
   if (!s.openingAsked) {
     const btn = document.createElement('div');
     btn.className = 'question-item';
-    btn.textContent = char.opening.question;
+    btn.textContent = openingData.question;
     btn.onclick = () => {
       if (typeof NocturneSound !== 'undefined') NocturneSound.playUIClick();
       const resp = document.getElementById('char-response');
-      if (resp) { resp.innerHTML = ''; resp.textContent = char.opening.response; _showHaleCallumRead(char.opening.callum); }
+      if (resp) { resp.innerHTML = ''; resp.textContent = openingData.response; _showHaleCallumRead(openingData.callum); }
       s.openingAsked = true;
+      // Skip warmup on return visits
+      if (isReturn) s.warmupAsked = true;
       renderQuestions('northcott');
     };
     list.appendChild(btn);
     return;
   }
 
-  // Step 1 — Warmup
+  // Step 1 — Warmup (first visit only)
   if (!s.warmupAsked) {
     const btn = document.createElement('div');
     btn.className = 'question-item';
@@ -2213,8 +2234,12 @@ function _renderNorthcottQuestions(list) {
         const resp = document.getElementById('char-response');
         if (resp) { resp.innerHTML = ''; resp.textContent = t.response; _showHaleCallumRead(t.callum); }
         // Apply composure cost via bridge
-        const newComposure = Math.max(0, (window.gameState?.composure || 100) + (t.composure || 0));
+        const currentComp = _getSuspectComposure('northcott');
+        const newComposure = Math.max(0, currentComp + (t.composure || 0));
+        _setSuspectComposure('northcott', newComposure);
         if (window.gameState) window.gameState.composure = newComposure;
+        // Record visit after first technique fires
+        if (s.usedQs.length === 0) _recordVisit('northcott');
         // ── BEHAVIORAL LOGGER BRIDGE ─────────────────────────
         if (typeof window.northcottEmitTechnique === 'function') {
           window.northcottEmitTechnique(techId, s.activeQ, t.composure || 0, t.grants || '');
@@ -2259,10 +2284,60 @@ function _renderNorthcottQuestions(list) {
     list.appendChild(btn);
   });
   if (!anyAvailable) {
+    // Mark session complete so next portrait tap triggers return visit
+    const ns = _getNorthcottSession();
+    if (ns) ns.sessionComplete = true;
     _showClosure('northcott');
     list.innerHTML = '<div style="padding:14px 20px;font-size:12px;color:var(--text-dim);font-style:italic;">The conversation has been exhausted.</div>';
   }
 }
+
+// ── SUSPECT COMPOSURE RECHARGE ────────────────────────────────
+// Each NPC conversation recharges suspect composure by +25.
+// No fixed cooldown — player decides when to return.
+// Hale is exempt — free tier, composure always resets to 100.
+const COMPOSURE_RECHARGE_PER_NPC = 25;
+const COMPOSURE_EXEMPT = ['pemberton-hale'];
+
+function _checkCooldown(charId) {
+  return true; // No hard gate — composure recharge handles pacing
+}
+
+function _recordVisit(charId) {
+  if (!window.gameState) return;
+  if (!window.gameState.suspectLastVisit) window.gameState.suspectLastVisit = {};
+  if (!window.gameState.suspectTotalConvos) window.gameState.suspectTotalConvos = 0;
+  window.gameState.suspectTotalConvos++;
+  window.gameState.suspectLastVisit[charId] = window.gameState.suspectTotalConvos;
+  // Recharge all other suspects' composure by +25
+  if (!COMPOSURE_EXEMPT.includes(charId) && window.gameState.suspectComposure) {
+    Object.keys(window.gameState.suspectComposure).forEach(sid => {
+      if (sid !== charId) {
+        window.gameState.suspectComposure[sid] = Math.min(100, (window.gameState.suspectComposure[sid] || 100) + COMPOSURE_RECHARGE_PER_NPC);
+      }
+    });
+  }
+}
+
+function _getSuspectComposure(charId) {
+  if (COMPOSURE_EXEMPT.includes(charId)) return 100;
+  if (!window.gameState) return 100;
+  if (!window.gameState.suspectComposure) window.gameState.suspectComposure = {};
+  if (window.gameState.suspectComposure[charId] === undefined) {
+    window.gameState.suspectComposure[charId] = 100;
+  }
+  return window.gameState.suspectComposure[charId];
+}
+
+function _setSuspectComposure(charId, value) {
+  if (COMPOSURE_EXEMPT.includes(charId)) return;
+  if (!window.gameState) return;
+  if (!window.gameState.suspectComposure) window.gameState.suspectComposure = {};
+  window.gameState.suspectComposure[charId] = Math.max(0, Math.min(100, value));
+}
+
+window._getSuspectComposure = _getSuspectComposure;
+window._setSuspectComposure = _setSuspectComposure;
 
 // ═══════════════════════════════════════════════════════════
 // CLOSURE MECHANIC
@@ -2368,7 +2443,7 @@ function _renderHaleQuestions(list) {
   // ── COMPOSURE COLLAPSE CHECK ──────────────────────────────────
   // Hale doesn't fracture — he goes cold and bureaucratic.
   // Fires when composure reaches 0 or snap limit exceeded.
-  const currentComposure = (window.gameState && window.gameState.composure) || s.composure || 100;
+  const currentComposure = _getSuspectComposure('pemberton-hale');
   const snapCount = s.snapCount || 0;
   const snapLimit = char.snap_limit || 3;
   if (currentComposure <= 0 || snapCount >= snapLimit) {
@@ -2678,6 +2753,8 @@ function _haleFireLineTechnique(lineId, techId) {
   window.haleSelectTechnique(techId);
   const s = window.getHaleSession ? window.getHaleSession() : null;
   if (s) s.techniqueSelected = null;
+  // Record visit after first technique fires
+  if (s && Object.values(s.usedTechniques || {}).every(arr => arr.length <= 1)) _recordVisit('pemberton-hale');
 
   // ── NODE GRANTS — no composure gate for Hale ─────────────
   // Player cycles all techniques via arrows — motive surfaces through exploration

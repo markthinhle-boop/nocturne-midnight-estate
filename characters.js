@@ -112,6 +112,12 @@ const CHARACTERS = {
       callum: "He quoted Lord Ashworth. Precisely and without being asked. A man who has been standing in this foyer for an hour with a dead man's words in his head has been deciding whether to say them out loud. He just did. Whatever is in that notebook he wants someone to read it correctly.",
     },
 
+    opening_return: {
+      question: "Ask again.",
+      response: "He looks up when you enter. He was expecting this.\n\n\"Again.\" He says it simply. Not a question. He adjusts the notebook in his hand. \"I wondered when you'd be back.\" A pause. \"The record hasn't changed. But I think your questions have.\"",
+      callum: "He said the record hasn't changed but my questions have. He's been standing here since the last conversation thinking about what I didn't ask. He already knows what I came back for.",
+    },
+
     warmup: {
       question: "Do you enjoy being a member?",
       response: "A pause. Something shifts — not relief exactly, but the first unguarded moment.\n\n\"Yes.\" He says it simply. \"It is — not something you ask for. You don't apply. You don't lobby for it.\" He looks at the notebook briefly. \"Lord Ashworth saw something and made a decision. Six weeks ago I received a letter and my life changed considerably.\" A small pause. \"There is nothing else like it. The people in this building tonight — the history of what this place is —\" He stops himself. \"Yes. I enjoy it very much.\"",
