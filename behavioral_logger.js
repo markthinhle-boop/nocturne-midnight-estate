@@ -123,6 +123,11 @@ const INFORMATION_NODES = {
   'scene_reads_as_northcott':         { category: 'actions',   weight: 1.0, event: 'scene_read_northcott_chain',        display: 'Scene read: plain mask + arrival record names Northcott',          accusation_target: 'northcott'},
   'scene_reads_as_ashworth':          { category: 'actions',   weight: 1.0, event: 'scene_read_ashworth_chain',         display: 'Scene read: candle note + estate flower names Lady Ashworth',      accusation_target: 'ashworth' },
 
+  // ── NEW ARCHITECTURE NODES — Northcott (clean names) ──────────────────────
+  'northcott_vivienne_motive':         { category: 'actions',   weight: 1.5, event: 'northcott_q3_motive_answered',        display: 'Northcott: Ashworth threatened Register entry tonight -- Vivienne named', accusation_target: 'northcott'},
+  'northcott_false_gap':               { category: 'times',     weight: 0.8, event: 'northcott_q1_answered',               display: 'Northcott: claims gap 7:15-7:23 -- left post to find Vivienne',          accusation_target: null       },
+  'northcott_decided_interval':        { category: 'actions',   weight: 1.3, event: 'northcott_q3_approach_answered',      display: 'Northcott: 11 minutes deciding -- considered intercepting Ashworth',     accusation_target: 'northcott'},
+
   // ── WRONG-PATH BRANCH NODES ────────────────────────────────────────────────
   // Fired by interrogation.js grants_node -- require branch work, not spine clicks
   'baron_705_observation':            { category: 'times',     weight: 1.5, event: 'baron_branch_a_bar_a1_answered',     display: '7:05PM -- Baron saw figure leave study, satisfied, toward stairs', accusation_target: 'baron'    },

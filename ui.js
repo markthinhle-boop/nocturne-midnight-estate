@@ -1761,6 +1761,7 @@ function _openConversationDirect(charId) {
       const ns = _getNorthcottSession();
       ns.activeQ = null;
     }
+    if (typeof window.northcottEmitConversationOpen === 'function') window.northcottEmitConversationOpen();
     const stale = document.getElementById('hale-callum-read');
     if (stale) stale.remove();
   }
@@ -2184,6 +2185,7 @@ function _renderNorthcottQuestions(list) {
       const resp = document.getElementById('char-response');
       if (resp) { resp.innerHTML = ''; resp.textContent = char.warmup.response; _showHaleCallumRead(char.warmup.callum); }
       s.warmupAsked = true;
+      if (typeof window.northcottEmitWarmup === 'function') window.northcottEmitWarmup();
       renderQuestions('northcott');
     };
     list.appendChild(btn);
@@ -2210,19 +2212,17 @@ function _renderNorthcottQuestions(list) {
         if (typeof NocturneSound !== 'undefined') NocturneSound.playUIClick();
         const resp = document.getElementById('char-response');
         if (resp) { resp.innerHTML = ''; resp.textContent = t.response; _showHaleCallumRead(t.callum); }
-        // Apply composure cost
-        if (t.composure && window.gameState) {
-          window.gameState.composure = Math.max(0, (window.gameState.composure || 100) + t.composure);
+        // Apply composure cost via bridge
+        const newComposure = Math.max(0, (window.gameState?.composure || 100) + (t.composure || 0));
+        if (window.gameState) window.gameState.composure = newComposure;
+        // ── BEHAVIORAL LOGGER BRIDGE ─────────────────────────
+        if (typeof window.northcottEmitTechnique === 'function') {
+          window.northcottEmitTechnique(techId, s.activeQ, t.composure || 0, t.grants || '');
         }
-        // Wire notepad capture for node-granting responses
+        // Wire notepad capture
         if (t.grants) {
           const pencilBtn = document.getElementById('np-pencil-btn');
           if (pencilBtn) pencilBtn.dataset.timelineNode = t.grants.split(' ')[0];
-          // Set node in gameState
-          if (window.gameState) {
-            if (!window.gameState.node_inventory) window.gameState.node_inventory = {};
-            t.grants.split(' ').forEach(n => { window.gameState.node_inventory[n] = true; });
-          }
         }
         if (!s.usedQs.includes(s.activeQ)) s.usedQs.push(s.activeQ);
         s.activeQ = null;

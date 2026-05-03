@@ -917,6 +917,75 @@ window.halePickGateTechnique    = halePickGateTechnique;
 window.haleAvailableFollowups   = haleAvailableFollowups;
 
 // ═══════════════════════════════════════════════════════════
+// NORTHCOTT SESSION — behavioral event bridge
+// Emits NocturneEngine events for new architecture so
+// behavioral_logger.js scores correctly via event listeners.
+// ═══════════════════════════════════════════════════════════
+
+function northcottEmitTechnique(techId, qId, composureDelta, grants) {
+  if (typeof NocturneEngine === 'undefined') return;
+  const charId = 'northcott';
+
+  // Universal events
+  NocturneEngine.emit('techniqueSelected', { charId, technique: techId });
+  NocturneEngine.emit('questionAnswered',  { charId, qId, qType: techId });
+
+  // Composure change
+  if (composureDelta && window.gameState) {
+    const newComp = Math.max(0, (window.gameState.composure || 100) + composureDelta);
+    window.gameState.composure = newComp;
+    NocturneEngine.emit('composureChanged', { charId, state: 'changed', composure: newComp });
+  }
+
+  // Technique-specific model events
+  if (techId === 'wait') {
+    NocturneEngine.emit('silenceFillFired', { charId });
+  }
+  if (techId === 'approach') {
+    NocturneEngine.emit('narrativeStatementUsed', { charId });
+  }
+  if (techId === 'pressure') {
+    // Northcott is cooperative — pressure = BS penalty
+    NocturneEngine.emit('directConfrontationUsed', { charId, targetIsGuilty: false });
+  }
+
+  // Node grants
+  if (grants) {
+    grants.split(' ').forEach(nodeId => {
+      if (!nodeId) return;
+      if (window.gameState) {
+        if (!window.gameState.node_inventory) window.gameState.node_inventory = {};
+        window.gameState.node_inventory[nodeId] = true;
+      }
+      NocturneEngine.emit('nodeMarked', { nodeId, charId });
+      // Branch completion for MMM nodes
+      if (nodeId === 'northcott_vivienne_motive') {
+        NocturneEngine.emit('branchCompleted', { charId, branchId: 'motive', isContradicting: false });
+      }
+      if (nodeId === 'northcott_false_gap') {
+        NocturneEngine.emit('branchCompleted', { charId, branchId: 'false_timeline', isContradicting: false });
+      }
+    });
+  }
+}
+
+function northcottEmitWarmup() {
+  if (typeof NocturneEngine === 'undefined') return;
+  const charId = 'northcott';
+  NocturneEngine.emit('backstoryComplete', { charId });
+  NocturneEngine.emit('approachCompleted', { charId });
+}
+
+function northcottEmitConversationOpen() {
+  if (typeof NocturneEngine === 'undefined') return;
+  NocturneEngine.emit('conversationOpened', { charId: 'northcott' });
+}
+
+window.northcottEmitTechnique         = northcottEmitTechnique;
+window.northcottEmitWarmup            = northcottEmitWarmup;
+window.northcottEmitConversationOpen  = northcottEmitConversationOpen;
+
+// ═══════════════════════════════════════════════════════════
 // PORTRAIT REACTION ENGINE — 3-layer system
 // ═══════════════════════════════════════════════════════════
 // Layer 1: ambient breathing keyed to composure
