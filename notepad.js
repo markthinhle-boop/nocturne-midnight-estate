@@ -350,7 +350,7 @@ function _injectCSS() {
     .np-hud-icon.pulse{animation:np-hud-pulse 600ms ease-out;}
     @keyframes np-hud-pulse{0%{color:var(--gold,#c9a84c);transform:scale(1.3);opacity:1}60%{color:var(--cream-dim,#b8a98a);transform:scale(1)}100%{opacity:0.7}}
 
-    .np-pencil-btn{position:absolute;bottom:-4px;right:0;background:rgba(20,16,10,0.75);border:1px solid rgba(180,155,90,0.3);border-radius:4px;color:var(--gold,#c9a84c);opacity:0.85;cursor:pointer;padding:5px 7px;line-height:1;transition:opacity 200ms,transform 150ms;z-index:10;}
+    .np-pencil-btn{position:absolute;bottom:8px;right:8px;background:rgba(20,16,10,0.75);border:1px solid rgba(180,155,90,0.3);border-radius:4px;color:var(--gold,#c9a84c);opacity:0.85;cursor:pointer;padding:5px 7px;line-height:1;transition:opacity 200ms,transform 150ms;z-index:10;}
     .np-pencil-btn:hover,.np-pencil-btn:active{opacity:1;transform:scale(1.1);}
     .np-pencil-btn.saved{animation:np-pencil-saved 1000ms ease-out forwards;}
     @keyframes np-pencil-saved{0%{transform:scale(1.4) rotate(-8deg);opacity:1}50%{transform:scale(1.1) rotate(0deg)}100%{transform:scale(1);opacity:0.85}}
