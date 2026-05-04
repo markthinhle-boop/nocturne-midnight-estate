@@ -10,7 +10,7 @@
 let _activeObjectId = null;
 const _seenRoomDescriptions = new Set();
 let _activePedestalId = null;
-var _activeCharId = null;
+let _activeCharId = null;
 Object.defineProperty(window, '_activeCharId', { get: () => _activeCharId });
 let _slowDragObjectId = null;
 let _slowDragComplete = false;
