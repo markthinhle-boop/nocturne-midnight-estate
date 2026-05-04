@@ -391,6 +391,12 @@ const CHARACTERS = {
       callum: "He named his committees before I asked for them. The Bond Review is one of three. That's the Register. That's the record. That's the business he won't name.\n\nHe said Lord Ashworth's name once. Clinically. Then moved past it. A man who has known someone for years and watched them die tonight does not move past their name that quickly unless the name costs something.\n\nHe said he knows the Estate's members. He said it the way a man says it who has been watching them. What he has seen tonight he has not offered.",
     },
 
+    opening_return: {
+      question: "Ask again.",
+      response: "He is at the window. He turns when you enter — the same smooth rotation. He was expecting this.\n\n\"You came back.\" He says it without surprise. \"That is more than most manage.\" A pause. He looks at the writing case. \"The questions are the same. What you are listening for may not be.\"",
+      callum: "He said what I'm listening for may not be the same. He's been in this room since the last conversation deciding what he would give a second attempt. The Ashworth branch is still there. So is everything I missed.",
+    },
+
     lines: {
       register: { text: "Walk me through your evening. From arrival to now." },
       ashworth: { text: "Tell me about your history with Lord Ashworth." },

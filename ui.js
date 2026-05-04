@@ -1785,15 +1785,31 @@ function _openConversationDirect(charId) {
   if (charId === 'pemberton-hale') {
     if (typeof window.initHaleSession === 'function') window.initHaleSession();
     const s = window.getHaleSession ? window.getHaleSession() : null;
-    if (s && s.openingAsked) {
-      // Return visit — reset active selection only
-      // usedTechniques, completedLines, flags, gateState, pencil all preserved
-      s.lineSelected      = null;
-      s.techniqueSelected = null;
-      s.followupAsked     = null;
-      s.diversionQueue    = [];
-      s.lastTechnique     = null;
+    if (s) {
+      if (s.sessionComplete) {
+        // Return visit after closure — reset fully, fire opening_return
+        s.sessionComplete   = false;
+        s.openingAsked      = false;
+        s.lineSelected      = null;
+        s.techniqueSelected = null;
+        s.followupAsked     = null;
+        s.lastTechnique     = null;
+        s.diversionQueue    = [];
+        s.completedLines    = [];
+        s.usedTechniques    = {};
+        // Load opening_return into char-response on next render
+        s.useReturnOpening  = true;
+      } else if (s.openingAsked) {
+        // Mid-conversation re-entry — preserve state, just reset active selection
+        s.lineSelected      = null;
+        s.techniqueSelected = null;
+        s.followupAsked     = null;
+        s.diversionQueue    = [];
+        s.lastTechnique     = null;
+      }
     }
+    // Hale no cooldown — _getSuspectComposure returns 100 always
+    if (window.gameState) window.gameState.composure = 100;
     const stale = document.getElementById('hale-callum-read');
     if (stale) stale.remove();
     const staleFlash = document.getElementById('hale-pencil-flash');
@@ -2524,11 +2540,12 @@ function _renderHaleQuestions(list) {
     return;
   }
 
-  // Step 0 — Opening question
+  // Step 0 — Opening question (or Ask again on return)
   if (!s.openingAsked) {
+    const isReturn = s.useReturnOpening && char.opening_return;
     const btn = document.createElement('div');
     btn.className = 'question-item';
-    btn.textContent = char.opening.question;
+    btn.textContent = isReturn ? char.opening_return.question : char.opening.question;
     btn.onclick = () => {
       if (typeof NocturneSound !== 'undefined') NocturneSound.playUIClick();
       _haleFireOpening();
@@ -2637,6 +2654,8 @@ function _renderHaleQuestions(list) {
 
   // Exhausted
   if (list.children.length === 0) {
+    const s = window.getHaleSession ? window.getHaleSession() : null;
+    if (s) s.sessionComplete = true;
     _showClosure('pemberton-hale');
     list.innerHTML = '<div style="padding:14px 20px;font-size:12px;color:var(--text-dim);font-style:italic;">The conversation has been exhausted.</div>';
   }
@@ -2727,7 +2746,8 @@ function _injectHaleSnapback(branch) {
 }
 
 function _injectHaleMiniArrow() {
-  // Mini arrow — cycles to remaining techniques in current branch
+  // Arrows removed — debrief guides return visits
+  // Silently re-render so remaining techniques appear
   const existing = document.getElementById('hale-mini-arrow');
   if (existing) existing.remove();
   const s = window.getHaleSession ? window.getHaleSession() : null;
@@ -2739,63 +2759,40 @@ function _injectHaleMiniArrow() {
     _injectHaleBigArrow();
     return;
   }
-  const resp = document.getElementById('char-response');
-  if (!resp) return;
-  const btn = document.createElement('button');
-  btn.id = 'hale-mini-arrow';
-  btn.style.cssText = 'display:flex;align-items:center;justify-content:center;margin:12px auto 0;background:rgba(20,16,10,0.75);border:1px solid rgba(180,155,90,0.35);border-radius:50%;width:32px;height:32px;cursor:pointer;color:#c9a84c;font-size:16px;';
-  btn.innerHTML = '›';
-  btn.title = `${remaining.length} approach${remaining.length !== 1 ? 'es' : ''} remaining`;
-  btn.onclick = () => {
-    btn.remove();
-    const s2 = window.getHaleSession ? window.getHaleSession() : null;
-    if (s2) { s2.techniqueSelected = null; s2.lastTechnique = null; }
-    const activeCharId = window._activeCharId || 'pemberton-hale';
-    renderQuestions(activeCharId);
-  };
-  resp.appendChild(btn);
+  if (s) { s.techniqueSelected = null; s.lastTechnique = null; }
+  renderQuestions('pemberton-hale');
 }
 
 function _injectHaleBigArrow() {
-  // Big arrow — advances to next branch
+  // Big arrow removed — branch advances automatically when exhausted
   const existing = document.getElementById('hale-big-arrow');
   if (existing) existing.remove();
   const s = window.getHaleSession ? window.getHaleSession() : null;
   if (!s) return;
   const BRANCH_ORDER = ['register', 'ashworth', 'others'];
-  const completed = s.completedLines || [];
-  const nextBranch = BRANCH_ORDER.find(b => !completed.includes(b) && b !== s.lineSelected);
+  const nextBranch = BRANCH_ORDER.find(b => !(s.completedLines || []).includes(b) && b !== s.lineSelected);
   if (!nextBranch) return;
-  const resp = document.getElementById('char-response');
-  if (!resp) return;
-  const btn = document.createElement('button');
-  btn.id = 'hale-big-arrow';
-  btn.style.cssText = 'display:flex;align-items:center;justify-content:center;margin:14px auto 0;background:rgba(180,155,90,0.15);border:1px solid rgba(180,155,90,0.6);border-radius:50%;width:42px;height:42px;cursor:pointer;color:#c9a84c;font-size:22px;';
-  btn.innerHTML = '›';
-  btn.title = 'Continue investigation';
-  btn.onclick = () => {
-    btn.remove();
-    if (!s.completedLines) s.completedLines = [];
-    if (!s.completedLines.includes(s.lineSelected)) s.completedLines.push(s.lineSelected);
-    s.lineSelected = null;
-    s.techniqueSelected = null;
-    s.followupAsked = null;
-    s.lastTechnique = null;
-    renderQuestions('pemberton-hale');
-    const list = document.getElementById('questions-list');
-    if (list) list.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  };
-  resp.appendChild(btn);
+  if (!s.completedLines) s.completedLines = [];
+  if (!s.completedLines.includes(s.lineSelected)) s.completedLines.push(s.lineSelected);
+  s.lineSelected = null;
+  s.techniqueSelected = null;
+  s.followupAsked = null;
+  s.lastTechnique = null;
+  renderQuestions('pemberton-hale');
 }
 
 function _haleFireOpening() {
   const char = window.CHARACTERS && window.CHARACTERS['pemberton-hale'];
   if (!char || !char.opening) return;
+  const s = window.getHaleSession ? window.getHaleSession() : null;
+  const useReturn = s && s.useReturnOpening && char.opening_return;
+  const openingData = useReturn ? char.opening_return : char.opening;
+  if (s && s.useReturnOpening) s.useReturnOpening = false;
   const resp = document.getElementById('char-response');
   if (resp) {
     resp.innerHTML = '';
-    resp.textContent = char.opening.response;
-    _showHaleCallumRead(char.opening.callum);
+    resp.textContent = openingData.response;
+    _showHaleCallumRead(openingData.callum);
   }
   window.haleOpeningAsked();
   renderQuestions('pemberton-hale');
