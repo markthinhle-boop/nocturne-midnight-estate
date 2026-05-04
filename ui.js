@@ -2340,75 +2340,137 @@ window._getSuspectComposure = _getSuspectComposure;
 window._setSuspectComposure = _setSuspectComposure;
 
 // ═══════════════════════════════════════════════════════════
-// CLOSURE MECHANIC
-// Fires when questions exhausted. Checks MMM surface/capture.
-// Flags elegantly if surfaced but player didn't capture.
+// THREE-LAYER DEBRIEF
+// Layer 1 — Case Checklist (MMM status)
+// Layer 2 — Technique Assessment (qualitative, suspect-specific)
+// Layer 3 — FBI Post-Interview Debrief (account/contradictions/intelligence/gaps/next)
 // ═══════════════════════════════════════════════════════════
 
-const CLOSURE_CONFIG = {
+const DEBRIEF_CONFIG = {
   'pemberton-hale': {
-    mmm: {
-      motive: { node: 'hale_immunity_motive',  label: 'motive'  },
-      false:  { node: 'hale_false_timeline',   label: 'timeline' },
-    },
     final: '"I\'d like to speak to the Curator." Quietly. Not panicked.',
-    callum_missed:  'The immunity clause was in this room. He said it without saying it. It may still be.',
-    callum_captured: 'He gave me the shape of it. The Register. Ashworth. Eighteen months of protection that wasn\'t enough. That goes on the board.',
+    mmm: {
+      motive: { node: 'hale_immunity_motive', label: 'Motive', surfaced: 'Immunity clause — eighteen months of Register amendments to limit Ashworth\'s authority over his provisions.', missing: 'The immunity clause. What he built and why. Still inside the Ashworth branch.' },
+      means:  { node: null, label: 'Means',  missing: 'Return after cross-character work.' },
+      moment: { node: null, label: 'Moment', missing: 'Return after cross-character work.' },
+    },
+    techniques: {
+      wait:     { good: 'Wait — he filled the silence. The Register detail surfaced without pressure. Correct technique for this witness.', bad: null },
+      account:  { good: 'Account — he narrated in sequence. The immunity clause emerged from the sequence. Correct technique.', bad: null },
+      approach: { good: 'Approach — the correction produced more than the question asked for. Effective.', bad: null },
+      pressure: { good: null, bad: 'Pressure — Hale is managed, not cooperative. Pressure produced bureaucratic shutdown. Composure cost was disproportionate to intelligence gained.' },
+    },
+    account_text: () => 'Pemberton-Hale claims standard Register entries reviewed with the Curator at 7:42. Bond provisions in order. Evening routine.',
+    contradictions: (ni) => ni['hale_false_timeline'] ? 'Entries described as standard. Eight years of incremental amendments inconsistent with this account.' : 'No contradictions identified this visit.',
+    intelligence: (ni) => ni['hale_immunity_motive'] ? 'Immunity clause added eighteen months ago. Ashworth held authority over Bond provisions. Subject had reason to want that authority neutralised before tonight.' : 'Register alterations referenced but not fully disclosed.',
+    gaps: () => 'Ashworth conversation before the Rite not yet surfaced.\nNature of immunity clause threat unconfirmed.\nCurator conversation at 7:42 unverified.',
+    next: () => 'Speak to the Curator. Cross-reference 7:42 account. Return to Ashworth branch when composure allows.',
   },
   'northcott': {
-    mmm: {
-      motive: { node: 'northcott_vivienne_motive', label: 'motive'  },
-      false:  { node: 'northcott_false_gap',        label: 'timeline' },
-    },
     final: '"I hope you find what you\'re looking for." He means it. He always has.',
-    callum_missed:  'He gave me the gap. He gave me the candelabra. The Ashworth conversation was in there. If it surfaced — it wasn\'t written down.',
-    callum_captured: 'He gave me the motive. Ashworth\'s threat. The Register entry. The arrangement with Vivienne. That goes on the board.',
+    mmm: {
+      motive: { node: 'northcott_vivienne_motive', label: 'Motive', surfaced: 'Ashworth threatened public Register entry tonight. Vivienne named. Membership at stake.', missing: 'What Ashworth said to him before the Rite. Still in the room.' },
+      means:  { node: null, label: 'Means',  missing: 'Return after cross-character work.' },
+      moment: { node: null, label: 'Moment', missing: 'Return after cross-character work.' },
+    },
+    techniques: {
+      wait:     { good: 'Wait — he filled the silence. The gap surfaced without pressure. Correct technique for this witness.', bad: null },
+      account:  { good: 'Account — he narrated his own evening. The candelabra detail emerged naturally. Correct technique.', bad: null },
+      approach: { good: 'Approach — the near-truth produced correction. He gave more than the question asked for. Effective.', bad: null },
+      pressure: { good: null, bad: 'Pressure — this witness is cooperative. Pressure produced defensiveness, not disclosure. Composure cost was unnecessary.' },
+    },
+    account_text: () => 'Northcott claims post established at 7:00. Continuous record until 7:15. Gap of eight minutes — left post to find a staff member. Returned 7:23. Candelabra base logged at 7:40 in correct position. Gone at 8:02.',
+    contradictions: (ni) => ni['northcott_false_gap'] ? 'Gap timing claims 7:15–7:23. No corroborating witness yet identified. True timing unverified.' : 'No contradictions identified this visit.',
+    intelligence: (ni) => ni['northcott_vivienne_motive'] ? 'Ashworth delivered threat at 7:05 — east corridor. Register entry planned for tonight naming Vivienne. Subject had motive before the Rite began.' : 'Ashworth conversation referenced but not disclosed. Subject deflected on Q3.',
+    gaps: () => 'True gap timing unconfirmed.\nStaff member identity not yet named.\nAshworth conversation content incomplete.',
+    next: () => 'Cross-reference gap timing with other witnesses. Return after corroborating intelligence gathered.',
   },
 };
 
 function _showClosure(charId) {
-  const config = CLOSURE_CONFIG[charId];
+  const config = DEBRIEF_CONFIG[charId];
   if (!config) return;
   const resp = document.getElementById('char-response');
   if (!resp) return;
 
-  // Get node inventory
   const ni = (window.gameState && window.gameState.node_inventory) || {};
-
-  // Check what was surfaced and what was captured
   const pencilBtn = document.getElementById('np-pencil-btn');
   const capturedNode = pencilBtn ? pencilBtn.dataset.timelineNode : null;
-  const motiveNode = config.mmm.motive.node;
-  const motivesSurfaced = !!ni[motiveNode];
-  const motiveCaptured = capturedNode === motiveNode;
+
+  resp.innerHTML = '';
 
   // Final line
-  resp.innerHTML = '';
-  resp.textContent = config.final;
+  const finalEl = document.createElement('div');
+  finalEl.style.cssText = 'font-size:15px;color:var(--text);font-style:italic;line-height:1.6;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--border);';
+  finalEl.textContent = config.final;
+  resp.appendChild(finalEl);
 
-  // Callum closure thought
-  const closureEl = document.createElement('div');
-  closureEl.style.cssText = 'margin-top:12px;padding:10px 14px;background:rgba(20,16,10,0.7);border-left:2px solid rgba(180,155,90,0.4);font-family:var(--sans);font-size:12px;color:var(--text-dim);font-style:italic;line-height:1.55;';
+  // ── LAYER 1 — CASE CHECKLIST ──────────────────────────
+  const l1 = document.createElement('div');
+  l1.style.cssText = 'margin-bottom:16px;';
+  l1.innerHTML = '<div style="font-family:var(--sans);font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-bottom:8px;">Case Checklist</div>';
+  Object.entries(config.mmm).forEach(([key, slot]) => {
+    const surfaced = slot.node && ni[slot.node];
+    const captured = slot.node && capturedNode === slot.node;
+    const status = surfaced && captured ? '✓' : surfaced && !captured ? '!' : '—';
+    const color = surfaced && captured ? 'rgba(107,138,74,.9)' : surfaced && !captured ? 'rgba(180,155,90,.9)' : 'var(--faint)';
+    const text = surfaced && captured ? slot.surfaced : surfaced && !captured ? 'Surfaced. Not captured.' : slot.missing;
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:flex-start;gap:10px;margin-bottom:6px;font-family:var(--sans);font-size:11px;line-height:1.5;';
+    row.innerHTML = `<span style="color:${color};width:14px;flex-shrink:0;">${status}</span><span style="color:var(--dim);width:52px;flex-shrink:0;">${slot.label}</span><span style="color:${color};font-style:italic;">${text}</span>`;
+    l1.appendChild(row);
+  });
+  resp.appendChild(l1);
 
-  if (motivesSurfaced && !motiveCaptured) {
-    // Surfaced but not captured — flag elegantly
-    closureEl.style.borderLeftColor = 'rgba(180,155,90,0.7)';
-    closureEl.textContent = config.mmm.motive.label.charAt(0).toUpperCase() + config.mmm.motive.label.slice(1) + ' was presented. Not captured.';
-    const subEl = document.createElement('div');
-    subEl.style.cssText = 'margin-top:6px;font-size:11px;color:var(--text-dim);';
-    subEl.textContent = config.callum_missed;
-    closureEl.appendChild(subEl);
-  } else if (motivesSurfaced && motiveCaptured) {
-    closureEl.textContent = config.callum_captured;
-  } else {
-    closureEl.textContent = config.callum_missed;
+  // ── LAYER 2 — TECHNIQUE ASSESSMENT ───────────────────
+  const l2 = document.createElement('div');
+  l2.style.cssText = 'margin-bottom:16px;';
+  l2.innerHTML = '<div style="font-family:var(--sans);font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-bottom:8px;">Technique Assessment</div>';
+
+  const s = charId === 'northcott' ? (typeof _getNorthcottSession === 'function' ? _getNorthcottSession() : null) : (typeof window.getHaleSession === 'function' ? window.getHaleSession() : null);
+  const techsUsed = new Set();
+  if (s && s.usedTechniques) Object.values(s.usedTechniques).forEach(arr => arr && arr.forEach(t => techsUsed.add(t)));
+
+  let anyTech = false;
+  ['wait','account','approach','pressure'].forEach(tech => {
+    if (!techsUsed.has(tech)) return;
+    const lines = config.techniques[tech];
+    if (!lines) return;
+    const line = lines.bad || lines.good;
+    if (!line) return;
+    anyTech = true;
+    const row = document.createElement('div');
+    row.style.cssText = `margin-bottom:6px;font-size:12px;color:${lines.bad ? 'rgba(160,74,58,.9)' : 'var(--dim)'};font-style:italic;line-height:1.5;padding-left:10px;border-left:2px solid ${lines.bad ? 'rgba(160,74,58,.4)' : 'rgba(107,138,74,.3)'};`;
+    row.textContent = line;
+    l2.appendChild(row);
+  });
+  if (!anyTech) {
+    const row = document.createElement('div');
+    row.style.cssText = 'font-size:12px;color:var(--faint);font-style:italic;';
+    row.textContent = 'No technique data recorded.';
+    l2.appendChild(row);
   }
+  resp.appendChild(l2);
 
-  resp.appendChild(closureEl);
+  // ── LAYER 3 — FBI POST-INTERVIEW DEBRIEF ─────────────
+  const l3 = document.createElement('div');
+  l3.innerHTML = '<div style="font-family:var(--sans);font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-bottom:8px;">Post-Interview Debrief</div>';
+  [
+    { label: 'Subject Account',         text: config.account_text(ni) },
+    { label: 'Contradictions',          text: config.contradictions(ni) },
+    { label: 'Intelligence Gained',     text: config.intelligence(ni) },
+    { label: 'Gaps Remaining',          text: config.gaps() },
+    { label: 'Next Investigative Step', text: config.next() },
+  ].forEach(sec => {
+    const block = document.createElement('div');
+    block.style.cssText = 'margin-bottom:10px;';
+    block.innerHTML = `<div style="font-family:var(--sans);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-bottom:3px;">${sec.label}</div><div style="font-size:12px;color:var(--dim);font-style:italic;line-height:1.6;white-space:pre-line;">${sec.text}</div>`;
+    l3.appendChild(block);
+  });
+  resp.appendChild(l3);
 
-  // Emit closure event
   if (typeof NocturneEngine !== 'undefined') {
-    NocturneEngine.emit('closureFired', { charId, motivesSurfaced, motiveCaptured });
+    NocturneEngine.emit('closureFired', { charId, ni });
   }
 }
 

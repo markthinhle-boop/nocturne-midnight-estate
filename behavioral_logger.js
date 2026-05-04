@@ -524,6 +524,36 @@ function _bindEvents() {
     _flush();
   });
 
+  // ── CLOSURE FIRED — PEACE Evaluate stage ──────────────────────
+  NocturneEngine.on('closureFired', ({ charId, ni }) => {
+    const log = _getCharLog(charId);
+    log.closure_reached = true;
+    log.closure_ni_snapshot = ni || {};
+    _activeCase.behavioral_log.peace_evaluate_count = (_activeCase.behavioral_log.peace_evaluate_count || 0) + 1;
+    _flush();
+  });
+
+  // ── NODE MARKED — intelligence captured ───────────────────────
+  NocturneEngine.on('nodeMarked', ({ nodeId, charId }) => {
+    if (!_activeCase.behavioral_log.nodes_marked) _activeCase.behavioral_log.nodes_marked = [];
+    if (!_activeCase.behavioral_log.nodes_marked.includes(nodeId)) {
+      _activeCase.behavioral_log.nodes_marked.push(nodeId);
+    }
+    // Track motive nodes specifically for NIS
+    if (nodeId && nodeId.includes('_motive')) {
+      _activeCase.behavioral_log.motive_nodes_earned = (_activeCase.behavioral_log.motive_nodes_earned || 0) + 1;
+    }
+    _flush();
+  });
+
+  // ── COLLAPSE FIRED — composure fully depleted ──────────────────
+  NocturneEngine.on('collapseFired', ({ charId }) => {
+    const log = _getCharLog(charId);
+    log.collapse_triggered = true;
+    _activeCase.behavioral_log.collapses_triggered = (_activeCase.behavioral_log.collapses_triggered || 0) + 1;
+    _flush();
+  });
+
   // ── EVIDENCE TIMING (SUE) ──────────────────────────────────
 
   NocturneEngine.on('evidenceRevealedBeforeQuestion', ({ charId, itemId }) => {
