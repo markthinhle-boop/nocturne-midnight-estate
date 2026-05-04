@@ -1787,7 +1787,8 @@ function _openConversationDirect(charId) {
     const s = window.getHaleSession ? window.getHaleSession() : null;
     if (s) {
       if (s.sessionComplete) {
-        // Return visit after closure — reset fully, fire opening_return
+        // Return visit after closure — reset only transient turn state.
+        // PRESERVE completedLines and usedTechniques across visits.
         s.sessionComplete   = false;
         s.openingAsked      = false;
         s.lineSelected      = null;
@@ -1795,8 +1796,6 @@ function _openConversationDirect(charId) {
         s.followupAsked     = null;
         s.lastTechnique     = null;
         s.diversionQueue    = [];
-        s.completedLines    = [];
-        s.usedTechniques    = {};
         // Load opening_return into char-response on next render
         s.useReturnOpening  = true;
       } else if (s.openingAsked) {
@@ -2447,8 +2446,6 @@ function _showClosure(charId, branchId) {
   if (!charConfig) return;
   const config = charConfig[branchId];
   if (!config) return;
-  const resp = document.getElementById('char-response');
-  if (!resp) return;
 
   // Branch-specific node inventory — only nodes earned in THIS branch
   const BRANCH_NODES = {
@@ -2471,16 +2468,56 @@ function _showClosure(charId, branchId) {
   const pencilBtn = document.getElementById('np-pencil-btn');
   const capturedNode = pencilBtn ? pencilBtn.dataset.timelineNode : null;
 
-  resp.innerHTML = '';
+  // ── Close the conversation panel — debrief lives outside it ──
+  if (typeof _closeConversationPanel === 'function') {
+    try { _closeConversationPanel(); } catch(e) { /* non-fatal */ }
+  }
 
+  // ── Build the debrief overlay ────────────────────────────────
+  const existing = document.getElementById('hale-debrief-overlay');
+  if (existing) existing.remove();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'hale-debrief-overlay';
+  overlay.style.cssText = [
+    'position:fixed','inset:0','z-index:9999',
+    'background:rgba(8,6,4,0.94)','backdrop-filter:blur(6px)',
+    'display:flex','align-items:flex-start','justify-content:center',
+    'padding:32px 16px 48px','overflow-y:auto',
+    'opacity:0','transition:opacity 320ms ease',
+  ].join(';');
+
+  const card = document.createElement('div');
+  card.style.cssText = [
+    'width:100%','max-width:520px','background:rgba(20,16,10,0.96)',
+    'border:1px solid rgba(180,155,90,0.28)','padding:28px 24px 24px',
+    'box-shadow:0 18px 60px rgba(0,0,0,0.6)','color:var(--text)','font-family:var(--serif,Georgia,serif)',
+  ].join(';');
+
+  // Header
+  const header = document.createElement('div');
+  header.style.cssText = 'margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid rgba(180,155,90,0.18);';
+  const eyebrow = document.createElement('div');
+  eyebrow.style.cssText = 'font-family:var(--sans);font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);margin-bottom:6px;';
+  eyebrow.textContent = 'Post-Interview Debrief';
+  header.appendChild(eyebrow);
+  const title = document.createElement('div');
+  title.style.cssText = 'font-size:14px;color:var(--text-dim);font-style:italic;letter-spacing:.04em;';
+  const lineLabels = { register: 'The Register', ashworth: 'Lord Ashworth', others: 'The Others', Q1: 'Q1', Q2: 'Q2', Q3: 'Q3' };
+  const charDisplay = (window.CHARACTERS && window.CHARACTERS[charId] && window.CHARACTERS[charId].display_name) || charId;
+  title.textContent = `${charDisplay} — ${lineLabels[branchId] || branchId}`;
+  header.appendChild(title);
+  card.appendChild(header);
+
+  // Final reflective line
   const finalEl = document.createElement('div');
-  finalEl.style.cssText = 'font-size:15px;color:var(--text);font-style:italic;line-height:1.6;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--border);';
+  finalEl.style.cssText = 'font-size:15px;color:var(--text);font-style:italic;line-height:1.6;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--border);';
   finalEl.textContent = config.final;
-  resp.appendChild(finalEl);
+  card.appendChild(finalEl);
 
   // Layer 1 — Case Checklist
   const l1 = document.createElement('div');
-  l1.style.cssText = 'margin-bottom:16px;';
+  l1.style.cssText = 'margin-bottom:18px;';
   l1.innerHTML = '<div style="font-family:var(--sans);font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-bottom:8px;">Case Checklist</div>';
   [
     { label: 'Motive', node: config.mmm.motive },
@@ -2497,15 +2534,20 @@ function _showClosure(charId, branchId) {
     row.innerHTML = `<span style="color:${color};width:14px;flex-shrink:0;">${status}</span><span style="color:var(--dim);width:52px;flex-shrink:0;">${slot.label}</span><span style="color:${color};font-style:italic;">${text}</span>`;
     l1.appendChild(row);
   });
-  resp.appendChild(l1);
+  card.appendChild(l1);
 
   // Layer 2 — Technique Assessment
   const l2 = document.createElement('div');
-  l2.style.cssText = 'margin-bottom:16px;';
+  l2.style.cssText = 'margin-bottom:18px;';
   l2.innerHTML = '<div style="font-family:var(--sans);font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-bottom:8px;">Technique Assessment</div>';
-  const sess = charId === 'northcott' ? (typeof _getNorthcottSession === 'function' ? _getNorthcottSession() : null) : (typeof window.getHaleSession === 'function' ? window.getHaleSession() : null);
+  const sess = charId === 'northcott'
+    ? (typeof _getNorthcottSession === 'function' ? _getNorthcottSession() : null)
+    : (typeof window.getHaleSession === 'function' ? window.getHaleSession() : null);
   const techsUsed = new Set();
-  if (sess && sess.usedTechniques) Object.values(sess.usedTechniques).forEach(arr => arr && arr.forEach(t => techsUsed.add(t)));
+  // Branch-scoped technique inventory: only techniques used IN this branch surface in the assessment
+  if (sess && sess.usedTechniques && sess.usedTechniques[branchId]) {
+    sess.usedTechniques[branchId].forEach(t => techsUsed.add(t));
+  }
   let anyTech = false;
   ['wait','account','approach','pressure'].forEach(tech => {
     if (!techsUsed.has(tech)) return;
@@ -2519,11 +2561,12 @@ function _showClosure(charId, branchId) {
     l2.appendChild(row);
   });
   if (!anyTech) l2.innerHTML += '<div style="font-size:12px;color:var(--faint);font-style:italic;">No technique data recorded.</div>';
-  resp.appendChild(l2);
+  card.appendChild(l2);
 
   // Layer 3 — FBI Debrief
   const l3 = document.createElement('div');
-  l3.innerHTML = '<div style="font-family:var(--sans);font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-bottom:8px;">Post-Interview Debrief</div>';
+  l3.style.cssText = 'margin-bottom:8px;';
+  l3.innerHTML = '<div style="font-family:var(--sans);font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-bottom:8px;">Subject Notes</div>';
   [
     { label: 'Subject Account',     text: config.account_text(ni) },
     { label: 'Contradictions',      text: config.contradictions(ni) },
@@ -2531,11 +2574,37 @@ function _showClosure(charId, branchId) {
     { label: 'Gaps Remaining',      text: typeof config.gaps === 'function' ? config.gaps(ni) : '' },
   ].forEach(sec => {
     const block = document.createElement('div');
-    block.style.cssText = 'margin-bottom:10px;';
+    block.style.cssText = 'margin-bottom:12px;';
     block.innerHTML = `<div style="font-family:var(--sans);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-bottom:3px;">${sec.label}</div><div style="font-size:12px;color:var(--dim);font-style:italic;line-height:1.6;white-space:pre-line;">${sec.text}</div>`;
     l3.appendChild(block);
   });
-  resp.appendChild(l3);
+  card.appendChild(l3);
+
+  // Dismiss button
+  const dismiss = document.createElement('button');
+  dismiss.textContent = 'Close';
+  dismiss.style.cssText = [
+    'display:block','margin:18px auto 4px','padding:10px 28px',
+    'background:transparent','border:1px solid rgba(180,155,90,0.45)',
+    'color:var(--gold)','font-family:var(--sans)','font-size:11px',
+    'letter-spacing:.18em','text-transform:uppercase','cursor:pointer',
+    'transition:background 200ms,border-color 200ms',
+  ].join(';');
+  dismiss.onmouseenter = () => { dismiss.style.background = 'rgba(180,155,90,0.08)'; dismiss.style.borderColor = 'rgba(180,155,90,0.7)'; };
+  dismiss.onmouseleave = () => { dismiss.style.background = 'transparent'; dismiss.style.borderColor = 'rgba(180,155,90,0.45)'; };
+  dismiss.onclick = () => {
+    overlay.style.opacity = '0';
+    setTimeout(() => { overlay.remove(); }, 320);
+  };
+  card.appendChild(dismiss);
+
+  overlay.appendChild(card);
+  // Tap-outside-to-dismiss
+  overlay.onclick = (e) => { if (e.target === overlay) dismiss.onclick(); };
+
+  document.body.appendChild(overlay);
+  // Fade in next frame
+  requestAnimationFrame(() => { overlay.style.opacity = '1'; });
 
   if (typeof NocturneEngine !== 'undefined') {
     NocturneEngine.emit('closureFired', { charId, branchId, ni });
@@ -2606,25 +2675,20 @@ function _renderHaleQuestions(list) {
     return;
   }
 
-  // ── SEQUENTIAL BRANCH SELECTION ──────────────────────────────
-  // Register always available first. Ashworth unlocks after Register exhausted.
-  // Others unlocks after Ashworth exhausted. Player clicks the branch to enter it.
+  // ── BRANCH SELECTION — all three available from the start ───
+  // Player chooses any branch in any order. Completed branches dim and lock.
   if (!s.lineSelected) {
     const BRANCH_ORDER = ['register', 'ashworth', 'others'];
     const completed = s.completedLines || [];
-    const used = s.usedTechniques || {};
-    BRANCH_ORDER.forEach((lineId, idx) => {
+    BRANCH_ORDER.forEach((lineId) => {
       const text = HALE_LINE_LABELS[lineId];
       const isDone = completed.includes(lineId);
-      // Branch is available if all previous branches are exhausted
-      const prevDone = BRANCH_ORDER.slice(0, idx).every(b => completed.includes(b));
-      const isAvailable = idx === 0 || prevDone;
       const btn = document.createElement('div');
-      btn.className = 'question-item' + (isDone ? ' question-asked' : '') + (!isAvailable ? ' question-locked' : '');
-      btn.style.opacity = isDone ? '0.35' : !isAvailable ? '0.35' : '1';
-      btn.style.cursor = (isDone || !isAvailable) ? 'default' : 'pointer';
+      btn.className = 'question-item' + (isDone ? ' question-asked' : '');
+      btn.style.opacity = isDone ? '0.35' : '1';
+      btn.style.cursor = isDone ? 'default' : 'pointer';
       btn.textContent = text;
-      if (isAvailable && !isDone) {
+      if (!isDone) {
         btn.onclick = () => {
           if (typeof NocturneSound !== 'undefined') NocturneSound.playUIClick();
           // Others fires immediately
@@ -2740,7 +2804,24 @@ function _haleFireOthers() {
     resp.textContent = tech.response;
     if (tech.callum) _showHaleCallumRead(tech.callum);
   }
-  renderQuestions('pemberton-hale');
+  // Others is a one-shot suspect list — no techniques, no follow-ups, no debrief.
+  // Lock as completed immediately so the branch dims on return visits.
+  // Sets sessionComplete so the return-visit handler fires opening_return next time,
+  // but pendingDebriefBranch stays null so closeConversation skips the debrief.
+  const s = window.getHaleSession ? window.getHaleSession() : null;
+  if (s) {
+    if (!s.completedLines) s.completedLines = [];
+    if (!s.completedLines.includes('others')) s.completedLines.push('others');
+    s.sessionComplete      = true;
+    s.pendingDebriefBranch = null;
+    s.lineSelected         = null;
+    s.techniqueSelected    = null;
+    s.followupAsked        = null;
+    s.lastTechnique        = null;
+  }
+  // Clear questions list — player closes to exit
+  const list = document.getElementById('questions-list');
+  if (list) list.innerHTML = '';
 }
 
 function _injectHaleSnapback(branch) {
@@ -2924,21 +3005,31 @@ function _haleFireFollowup(followupId) {
     if (fq.callum) _showHaleCallumRead(fq.callum);
   }
   const s = window.getHaleSession ? window.getHaleSession() : null;
-  if (s) { s.followupAsked = null; s.lastTechnique = null; }
   // Flash pencil for timeline node
   if (fq.pencil_flash && window.gameState && window.gameState.halePencilFlashPending) {
     if (typeof window.flashPencilForTimeline === 'function') {
       window.flashPencilForTimeline(fq.pencil_node || window.gameState.halePencilNode);
     }
   }
-  // Follow-up chosen = branch complete for this visit
+  // Per-visit branch exhaustion:
+  // - One technique + its follow-up = branch exhausted FOR THIS VISIT.
+  // - Debrief fires when player closes (Register/Ashworth only — never Others).
+  // - Branch is fully completed (and locked) only when all 4 techniques have been used across visits.
+  // - Branch remains selectable on return visits if techniques remain.
   if (s && s.lineSelected && s.lineSelected !== 'others') {
-    if (!s.completedLines) s.completedLines = [];
-    if (!s.completedLines.includes(s.lineSelected)) s.completedLines.push(s.lineSelected);
-    s.sessionComplete = true;
-    s.pendingDebriefBranch = s.lineSelected;
-    s.lineSelected = null;
+    const branchId = s.lineSelected;
+    const usedHere = (s.usedTechniques && s.usedTechniques[branchId]) || [];
+    const allFour = ['wait','account','approach','pressure'].every(t => usedHere.includes(t));
+    if (allFour) {
+      if (!s.completedLines) s.completedLines = [];
+      if (!s.completedLines.includes(branchId)) s.completedLines.push(branchId);
+    }
+    s.sessionComplete       = true;
+    s.pendingDebriefBranch  = branchId;
+    s.lineSelected      = null;
     s.techniqueSelected = null;
+    s.followupAsked     = null;
+    s.lastTechnique     = null;
   }
   // Clear questions list — nothing shown until player closes and returns
   const list = document.getElementById('questions-list');
