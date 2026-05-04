@@ -227,10 +227,6 @@ function injectPencilIcon() {
   // Gate: hide until antechamber unlocked (matches HUD icon gating)
   if (!window.gameState || !window.gameState.antechamberGateOpen) return;
 
-  // Hale's pencil flash is handled directly by ui.js _injectHalePencilFlash
-  // The standard pencil icon is suppressed during Hale's interrogation
-  if (window._activeCharId === 'pemberton-hale') return;
-
   const resp   = document.getElementById('char-response');
   const charId = window._activeCharId;
   if (!resp || !charId) return;
