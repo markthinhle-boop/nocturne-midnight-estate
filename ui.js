@@ -2379,10 +2379,15 @@ const DEBRIEF_CONFIG = {
     register: {
       final: 'He looks at the writing case. He has given you the record.',
       mmm: { motive: null, means: null, moment: null },
-      account_text: () => 'Entries described as standard. Administrative amendments over a period of years. Bond provisions confirmed in order at seven forty-two.',
+      account_text: (ni) => ni['hale_false_timeline'] ? 'Entries described as standard. Administrative amendments over a period of years. Bond provisions confirmed in order.' : 'Subject gave account of Register duties. No detail volunteered.',
       contradictions: (ni) => ni['hale_false_timeline'] ? 'Eight years of incremental amendments described as administrative. The scope is inconsistent with the characterisation.' : 'No contradictions identified.',
       intelligence: (ni) => ni['hale_false_timeline'] ? 'Register alterations confirmed. Nature and purpose not yet established.' : 'Subject account taken. No intelligence extracted.',
-      gaps: () => 'Immunity clause not yet surfaced.\nAshworth conversation not yet surfaced.\nCurator account at seven forty-two unverified.',
+      gaps: (ni) => {
+        const lines = [];
+        if (!ni['hale_immunity_motive']) lines.push('Immunity clause not yet surfaced.');
+        lines.push('Ashworth conversation before the Rite not yet surfaced.');
+        return lines.join('\n');
+      },
       techniques: { wait: 'Wait — he returned the silence. The record surfaced on his terms.', account: 'Account — he narrated in sequence. He chose the order.', approach: 'Approach — the correction produced more than the question contained.', pressure: 'Pressure — he redirected to specifics. He is managing disclosure.' },
     },
     ashworth: {
@@ -2391,7 +2396,13 @@ const DEBRIEF_CONFIG = {
       account_text: () => 'Lord Ashworth informed subject of committee finding at seven-oh-five. Immunity clause identified as irregular. Reading into Register scheduled for tonight.',
       contradictions: (ni) => ni['hale_immunity_motive'] ? 'Subject described provisions as protective. Committee found the clause irregular. These accounts are inconsistent.' : 'Ashworth conversation not fully disclosed. Account incomplete.',
       intelligence: (ni) => ni['hale_immunity_motive'] ? 'Committee convened informally that afternoon. Subject had fifty-five minutes between that conversation and the Rite.' : 'Ashworth relationship characterised as formal and correct. Personal dimension not yet surfaced.',
-      gaps: () => 'Subject decision during fifty-five minute interval not established.\nMeans not yet surfaced.\nMoment not yet surfaced.',
+      gaps: (ni) => {
+        const lines = [];
+        if (ni['hale_immunity_motive']) lines.push('Subject decision during fifty-five minute interval not established.');
+        lines.push('Means not yet surfaced.');
+        lines.push('Moment not yet surfaced.');
+        return lines.join('\n');
+      },
       techniques: { wait: 'Wait — he filled the silence with more than expected.', account: 'Account — he narrated with precision. The writing case opened.', approach: 'Approach — he completed the arithmetic without being asked.', pressure: 'Pressure — he drew the line between institutional and private.' },
     },
   },
@@ -2402,7 +2413,12 @@ const DEBRIEF_CONFIG = {
       account_text: () => 'Post established at seven. Continuous log until seven-fifteen. Gap of eight minutes. Returned at seven-twenty-three. Record continuous until eight-oh-one.',
       contradictions: (ni) => ni['northcott_false_gap'] ? 'Gap timing provided as seven-fifteen to seven-twenty-three. No corroborating witness identified. Timing unverified.' : 'No contradictions identified.',
       intelligence: (ni) => ni['northcott_false_gap'] ? 'Eight-minute gap acknowledged. Marked differently in record. Reason for departure not yet established.' : 'Evening account taken. No gaps identified.',
-      gaps: () => 'Reason for gap not yet established.\nStaff member referenced but not named.\nAshworth conversation not yet surfaced.',
+      gaps: (ni) => {
+        const lines = [];
+        if (ni['northcott_false_gap']) lines.push('Reason for eight-minute gap not yet established.');
+        lines.push('Ashworth conversation before the Rite not yet surfaced.');
+        return lines.join('\n');
+      },
       techniques: { wait: 'Wait — he volunteered the gap before the question reached it.', account: 'Account — he narrated with the notebook. He used the word reconstructed.', approach: 'Approach — he confirmed the gap and said her.', pressure: 'Pressure — he retreated into role. The gap was acknowledged but not explained.' },
     },
     Q2: {
@@ -2411,7 +2427,7 @@ const DEBRIEF_CONFIG = {
       account_text: () => 'Candelabra base logged at seven-forty in correct position. Checked at eight-oh-two. Gone. Subject used the word weapon.',
       contradictions: () => 'Candelabra absent at eight-oh-two. Position last confirmed at seven-forty. Interval unaccounted for.',
       intelligence: () => 'Subject instructed by Ashworth to check previously logged items if anything unusual occurred. Candelabra was the first logged item associated with potential harm.',
-      gaps: () => 'Candelabra location between seven-forty and eight-oh-two not established.\nAshworth conversation not yet surfaced.\nMotive not yet surfaced.',
+      gaps: () => 'Candelabra location between seven-forty and eight-oh-two not established.\nAshworth conversation before the Rite not yet surfaced.',
       techniques: { wait: 'Wait — he opened the notebook without being asked.', account: 'Account — he read both entries precisely. He used the word interval.', approach: 'Approach — he said weapon. He said Ashworth told him to check.', pressure: 'Pressure — he narrowed his remit. He retreated to foyer arrivals.' },
     },
     Q3: {
@@ -2434,7 +2450,24 @@ function _showClosure(charId, branchId) {
   const resp = document.getElementById('char-response');
   if (!resp) return;
 
-  const ni = (window.gameState && window.gameState.node_inventory) || {};
+  // Branch-specific node inventory — only nodes earned in THIS branch
+  const BRANCH_NODES = {
+    'pemberton-hale': {
+      register: ['hale_false_timeline'],
+      ashworth: ['hale_immunity_motive', 'hale_ashworth_deep'],
+      others:   [],
+    },
+    'northcott': {
+      Q1: ['northcott_false_gap'],
+      Q2: [],
+      Q3: ['northcott_vivienne_motive', 'northcott_decided_interval'],
+    },
+  };
+  const fullNi = (window.gameState && window.gameState.node_inventory) || {};
+  const branchNodes = (BRANCH_NODES[charId] || {})[branchId] || [];
+  const ni = {};
+  branchNodes.forEach(n => { if (fullNi[n]) ni[n] = true; });
+
   const pencilBtn = document.getElementById('np-pencil-btn');
   const capturedNode = pencilBtn ? pencilBtn.dataset.timelineNode : null;
 
