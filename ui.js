@@ -10,7 +10,7 @@
 let _activeObjectId = null;
 const _seenRoomDescriptions = new Set();
 let _activePedestalId = null;
-let _activeCharId = null;
+var _activeCharId = null;
 Object.defineProperty(window, '_activeCharId', { get: () => _activeCharId });
 let _slowDragObjectId = null;
 let _slowDragComplete = false;
@@ -2218,6 +2218,7 @@ function _renderNorthcottQuestions(list) {
       if (typeof NocturneSound !== 'undefined') NocturneSound.playUIClick();
       const resp = document.getElementById('char-response');
       if (resp) { resp.innerHTML = ''; resp.textContent = openingData.response; _showHaleCallumRead(openingData.callum); }
+      if (typeof window.injectPencilIcon === 'function') window.injectPencilIcon();
       s.openingAsked = true;
       // Skip warmup on return visits
       if (isReturn) s.warmupAsked = true;
@@ -2236,6 +2237,7 @@ function _renderNorthcottQuestions(list) {
       if (typeof NocturneSound !== 'undefined') NocturneSound.playUIClick();
       const resp = document.getElementById('char-response');
       if (resp) { resp.innerHTML = ''; resp.textContent = char.warmup.response; _showHaleCallumRead(char.warmup.callum); }
+      if (typeof window.injectPencilIcon === 'function') window.injectPencilIcon();
       s.warmupAsked = true;
       if (typeof window.northcottEmitWarmup === 'function') window.northcottEmitWarmup();
       renderQuestions('northcott');
@@ -2264,6 +2266,8 @@ function _renderNorthcottQuestions(list) {
         if (typeof NocturneSound !== 'undefined') NocturneSound.playUIClick();
         const resp = document.getElementById('char-response');
         if (resp) { resp.innerHTML = ''; resp.textContent = t.response; _showHaleCallumRead(t.callum); }
+        // Inject pencil before grants are surfaced — surfaceNode arms the fresh button.
+        if (typeof window.injectPencilIcon === 'function') window.injectPencilIcon();
         // Apply composure cost via bridge
         const currentComp = _getSuspectComposure('northcott');
         const newComposure = Math.max(0, currentComp + (t.composure || 0));
@@ -2272,13 +2276,9 @@ function _renderNorthcottQuestions(list) {
         // Record visit after first technique fires
         if (s.usedQs.length === 0) _recordVisit('northcott');
         // ── BEHAVIORAL LOGGER BRIDGE ─────────────────────────
+        // northcottEmitTechnique calls into interrogation.js which routes grants through surfaceNode.
         if (typeof window.northcottEmitTechnique === 'function') {
           window.northcottEmitTechnique(techId, s.activeQ, t.composure || 0, t.grants || '');
-        }
-        // Wire notepad capture
-        if (t.grants) {
-          const pencilBtn = document.getElementById('np-pencil-btn');
-          if (pencilBtn) pencilBtn.dataset.timelineNode = t.grants.split(' ')[0];
         }
         if (!s.usedQs.includes(s.activeQ)) {
           s.usedQs.push(s.activeQ);
@@ -2886,6 +2886,8 @@ function _haleFireOthers() {
     resp.textContent = tech.response;
     if (tech.callum) _showHaleCallumRead(tech.callum);
   }
+  // Inject pencil — every dialogue response gets one.
+  if (typeof window.injectPencilIcon === 'function') window.injectPencilIcon();
   // Others is a one-shot suspect list — no techniques, no follow-ups, no debrief.
   // Lock as completed immediately so the branch dims on return visits.
   // Sets sessionComplete so the return-visit handler fires opening_return next time,
@@ -3010,6 +3012,8 @@ function _haleFireOpening() {
     resp.textContent = openingData.response;
     _showHaleCallumRead(openingData.callum);
   }
+  // Inject pencil — every dialogue response gets one.
+  if (typeof window.injectPencilIcon === 'function') window.injectPencilIcon();
   window.haleOpeningAsked();
   renderQuestions('pemberton-hale');
 }
@@ -3030,6 +3034,9 @@ function _haleFireLineTechnique(lineId, techId) {
   if (s) s.techniqueSelected = null;
   // Record visit after first technique fires
   if (s && Object.values(s.usedTechniques || {}).every(arr => arr.length <= 1)) _recordVisit('pemberton-hale');
+
+  // Inject the pencil before surfacing nodes — surfaceNode arms the fresh button's dataset.
+  if (typeof window.injectPencilIcon === 'function') window.injectPencilIcon();
 
   // ── NODE GRANTS — surface only; capture happens on pencil tap ─────────
   // Player cycles all techniques via arrows — motive surfaces through exploration.
@@ -3081,6 +3088,8 @@ function _haleFireFollowup(followupId) {
     resp.textContent = fq.response;
     if (fq.callum) _showHaleCallumRead(fq.callum);
   }
+  // Inject pencil — every dialogue response gets one.
+  if (typeof window.injectPencilIcon === 'function') window.injectPencilIcon();
   const s = window.getHaleSession ? window.getHaleSession() : null;
   // Flash pencil for timeline node
   if (fq.pencil_flash && window.gameState && window.gameState.halePencilFlashPending) {
