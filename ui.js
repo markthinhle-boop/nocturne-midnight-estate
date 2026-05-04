@@ -2852,13 +2852,13 @@ function _haleFireLineTechnique(lineId, techId) {
     });
   }
 
-  // Inject snapback or mini arrow
+  // Check snapback first
   if (s && s.snapbackPending) {
     _injectHaleSnapback(lineId);
-  } else {
-    _injectHaleMiniArrow();
+    return;
   }
-  // Render follow-ups
+
+  // Render follow-ups directly — no arrow, follow-ups appear immediately
   const list = document.getElementById('questions-list');
   if (!list) return;
   list.innerHTML = '';
@@ -2875,6 +2875,9 @@ function _haleFireLineTechnique(lineId, techId) {
       };
       list.appendChild(btn);
     });
+  } else {
+    // No follow-ups — re-render questions so remaining techniques show
+    renderQuestions('pemberton-hale');
   }
 }
 
