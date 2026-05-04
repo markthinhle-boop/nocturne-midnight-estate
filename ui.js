@@ -2278,12 +2278,12 @@ function _renderNorthcottQuestions(list) {
         }
         if (!s.usedQs.includes(s.activeQ)) {
           s.usedQs.push(s.activeQ);
-          // Set debrief pending for this question
           s.sessionComplete = true;
           s.pendingDebriefBranch = s.activeQ;
         }
         s.activeQ = null;
-        renderQuestions('northcott');
+        // Clear questions list — player sees only response, taps close, gets debrief
+        list.innerHTML = '';
       };
       list.appendChild(btn);
     });
@@ -2890,7 +2890,6 @@ function _haleFireFollowup(followupId) {
     resp.textContent = fq.response;
     if (fq.callum) _showHaleCallumRead(fq.callum);
   }
-  // Reset so next technique shows its own follow-ups
   const s = window.getHaleSession ? window.getHaleSession() : null;
   if (s) { s.followupAsked = null; s.lastTechnique = null; }
   // Flash pencil for timeline node
@@ -2899,8 +2898,18 @@ function _haleFireFollowup(followupId) {
       window.flashPencilForTimeline(fq.pencil_node || window.gameState.halePencilNode);
     }
   }
-  // Re-render questions — remaining techniques appear naturally
-  renderQuestions('pemberton-hale');
+  // Follow-up chosen = branch complete for this visit
+  if (s && s.lineSelected && s.lineSelected !== 'others') {
+    if (!s.completedLines) s.completedLines = [];
+    if (!s.completedLines.includes(s.lineSelected)) s.completedLines.push(s.lineSelected);
+    s.sessionComplete = true;
+    s.pendingDebriefBranch = s.lineSelected;
+    s.lineSelected = null;
+    s.techniqueSelected = null;
+  }
+  // Clear questions list — nothing shown until player closes and returns
+  const list = document.getElementById('questions-list');
+  if (list) list.innerHTML = '';
 }
 
 function _haleOpenGate(gateId) {
