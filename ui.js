@@ -1786,8 +1786,11 @@ function _openConversationDirect(charId) {
     if (typeof window.initHaleSession === 'function') window.initHaleSession();
     const s = window.getHaleSession ? window.getHaleSession() : null;
     if (s) {
-      if (s.sessionComplete) {
-        // Return visit after closure — reset only transient turn state.
+      // Detect return visit via persistent counter (set by _recordVisit on first technique fire)
+      const visitCount = (window.gameState && window.gameState.suspectLastVisit && window.gameState.suspectLastVisit['pemberton-hale']) || 0;
+      const isReturn = visitCount > 0;
+      if (s.sessionComplete || isReturn) {
+        // Fresh open after a prior session — reset transient turn state, fire opening_return.
         // PRESERVE completedLines and usedTechniques across visits.
         s.sessionComplete   = false;
         s.openingAsked      = false;
@@ -1796,8 +1799,7 @@ function _openConversationDirect(charId) {
         s.followupAsked     = null;
         s.lastTechnique     = null;
         s.diversionQueue    = [];
-        // Load opening_return into char-response on next render
-        s.useReturnOpening  = true;
+        s.useReturnOpening  = isReturn;
       } else if (s.openingAsked) {
         // Mid-conversation re-entry — preserve state, just reset active selection
         s.lineSelected      = null;
