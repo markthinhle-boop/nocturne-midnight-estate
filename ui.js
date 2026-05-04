@@ -1761,17 +1761,19 @@ function _openConversationDirect(charId) {
   document.getElementById('char-response').textContent = introText;
   const _introEl = document.getElementById('char-response'); if (_introEl) _introEl.scrollTop = 0;
 
-  // Northcott — reset active question on re-entry, preserve progress
+  // Northcott — reset active question on re-entry, preserve progress and capture state
   if (charId === 'northcott') {
     if (typeof _getNorthcottSession === 'function') {
       const ns = _getNorthcottSession();
       // Only reset if session was completed — mid-conversation taps don't reset
       if (ns.sessionComplete) {
+        const visitCount = (window.gameState && window.gameState.suspectLastVisit && window.gameState.suspectLastVisit['northcott']) || 0;
         ns.openingAsked = false;
-        ns.warmupAsked  = false;
+        // warmup fires only on the very first conversation; on returns it stays asked.
+        if (visitCount === 0) ns.warmupAsked = false;
         ns.activeQ      = null;
-        ns.usedQs       = [];
         ns.sessionComplete = false;
+        // PRESERVE usedQs and qTechnique — branch reopen logic uses them with captured_nodes
       } else {
         ns.activeQ = null;
       }
@@ -2192,6 +2194,7 @@ function _getNorthcottSession() {
       warmupAsked:  false,
       activeQ:      null,
       usedQs:       [],
+      qTechnique:   {},  // map: { Q1: 'wait', Q2: 'account', ... } — records which technique fired per Q for retry-on-missed-capture
     };
   }
   return _northcottSession;
@@ -2282,6 +2285,9 @@ function _renderNorthcottQuestions(list) {
           s.sessionComplete = true;
           s.pendingDebriefBranch = s.activeQ;
         }
+        // Record which technique was used on this Q (latest wins on retry)
+        if (!s.qTechnique) s.qTechnique = {};
+        s.qTechnique[s.activeQ] = techId;
         s.activeQ = null;
         // Clear questions list — player sees only response, taps close, gets debrief
         list.innerHTML = '';
@@ -2292,22 +2298,47 @@ function _renderNorthcottQuestions(list) {
   }
 
   // Step 3 — Available branch questions (all visible, player picks order)
+  // A used Q remains selectable on return if the technique that fired surfaced a node
+  // that wasn't captured. Locked = used AND (no grant OR every granted node captured).
   const allQs = Object.keys(char.line_techniques || {});
   if (allQs.length === 0) {
     list.innerHTML = '<div style="padding:14px 20px;font-size:12px;color:var(--text-dim);font-style:italic;">The conversation has been exhausted.</div>';
     return;
   }
+  const captured = (window.gameState && window.gameState.captured_nodes) || {};
+  const surfaced = (window.gameState && window.gameState.surfaced_nodes) || {};
+  const isQLocked = (qid) => {
+    if (!s.usedQs.includes(qid)) return false;
+    const techId = s.qTechnique && s.qTechnique[qid];
+    if (!techId) return true;  // used but no technique recorded — defensive lock
+    const grants = char.line_techniques[qid] && char.line_techniques[qid][techId] && char.line_techniques[qid][techId].grants;
+    if (!grants) return true;
+    return grants.split(' ').every(n => !n || captured[n]);
+  };
+  const isQMissed = (qid) => {
+    if (!s.usedQs.includes(qid)) return false;
+    const techId = s.qTechnique && s.qTechnique[qid];
+    if (!techId) return false;
+    const grants = char.line_techniques[qid] && char.line_techniques[qid][techId] && char.line_techniques[qid][techId].grants;
+    if (!grants) return false;
+    return grants.split(' ').some(n => n && surfaced[n] && !captured[n]);
+  };
   let anyAvailable = false;
   allQs.forEach(qid => {
     const qt = char.line_techniques[qid];
-    const used = s.usedQs.includes(qid);
-    if (!used) anyAvailable = true;
+    const locked = isQLocked(qid);
+    const missed = !locked && isQMissed(qid);
+    if (!locked) anyAvailable = true;
     const btn = document.createElement('div');
-    btn.className = 'question-item' + (used ? ' question-asked' : '');
-    btn.style.opacity = used ? '0.35' : '1';
-    btn.style.cursor = used ? 'default' : 'pointer';
+    btn.className = 'question-item' + (locked ? ' question-asked' : '');
+    btn.style.opacity = locked ? '0.35' : '1';
+    btn.style.cursor = locked ? 'default' : 'pointer';
     btn.textContent = qt.text;
-    if (!used) {
+    if (missed) {
+      btn.style.borderLeft = '2px solid rgba(180,155,90,0.5)';
+      btn.style.paddingLeft = '12px';
+    }
+    if (!locked) {
       btn.onclick = () => {
         if (typeof NocturneSound !== 'undefined') NocturneSound.playUIClick();
         s.activeQ = qid;
@@ -2379,7 +2410,7 @@ const DEBRIEF_CONFIG = {
   'pemberton-hale': {
     register: {
       final: 'He looks at the writing case. He has given you the record.',
-      mmm: { motive: null, means: null, moment: null },
+      mmm: { motive: null, means: null, moment: 'hale_false_timeline' },
       account_text: (ni) => ni['hale_false_timeline'] ? 'Entries described as standard. Administrative amendments over a period of years. Bond provisions confirmed in order.' : 'Subject gave account of Register duties. No detail volunteered.',
       contradictions: (ni) => ni['hale_false_timeline'] ? 'Eight years of incremental amendments described as administrative. The scope is inconsistent with the characterisation.' : 'No contradictions identified.',
       intelligence: (ni) => ni['hale_false_timeline'] ? 'Register alterations confirmed. Nature and purpose not yet established.' : 'Subject account taken. No intelligence extracted.',
@@ -2462,13 +2493,18 @@ function _showClosure(charId, branchId) {
       Q3: ['northcott_vivienne_motive', 'northcott_decided_interval'],
     },
   };
-  const fullNi = (window.gameState && window.gameState.node_inventory) || {};
+  // Surfaced = node was shown to the player in this branch.
+  // Captured = player tapped the pencil to commit it to the timeline.
+  // node_inventory remains the source of truth for "system knows it" but is now populated only on capture.
+  const surfacedSet = (window.gameState && window.gameState.surfaced_nodes) || {};
+  const capturedSet = (window.gameState && window.gameState.captured_nodes) || {};
   const branchNodes = (BRANCH_NODES[charId] || {})[branchId] || [];
-  const ni = {};
-  branchNodes.forEach(n => { if (fullNi[n]) ni[n] = true; });
-
-  const pencilBtn = document.getElementById('np-pencil-btn');
-  const capturedNode = pencilBtn ? pencilBtn.dataset.timelineNode : null;
+  const ni = {};        // surfaced map for this branch
+  const niCap = {};     // captured map for this branch
+  branchNodes.forEach(n => {
+    if (surfacedSet[n]) ni[n] = true;
+    if (capturedSet[n]) niCap[n] = true;
+  });
 
   // ── Close the conversation panel — debrief lives outside it ──
   if (typeof _closeConversationPanel === 'function') {
@@ -2527,7 +2563,7 @@ function _showClosure(charId, branchId) {
     { label: 'Moment', node: config.mmm.moment  },
   ].forEach(slot => {
     const surfaced = slot.node && ni[slot.node];
-    const captured = slot.node && capturedNode === slot.node;
+    const captured = slot.node && niCap[slot.node];
     const status = surfaced && captured ? '\u2713' : surfaced ? '!' : '\u2014';
     const color  = surfaced && captured ? 'rgba(107,138,74,.9)' : surfaced ? 'rgba(180,155,90,.9)' : 'var(--faint)';
     const text   = surfaced && captured ? 'Captured.' : surfaced ? 'Surfaced. Not captured.' : 'Not yet surfaced.';
@@ -2678,18 +2714,44 @@ function _renderHaleQuestions(list) {
   }
 
   // ── BRANCH SELECTION — all three available from the start ───
-  // Player chooses any branch in any order. Completed branches dim and lock.
+  // Player chooses any branch in any order.
+  // Locked branches dim. Branches with uncaptured surfaced nodes show a missed marker
+  // and remain selectable (player can return and capture).
   if (!s.lineSelected) {
     const BRANCH_ORDER = ['register', 'ashworth', 'others'];
     const completed = s.completedLines || [];
+    const usedTechs = s.usedTechniques || {};
+    const surfaced = (window.gameState && window.gameState.surfaced_nodes) || {};
+    const captured = (window.gameState && window.gameState.captured_nodes) || {};
+    // Returns true if this branch has at least one node that was surfaced this run but not captured.
+    const branchHasMissedCapture = (lineId) => {
+      const techs = (char.line_techniques && char.line_techniques[lineId]) || {};
+      const used = usedTechs[lineId] || [];
+      for (let i = 0; i < used.length; i++) {
+        const t = used[i];
+        const grants = techs[t] && techs[t].grants;
+        if (!grants) continue;
+        const nodes = grants.split(' ').filter(Boolean);
+        for (let j = 0; j < nodes.length; j++) {
+          if (surfaced[nodes[j]] && !captured[nodes[j]]) return true;
+        }
+      }
+      return false;
+    };
     BRANCH_ORDER.forEach((lineId) => {
       const text = HALE_LINE_LABELS[lineId];
       const isDone = completed.includes(lineId);
+      const isMissed = !isDone && branchHasMissedCapture(lineId);
       const btn = document.createElement('div');
       btn.className = 'question-item' + (isDone ? ' question-asked' : '');
       btn.style.opacity = isDone ? '0.35' : '1';
       btn.style.cursor = isDone ? 'default' : 'pointer';
       btn.textContent = text;
+      // Soft border indicator when surfaced nodes remain uncaptured — no glyphs.
+      if (isMissed) {
+        btn.style.borderLeft = '2px solid rgba(180,155,90,0.5)';
+        btn.style.paddingLeft = '12px';
+      }
       if (!isDone) {
         btn.onclick = () => {
           if (typeof NocturneSound !== 'undefined') NocturneSound.playUIClick();
@@ -2712,23 +2774,41 @@ function _renderHaleQuestions(list) {
   if (!s.techniqueSelected && !s.lastTechnique) {
     const techniques = char.line_techniques[s.lineSelected] || {};
     const used = (s.usedTechniques && s.usedTechniques[s.lineSelected]) || [];
-    const remaining = ['wait','account','approach','pressure'].filter(t => !used.includes(t));
+    const captured = (window.gameState && window.gameState.captured_nodes) || {};
+    // A used technique remains openable (retry) if its grant has not been captured.
+    // resolved = used AND (no grant OR every granted node is captured).
+    const isResolved = (techId) => {
+      if (!used.includes(techId)) return false;
+      const grants = techniques[techId] && techniques[techId].grants;
+      if (!grants) return true;
+      return grants.split(' ').every(n => !n || captured[n]);
+    };
+    const remaining = ['wait','account','approach','pressure'].filter(t => !isResolved(t));
     const note = document.createElement('div');
     note.style.cssText = 'padding:10px 16px;font-size:12px;color:var(--text-dim);font-style:italic;';
-    note.textContent = used.length === 0 ? 'Choose how you ask.' : remaining.length > 0 ? `${remaining.length} approach${remaining.length !== 1 ? 'es' : ''} remaining.` : 'All approaches used.';
+    note.textContent = used.length === 0
+      ? 'Choose how you ask.'
+      : remaining.length > 0
+        ? `${remaining.length} approach${remaining.length !== 1 ? 'es' : ''} remaining.`
+        : 'All approaches resolved.';
     list.appendChild(note);
     ['wait', 'account', 'approach', 'pressure'].forEach(techId => {
       const tech = techniques[techId];
       if (!tech) return;
-      const isUsed = used.includes(techId);
+      const resolved = isResolved(techId);
+      const usedButOpen = used.includes(techId) && !resolved;  // surfaced but not captured
       const btn = document.createElement('div');
-      btn.className = 'question-item hale-technique-btn' + (isUsed ? ' question-asked' : '');
-      btn.style.opacity = isUsed ? '0.35' : '1';
-      btn.style.cursor = isUsed ? 'default' : 'pointer';
-      btn.innerHTML = `<span class="hale-tech-name">${HALE_TECH_META[techId].name}${isUsed ? ' ✓' : ''}</span>
+      btn.className = 'question-item hale-technique-btn' + (resolved ? ' question-asked' : '');
+      btn.style.opacity = resolved ? '0.35' : '1';
+      btn.style.cursor = resolved ? 'default' : 'pointer';
+      // Soft border indicator for surfaced-but-uncaptured techniques — no glyphs.
+      if (usedButOpen) {
+        btn.style.borderLeft = '2px solid rgba(180,155,90,0.5)';
+      }
+      btn.innerHTML = `<span class="hale-tech-name">${HALE_TECH_META[techId].name}</span>
         <span class="hale-tech-desc">${HALE_TECH_META[techId].desc}</span>
-        ${!isUsed ? `<span class="hale-callum-q">${tech.callum_question}</span>` : ''}`;
-      if (!isUsed) {
+        ${!resolved ? `<span class="hale-callum-q">${tech.callum_question}</span>` : ''}`;
+      if (!resolved) {
         btn.onclick = () => {
           if (typeof NocturneSound !== 'undefined') NocturneSound.playUIClick();
           _haleFireLineTechnique(s.lineSelected, techId);
@@ -2951,20 +3031,15 @@ function _haleFireLineTechnique(lineId, techId) {
   // Record visit after first technique fires
   if (s && Object.values(s.usedTechniques || {}).every(arr => arr.length <= 1)) _recordVisit('pemberton-hale');
 
-  // ── NODE GRANTS — no composure gate for Hale ─────────────
-  // Player cycles all techniques via arrows — motive surfaces through exploration
+  // ── NODE GRANTS — surface only; capture happens on pencil tap ─────────
+  // Player cycles all techniques via arrows — motive surfaces through exploration.
+  // Branches stay reopenable on return visits if any surfaced node remains uncaptured.
   if (tech.grants) {
     tech.grants.split(' ').forEach(node => {
       if (!node) return;
-      if (window.gameState) {
-        if (!window.gameState.node_inventory) window.gameState.node_inventory = {};
-        window.gameState.node_inventory[node] = true;
+      if (typeof window.surfaceNode === 'function') {
+        window.surfaceNode(node, 'pemberton-hale');
       }
-      if (typeof NocturneEngine !== 'undefined') {
-        NocturneEngine.emit('nodeMarked', { nodeId: node, charId: 'pemberton-hale' });
-      }
-      const pencilBtn = document.getElementById('np-pencil-btn');
-      if (pencilBtn) pencilBtn.dataset.timelineNode = node;
     });
   }
 
@@ -3013,18 +3088,29 @@ function _haleFireFollowup(followupId) {
       window.flashPencilForTimeline(fq.pencil_node || window.gameState.halePencilNode);
     }
   }
-  // Per-visit branch exhaustion:
+  // Per-visit branch exhaustion + capture-aware lock:
   // - One technique + its follow-up = branch exhausted FOR THIS VISIT.
   // - Debrief fires when player closes (Register/Ashworth only — never Others).
-  // - Branch is fully completed (and locked) only when all 4 techniques have been used across visits.
-  // - Branch remains selectable on return visits if techniques remain.
+  // - A technique is "fully resolved" when either it has no grant, OR its grant has been captured.
+  // - Branch is locked into completedLines only when ALL FOUR techniques are fully resolved.
+  // - Otherwise the branch reopens on return visits — and only the unresolved techniques
+  //   (the ones whose grants weren't captured) remain selectable.
   if (s && s.lineSelected && s.lineSelected !== 'others') {
     const branchId = s.lineSelected;
     const usedHere = (s.usedTechniques && s.usedTechniques[branchId]) || [];
     const allFour = ['wait','account','approach','pressure'].every(t => usedHere.includes(t));
     if (allFour) {
-      if (!s.completedLines) s.completedLines = [];
-      if (!s.completedLines.includes(branchId)) s.completedLines.push(branchId);
+      const branchTechs = (char.line_techniques && char.line_techniques[branchId]) || {};
+      const captured = (window.gameState && window.gameState.captured_nodes) || {};
+      const allResolved = ['wait','account','approach','pressure'].every(t => {
+        const grants = branchTechs[t] && branchTechs[t].grants;
+        if (!grants) return true;                      // no grant → resolved
+        return grants.split(' ').every(n => !n || captured[n]);  // every granted node captured
+      });
+      if (allResolved) {
+        if (!s.completedLines) s.completedLines = [];
+        if (!s.completedLines.includes(branchId)) s.completedLines.push(branchId);
+      }
     }
     s.sessionComplete       = true;
     s.pendingDebriefBranch  = branchId;

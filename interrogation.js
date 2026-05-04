@@ -724,9 +724,9 @@ function haleSnapbackAnswer(branch, optionId) {
   if (result.grants) {
     if (!s.flags) s.flags = {};
     s.flags[result.grants] = true;
-    if (window.gameState) {
-      if (!window.gameState.node_inventory) window.gameState.node_inventory = {};
-      window.gameState.node_inventory[result.grants] = true;
+    // Surface the node — it enters node_inventory only when player taps the pencil
+    if (typeof window.surfaceNode === 'function') {
+      window.surfaceNode(result.grants, 'pemberton-hale');
     }
   }
   return result;
@@ -845,10 +845,9 @@ function haleCapturePencil() {
   const s = getHaleSession();
   s.pencilCaptured = true;
   window.gameState.halePencilFlashPending = false;
-  // Set board node
-  if (window.gameState.halePencilNode) {
-    if (!window.gameState.node_inventory) window.gameState.node_inventory = {};
-    window.gameState.node_inventory[window.gameState.halePencilNode] = true;
+  // The pencil tap is the canonical capture moment — promote into node_inventory + captured_nodes.
+  if (window.gameState.halePencilNode && typeof window.captureNode === 'function') {
+    window.captureNode(window.gameState.halePencilNode);
   }
 }
 
@@ -884,8 +883,10 @@ function halePickGateTechnique(gateId, techId) {
   } else {
     s.gateState[gateId] = 'cleared';
     if (char.gates[gateId].grants) {
-      if (!window.gameState.node_inventory) window.gameState.node_inventory = {};
-      window.gameState.node_inventory[char.gates[gateId].grants] = true;
+      // Surface the node — entry into node_inventory deferred until pencil tap
+      if (typeof window.surfaceNode === 'function') {
+        window.surfaceNode(char.gates[gateId].grants, 'pemberton-hale');
+      }
     }
     // Slip fires
     if (char.gates[gateId].slip) {
@@ -949,15 +950,15 @@ function northcottEmitTechnique(techId, qId, composureDelta, grants) {
     NocturneEngine.emit('directConfrontationUsed', { charId, targetIsGuilty: false });
   }
 
-  // Node grants
+  // Node grants — surface only; capture happens on pencil tap.
+  // Behavioral branch-completion events still fire here because they reflect
+  // the dialogue beat (the player asked the right question), not the capture.
   if (grants) {
     grants.split(' ').forEach(nodeId => {
       if (!nodeId) return;
-      if (window.gameState) {
-        if (!window.gameState.node_inventory) window.gameState.node_inventory = {};
-        window.gameState.node_inventory[nodeId] = true;
+      if (typeof window.surfaceNode === 'function') {
+        window.surfaceNode(nodeId, charId);
       }
-      NocturneEngine.emit('nodeMarked', { nodeId, charId });
       // Branch completion for MMM nodes
       if (nodeId === 'northcott_vivienne_motive') {
         NocturneEngine.emit('branchCompleted', { charId, branchId: 'motive', isContradicting: false });
@@ -5168,16 +5169,19 @@ function askBranchQuestion(charId, branchId, qId, q) {
     }, 800);
   }
 
-  // Grant information node
-  if (q.grants_node && typeof window._markNode === 'function') {
-    window._markNode(q.grants_node);
-    if (gameState.node_inventory) gameState.node_inventory[q.grants_node] = true;
-    NocturneEngine.emit('nodeMarked', { nodeId: q.grants_node, charId });
+  // Grant information node — surface only; capture happens on pencil tap.
+  // The questionAnswered event still fires here because it tracks the dialogue beat.
+  if (q.grants_node) {
+    if (typeof window._markNode === 'function') window._markNode(q.grants_node);
+    if (typeof window.surfaceNode === 'function') {
+      window.surfaceNode(q.grants_node, charId);
+    }
   }
-  if (q.grants_node_secondary && typeof window._markNode === 'function') {
-    window._markNode(q.grants_node_secondary);
-    if (gameState.node_inventory) gameState.node_inventory[q.grants_node_secondary] = true;
-    NocturneEngine.emit('nodeMarked', { nodeId: q.grants_node_secondary, charId });
+  if (q.grants_node_secondary) {
+    if (typeof window._markNode === 'function') window._markNode(q.grants_node_secondary);
+    if (typeof window.surfaceNode === 'function') {
+      window.surfaceNode(q.grants_node_secondary, charId);
+    }
   }
   if (q.grants_node) {
     NocturneEngine.emit('questionAnswered', { charId, qId: `branch_${branchId}_${qId}`, qType: q.type });

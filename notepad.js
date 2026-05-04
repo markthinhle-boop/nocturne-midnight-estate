@@ -227,6 +227,10 @@ function injectPencilIcon() {
   // Gate: hide until antechamber unlocked (matches HUD icon gating)
   if (!window.gameState || !window.gameState.antechamberGateOpen) return;
 
+  // Hale's pencil flash is handled directly by ui.js _injectHalePencilFlash
+  // The standard pencil icon is suppressed during Hale's interrogation
+  if (window._activeCharId === 'pemberton-hale') return;
+
   const resp   = document.getElementById('char-response');
   const charId = window._activeCharId;
   if (!resp || !charId) return;
@@ -256,6 +260,10 @@ function injectPencilIcon() {
       ? `Q: ${_lastQuestion}\n\n${responseText}`
       : responseText;
     saveNoteForChar(charId, fullNote);
+    // Capture the timeline node armed by surfaceNode — promotes into node_inventory + captured_nodes.
+    if (btn.dataset.timelineNode && typeof window.captureNode === 'function') {
+      window.captureNode(btn.dataset.timelineNode);
+    }
     btn.dataset.saved = 'true';
     btn.classList.add('saved');
     setTimeout(() => btn.classList.remove('saved'), 1200);
@@ -265,22 +273,7 @@ function injectPencilIcon() {
   resp.appendChild(btn);
 }
 
-// ── TIMELINE NODE FLASH ─────────────────────────────────────
-// Called when a timeline node is captured — flashes the existing
-// pencil button until the player taps it.
-function flashPencilForTimeline(node) {
-  const btn = document.getElementById('np-pencil-btn');
-  if (!btn) return;
-  btn.classList.add('flash');
-  const _stop = () => {
-    btn.classList.remove('flash');
-    btn.removeEventListener('click', _stop);
-  };
-  btn.addEventListener('click', _stop);
-  // Store node so onclick can set it on the board
-  btn.dataset.timelineNode = node || '';
-}
-window.flashPencilForTimeline = flashPencilForTimeline;
+// ── SAVE FLASH ─────────────────────────────────────────────
 function _showSaveFlash() {
   const icon = document.getElementById('np-hud-icon');
   if (!icon) return;
@@ -364,9 +357,7 @@ function _injectCSS() {
     .np-pencil-btn{position:absolute;bottom:-4px;right:0;background:rgba(20,16,10,0.75);border:1px solid rgba(180,155,90,0.3);border-radius:4px;color:var(--gold,#c9a84c);opacity:0.85;cursor:pointer;padding:5px 7px;line-height:1;transition:opacity 200ms,transform 150ms;z-index:10;}
     .np-pencil-btn:hover,.np-pencil-btn:active{opacity:1;transform:scale(1.1);}
     .np-pencil-btn.saved{animation:np-pencil-saved 1000ms ease-out forwards;}
-    .np-pencil-btn.flash{animation:np-pencil-flash 1.2s ease-in-out infinite;border-color:rgba(180,155,90,0.9);opacity:1;}
     @keyframes np-pencil-saved{0%{transform:scale(1.4) rotate(-8deg);opacity:1}50%{transform:scale(1.1) rotate(0deg)}100%{transform:scale(1);opacity:0.85}}
-    @keyframes np-pencil-flash{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.3;transform:scale(0.88)}}
 
     #notepad-panel{position:fixed;inset:0;z-index:9999;display:none;align-items:center;justify-content:center;opacity:0;transition:opacity 300ms ease;}
     #notepad-panel.visible{opacity:1;}

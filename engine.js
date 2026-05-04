@@ -214,13 +214,66 @@ const gameState = {
   // Franchise record
   franchise_record: null,
 
-  // Node inventory — granted investigation nodes
+  // Node inventory — granted investigation nodes (the "system knows" set; populated only on capture)
   node_inventory: {},
+  // Surfaced nodes — set of node IDs that have been shown to the player but not yet captured to notepad
+  surfaced_nodes: {},
+  // Captured nodes — set of node IDs the player has explicitly captured via pencil tap
+  captured_nodes: {},
     _stageGateAttempts: {},
     _missedTimelines: {},
     _cranePuzzleUnlocked: false,
     _verdictDepth: 'surface',
 };
+
+// ── NODE LIFECYCLE HELPERS ─────────────────────────────────
+// All timeline nodes (true and false) require manual capture via pencil tap.
+// Granting a node from dialogue does NOT enter it into node_inventory directly.
+// Flow:
+//   1. Dialogue surfaces a node          → surfaceNode(nodeId, charId)
+//      - Records in gameState.surfaced_nodes
+//      - Arms the pencil button with the node ID for the next tap
+//      - Emits nodeMarked for behavioral logging
+//   2. Player taps the pencil            → captureNode(nodeId)
+//      - Records in gameState.captured_nodes
+//      - Promotes into gameState.node_inventory (this is the "system knows" moment)
+//
+// Debrief logic distinguishes three states per MMM slot:
+//   surfaced && captured → ✓ Captured
+//   surfaced && !captured → ! Surfaced. Not captured.
+//   !surfaced            → — Not yet surfaced.
+//
+// Branch reopen logic: a technique remains openable on return visits if it surfaced
+// a node that has not yet been captured. The branch only locks once every used
+// technique has either no grant, or a grant that has been captured.
+function surfaceNode(nodeId, charId) {
+  if (!nodeId || !window.gameState) return;
+  if (!window.gameState.surfaced_nodes) window.gameState.surfaced_nodes = {};
+  window.gameState.surfaced_nodes[nodeId] = true;
+  // Arm the pencil button with this node so a subsequent tap captures it
+  const pencilBtn = (typeof document !== 'undefined') ? document.getElementById('np-pencil-btn') : null;
+  if (pencilBtn) pencilBtn.dataset.timelineNode = nodeId;
+  // Emit a separate "surfaced" event — distinct from nodeMarked (which fires on capture).
+  if (typeof NocturneEngine !== 'undefined' && NocturneEngine.emit) {
+    NocturneEngine.emit('nodeSurfaced', { nodeId, charId: charId || null });
+  }
+}
+
+function captureNode(nodeId) {
+  if (!nodeId || !window.gameState) return;
+  if (!window.gameState.captured_nodes) window.gameState.captured_nodes = {};
+  if (!window.gameState.node_inventory)  window.gameState.node_inventory  = {};
+  window.gameState.captured_nodes[nodeId] = true;
+  window.gameState.node_inventory[nodeId] = true;
+  // nodeMarked fires on capture — this is the contract behavioral_logger expects.
+  if (typeof NocturneEngine !== 'undefined' && NocturneEngine.emit) {
+    NocturneEngine.emit('nodeMarked', { nodeId });
+    NocturneEngine.emit('nodeCaptured', { nodeId });
+  }
+}
+
+window.surfaceNode = surfaceNode;
+window.captureNode = captureNode;
 
 // ── ROOM ADJACENCY ─────────────────────────────────────────
 const ROOM_ADJACENCY = {
