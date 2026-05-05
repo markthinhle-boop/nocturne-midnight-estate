@@ -911,6 +911,24 @@ html, body {
   -webkit-overflow-scrolling: touch;
   position: relative;
   z-index: 1;
+  /* Always show scrollbar on iOS so player knows to scroll */
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(180,155,90,0.4) transparent;
+}
+#questions-list::-webkit-scrollbar { width: 3px; }
+#questions-list::-webkit-scrollbar-thumb { background: rgba(180,155,90,0.4); border-radius: 2px; }
+#questions-list::after {
+  content: '';
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: block;
+  height: 24px;
+  background: linear-gradient(to bottom, transparent, rgba(10,8,5,0.95));
+  pointer-events: none;
+  flex-shrink: 0;
 }
 .question-item {
   padding: 12px 20px;
