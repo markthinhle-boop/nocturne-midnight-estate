@@ -809,6 +809,9 @@ function haleAskFollowup(followupId) {
   const q = pool.find(f => f.id === followupId);
   if (!q) return null;
   s.followupAsked = followupId;
+  // Persistent follow-up history — survives across techniques and visits, used by debrief
+  if (!s.askedFollowups) s.askedFollowups = {};
+  s.askedFollowups[followupId] = true;
   // Mark excluded followup as asked too
   if (q.excludes) {
     const excluded = pool.find(f => f.id === q.excludes);

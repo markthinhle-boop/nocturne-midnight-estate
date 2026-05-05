@@ -2437,6 +2437,61 @@ const DEBRIEF_CONFIG = {
       },
       techniques: { wait: 'Wait — he filled the silence with more than expected.', account: 'Account — he narrated with precision. The writing case opened.', approach: 'Approach — he completed the arithmetic without being asked.', pressure: 'Pressure — he drew the line between institutional and private.' },
     },
+    others: {
+      kind: 'others',
+      final: 'He has decided what he will say about the others. The list is shorter than the truth.',
+      // Renders 4 custom sections instead of MMM Case Checklist:
+      //   Posture | Names Surfaced | Routes Suggested | What Hale Withheld
+      posture: (used) => {
+        if (used.includes('pressure')) {
+          return 'Subject held institutional posture across all approaches until pressure was applied. Under pressure, the boundary moved. He named seven members and assigned each a relation to Lord Ashworth. The disclosure was prepared.';
+        }
+        if (used.length === 0) {
+          return 'Subject posture not yet read.';
+        }
+        return 'Subject held institutional posture throughout. He refused to characterise fellow members on procedural grounds. The refusal was deliberate and rehearsed. He has anticipated approaches he has not yet been asked to refuse.';
+      },
+      names: (used, fuFlags) => {
+        if (used.includes('pressure')) {
+          return 'Sir Aldous Greaves — debt of fairness.\nThe Baron — debt of less honourable kind.\nDr. Crane — thirty years of physician access.\nThe Surgeon — licensing board, thirty years prior.\nLady Ashworth — estrangement.\nMr. Northcott — directed to be present.\nThe Steward — he will not say more.';
+        }
+        const partial = [];
+        if (fuFlags['OW1']) partial.push('The Curator — institutional memory. Subject pointed here as the procedural starting point.');
+        if (fuFlags['OA1']) partial.push('A procedurally irregular member — name withheld. Subject pointed at Curator records of new memberships within the last two months.');
+        if (partial.length === 0) return 'No members named.';
+        return partial.join('\n');
+      },
+      routes: (used, fuFlags) => {
+        const lines = [];
+        if (fuFlags['OW1']) lines.push('Speak with the Curator regarding institutional procedure and member confidentiality.');
+        if (fuFlags['OA1']) lines.push('Ask the Curator about new memberships extended in the last two months.');
+        if (fuFlags['OP1']) lines.push('Ask the Surgeon what year he qualified. Request documentation of training.');
+        if (fuFlags['OP2']) lines.push('Ask the Curator about the custody of Lord Ashworth\'s personal seal.');
+        if (used.includes('pressure') && !fuFlags['OP1'] && !fuFlags['OP2']) {
+          lines.push('Subject identified the Surgeon\'s licensing board as worth investigating.');
+          lines.push('Subject indicated Northcott\'s presence was arranged externally.');
+        }
+        if (lines.length === 0) return 'No routes identified.';
+        return lines.join('\n');
+      },
+      withheld: (used) => {
+        const lines = [];
+        if (!used.includes('pressure')) {
+          lines.push('Subject declined to characterise fellow members. The line held across attempted approaches.');
+        }
+        lines.push('The Steward — subject refused to elaborate. The refusal was specific and complete.');
+        if (used.includes('approach') || used.includes('account')) {
+          lines.push('Subject indicated someone less practiced than himself will produce the same information. He declined to identify that person.');
+        }
+        return lines.join('\n');
+      },
+      techniques: {
+        wait: 'Wait — he waited the silence out. He returned the procedural answer.',
+        account: 'Account — he reframed the question as Bond structure. He named the procedurally irregular member without naming him.',
+        approach: 'Approach — he closed the door before it opened. He acknowledged what would work on someone less practiced.',
+        pressure: 'Pressure — the list came forward. The disclosure had been prepared.',
+      },
+    },
   },
   'northcott': {
     Q1: {
@@ -2553,26 +2608,30 @@ function _showClosure(charId, branchId) {
   finalEl.textContent = config.final;
   card.appendChild(finalEl);
 
-  // Layer 1 — Case Checklist
-  const l1 = document.createElement('div');
-  l1.style.cssText = 'margin-bottom:18px;';
-  l1.innerHTML = '<div style="font-family:var(--sans);font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-bottom:8px;">Case Checklist</div>';
-  [
-    { label: 'Motive', node: config.mmm.motive },
-    { label: 'Means',  node: config.mmm.means  },
-    { label: 'Moment', node: config.mmm.moment  },
-  ].forEach(slot => {
-    const surfaced = slot.node && ni[slot.node];
-    const captured = slot.node && niCap[slot.node];
-    const status = surfaced && captured ? '\u2713' : surfaced ? '!' : '\u2014';
-    const color  = surfaced && captured ? 'rgba(107,138,74,.9)' : surfaced ? 'rgba(180,155,90,.9)' : 'var(--faint)';
-    const text   = surfaced && captured ? 'Captured.' : surfaced ? 'Surfaced. Not captured.' : 'Not yet surfaced.';
-    const row = document.createElement('div');
-    row.style.cssText = 'display:flex;align-items:flex-start;gap:10px;margin-bottom:6px;font-family:var(--sans);font-size:11px;line-height:1.5;';
-    row.innerHTML = `<span style="color:${color};width:14px;flex-shrink:0;">${status}</span><span style="color:var(--dim);width:52px;flex-shrink:0;">${slot.label}</span><span style="color:${color};font-style:italic;">${text}</span>`;
-    l1.appendChild(row);
-  });
-  card.appendChild(l1);
+  const isOthersDebrief = config.kind === 'others';
+
+  if (!isOthersDebrief) {
+    // Layer 1 — Case Checklist (Register/Ashworth/Northcott)
+    const l1 = document.createElement('div');
+    l1.style.cssText = 'margin-bottom:18px;';
+    l1.innerHTML = '<div style="font-family:var(--sans);font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-bottom:8px;">Case Checklist</div>';
+    [
+      { label: 'Motive', node: config.mmm.motive },
+      { label: 'Means',  node: config.mmm.means  },
+      { label: 'Moment', node: config.mmm.moment  },
+    ].forEach(slot => {
+      const surfaced = slot.node && ni[slot.node];
+      const captured = slot.node && niCap[slot.node];
+      const status = surfaced && captured ? '\u2713' : surfaced ? '!' : '\u2014';
+      const color  = surfaced && captured ? 'rgba(107,138,74,.9)' : surfaced ? 'rgba(180,155,90,.9)' : 'var(--faint)';
+      const text   = surfaced && captured ? 'Captured.' : surfaced ? 'Surfaced. Not captured.' : 'Not yet surfaced.';
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:flex-start;gap:10px;margin-bottom:6px;font-family:var(--sans);font-size:11px;line-height:1.5;';
+      row.innerHTML = `<span style="color:${color};width:14px;flex-shrink:0;">${status}</span><span style="color:var(--dim);width:52px;flex-shrink:0;">${slot.label}</span><span style="color:${color};font-style:italic;">${text}</span>`;
+      l1.appendChild(row);
+    });
+    card.appendChild(l1);
+  }
 
   // Layer 2 — Technique Assessment
   const l2 = document.createElement('div');
@@ -2601,22 +2660,43 @@ function _showClosure(charId, branchId) {
   if (!anyTech) l2.innerHTML += '<div style="font-size:12px;color:var(--faint);font-style:italic;">No technique data recorded.</div>';
   card.appendChild(l2);
 
-  // Layer 3 — FBI Debrief
-  const l3 = document.createElement('div');
-  l3.style.cssText = 'margin-bottom:8px;';
-  l3.innerHTML = '<div style="font-family:var(--sans);font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-bottom:8px;">Subject Notes</div>';
-  [
-    { label: 'Subject Account',     text: config.account_text(ni) },
-    { label: 'Contradictions',      text: config.contradictions(ni) },
-    { label: 'Intelligence Gained', text: config.intelligence(ni) },
-    { label: 'Gaps Remaining',      text: typeof config.gaps === 'function' ? config.gaps(ni) : '' },
-  ].forEach(sec => {
-    const block = document.createElement('div');
-    block.style.cssText = 'margin-bottom:12px;';
-    block.innerHTML = `<div style="font-family:var(--sans);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-bottom:3px;">${sec.label}</div><div style="font-size:12px;color:var(--dim);font-style:italic;line-height:1.6;white-space:pre-line;">${sec.text}</div>`;
-    l3.appendChild(block);
-  });
-  card.appendChild(l3);
+  // Layer 3 — Subject Notes (normal branches) OR 4 Others sections
+  if (!isOthersDebrief) {
+    const l3 = document.createElement('div');
+    l3.style.cssText = 'margin-bottom:8px;';
+    l3.innerHTML = '<div style="font-family:var(--sans);font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-bottom:8px;">Subject Notes</div>';
+    [
+      { label: 'Subject Account',     text: config.account_text(ni) },
+      { label: 'Contradictions',      text: config.contradictions(ni) },
+      { label: 'Intelligence Gained', text: config.intelligence(ni) },
+      { label: 'Gaps Remaining',      text: typeof config.gaps === 'function' ? config.gaps(ni) : '' },
+    ].forEach(sec => {
+      const block = document.createElement('div');
+      block.style.cssText = 'margin-bottom:12px;';
+      block.innerHTML = `<div style="font-family:var(--sans);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-bottom:3px;">${sec.label}</div><div style="font-size:12px;color:var(--dim);font-style:italic;line-height:1.6;white-space:pre-line;">${sec.text}</div>`;
+      l3.appendChild(block);
+    });
+    card.appendChild(l3);
+  } else {
+    // Others branch — 4 custom sections instead of MMM Subject Notes
+    const usedArr = (sess && sess.usedTechniques && sess.usedTechniques['others']) || [];
+    const fuFlags = (sess && sess.askedFollowups) || {};
+    const l3 = document.createElement('div');
+    l3.style.cssText = 'margin-bottom:8px;';
+    l3.innerHTML = '<div style="font-family:var(--sans);font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-bottom:8px;">Subject Notes</div>';
+    [
+      { label: 'Posture',         text: config.posture(usedArr) },
+      { label: 'Names Surfaced',  text: config.names(usedArr, fuFlags) },
+      { label: 'Routes Suggested',text: config.routes(usedArr, fuFlags) },
+      { label: 'Withheld',        text: config.withheld(usedArr) },
+    ].forEach(sec => {
+      const block = document.createElement('div');
+      block.style.cssText = 'margin-bottom:12px;';
+      block.innerHTML = `<div style="font-family:var(--sans);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-bottom:3px;">${sec.label}</div><div style="font-size:12px;color:var(--dim);font-style:italic;line-height:1.6;white-space:pre-line;">${sec.text}</div>`;
+      l3.appendChild(block);
+    });
+    card.appendChild(l3);
+  }
 
   // Dismiss button
   const dismiss = document.createElement('button');
@@ -2799,12 +2879,6 @@ function _renderHaleQuestions(list) {
       if (!isDone) {
         btn.onclick = () => {
           if (typeof NocturneSound !== 'undefined') NocturneSound.playUIClick();
-          // Others fires immediately
-          if (lineId === 'others') {
-            window.haleSelectLine(lineId);
-            _haleFireOthers();
-            return;
-          }
           window.haleSelectLine(lineId);
           renderQuestions('pemberton-hale');
         };
@@ -2816,7 +2890,9 @@ function _renderHaleQuestions(list) {
 
   // Technique selection — only show when no technique has fired yet this cycle
   if (!s.techniqueSelected && !s.lastTechnique) {
-    const techniques = char.line_techniques[s.lineSelected] || {};
+    const techniques = s.lineSelected === 'others'
+      ? (char.others_techniques || {})
+      : (char.line_techniques[s.lineSelected] || {});
     const used = (s.usedTechniques && s.usedTechniques[s.lineSelected]) || [];
     const captured = (window.gameState && window.gameState.captured_nodes) || {};
     // A used technique remains openable (retry) if its grant has not been captured.
@@ -2917,39 +2993,6 @@ function _injectHaleForwardArrow() {
     if (list) list.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   };
   resp.appendChild(btn);
-}
-
-function _haleFireOthers() {
-  const char = window.CHARACTERS && window.CHARACTERS['pemberton-hale'];
-  if (!char || !char.others_techniques) return;
-  const tech = char.others_techniques['wait'];
-  if (!tech) return;
-  const resp = document.getElementById('char-response');
-  if (resp) {
-    resp.innerHTML = '';
-    resp.textContent = tech.response;
-    if (tech.callum) _showHaleCallumRead(tech.callum);
-  }
-  // Inject pencil — every dialogue response gets one.
-  if (typeof window.injectPencilIcon === 'function') window.injectPencilIcon();
-  // Others is a one-shot suspect list — no techniques, no follow-ups, no debrief.
-  // Lock as completed immediately so the branch dims on return visits.
-  // Sets sessionComplete so the return-visit handler fires opening_return next time,
-  // but pendingDebriefBranch stays null so closeConversation skips the debrief.
-  const s = window.getHaleSession ? window.getHaleSession() : null;
-  if (s) {
-    if (!s.completedLines) s.completedLines = [];
-    if (!s.completedLines.includes('others')) s.completedLines.push('others');
-    s.sessionComplete      = true;
-    s.pendingDebriefBranch = null;
-    s.lineSelected         = null;
-    s.techniqueSelected    = null;
-    s.followupAsked        = null;
-    s.lastTechnique        = null;
-  }
-  // Clear questions list — player closes to exit
-  const list = document.getElementById('questions-list');
-  if (list) list.innerHTML = '';
 }
 
 function _injectHaleSnapback(branch) {
@@ -3065,7 +3108,10 @@ function _haleFireOpening() {
 function _haleFireLineTechnique(lineId, techId) {
   const char = window.CHARACTERS && window.CHARACTERS['pemberton-hale'];
   if (!char) return;
-  const tech = (char.line_techniques[lineId] || {})[techId];
+  const techPool = lineId === 'others'
+    ? (char.others_techniques || {})
+    : (char.line_techniques[lineId] || {});
+  const tech = techPool[techId];
   if (!tech) return;
   const resp = document.getElementById('char-response');
   if (resp) {
@@ -3147,22 +3193,25 @@ function _haleFireFollowup(followupId) {
   }
   // Per-visit branch exhaustion + capture-aware lock:
   // - One technique + its follow-up = branch exhausted FOR THIS VISIT.
-  // - Debrief fires when player closes (Register/Ashworth only — never Others).
+  // - Debrief fires when player closes (Register/Ashworth only — never Others, which has no MMM nodes).
   // - A technique is "fully resolved" when either it has no grant, OR its grant has been captured.
   // - Branch is locked into completedLines only when ALL FOUR techniques are fully resolved.
   // - Otherwise the branch reopens on return visits — and only the unresolved techniques
   //   (the ones whose grants weren't captured) remain selectable.
-  if (s && s.lineSelected && s.lineSelected !== 'others') {
+  if (s && s.lineSelected) {
     const branchId = s.lineSelected;
+    const isOthers = branchId === 'others';
     const usedHere = (s.usedTechniques && s.usedTechniques[branchId]) || [];
     const allFour = ['wait','account','approach','pressure'].every(t => usedHere.includes(t));
     if (allFour) {
-      const branchTechs = (char.line_techniques && char.line_techniques[branchId]) || {};
+      const branchTechs = isOthers
+        ? (char.others_techniques || {})
+        : ((char.line_techniques && char.line_techniques[branchId]) || {});
       const captured = (window.gameState && window.gameState.captured_nodes) || {};
       const allResolved = ['wait','account','approach','pressure'].every(t => {
         const grants = branchTechs[t] && branchTechs[t].grants;
-        if (!grants) return true;                      // no grant → resolved
-        return grants.split(' ').every(n => !n || captured[n]);  // every granted node captured
+        if (!grants) return true;                      // no grant → resolved (Others techniques have no grants)
+        return grants.split(' ').every(n => !n || captured[n]);
       });
       if (allResolved) {
         if (!s.completedLines) s.completedLines = [];
