@@ -3412,7 +3412,7 @@ function _showHaleCallumRead(text) {
   if (!resp) return;
   const el = document.createElement('div');
   el.id = 'hale-callum-read';
-  el.style.cssText = 'margin-top:10px;padding:8px 12px;background:rgba(20,16,10,0.6);border-left:2px solid rgba(180,155,90,0.3);font-size:11px;color:var(--text-dim);font-style:italic;line-height:1.5;overflow-y:auto;max-height:30vh;';
+  el.style.cssText = 'margin-top:10px;padding:8px 12px;background:rgba(20,16,10,0.6);border-left:2px solid rgba(180,155,90,0.3);font-size:11px;color:var(--text-dim);font-style:italic;line-height:1.5;';
   // Use only the first paragraph on mobile to keep it tight
   const paragraphs = text.split('\n\n').filter(Boolean);
   el.innerHTML = paragraphs.map(p => `<p style="margin:0 0 6px">${p}</p>`).join('');

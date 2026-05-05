@@ -714,7 +714,7 @@ html, body {
 /* Portrait zone — floats on room background, scene visible */
 #conv-portrait-zone {
   flex: 0 0 auto;
-  height: calc(var(--app-height, 100vh) * 0.22);
+  height: calc(var(--app-height, 100vh) * 0.17);
   width: 42%;
   align-self: center;
   display: flex;
@@ -778,7 +778,7 @@ html, body {
   color: var(--cream);
   font-style: italic;
   min-height: 52px;
-  max-height: 28vh;
+  max-height: 36vh;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   flex-shrink: 1;
@@ -847,8 +847,46 @@ html, body {
   margin-top: -12px;
 }
 
-/* Tell annotation */
-#char-tell {
+/* Callum investigator read — appears below character response in Hale/Northcott */
+#hale-callum-read {
+  margin-top: 10px;
+  padding: 8px 12px;
+  background: rgba(20,16,10,0.6);
+  border-left: 2px solid rgba(180,155,90,0.3);
+  font-size: 11px;
+  color: var(--text-dim, rgba(180,165,140,0.7));
+  font-style: italic;
+  line-height: 1.5;
+}
+#hale-callum-read p { margin: 0 0 6px; }
+
+/* Hale technique buttons */
+.hale-technique-btn { padding: 14px 20px; }
+.hale-tech-name {
+  display: block;
+  font-size: 12px;
+  color: var(--gold, #c9a84c);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-family: var(--font-ui, sans-serif);
+  margin-bottom: 3px;
+}
+.hale-tech-desc {
+  display: block;
+  font-size: 10px;
+  color: var(--cream-dim, rgba(200,185,160,0.5));
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+.hale-callum-q {
+  display: block;
+  font-size: 12px;
+  color: var(--cream, rgba(220,205,180,0.85));
+  font-style: italic;
+  line-height: 1.5;
+}
+
+
   padding: 0 20px 8px;
   font-size: 10px;
   color: #4a4030;
@@ -867,7 +905,7 @@ html, body {
   background: rgba(10,8,5,0.95);
   border-top: 1px solid rgba(42,37,28,0.4);
   flex: 1 1 0;
-  min-height: 0;
+  min-height: 96px;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   position: relative;
@@ -2951,4 +2989,11 @@ html, body {
 #train-card-ph-train.speaking .mouth-overlay,
 #train-card-todd.speaking .mouth-overlay {
   background: rgba(190,155,130,0.55);
+}
+
+/* ── MOBILE CONVERSATION FIXES ───────────────────────────── */
+@media (max-height: 760px) {
+  #conv-portrait-zone { height: calc(var(--app-height, 100vh) * 0.15); }
+  #char-response { max-height: 18vh; }
+  .question-item { padding: 10px 20px; font-size: 12px; }
 }
