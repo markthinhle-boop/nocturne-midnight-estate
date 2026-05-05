@@ -31,7 +31,7 @@ function _getCharNotes(charId) {
 }
 
 // ── SAVE A NOTE ────────────────────────────────────────────
-function saveNoteForChar(charId, text) {
+function saveNoteForChar(charId, text, nodeId) {
   if (!charId || !text || !text.trim()) return;
   const notes = _getCharNotes(charId);
   // Prevent duplicate — don't save if last note has identical text
@@ -41,6 +41,8 @@ function saveNoteForChar(charId, text) {
     text:      text.trim(),
     timestamp: Date.now(),
   };
+  // Track which timeline node was captured by this entry — enables un-capture on delete.
+  if (nodeId) entry.nodeId = nodeId;
   notes.push(entry);
   _getNotes()[charId] = notes;
   if (typeof saveGame === 'function') saveGame();
@@ -50,7 +52,26 @@ function saveNoteForChar(charId, text) {
 function deleteNote(charId, noteId) {
   const notes = _getCharNotes(charId);
   const idx = notes.findIndex(n => n.id === noteId);
-  if (idx !== -1) notes.splice(idx, 1);
+  if (idx === -1) return;
+  const entry = notes[idx];
+  notes.splice(idx, 1);
+  // Un-capture the associated timeline node — the player has retracted the record.
+  // Removes from captured_nodes AND node_inventory so debrief reflects the change
+  // and the surfacing branch reopens for retry.
+  if (entry.nodeId && window.gameState) {
+    if (window.gameState.captured_nodes) delete window.gameState.captured_nodes[entry.nodeId];
+    if (window.gameState.node_inventory) delete window.gameState.node_inventory[entry.nodeId];
+    if (typeof NocturneEngine !== 'undefined' && NocturneEngine.emit) {
+      NocturneEngine.emit('nodeUncaptured', { nodeId: entry.nodeId });
+    }
+    // If the pencil for this exact node is currently visible, clear the saved flag
+    // so the player can re-tap to recapture without leaving the conversation.
+    const pencil = document.getElementById('np-pencil-btn');
+    if (pencil && pencil.dataset.timelineNode === entry.nodeId) {
+      delete pencil.dataset.saved;
+      pencil.classList.remove('saved');
+    }
+  }
   if (typeof saveGame === 'function') saveGame();
   renderNotepadPage(_padCurrentIndex);
 }
@@ -255,10 +276,11 @@ function injectPencilIcon() {
     const fullNote = _lastQuestion
       ? `Q: ${_lastQuestion}\n\n${responseText}`
       : responseText;
-    saveNoteForChar(charId, fullNote);
+    const nodeId = btn.dataset.timelineNode || null;
+    saveNoteForChar(charId, fullNote, nodeId);
     // Capture the timeline node armed by surfaceNode — promotes into node_inventory + captured_nodes.
-    if (btn.dataset.timelineNode && typeof window.captureNode === 'function') {
-      window.captureNode(btn.dataset.timelineNode);
+    if (nodeId && typeof window.captureNode === 'function') {
+      window.captureNode(nodeId);
     }
     btn.dataset.saved = 'true';
     btn.classList.add('saved');
@@ -350,7 +372,7 @@ function _injectCSS() {
     .np-hud-icon.pulse{animation:np-hud-pulse 600ms ease-out;}
     @keyframes np-hud-pulse{0%{color:var(--gold,#c9a84c);transform:scale(1.3);opacity:1}60%{color:var(--cream-dim,#b8a98a);transform:scale(1)}100%{opacity:0.7}}
 
-    .np-pencil-btn{position:absolute;bottom:8px;right:8px;background:rgba(20,16,10,0.75);border:1px solid rgba(180,155,90,0.3);border-radius:4px;color:var(--gold,#c9a84c);opacity:0.85;cursor:pointer;padding:5px 7px;line-height:1;transition:opacity 200ms,transform 150ms;z-index:10;}
+    .np-pencil-btn{position:absolute;top:8px;right:8px;background:rgba(20,16,10,0.75);border:1px solid rgba(180,155,90,0.3);border-radius:4px;color:var(--gold,#c9a84c);opacity:0.85;cursor:pointer;padding:5px 7px;line-height:1;transition:opacity 200ms,transform 150ms;z-index:10;}
     .np-pencil-btn:hover,.np-pencil-btn:active{opacity:1;transform:scale(1.1);}
     .np-pencil-btn.saved{animation:np-pencil-saved 1000ms ease-out forwards;}
     @keyframes np-pencil-saved{0%{transform:scale(1.4) rotate(-8deg);opacity:1}50%{transform:scale(1.1) rotate(0deg)}100%{transform:scale(1);opacity:0.85}}
