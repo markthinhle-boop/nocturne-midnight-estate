@@ -778,10 +778,10 @@ html, body {
   color: var(--cream);
   font-style: italic;
   min-height: 52px;
-  max-height: 36vh;
+  max-height: 28vh;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  flex-shrink: 1;
+  flex-shrink: 0;
   background: rgba(10,8,5,0.92);
   border-top: 1px solid rgba(42,37,28,0.5);
   position: relative;
