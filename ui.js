@@ -1718,13 +1718,8 @@ function _openConversationDirect(charId) {
     window.gameState.composure = _getSuspectComposure(charId);
   }
 
-  // ROWE DUEL — hide Close button during intro/duel (one-way street)
   const dismissBtn = document.getElementById('btn-dismiss-conv');
-  if (charId === 'rowe' && dismissBtn) {
-    dismissBtn.style.display = 'none';
-  } else if (dismissBtn) {
-    dismissBtn.style.display = '';
-  }
+  if (dismissBtn) dismissBtn.style.display = '';
 
   // Clear inline display:none set by train sequence
   panel.style.display = '';
@@ -3470,13 +3465,10 @@ function renderQuestions(charId) {
   if (!window.computeAvailableQuestions) return;
   const available = computeAvailableQuestions(charId);
   
-  // ROWE — restore Close button after duel completes
+  // ROWE — Close button always visible (duel engine removed)
   if (charId === 'rowe') {
     const dismissBtn = document.getElementById('btn-dismiss-conv');
-    const roweState = typeof window.getRoweDialogueState === 'function' ? window.getRoweDialogueState() : null;
-    if (dismissBtn && roweState && roweState.duel_complete) {
-      dismissBtn.style.display = '';
-    }
+    if (dismissBtn) dismissBtn.style.display = '';
   }
   
   available.forEach(qId => {
