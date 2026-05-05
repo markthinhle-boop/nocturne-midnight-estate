@@ -772,13 +772,13 @@ html, body {
 #char-response {
   width: 100%;
   box-sizing: border-box;
-  padding: 12px 20px 8px;
-  font-size: 13px;
-  line-height: 1.7;
+  padding: 8px 16px 6px;
+  font-size: 12px;
+  line-height: 1.55;
   color: var(--cream);
   font-style: italic;
-  min-height: 52px;
-  max-height: 22vh;
+  min-height: 40px;
+  max-height: 18vh;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   flex-shrink: 1;
