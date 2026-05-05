@@ -1973,21 +1973,6 @@ function updateComposureLabel(charId) {
 function closeConversation() {
   const charId = _activeCharId;
 
-  // ── ROWE — fire ballroom cinematic on close after any dialogue ──
-  if (charId === 'rowe') {
-    const roweState = typeof window.getRoweDialogueState === 'function' ? window.getRoweDialogueState() : null;
-    if (roweState && roweState.choice_made) {
-      _closeConversationPanel();
-      // Navigate to ballroom — prologue.js cinematic intercept fires on navigateTo
-      if (typeof window.navigateTo === 'function') {
-        window.navigateTo('ballroom');
-      }
-      return;
-    }
-    _closeConversationPanel();
-    return;
-  }
-
   // ── NEW ARCHITECTURE DEBRIEF — Hale and Northcott ────────────
   // Debrief tracked silently. Displays when player taps close
   // ONLY after questions have been exhausted (sessionComplete).
