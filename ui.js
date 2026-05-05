@@ -2194,9 +2194,10 @@ function _getNorthcottSession() {
       warmupAsked:  false,
       activeQ:      null,
       usedQs:       [],
-      qTechnique:   {},  // map: { Q1: 'wait', Q2: 'account', ... } — records which technique fired per Q for retry-on-missed-capture
+      qTechnique:   {},  // map: { Q1: 'wait', Q2: 'account', ... }
     };
   }
+  if (window.gameState) window.gameState.northcottSession = _northcottSession;
   return _northcottSession;
 }
 
@@ -2411,44 +2412,92 @@ const DEBRIEF_CONFIG = {
     register: {
       final: 'He looks at the writing case. He has given you the record.',
       mmm: { motive: null, means: null, moment: 'hale_false_timeline' },
-      account_text: (ni) => ni['hale_false_timeline'] ? 'Entries described as standard. Administrative amendments over a period of years. Bond provisions confirmed in order.' : 'Subject gave account of Register duties. No detail volunteered.',
-      contradictions: (ni) => ni['hale_false_timeline'] ? 'Eight years of incremental amendments described as administrative. The scope is inconsistent with the characterisation.' : 'No contradictions identified.',
-      intelligence: (ni) => ni['hale_false_timeline'] ? 'Register alterations confirmed. Nature and purpose not yet established.' : 'Subject account taken. No intelligence extracted.',
+      account_text: (ni) => ni['hale_false_timeline']
+        ? 'Entries described as standard. Administrative amendments over a period of years. Bond provisions confirmed in order.'
+        : 'Subject gave account of Register duties. The question was returned without detail. The record was not opened.',
+      contradictions: (ni) => ni['hale_false_timeline']
+        ? 'Eight years of incremental amendments described as administrative. The scope is inconsistent with the characterisation.'
+        : 'No contradictions identified. Subject did not commit to specifics.',
+      intelligence: (ni) => ni['hale_false_timeline']
+        ? 'Register alterations confirmed. Nature and purpose not yet established. Subject confirmed entries with Curator at seven forty-two.'
+        : 'Subject account taken. No intelligence extracted.',
       gaps: (ni) => {
         const lines = [];
-        if (!ni['hale_immunity_motive']) lines.push('Immunity clause not yet surfaced.');
-        lines.push('Ashworth conversation before the Rite not yet surfaced.');
-        return lines.join('\n');
+        // Cross-branch: check actual captured_nodes for immunity clause, not just this branch's ni
+        const cap = (window.gameState && window.gameState.captured_nodes) || {};
+        if (!cap['hale_immunity_motive']) lines.push('Immunity clause — purpose and origin not yet established.');
+        if (!cap['hale_false_timeline']) lines.push('Register alterations — full scope not yet recorded.');
+        return lines.join('\n') || 'No gaps identified.';
       },
-      techniques: { wait: 'Wait — he returned the silence. The record surfaced on his terms.', account: 'Account — he narrated in sequence. He chose the order.', approach: 'Approach — the correction produced more than the question contained.', pressure: 'Pressure — he redirected to specifics. He is managing disclosure.' },
+      techniques: {
+        wait: 'Wait — he returned the silence. The record surfaced on his terms.',
+        account: 'Account — he narrated in sequence. He chose the order. The administrative framing was deliberate.',
+        approach: 'Approach — the correction produced more than the question contained. He corrected both the number and the timing.',
+        pressure: 'Pressure — he redirected to specifics. He is managing disclosure, not preventing it.',
+      },
     },
     ashworth: {
       final: '"I\'d like to speak to the Curator." Quietly. Not panicked.',
       mmm: { motive: 'hale_immunity_motive', means: null, moment: null },
-      account_text: () => 'Lord Ashworth informed subject of committee finding at seven-oh-five. Immunity clause identified as irregular. Reading into Register scheduled for tonight.',
-      contradictions: (ni) => ni['hale_immunity_motive'] ? 'Subject described provisions as protective. Committee found the clause irregular. These accounts are inconsistent.' : 'Ashworth conversation not fully disclosed. Account incomplete.',
-      intelligence: (ni) => ni['hale_immunity_motive'] ? 'Committee convened informally that afternoon. Subject had fifty-five minutes between that conversation and the Rite.' : 'Ashworth relationship characterised as formal and correct. Personal dimension not yet surfaced.',
+      account_text: (ni) => {
+        const sess = window.gameState && window.gameState.haleSession;
+        const used = (sess && sess.usedTechniques && sess.usedTechniques['ashworth']) || [];
+        if (ni['hale_immunity_motive']) {
+          if (used.includes('wait')) {
+            return 'Lord Ashworth found subject at seven-oh-five. East corridor. Committee had already met. Clause would not survive review. Provisions would revert by morning Rite. Subject had fifty-five minutes. He counted them.';
+          }
+          if (used.includes('account')) {
+            return 'Lord Ashworth informed subject of committee finding at seven-oh-five. Immunity clause identified as irregular. Reading into Register scheduled for tonight. Nothing would stop it — Ashworth\'s exact words, repeated.';
+          }
+          if (used.includes('approach')) {
+            return 'Lord Ashworth told subject tonight was the end of it. Four generations of membership. The clause he spent eighteen months building failed at the one moment it mattered. Subject left the arithmetic to Callum.';
+          }
+          return 'Lord Ashworth informed subject of committee finding at seven-oh-five. Immunity clause identified as irregular. Reading into Register scheduled for tonight.';
+        }
+        if (used.includes('pressure')) {
+          return 'Subject drew a line between institutional context and private affairs. The private affairs were not disclosed. The line was drawn at the moment the conversation reached what Ashworth actually said.';
+        }
+        return 'Ashworth conversation not fully disclosed. Relationship characterised as formal and correct. The personal dimension remains behind the institutional account.';
+      },
+      contradictions: (ni) => ni['hale_immunity_motive']
+        ? 'Subject described provisions as protective self-defence. Committee found the clause irregular. These accounts are inconsistent — the clause that was protective is the clause that looks like preparation.'
+        : 'Ashworth conversation not fully disclosed. No contradictions available to identify.',
+      intelligence: (ni) => {
+        if (ni['hale_immunity_motive']) {
+          const cap = (window.gameState && window.gameState.captured_nodes) || {};
+          const hasDeep = cap['hale_ashworth_deep'];
+          let text = 'Committee convened informally that afternoon. Subject had fifty-five minutes between that conversation and the Rite opening. What he decided in those fifty-five minutes is not yet established.';
+          if (hasDeep) text += '\n\nSubject was aware that Ashworth kept a private note from his membership review thirty years ago. That note — and what it contained — is the deeper fear behind the immunity clause.';
+          return text;
+        }
+        return 'Ashworth relationship characterised as formal and correct. Subject drew the line at the personal dimension. The fifty-five minute interval between seven-oh-five and the Rite opening is unaccounted for.';
+      },
       gaps: (ni) => {
         const lines = [];
-        if (ni['hale_immunity_motive']) lines.push('Subject decision during fifty-five minute interval not established.');
-        lines.push('Means not yet surfaced.');
-        lines.push('Moment not yet surfaced.');
+        if (ni['hale_immunity_motive']) {
+          lines.push('Subject decision during fifty-five minute interval not independently established.');
+          lines.push('Ashworth\'s private note from membership review — contents unknown.');
+        } else {
+          lines.push('Ashworth conversation content not yet disclosed.');
+          lines.push('Immunity clause purpose not yet established.');
+        }
         return lines.join('\n');
       },
-      techniques: { wait: 'Wait — he filled the silence with more than expected.', account: 'Account — he narrated with precision. The writing case opened.', approach: 'Approach — he completed the arithmetic without being asked.', pressure: 'Pressure — he drew the line between institutional and private.' },
+      techniques: {
+        wait: 'Wait — he filled the silence with more than expected. Fifty-five minutes. He counted them.',
+        account: 'Account — he narrated with precision. The writing case opened. Nothing would stop it — Ashworth\'s words repeated exactly.',
+        approach: 'Approach — he completed the arithmetic without being asked. He left the conclusion to Callum.',
+        pressure: 'Pressure — he drew the line between institutional and private. Everything on his side of that line is the thing that matters.',
+      },
     },
     others: {
       kind: 'others',
       final: 'He has decided what he will say about the others. The list is shorter than the truth.',
-      // Renders 4 custom sections instead of MMM Case Checklist:
-      //   Posture | Names Surfaced | Routes Suggested | What Hale Withheld
       posture: (used) => {
         if (used.includes('pressure')) {
-          return 'Subject held institutional posture across all approaches until pressure was applied. Under pressure, the boundary moved. He named seven members and assigned each a relation to Lord Ashworth. The disclosure was prepared.';
+          return 'Subject held institutional posture across all approaches until pressure was applied. Under pressure, the boundary moved. He named seven members and assigned each a relation to Lord Ashworth. The disclosure was prepared. It did not cost him as much as it should have.';
         }
-        if (used.length === 0) {
-          return 'Subject posture not yet read.';
-        }
+        if (used.length === 0) return 'Subject posture not yet read.';
         return 'Subject held institutional posture throughout. He refused to characterise fellow members on procedural grounds. The refusal was deliberate and rehearsed. He has anticipated approaches he has not yet been asked to refuse.';
       },
       names: (used, fuFlags) => {
@@ -2471,18 +2520,14 @@ const DEBRIEF_CONFIG = {
           lines.push('Subject identified the Surgeon\'s licensing board as worth investigating.');
           lines.push('Subject indicated Northcott\'s presence was arranged externally.');
         }
-        if (lines.length === 0) return 'No routes identified.';
+        if (lines.length === 0) return 'No routes identified. Apply pressure on return.';
         return lines.join('\n');
       },
       withheld: (used) => {
         const lines = [];
-        if (!used.includes('pressure')) {
-          lines.push('Subject declined to characterise fellow members. The line held across attempted approaches.');
-        }
+        if (!used.includes('pressure')) lines.push('Subject declined to characterise fellow members. The line held across all attempted approaches.');
         lines.push('The Steward — subject refused to elaborate. The refusal was specific and complete.');
-        if (used.includes('approach') || used.includes('account')) {
-          lines.push('Subject indicated someone less practiced than himself will produce the same information. He declined to identify that person.');
-        }
+        if (used.includes('approach') || used.includes('account')) lines.push('Subject indicated someone less practiced than himself will give what he will not. He declined to identify that person.');
         return lines.join('\n');
       },
       techniques: {
@@ -2497,34 +2542,126 @@ const DEBRIEF_CONFIG = {
     Q1: {
       final: 'He closes the notebook to the same page.',
       mmm: { motive: null, means: null, moment: 'northcott_false_gap' },
-      account_text: () => 'Post established at seven. Continuous log until seven-fifteen. Gap of eight minutes. Returned at seven-twenty-three. Record continuous until eight-oh-one.',
-      contradictions: (ni) => ni['northcott_false_gap'] ? 'Gap timing provided as seven-fifteen to seven-twenty-three. No corroborating witness identified. Timing unverified.' : 'No contradictions identified.',
-      intelligence: (ni) => ni['northcott_false_gap'] ? 'Eight-minute gap acknowledged. Marked differently in record. Reason for departure not yet established.' : 'Evening account taken. No gaps identified.',
+      account_text: (ni) => {
+        const sess = window.gameState && window.gameState.northcottSession;
+        const used = (sess && sess.qTechnique && sess.qTechnique['Q1']) ? [sess.qTechnique['Q1']] : [];
+        if (!ni['northcott_false_gap']) {
+          if (used.includes('pressure')) return 'Subject acknowledged a gap exists. He declined to elaborate without understanding the reason for the question. The gap is on record. The reason for it is not.';
+          return 'Evening account taken. No detail on gaps or departures volunteered.';
+        }
+        if (used.includes('wait'))    return 'Subject volunteered the gap before the question reached it. Seven-fifteen to seven-twenty-three. Eight minutes. Marked differently. He has been rehearsing this account since eight o\'clock.';
+        if (used.includes('account')) return 'Subject read from the notebook. Entries before and after the gap are direct observation. Gap entries are marked as reconstructed — his word. He has been thinking about how this record looks to someone else.';
+        if (used.includes('approach')) return 'Subject confirmed the gap before the question was complete. He said her. He left the name unspoken. He went to find someone in those eight minutes. He came back at seven-twenty-three.';
+        return 'Gap of eight minutes acknowledged. Seven-fifteen to seven-twenty-three. Record continuous before and after.';
+      },
+      contradictions: (ni) => ni['northcott_false_gap']
+        ? 'Gap timing provided as seven-fifteen to seven-twenty-three. No corroborating witness identified. Timing unverified against independent account.'
+        : 'No contradictions identified. Subject did not commit to specifics on gap.',
+      intelligence: (ni) => ni['northcott_false_gap']
+        ? 'Eight-minute gap acknowledged and marked differently in the record. Subject left his post. The reason for departure is not yet established. The gap timing places his absence before the murder window — but the murder window is not yet confirmed.'
+        : 'Subject acknowledged gap exists. No further detail obtained.',
       gaps: (ni) => {
         const lines = [];
+        const cap = (window.gameState && window.gameState.captured_nodes) || {};
         if (ni['northcott_false_gap']) lines.push('Reason for eight-minute gap not yet established.');
-        lines.push('Ashworth conversation before the Rite not yet surfaced.');
-        return lines.join('\n');
+        // Cross-branch: only show if Q3 not yet surfaced
+        if (!cap['northcott_vivienne_motive']) lines.push('Ashworth conversation before the Rite not yet surfaced.');
+        return lines.join('\n') || 'No gaps identified.';
       },
-      techniques: { wait: 'Wait — he volunteered the gap before the question reached it.', account: 'Account — he narrated with the notebook. He used the word reconstructed.', approach: 'Approach — he confirmed the gap and said her.', pressure: 'Pressure — he retreated into role. The gap was acknowledged but not explained.' },
+      techniques: {
+        wait: 'Wait — he volunteered the gap before the question reached it. He has been rehearsing this part since eight o\'clock.',
+        account: 'Account — he narrated with the notebook. He used the word reconstructed. That word was chosen.',
+        approach: 'Approach — he confirmed the gap and said her. He left the name.',
+        pressure: 'Pressure — he retreated into role. The gap was acknowledged. The reason was closed.',
+      },
     },
     Q2: {
       final: 'He holds the notebook. He does not open it again.',
       mmm: { motive: null, means: null, moment: null },
-      account_text: () => 'Candelabra base logged at seven-forty in correct position. Checked at eight-oh-two. Gone. Subject used the word weapon.',
-      contradictions: () => 'Candelabra absent at eight-oh-two. Position last confirmed at seven-forty. Interval unaccounted for.',
-      intelligence: () => 'Subject instructed by Ashworth to check previously logged items if anything unusual occurred. Candelabra was the first logged item associated with potential harm.',
-      gaps: () => 'Candelabra location between seven-forty and eight-oh-two not established.\nAshworth conversation before the Rite not yet surfaced.',
-      techniques: { wait: 'Wait — he opened the notebook without being asked.', account: 'Account — he read both entries precisely. He used the word interval.', approach: 'Approach — he said weapon. He said Ashworth told him to check.', pressure: 'Pressure — he narrowed his remit. He retreated to foyer arrivals.' },
+      // Q2 carries no conviction nodes — the Case Checklist is suppressed for this branch
+      // and replaced with an intelligence-only notice in _showClosure.
+      _noMMM: true,
+      account_text: () => {
+        const sess = window.gameState && window.gameState.northcottSession;
+        const used = (sess && sess.qTechnique && sess.qTechnique['Q2']) ? [sess.qTechnique['Q2']] : [];
+        if (used.includes('pressure')) return 'Subject narrowed his remit under pressure. Candelabra acknowledged as logged. Jurisdiction for its movement was disclaimed. He knows what the candelabra has to do with tonight. That is why he became unclear about it.';
+        if (used.includes('account')) return 'Subject read both entries precisely. Seven-forty — correct position. Eight-oh-two — absent. He said he was thinking about something else during the interval. He said it like a confession and moved past it.';
+        if (used.includes('approach')) return 'Subject used the word weapon to himself at eight-oh-two. He said Ashworth told him to check what he had already logged. He thinks Callum already knows about the base.';
+        return 'Candelabra base logged at seven-forty in correct position. Gone at eight-oh-two. Subject used the word weapon. Subject was instructed by Ashworth to check previously logged items if anything unusual occurred.';
+      },
+      contradictions: () => 'Candelabra absent at eight-oh-two. Position last confirmed at seven-forty. Interval unaccounted for. Subject acknowledges he was not watching it during that interval.',
+      intelligence: () => {
+        const sess = window.gameState && window.gameState.northcottSession;
+        const used = (sess && sess.qTechnique && sess.qTechnique['Q2']) ? [sess.qTechnique['Q2']] : [];
+        let text = 'Lord Ashworth instructed subject before the Rite: if anything unusual happens, check what you have already logged. The candelabra was the first logged item that could function as a weapon. Subject reached that conclusion at eight-oh-two.';
+        if (used.includes('account')) text += '\n\nSubject stated he was thinking about something else during the interval when the candelabra moved. The eight-minute gap and the candelabra interval are the same window. He knows this.';
+        return text;
+      },
+      gaps: () => {
+        const lines = [];
+        lines.push('Candelabra location between seven-forty and eight-oh-two not established.');
+        const cap = (window.gameState && window.gameState.captured_nodes) || {};
+        if (!cap['northcott_vivienne_motive']) lines.push('Ashworth conversation before the Rite not yet surfaced.');
+        return lines.join('\n');
+      },
+      techniques: {
+        wait: 'Wait — he opened the notebook without being asked. The candelabra was the first thing he named.',
+        account: 'Account — he read both entries exactly as written. He used the word interval. He confessed he was not watching.',
+        approach: 'Approach — he said weapon. He said Ashworth told him to check. He decided Callum already knows.',
+        pressure: 'Pressure — he retreated into role. Jurisdiction disclaimed. He narrowed his remit because widening it was more dangerous.',
+      },
     },
     Q3: {
       final: '"I hope you find what you\'re looking for." He means it. He always has.',
       mmm: { motive: 'northcott_vivienne_motive', means: null, moment: null },
-      account_text: () => 'Ashworth found subject at seven-oh-five in east corridor. Register entry planned for tonight. Subject and staff member named. Nothing would stop it.',
-      contradictions: (ni) => ni['northcott_vivienne_motive'] ? 'Subject described gap as eight minutes to find her. Ashworth conversation at seven-oh-five establishes why.' : 'Ashworth conversation not yet disclosed.',
-      intelligence: (ni) => ni['northcott_vivienne_motive'] ? 'Subject had reason to act before eight. Subject states he decided to find her and tell her. Decision made between seven-oh-five and eight-oh-one.' : 'Ashworth conversation deflected. Subject cited privacy.',
-      gaps: (ni) => ni['northcott_vivienne_motive'] ? 'Subject decision between seven-oh-five and eight-oh-one not independently verified.\nMeans not yet surfaced.\nTrue gap timing not yet established.' : 'Ashworth conversation content not yet established.',
-      techniques: { wait: 'Wait — he set it down.', account: 'Account — he reported it like a log entry.', approach: 'Approach — he stated what he decided. He denied the action.', pressure: 'Pressure — he checked the corridor. He closed.' },
+      account_text: (ni) => {
+        const sess = window.gameState && window.gameState.northcottSession;
+        const used = (sess && sess.qTechnique && sess.qTechnique['Q3']) ? [sess.qTechnique['Q3']] : [];
+        if (!ni['northcott_vivienne_motive']) {
+          if (used.includes('pressure')) return 'Subject checked the corridor. He declined to characterise private conversations. He cited his record. He said he had said everything he could say tonight. The corridor check was not about Callum.';
+          return 'Subject deflected. Ashworth conversation cited as private. No detail disclosed.';
+        }
+        if (used.includes('wait'))    return 'He set it down. Ashworth found him at seven-oh-five. East corridor. He said he knew about Vivienne. Membership in breach. Her name and his name in the Register tonight. Nothing would stop it. He said it without anger. That was the part Northcott could not stop thinking about.';
+        if (used.includes('account')) return 'He reported it like a log entry. Seven-oh-five. East corridor. The violation named. The provision cited. Nothing would stop the reading. Ashworth\'s exact words, repeated with the same precision he applies to arrivals.';
+        if (used.includes('approach')) return 'He confirmed the threat. He named Vivienne. He named the provision. He said nothing would stop it. He said he decided to find her and tell her before it happened so she would not be blindsided.';
+        return 'Ashworth conversation disclosed. Membership breach cited. Vivienne named. Reading into Register tonight. Nothing would stop it.';
+      },
+      contradictions: (ni) => {
+        if (!ni['northcott_vivienne_motive']) return 'Ashworth conversation not yet disclosed. No contradictions available.';
+        const cap = (window.gameState && window.gameState.captured_nodes) || {};
+        if (cap['northcott_false_gap']) {
+          return 'Subject described gap as eight minutes to find her after the seven-oh-five conversation. The gap is the reason. The gap timing — seven-fifteen to seven-twenty-three — now has an established cause. Whether that cause is the complete account remains unverified.';
+        }
+        return 'Subject disclosed motive for the eight-minute gap. Gap timing from Q1 now has an established cause — but Q1 gap is not yet captured. Cross-reference needed.';
+      },
+      intelligence: (ni) => {
+        if (!ni['northcott_vivienne_motive']) {
+          return 'Subject closed on the Ashworth conversation. He checked the corridor before closing — he is not afraid of Callum. He is afraid of who might hear.';
+        }
+        const cap = (window.gameState && window.gameState.captured_nodes) || {};
+        const hasInterval = cap['northcott_decided_interval'];
+        let text = 'Subject had reason to act before eight. He was told at seven-oh-five. He had until eight o\'clock. He states he decided to find her and tell her — not to act against Ashworth.';
+        if (hasInterval) text += '\n\nSubject explicitly described the decision interval. Seven-oh-five to eight-oh-one. Whatever he decided, he decided it in that window. The decision is stated. It is not yet independently verified.';
+        return text;
+      },
+      gaps: (ni) => {
+        const lines = [];
+        if (ni['northcott_vivienne_motive']) {
+          lines.push('Subject stated decision — not independently verified.');
+          const cap = (window.gameState && window.gameState.captured_nodes) || {};
+          if (!cap['northcott_false_gap']) lines.push('Gap timing from Q1 not yet cross-referenced against this account.');
+          lines.push('Means not yet surfaced from any source.');
+        } else {
+          lines.push('Ashworth conversation content not yet established.');
+        }
+        return lines.join('\n');
+      },
+      techniques: {
+        wait: 'Wait — he set it down. Four hours of carrying it. The longest pause of the evening.',
+        account: 'Account — he reported it like a log entry. The precision is how he survives things.',
+        approach: 'Approach — he confirmed the threat, named Vivienne, stated what he decided.',
+        pressure: 'Pressure — he checked the corridor. He closed. He is afraid of who might hear, not of Callum.',
+      },
     },
   },
 };
@@ -2614,22 +2751,31 @@ function _showClosure(charId, branchId) {
     // Layer 1 — Case Checklist (Register/Ashworth/Northcott)
     const l1 = document.createElement('div');
     l1.style.cssText = 'margin-bottom:18px;';
-    l1.innerHTML = '<div style="font-family:var(--sans);font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-bottom:8px;">Case Checklist</div>';
-    [
-      { label: 'Motive', node: config.mmm.motive },
-      { label: 'Means',  node: config.mmm.means  },
-      { label: 'Moment', node: config.mmm.moment  },
-    ].forEach(slot => {
-      const surfaced = slot.node && ni[slot.node];
-      const captured = slot.node && niCap[slot.node];
-      const status = surfaced && captured ? '\u2713' : surfaced ? '!' : '\u2014';
-      const color  = surfaced && captured ? 'rgba(107,138,74,.9)' : surfaced ? 'rgba(180,155,90,.9)' : 'var(--faint)';
-      const text   = surfaced && captured ? 'Captured.' : surfaced ? 'Surfaced. Not captured.' : 'Not yet surfaced.';
-      const row = document.createElement('div');
-      row.style.cssText = 'display:flex;align-items:flex-start;gap:10px;margin-bottom:6px;font-family:var(--sans);font-size:11px;line-height:1.5;';
-      row.innerHTML = `<span style="color:${color};width:14px;flex-shrink:0;">${status}</span><span style="color:var(--dim);width:52px;flex-shrink:0;">${slot.label}</span><span style="color:${color};font-style:italic;">${text}</span>`;
-      l1.appendChild(row);
-    });
+    if (config._noMMM) {
+      // Q2 carries no conviction nodes — suppress MMM slots, show a plain label instead
+      l1.innerHTML = '<div style="font-family:var(--sans);font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-bottom:8px;">Case Checklist</div>';
+      const note = document.createElement('div');
+      note.style.cssText = 'font-family:var(--sans);font-size:11px;color:var(--faint);font-style:italic;';
+      note.textContent = 'This line carries no conviction nodes. Intelligence only.';
+      l1.appendChild(note);
+    } else {
+      l1.innerHTML = '<div style="font-family:var(--sans);font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-bottom:8px;">Case Checklist</div>';
+      [
+        { label: 'Motive', node: config.mmm.motive },
+        { label: 'Means',  node: config.mmm.means  },
+        { label: 'Moment', node: config.mmm.moment  },
+      ].forEach(slot => {
+        const surfaced = slot.node && ni[slot.node];
+        const captured = slot.node && niCap[slot.node];
+        const status = surfaced && captured ? '\u2713' : surfaced ? '!' : '\u2014';
+        const color  = surfaced && captured ? 'rgba(107,138,74,.9)' : surfaced ? 'rgba(180,155,90,.9)' : 'var(--faint)';
+        const text   = surfaced && captured ? 'Captured.' : surfaced ? 'Surfaced. Not captured.' : 'Not yet surfaced.';
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;align-items:flex-start;gap:10px;margin-bottom:6px;font-family:var(--sans);font-size:11px;line-height:1.5;';
+        row.innerHTML = `<span style="color:${color};width:14px;flex-shrink:0;">${status}</span><span style="color:var(--dim);width:52px;flex-shrink:0;">${slot.label}</span><span style="color:${color};font-style:italic;">${text}</span>`;
+        l1.appendChild(row);
+      });
+    }
     card.appendChild(l1);
   }
 
