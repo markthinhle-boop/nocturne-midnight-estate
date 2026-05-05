@@ -683,7 +683,7 @@ html, body {
 /* ── CHARACTER CONVERSATION ──────────────────────────────── */
 #conversation-panel {
   position: absolute;
-  top: 25%;
+  top: 20%;
   left: 0;
   right: 0;
   bottom: 0;
