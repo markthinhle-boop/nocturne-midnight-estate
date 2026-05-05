@@ -714,12 +714,10 @@ function haleSnapbackAnswer(branch, optionId) {
   const result = snap.responses[optionId];
   if (!result) return null;
   if (result.kind === 'wrong') {
-    // Lock branch — composure floor rises on return
+    // Lock branch on wrong snapback answer
     s.ashworthBranchLocked = true;
     if (!s.completedLines) s.completedLines = [];
     if (!s.completedLines.includes('ashworth')) s.completedLines.push('ashworth');
-    // Raise composure floor for next visit
-    if (window.gameState) window.gameState.haleComposureFloorBonus = 15;
   }
   if (result.grants) {
     if (!s.flags) s.flags = {};
@@ -745,7 +743,6 @@ function initHaleSession() {
     gateState:         {},
     diversionQueue:    [],
     flags:             {},
-    pencilFlashShown:  false,
     pencilCaptured:    false,
     completedLines:    [],
     usedTechniques:    {},
@@ -792,27 +789,15 @@ function haleSelectTechnique(techId) {
       s.usedTechniques[s.lineSelected].push(techId);
     }
   }
-  // Check snapback trigger — fires on Ashworth branch after 2nd technique
+  // Snapback trigger — arms after 2nd technique on Ashworth branch.
+  // Fires AFTER the follow-up is chosen (checked in _haleFireFollowup), not before.
   if (s.lineSelected === 'ashworth'
       && !s.snapbackFired
       && (s.usedTechniques['ashworth'] || []).length === 2) {
     s.snapbackPending = true;
   }
-  // Apply composure cost from line technique
-  const char = (window.CHARACTERS || {})['pemberton-hale'];
-  if (char && char.line_techniques && char.line_techniques[s.lineSelected]) {
-    const t = char.line_techniques[s.lineSelected][techId];
-    if (t && t.composure) {
-      window.gameState.composure = Math.max(0, (window.gameState.composure || 100) + t.composure);
-    }
-  }
-  // Check if all 4 techniques used — mark line complete
-  const allTechs = ['wait', 'account', 'approach', 'pressure'];
-  const used = s.usedTechniques[s.lineSelected] || [];
-  if (allTechs.every(t => used.includes(t))) {
-    if (!s.completedLines) s.completedLines = [];
-    if (!s.completedLines.includes(s.lineSelected)) s.completedLines.push(s.lineSelected);
-  }
+  // NOTE: composure cost is applied in ui.js _haleFireLineTechnique (single apply point).
+  // Branch-lock logic lives in ui.js _haleFireFollowup (capture-aware). Not duplicated here.
 }
 
 function haleAskFollowup(followupId) {
@@ -830,9 +815,9 @@ function haleAskFollowup(followupId) {
     if (excluded) s.followupAsked = followupId; // just tracks one
   }
   if (q.flag) s.flags[q.flag] = true;
-  // Pencil flash — only RW2
-  if (q.pencil_flash && !s.pencilFlashShown) {
-    s.pencilFlashShown = true;
+  // Pencil flash — fires every time a pencil_flash follow-up is chosen (not just once).
+  // Player may have deleted the previous capture, requiring a fresh flash to recapture.
+  if (q.pencil_flash) {
     if (window.gameState) {
       window.gameState.halePencilFlashPending = true;
       window.gameState.halePencilNode = q.pencil_node;
@@ -931,11 +916,10 @@ function northcottEmitTechnique(techId, qId, composureDelta, grants) {
   NocturneEngine.emit('techniqueSelected', { charId, technique: techId });
   NocturneEngine.emit('questionAnswered',  { charId, qId, qType: techId });
 
-  // Composure change
+  // Composure change event — actual composure cost applied in ui.js (single apply point).
+  // Emit the event for behavioral logger tracking only.
   if (composureDelta && window.gameState) {
-    const newComp = Math.max(0, (window.gameState.composure || 100) + composureDelta);
-    window.gameState.composure = newComp;
-    NocturneEngine.emit('composureChanged', { charId, state: 'changed', composure: newComp });
+    NocturneEngine.emit('composureChanged', { charId, state: 'changed', composure: window.gameState.composure });
   }
 
   // Technique-specific model events

@@ -3035,6 +3035,11 @@ function _haleFireLineTechnique(lineId, techId) {
   // Record visit after first technique fires
   if (s && Object.values(s.usedTechniques || {}).every(arr => arr.length <= 1)) _recordVisit('pemberton-hale');
 
+  // ── COMPOSURE — single apply point (removed from haleSelectTechnique to prevent double-fire)
+  if (tech.composure && window.gameState) {
+    window.gameState.composure = Math.max(0, (window.gameState.composure || 100) + tech.composure);
+  }
+
   // Inject the pencil before surfacing nodes — surfaceNode arms the fresh button's dataset.
   if (typeof window.injectPencilIcon === 'function') window.injectPencilIcon();
 
@@ -3050,13 +3055,8 @@ function _haleFireLineTechnique(lineId, techId) {
     });
   }
 
-  // Check snapback first
-  if (s && s.snapbackPending) {
-    _injectHaleSnapback(lineId);
-    return;
-  }
-
   // Render follow-ups directly — no arrow, follow-ups appear immediately
+  // Snapback (if pending) fires AFTER the player picks a follow-up, not here.
   const list = document.getElementById('questions-list');
   if (!list) return;
   list.innerHTML = '';
@@ -3074,7 +3074,11 @@ function _haleFireLineTechnique(lineId, techId) {
       list.appendChild(btn);
     });
   } else {
-    // No follow-ups — re-render questions so remaining techniques show
+    // No follow-ups — check snapback before re-rendering
+    if (s && s.snapbackPending) {
+      _injectHaleSnapback(lineId);
+      return;
+    }
     renderQuestions('pemberton-hale');
   }
 }
@@ -3131,6 +3135,10 @@ function _haleFireFollowup(followupId) {
   // Clear questions list — nothing shown until player closes and returns
   const list = document.getElementById('questions-list');
   if (list) list.innerHTML = '';
+  // Snapback fires AFTER the follow-up is chosen — gives the player the full exchange first
+  if (s && s.snapbackPending) {
+    _injectHaleSnapback('ashworth');
+  }
 }
 
 function _haleOpenGate(gateId) {
