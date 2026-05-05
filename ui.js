@@ -2636,6 +2636,50 @@ function _showClosure(charId, branchId) {
   };
   card.appendChild(dismiss);
 
+  // Return suggestion — quiet line below Close, state-aware (priority order)
+  const surfaced = (window.gameState && window.gameState.surfaced_nodes) || {};
+  const captured = (window.gameState && window.gameState.captured_nodes) || {};
+  const allTechsFour = ['wait','account','approach','pressure'];
+  const branchTechData = (CHARACTERS[charId] && CHARACTERS[charId].line_techniques && CHARACTERS[charId].line_techniques[branchId]) || {};
+  const sessForReturn = charId === 'northcott'
+    ? (typeof _getNorthcottSession === 'function' ? _getNorthcottSession() : null)
+    : (typeof window.getHaleSession === 'function' ? window.getHaleSession() : null);
+  const usedInBranch = sessForReturn && sessForReturn.usedTechniques && sessForReturn.usedTechniques[branchId]
+    ? sessForReturn.usedTechniques[branchId]
+    : [];
+  const hasMissedCapture = usedInBranch.some(t => {
+    const g = branchTechData[t] && branchTechData[t].grants;
+    return g && g.split(' ').some(n => n && surfaced[n] && !captured[n]);
+  });
+  const hasUnusedTechs = allTechsFour.some(t => !usedInBranch.includes(t));
+
+  // Composure check — is this NPC too depleted to continue productively?
+  const currentComp = typeof _getSuspectComposure === 'function' ? _getSuspectComposure(charId) : 100;
+  const composureLow = currentComp < 40;
+
+  // Cross-contamination check — has the player talked to anyone else at all
+  const charDialogue = (window.gameState && window.gameState.char_dialogue_complete) || {};
+  const othersTalkedTo = Object.keys(charDialogue).filter(id => id !== charId && charDialogue[id] && Object.keys(charDialogue[id]).length > 0);
+  const hasCrossOpportunity = othersTalkedTo.length > 0;
+
+  // Priority: composure low > missed capture > cross opportunity > unused techniques
+  let returnLine = null;
+  if (composureLow) {
+    returnLine = 'Low composure. Speak with others and return.';
+  } else if (hasMissedCapture) {
+    returnLine = 'Return to recover what was not recorded.';
+  } else if (hasCrossOpportunity) {
+    returnLine = 'Speak with others. Return with what you find.';
+  } else if (hasUnusedTechs) {
+    returnLine = 'Return to continue the conversation.';
+  }
+  if (returnLine) {
+    const hint = document.createElement('div');
+    hint.style.cssText = 'text-align:center;font-family:var(--sans);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin-top:10px;opacity:0.7;';
+    hint.textContent = returnLine;
+    card.appendChild(hint);
+  }
+
   overlay.appendChild(card);
   // Tap-outside-to-dismiss
   overlay.onclick = (e) => { if (e.target === overlay) dismiss.onclick(); };
